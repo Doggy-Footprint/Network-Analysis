@@ -1,0 +1,32 @@
+<section class="panel graph-panel" data-component="graph" aria-labelledby="graph-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Relationships</p>
+      <h2 id="graph-title">전체 관계 그래프</h2>
+    </div>
+    <p>readable node, query node와 origin→query, query→arrival, framework link를 모두 포함합니다.</p>
+  </div>
+  <div class="graph-toolbar">
+    <label class="grow">노드 검색<input id="graph-search" type="search" placeholder="label, path, query term 또는 id"></label>
+    <button id="graph-find" type="button">검색 위치로</button>
+    <button id="graph-fit" type="button">전체 맞춤</button>
+    <label><input id="filter-readable" type="checkbox" checked> readable</label>
+    <label><input id="filter-query" type="checkbox" checked> query</label>
+    <label><input id="filter-framework" type="checkbox" checked> framework edge</label>
+    <label>query 종류<select id="filter-query-kind"><option value="all">전체</option></select></label>
+  </div>
+  <div class="graph-stage">
+    <canvas id="relationship-canvas" aria-label="Agent-view 관계 그래프"></canvas>
+    <div class="empty-state" id="graph-empty" data-empty-count="0">표시할 관계가 없습니다.</div>
+  </div>
+  <div class="graph-footer">
+    <div class="legend">
+      <span><i class="dot readable-dot"></i>readable node</span>
+      <span><i class="dot query-dot"></i>query node</span>
+      <span><i class="line regular-line"></i>탐색 관계</span>
+      <span><i class="line framework-line"></i>framework link</span>
+    </div>
+    <p id="graph-status">드래그: 이동 · 휠: 확대/축소 · 클릭: 상세 보기 · viewport culling 적용</p>
+  </div>
+  <pre class="inspector" id="graph-inspector">노드나 관계를 클릭하면 근거가 표시됩니다.</pre>
+</section>

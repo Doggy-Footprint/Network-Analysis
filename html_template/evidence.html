@@ -1,0 +1,27 @@
+<section class="panel" data-component="evidence" aria-labelledby="evidence-title">
+  <div class="section-heading">
+    <div>
+      <p class="eyebrow">Evidence</p>
+      <h2 id="evidence-title">근거 탐색</h2>
+    </div>
+    <p>node, query, occurrence, framework link와 분석 경계를 원본 필드까지 확인합니다.</p>
+  </div>
+  <div class="evidence-layout">
+    <div>
+      <label class="evidence-search">근거 검색<input id="evidence-search" type="search" placeholder="path, term, rule, id"></label>
+      <p class="muted" id="evidence-count"></p>
+      <div class="evidence-list" id="evidence-list"></div>
+    </div>
+    <pre class="inspector evidence-detail" id="evidence-detail">항목을 선택하면 전체 근거가 표시됩니다.</pre>
+  </div>
+  <div class="boundary-grid">
+    <article>
+      <h3>제외된 파일</h3>
+      <div class="compact-list" id="excluded-files"></div>
+    </article>
+    <article>
+      <h3>알 수 없는 framework edge</h3>
+      <div class="compact-list" id="unknown-edges"></div>
+    </article>
+  </div>
+</section>
