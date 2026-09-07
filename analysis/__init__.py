@@ -1,5 +1,5 @@
-from .graph_metrics import GraphAnalyzer, GraphAnalysisConfig
+from .graph_metrics import GraphAnalyzer, GraphAnalysisConfig, pagerank
 
 __all__ = [
-    "GraphAnalyzer", "GraphAnalysisConfig",
+    "GraphAnalyzer", "GraphAnalysisConfig", "pagerank",
 ]

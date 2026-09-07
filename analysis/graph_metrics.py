@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
 
-from language_analyzers.core.cost import CHARACTERS_PER_TOKEN
+from language_analyzers.core.cost import CHARACTERS_PER_TOKEN, DIGIT_GROUP_SIZE, estimate_tokens
 
 
 def _display_name(node: Any, fallback: str) -> str:
@@ -19,9 +19,37 @@ class GraphAnalysisConfig:
     tolerance: float = 1e-10
     max_iterations: int = 100
     characters_per_token: float = CHARACTERS_PER_TOKEN
+    digit_group_size: int = DIGIT_GROUP_SIZE
     exact_betweenness_threshold: int = 500
     betweenness_sample_size: int = 100
     betweenness_sampler: Optional[Callable[[Sequence[str], int], Sequence[str]]] = None
+
+
+def pagerank(
+    outgoing: Mapping[str, Set[str]],
+    config: Optional[GraphAnalysisConfig] = None,
+) -> Dict[str, float]:
+    settings = config or GraphAnalysisConfig()
+    count = len(outgoing)
+    if not count:
+        return {}
+    scores = {node_id: 1.0 / count for node_id in outgoing}
+    base = (1.0 - settings.damping) / count
+
+    for _ in range(settings.max_iterations):
+        dangling = sum(scores[node_id] for node_id, targets in outgoing.items() if not targets)
+        updated = {node_id: base + settings.damping * dangling / count for node_id in outgoing}
+        for source, targets in outgoing.items():
+            if not targets:
+                continue
+            contribution = settings.damping * scores[source] / len(targets)
+            for target in targets:
+                updated[target] += contribution
+        if sum(abs(updated[item] - scores[item]) for item in scores) <= settings.tolerance:
+            scores = updated
+            break
+        scores = updated
+    return scores
 
 
 class GraphAnalyzer:
@@ -124,26 +152,7 @@ class GraphAnalyzer:
         return self._betweenness(outgoing, sampled), "deterministic_sampled", len(sampled)
 
     def _pagerank(self, outgoing: Mapping[str, Set[str]]) -> Dict[str, float]:
-        count = len(outgoing)
-        if not count:
-            return {}
-        scores = {node_id: 1.0 / count for node_id in outgoing}
-        base = (1.0 - self.config.damping) / count
-
-        for _ in range(self.config.max_iterations):
-            dangling = sum(scores[node_id] for node_id, targets in outgoing.items() if not targets)
-            updated = {node_id: base + self.config.damping * dangling / count for node_id in outgoing}
-            for source, targets in outgoing.items():
-                if not targets:
-                    continue
-                contribution = self.config.damping * scores[source] / len(targets)
-                for target in targets:
-                    updated[target] += contribution
-            if sum(abs(updated[item] - scores[item]) for item in scores) <= self.config.tolerance:
-                scores = updated
-                break
-            scores = updated
-        return scores
+        return pagerank(outgoing, self.config)
 
     def _hits(
         self,
@@ -329,7 +338,7 @@ class GraphAnalyzer:
         return ast.get_source_segment(source, target) or source
 
     def _estimate_tokens(self, text: str) -> int:
-        return max(1, math.ceil(len(text) / self.config.characters_per_token))
+        return estimate_tokens(text, self.config.characters_per_token, self.config.digit_group_size)
 
     @staticmethod
     def _edge_value(edge: Any, attribute: str, mapping_key: str) -> Any:

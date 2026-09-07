@@ -81,12 +81,16 @@ class Profile:
             "Pipfile.lock",
         ]
     )
+    characters_per_token: int = 4
+    digit_group_size: int = 3
     split_version: str = "symbol-greedy-v1"
     ordering_version: str = "path-line-byte-v1"
     output_format_version: str = "match-line-v1"
     query_equivalence_version: str = "kind-term-surface-scope-rules-v1"
+    tokenizer_version: str = "chars-div4-digit-group3-v1"
     read_limit_provenance: str = ""
     search_limit_provenance: str = ""
+    tokenizer_provenance: str = ""
     query_candidate_limit_provenance: str = ""
 
     @property
@@ -122,6 +126,16 @@ def _positive_limits(raw: Dict[str, Any]) -> Dict[str, int]:
     return values
 
 
+def _tokenizer(raw: Dict[str, Any]) -> Dict[str, int]:
+    values = {}
+    for key in ("characters_per_token", "digit_group_size"):
+        value = raw.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+            raise ProfileError(f"profile tokenizer.{key} must be an int >= 1")
+        values[key] = value
+    return values
+
+
 def _string_list(raw: Dict[str, Any], key: str) -> List[str]:
     value = raw.get(key)
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
@@ -140,7 +154,7 @@ def load_profile(path: Union[str, Path]) -> Profile:
         raise ProfileError(f"profile is not valid YAML: {error}") from error
     if not isinstance(document, dict):
         raise ProfileError("profile root must be a mapping")
-    for key in ("id", "version", "limits", "transforms", "versions", "provenance", "exclusions"):
+    for key in ("id", "version", "limits", "transforms", "versions", "provenance", "exclusions", "tokenizer"):
         if key not in document:
             raise ProfileError(f"profile is missing required key: {key}")
     if not isinstance(document["id"], str) or not document["id"]:
@@ -155,10 +169,11 @@ def load_profile(path: Union[str, Path]) -> Profile:
     versions = _required_mapping(document, "versions")
     provenance = _required_mapping(document, "provenance")
     exclusions = _required_mapping(document, "exclusions")
-    for key in ("split", "ordering", "output_format", "query_equivalence"):
+    tokenizer = _tokenizer(_required_mapping(document, "tokenizer"))
+    for key in ("split", "ordering", "output_format", "query_equivalence", "tokenizer"):
         if not isinstance(versions.get(key), str) or not versions[key]:
             raise ProfileError(f"profile versions.{key} must be a non-empty string")
-    for key in ("read_limit", "search_limit", "query_candidate_limit"):
+    for key in ("read_limit", "search_limit", "query_candidate_limit", "tokenizer"):
         if not isinstance(provenance.get(key), str) or not provenance[key]:
             raise ProfileError(f"profile provenance.{key} must be a non-empty string")
 
@@ -175,12 +190,16 @@ def load_profile(path: Union[str, Path]) -> Profile:
         generated_globs=_string_list(exclusions, "generated_globs"),
         generated_markers=_string_list(exclusions, "generated_markers"),
         lockfile_names=_string_list(exclusions, "lockfile_names"),
+        characters_per_token=tokenizer["characters_per_token"],
+        digit_group_size=tokenizer["digit_group_size"],
         split_version=versions["split"],
         ordering_version=versions["ordering"],
         output_format_version=versions["output_format"],
         query_equivalence_version=versions["query_equivalence"],
+        tokenizer_version=versions["tokenizer"],
         read_limit_provenance=provenance["read_limit"],
         search_limit_provenance=provenance["search_limit"],
+        tokenizer_provenance=provenance["tokenizer"],
         query_candidate_limit_provenance=provenance["query_candidate_limit"],
         **limits,
     )

@@ -96,6 +96,8 @@ class V3ContractTests(unittest.TestCase):
             "occurrence_block_rows": 4096,
             "context_lines": 0,
             "generated_marker_lines": 8,
+            "characters_per_token": 4,
+            "digit_group_size": 3,
             "vendor_globs": ["vendor/**", "node_modules/**", "third_party/**"],
             "generated_globs": ["build/**", "dist/**", "*.min.js"],
             "generated_markers": ["generated file", "do not edit"],
@@ -104,8 +106,10 @@ class V3ContractTests(unittest.TestCase):
             "ordering_version": "path-line-byte-v1",
             "output_format_version": "match-line-v1",
             "query_equivalence_version": "kind-term-surface-scope-rules-v1",
+            "tokenizer_version": "chars-div4-digit-group3-v1",
             "read_limit_provenance": "Harness command: sed -n '1,2000p' FILE; measured ceiling: 8000 estimated tokens",
             "search_limit_provenance": "Harness command: rg --json TERM ROOT | head -n 30; configured visible occurrence ceiling: 30",
+            "tokenizer_provenance": "ROADMAP.md cost contract: characters per token defaulting to 4, digit runs grouped three at a time from the left",
             "query_candidate_limit_provenance": "Harness trace field: follow_up_queries_after_read; retained positions: 1-3",
         })
         self.assertNotIn("max_arrival_nodes", profile)

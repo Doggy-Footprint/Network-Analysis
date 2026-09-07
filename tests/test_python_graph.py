@@ -336,9 +336,9 @@ class TestPythonGraphEdges(PythonProjectFixture):
         self.assertEqual(node.span.file_path, "mod.py")
         self.assertEqual((node.span.start_line, node.span.end_line), (1, 2))
         # "def compute(value: int) -> int:" (31) + newline + "    return value * 2" (20) = 52
-        # chars -> ceil(52/4) = 13.
+        # 51 non-digit chars -> ceil(51/4) = 13, plus the digit run "2" -> 1 = 14.
         self.assertEqual(node.cost.char_count, 52)
-        self.assertEqual(node.cost.token_estimate, 13)
+        self.assertEqual(node.cost.token_estimate, 14)
         self.assertEqual(node.signature, "def compute(value: int) -> int")
         self.assertEqual(node.symbol_path, "mod.compute")
         self.assertEqual(node.language, "python")

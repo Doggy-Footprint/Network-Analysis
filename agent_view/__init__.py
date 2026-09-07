@@ -527,6 +527,8 @@ def build_agent_view(
         list(contents),
         contents,
         active.read_unit_token_limit,
+        active.characters_per_token,
+        active.digit_group_size,
     )
     readable_by_id = {node.id: node for node in readable}
     nodes_by_file: Dict[str, List[ReadableNode]] = defaultdict(list)
@@ -594,7 +596,11 @@ def build_agent_view(
                 total_count=len(spec.occurrences),
                 visible_count=len(visible),
                 truncated=len(visible) < len(spec.occurrences),
-                output_tokens=estimate_tokens(_render_visible(visible, contents)) if visible else 0,
+                output_tokens=estimate_tokens(
+                    _render_visible(visible, contents),
+                    active.characters_per_token,
+                    active.digit_group_size,
+                ) if visible else 0,
                 duplicate_suppressed_count=spec.duplicate_count,
                 candidate_filtered_count=spec.filtered_count,
                 candidate_cap_truncated=spec.cap_truncated,

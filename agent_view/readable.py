@@ -2,7 +2,7 @@ import hashlib
 from dataclasses import replace
 from typing import Dict, List, Mapping, Sequence, Tuple
 
-from language_analyzers.core.cost import cost_for_text
+from language_analyzers.core.cost import CHARACTERS_PER_TOKEN, DIGIT_GROUP_SIZE, cost_for_text
 from language_analyzers.core.flags import path_flags
 from language_analyzers.core.graph_models import GraphNode
 
@@ -31,6 +31,7 @@ def _candidate_nodes(
     nodes: Sequence[GraphNode],
     scanned_paths: Sequence[str],
     contents: Mapping[str, str],
+    tokenizer: Tuple[float, int],
 ) -> List[ReadableNode]:
     scanned = set(scanned_paths)
     by_id: Dict[str, ReadableNode] = {}
@@ -60,7 +61,7 @@ def _candidate_nodes(
             kind=node.kind,
             start_line=node.span.start_line,
             end_line=node.span.end_line,
-            read_cost=cost_for_text(span_text),
+            read_cost=cost_for_text(span_text, *tokenizer),
             flags=sorted(path_flags(node.span.file_path)),
         )
 
@@ -75,7 +76,7 @@ def _candidate_nodes(
             kind="file",
             start_line=1,
             end_line=_line_count(contents[path]),
-            read_cost=cost_for_text(contents[path]),
+            read_cost=cost_for_text(contents[path], *tokenizer),
             flags=sorted(path_flags(path)),
         )
     return sorted(by_id.values(), key=lambda node: node.id)
@@ -86,9 +87,10 @@ def _split_file(
     text: str,
     symbols: Sequence[ReadableNode],
     token_limit: int,
+    tokenizer: Tuple[float, int],
 ) -> List[ReadUnit]:
     last_line = _line_count(text)
-    whole_cost = cost_for_text(text)
+    whole_cost = cost_for_text(text, *tokenizer)
     if whole_cost.token_estimate <= token_limit or not symbols:
         return [
             ReadUnit(
@@ -121,13 +123,13 @@ def _split_file(
             continue
 
         candidate_end = max(covered_end, symbol_end)
-        candidate_tokens = cost_for_text(_slice(text, start_line, candidate_end)).token_estimate
+        candidate_tokens = cost_for_text(_slice(text, start_line, candidate_end), *tokenizer).token_estimate
         if members and candidate_tokens > token_limit:
             groups.append((start_line, covered_end, members, False))
             start_line = covered_end + 1
             members = []
 
-        symbol_tokens = cost_for_text(_slice(text, symbol_start, symbol_end)).token_estimate
+        symbol_tokens = cost_for_text(_slice(text, symbol_start, symbol_end), *tokenizer).token_estimate
         if not members and symbol_tokens > token_limit:
             if start_line < symbol_start:
                 groups.append((start_line, symbol_start - 1, [], False))
@@ -163,7 +165,7 @@ def _split_file(
                 start_line=start_line,
                 end_line=end_line,
                 symbol_ids=sorted({node.id for node in members}),
-                read_cost=cost_for_text(_slice(text, start_line, end_line)),
+                read_cost=cost_for_text(_slice(text, start_line, end_line), *tokenizer),
                 oversized_symbol=oversized,
             )
         )
@@ -175,15 +177,18 @@ def build_readable_graph(
     scanned_paths: Sequence[str],
     contents: Mapping[str, str],
     token_limit: int,
+    characters_per_token: float = CHARACTERS_PER_TOKEN,
+    digit_group_size: int = DIGIT_GROUP_SIZE,
 ) -> Tuple[List[ReadableNode], List[ReadUnit], Dict[str, List[str]]]:
-    readable = _candidate_nodes(nodes, scanned_paths, contents)
+    tokenizer = (characters_per_token, digit_group_size)
+    readable = _candidate_nodes(nodes, scanned_paths, contents, tokenizer)
     by_path: Dict[str, List[ReadableNode]] = {}
     for node in readable:
         by_path.setdefault(node.file_path, []).append(node)
 
     units: List[ReadUnit] = []
     for path in sorted(scanned_paths):
-        units.extend(_split_file(path, contents[path], by_path.get(path, []), token_limit))
+        units.extend(_split_file(path, contents[path], by_path.get(path, []), token_limit, tokenizer))
 
     unit_by_node = {
         node_id: unit
@@ -207,8 +212,12 @@ def build_readable_nodes(
     nodes: Sequence[GraphNode],
     scanned_paths: Sequence[str],
     contents: Mapping[str, str],
+    characters_per_token: float = CHARACTERS_PER_TOKEN,
+    digit_group_size: int = DIGIT_GROUP_SIZE,
 ):
-    readable, _, _ = build_readable_graph(nodes, scanned_paths, contents, 10**12)
+    readable, _, _ = build_readable_graph(
+        nodes, scanned_paths, contents, 10**12, characters_per_token, digit_group_size
+    )
     by_path: Dict[str, List[str]] = {}
     for node in readable:
         by_path.setdefault(node.file_path, []).append(node.id)
