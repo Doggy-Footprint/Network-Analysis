@@ -1,5 +1,5 @@
 File: base.html
-Summary: 단일 오프라인 M1 보고서의 문서 골격과 asset 삽입 위치
+Summary: 결정적 gzip v3 graph를 시작 시 해제하고 occurrence 블록은 지연 해제하는 오프라인 문서 골격
 Related Files: generate_html.py
 Related Symbols: _build_document
 ---
@@ -24,9 +24,9 @@ Related Files: generate_html.py, agent_view/models.py
 Related Symbols: ReadableNode, QueryNode
 ---
 File: graph.html, graph.js
-Summary: 전체 agent-view 관계를 탐색하는 Canvas 시각화
+Summary: 전체 readable·query node와 일반·framework connection을 탐색하는 Canvas 시각화
 Related Files: generate_html.py, agent_view/models.py
-Related Symbols: ReadableNode, QueryNode, FrameworkLink
+Related Symbols: ReadableNode, QueryNode, Connection
 ---
 File: graph_model.js
 Summary: 관계 구성·배치와 Canvas 상호작용을 계산하는 순수 모델
@@ -34,14 +34,14 @@ Related Files: graph.js, tests/test_generate_html.py
 Related Symbols: build, selectVisible, fit, pan, zoomAt, find, center, inspectAt
 ---
 File: evidence.html, evidence.js
-Summary: node·query·framework 근거와 분석 경계 검색 화면
+Summary: node·query·connection 근거와 지연 occurrence 조회 및 분석 경계 검색 화면
 Related Files: generate_html.py, agent_view/models.py
-Related Symbols: Occurrence, FrameworkLink, ScanReport
+Related Symbols: OccurrenceBlock, Connection, ScanReport
 ---
 File: evidence_model.js
-Summary: 근거 항목 구성과 검색을 담당하는 순수 모델
+Summary: 근거 항목 구성·검색과 query occurrence 블록 지연 해제를 담당하는 순수 모델
 Related Files: evidence.js, tests/test_generate_html.py
-Related Symbols: build, search, boundaries
+Related Symbols: build, search, boundaries, loadQuery
 ---
 File: glossary.html
 Summary: 비전문가를 위한 M1 핵심 용어 설명

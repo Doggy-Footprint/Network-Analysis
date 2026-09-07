@@ -210,8 +210,13 @@ def main():
     if args.agent_view:
         profile = load_profile(args.agent_view_profile) if args.agent_view_profile else None
         agent_view_path = Path(args.agent_view)
+        dashboard_assets = output_html_path.with_name(f"{output_html_path.stem}_assets")
         agent_view_path.write_text(
-            graph_to_json(build_agent_view(arch, profile=profile)), encoding="utf-8"
+            graph_to_json(build_agent_view(
+                arch,
+                profile=profile,
+                excluded_paths=(agent_view_path, output_html_path, dashboard_assets),
+            )), encoding="utf-8"
         )
         print(f"[✓] Exported agent-view graph: {agent_view_path}")
 

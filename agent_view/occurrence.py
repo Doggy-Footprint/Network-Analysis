@@ -1,10 +1,20 @@
+import base64
 import bisect
+import gzip
+import hashlib
+import json
 import re
 import string
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence, Tuple
 
-from .models import Occurrence, ReadableNode
+from dataclasses import asdict
+
+from .models import Occurrence, OccurrenceBlock, OccurrenceRange, ReadableNode
+
+
+class OccurrenceStoreError(ValueError):
+    pass
 
 _WORD_RE = re.compile(r"[A-Za-z0-9_]+")
 _WORD_CHARS = frozenset(string.ascii_letters + string.digits + "_")
@@ -169,6 +179,109 @@ class OccurrenceIndex:
                 results.append(self._at(path, match.start(), match.group(0)))
         results.sort(key=lambda item: (item.file_path, item.line, item.col))
         return results
+
+    def find_path(self, term: str) -> List[Occurrence]:
+        results = []
+        for path in sorted(self._contents):
+            start = 0
+            while True:
+                offset = path.find(term, start)
+                if offset < 0:
+                    break
+                results.append(
+                    Occurrence(path, 1, offset, term, "path", self._enclosing(path, 1), "path")
+                )
+                start = offset + max(1, len(term))
+        return results
+
+    def list_paths(self, paths: Sequence[str]) -> List[Occurrence]:
+        return [
+            Occurrence(path, 1, 0, path, "path", self._enclosing(path, 1), "path")
+            for path in sorted(paths)
+        ]
+
+
+def encode_occurrence_blocks(
+    groups: Sequence[Sequence[Occurrence]],
+    rows_per_block: int,
+) -> Tuple[List[OccurrenceBlock], List[List[OccurrenceRange]]]:
+    if rows_per_block < 1:
+        raise OccurrenceStoreError("rows_per_block must be >= 1")
+    blocks: List[OccurrenceBlock] = []
+    ranges: List[List[OccurrenceRange]] = []
+    absolute = 0
+    for group in groups:
+        group_ranges = []
+        position = 0
+        while position < len(group):
+            chunk = list(group[position:position + rows_per_block])
+            raw = json.dumps(
+                [asdict(item) for item in chunk],
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            ).encode("utf-8")
+            compressed = gzip.compress(raw, compresslevel=9, mtime=0)
+            block_id = f"o:{len(blocks):08d}"
+            blocks.append(
+                OccurrenceBlock(
+                    id=block_id,
+                    start=absolute,
+                    end=absolute + len(chunk),
+                    count=len(chunk),
+                    sha256=hashlib.sha256(raw).hexdigest(),
+                    encoding="gzip+base64",
+                    data=base64.b64encode(compressed).decode("ascii"),
+                )
+            )
+            group_ranges.append(OccurrenceRange(block_id, 0, len(chunk)))
+            absolute += len(chunk)
+            position += len(chunk)
+        ranges.append(group_ranges)
+    return blocks, ranges
+
+
+def decode_occurrence_block(block: OccurrenceBlock) -> List[Occurrence]:
+    try:
+        if block.encoding != "gzip+base64":
+            raise ValueError(f"unsupported encoding {block.encoding!r}")
+        if block.count < 0 or block.end - block.start != block.count:
+            raise ValueError("invalid block range/count")
+        raw = gzip.decompress(base64.b64decode(block.data, validate=True))
+        if hashlib.sha256(raw).hexdigest() != block.sha256:
+            raise ValueError("digest mismatch")
+        values = json.loads(raw)
+        if not isinstance(values, list) or len(values) != block.count:
+            raise ValueError("row count mismatch")
+        return [Occurrence(**value) for value in values]
+    except Exception as error:
+        raise OccurrenceStoreError(f"corrupt occurrence block {block.id}: {error}") from error
+
+
+def decode_occurrence_ranges(
+    ranges: Sequence[OccurrenceRange],
+    blocks: Sequence[OccurrenceBlock],
+) -> List[Occurrence]:
+    by_id = {block.id: block for block in blocks}
+    result = []
+    for occurrence_range in ranges:
+        block = by_id.get(occurrence_range.block_id)
+        if block is None:
+            raise OccurrenceStoreError(
+                f"unknown occurrence block {occurrence_range.block_id}"
+            )
+        if (
+            occurrence_range.start < 0
+            or occurrence_range.count < 0
+            or occurrence_range.start + occurrence_range.count > block.count
+        ):
+            raise OccurrenceStoreError(
+                f"invalid occurrence range for block {occurrence_range.block_id}"
+            )
+        rows = decode_occurrence_block(block)
+        start = occurrence_range.start
+        result.extend(rows[start:start + occurrence_range.count])
+    return result
 
 
 def enclosing_node_id(nodes: Sequence[ReadableNode], path: str, line: int) -> str:

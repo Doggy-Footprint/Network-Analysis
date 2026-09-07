@@ -427,6 +427,8 @@ M1 이후 각 마일스톤은 기계 판독과 재검증을 위한 JSON, 그리�
 
 ### M1. Agent-view graph — 완료
 
+확장성 불변식은 저장소를 하나의 immutable snapshot으로 읽는 것, 명시적·식별된 analyzer 산출물을 재분석에서 제외하는 것, 검색 노출 결과를 profile 상한으로 제한하면서 전체 occurrence 근거는 결정적 압축 블록에 무손실 보존하는 것이다.
+
 - readable node와 query node 모델
 - 파일 token 임계 기반 read 단위 분할. greedy 순차 분할과 단일 symbol 초과 허용
 - 파일 내용과 경로 이름공간을 포함한 검색 surface, list query

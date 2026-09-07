@@ -1,15 +1,13 @@
-import hashlib
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Mapping, Sequence, Set
 
-from language_analyzers.core.cost import estimate_tokens
 from language_analyzers.core.enrichment import STRING_RE, config_keys
 from language_analyzers.core.graph_models import GraphNode
 
-from .models import Occurrence, QueryNode, ReadableNode
-from .occurrence import OccurrenceIndex, enclosing_node_id, file_context_kind
+from .models import ReadableNode
+from .occurrence import enclosing_node_id, file_context_kind
 from .profile import Profile
 
 _BACKTICK_RE = re.compile(r"`([^`\n]+)`")
@@ -21,24 +19,6 @@ class Clue:
     term: str
     clue_kinds: Set[str] = field(default_factory=set)
     origin_node_ids: Set[str] = field(default_factory=set)
-
-
-def query_node_id(kind: str, term: str, version: int) -> str:
-    return hashlib.sha256(f"{kind}|{term}|{version}".encode("utf-8")).hexdigest()[:16]
-
-
-def render_occurrences(occurrences: Sequence[Occurrence]) -> str:
-    return "\n".join(f"{item.file_path}:{item.line}:{item.matched_text}" for item in occurrences)
-
-
-def occurrence_digest(occurrences: Sequence[Occurrence]) -> str:
-    # output_tokens는 파일·줄·매치 문자열만 반영하므로 context나 enclosing node가 바뀌어도 값이 같다.
-    # 근거 변화를 diff가 관측하려면 occurrence의 모든 필드를 포함한 별도 지문이 필요하다.
-    payload = "\n".join(
-        f"{item.file_path}|{item.line}|{item.col}|{item.matched_text}|{item.context}|{item.enclosing_node_id}"
-        for item in occurrences
-    )
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def _add(clues: Dict[str, Clue], term: str, kind: str, origin: str, profile: Profile) -> None:
@@ -61,13 +41,17 @@ def extract_clues(
     profile: Profile,
 ) -> Dict[str, Clue]:
     clues: Dict[str, Clue] = {}
-    readable_ids = {node.id for node in readable}
+    readable_ids = {
+        node.symbol_id: node.id
+        for node in readable
+        if node.symbol_id is not None
+    }
     nodes_by_file: Dict[str, List[ReadableNode]] = {}
     for node in readable:
         nodes_by_file.setdefault(node.file_path, []).append(node)
 
     for node in sorted(nodes, key=lambda item: item.id):
-        origin = node.id if node.id in readable_ids else ""
+        origin = readable_ids.get(node.id, "")
         _add(clues, node.label, "identifier", origin, profile)
         if node.symbol_path and node.symbol_path != node.label:
             _add(clues, node.symbol_path, "qualified_name", origin, profile)
@@ -105,51 +89,3 @@ def extract_clues(
                 _add(clues, value, "error_message", origin, profile)
 
     return clues
-
-
-def make_query_node(
-    *,
-    term: str,
-    kind: str,
-    clue: Clue,
-    occurrences: List[Occurrence],
-    profile: Profile,
-    rule_id=None,
-    source_terms=(),
-) -> QueryNode:
-    arrivals = sorted({occurrence.enclosing_node_id for occurrence in occurrences})
-    excluded = len(arrivals) > profile.max_arrival_nodes
-    output_tokens = estimate_tokens(render_occurrences(occurrences))
-    return QueryNode(
-        id=query_node_id(kind, term, profile.ref.version),
-        term=term,
-        kind=kind,
-        clue_kinds=sorted(clue.clue_kinds),
-        origin_node_ids=sorted(clue.origin_node_ids),
-        rule_id=rule_id,
-        source_terms=sorted(source_terms),
-        occurrences=occurrences,
-        occurrence_digest=occurrence_digest(occurrences),
-        arrival_node_ids=arrivals,
-        output_tokens=output_tokens,
-        excluded=excluded,
-        exclusion_reason="too_many_arrival_nodes" if excluded else None,
-    )
-
-
-def build_exact_queries(
-    clues: Mapping[str, Clue],
-    index: OccurrenceIndex,
-    profile: Profile,
-) -> List[QueryNode]:
-    queries: List[QueryNode] = []
-    for term in sorted(clues):
-        occurrences = index.find(term)
-        if not occurrences:
-            continue
-        queries.append(make_query_node(
-            term=term, kind="exact", clue=clues[term],
-            occurrences=occurrences, profile=profile,
-        ))
-    queries.sort(key=lambda item: item.id)
-    return queries

@@ -1,304 +1,357 @@
 import argparse
-import html
+import base64
+import gzip
+import hashlib
 import json
-import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Union
 
-
-TEMPLATE_DIR = Path(__file__).resolve().parent / "html_template"
-COMPONENTS = ("header", "summary", "distributions", "graph", "evidence", "glossary")
-SCRIPTS = (
-    "summary_model", "graph_model", "evidence_model", "header",
-    "summary", "distributions", "graph", "evidence",
+SUPPORTED_SCHEMA_VERSION = "3"
+SIZE_WARNING_BYTES = 10 * 1024 * 1024
+TEMPLATE_FILES = (
+    "common.css", "header.html", "summary.html", "distributions.html", "graph.html",
+    "evidence.html", "glossary.html", "summary_model.js", "graph_model.js",
+    "evidence_model.js", "header.js", "summary.js", "distributions.js", "graph.js", "evidence.js",
 )
-SUPPORTED_SCHEMA_VERSION = "2"
-
 
 class ReportInputError(ValueError):
     pass
 
-
 class ReportOutputError(RuntimeError):
     pass
-
 
 def _fail(path: str, message: str) -> None:
     raise ReportInputError(f"{path}: {message}")
 
-
-def _mapping(value: Any, path: str) -> Mapping[str, Any]:
+def _object(value: Any, path: str) -> Dict[str, Any]:
     if not isinstance(value, dict):
         _fail(path, "must be an object")
     return value
 
-
-def _required(mapping: Mapping[str, Any], key: str, path: str) -> Any:
-    if key not in mapping:
-        _fail(path, f"missing required field {key!r}")
-    return mapping[key]
-
-
-def _string(value: Any, path: str, *, nullable: bool = False) -> Optional[str]:
-    if nullable and value is None:
-        return None
-    if not isinstance(value, str):
-        _fail(path, "must be a string" + (" or null" if nullable else ""))
+def _array(value: Any, path: str) -> list[Any]:
+    if not isinstance(value, list):
+        _fail(path, "must be an array")
     return value
 
+def _string(value: Any, path: str, *, allow_empty: bool = True) -> str:
+    if not isinstance(value, str) or (not allow_empty and not value):
+        _fail(path, "must be a string" if allow_empty else "must be a non-empty string")
+    return value
 
-def _integer(value: Any, path: str, *, nullable: bool = False, minimum: int = 0) -> Optional[int]:
-    if nullable and value is None:
-        return None
+def _integer(value: Any, path: str, *, minimum: int = 0) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value < minimum:
-        _fail(path, f"must be an integer >= {minimum}" + (" or null" if nullable else ""))
+        _fail(path, f"must be an integer >= {minimum}")
     return value
-
 
 def _boolean(value: Any, path: str) -> bool:
     if not isinstance(value, bool):
         _fail(path, "must be a boolean")
     return value
 
+def _required(value: Mapping[str, Any], path: str, fields: Sequence[str]) -> None:
+    for field in fields:
+        if field not in value:
+            _fail(path, f"missing required field {field!r}")
 
-def _list(value: Any, path: str) -> Sequence[Any]:
-    if not isinstance(value, list):
-        _fail(path, "must be an array")
-    return value
-
-
-def _string_list(value: Any, path: str) -> Sequence[str]:
-    result = _list(value, path)
+def _string_array(value: Any, path: str) -> list[str]:
+    result = _array(value, path)
     for index, item in enumerate(result):
         _string(item, f"{path}[{index}]")
     return result
 
+def _validate_node_cost(value: Any, path: str) -> None:
+    cost = _object(value, path)
+    _required(cost, path, ("char_count", "line_count", "token_estimate"))
+    for field in ("char_count", "line_count", "token_estimate"):
+        _integer(cost[field], f"{path}.{field}")
 
-def _validate_profile(value: Any) -> None:
-    profile = _mapping(value, "profile")
-    _string(_required(profile, "id", "profile"), "profile.id")
-    _integer(_required(profile, "version", "profile"), "profile.version")
-    _string(_required(profile, "content_hash", "profile"), "profile.content_hash")
+def _decode_block(block: Mapping[str, Any], path: str) -> list[Any]:
+    if block["encoding"] != "gzip+base64":
+        _fail(f"{path}.encoding", "must be 'gzip+base64'")
+    try:
+        compressed = base64.b64decode(block["data"], validate=True)
+    except (ValueError, TypeError) as error:
+        _fail(f"{path}.data", f"invalid base64: {error}")
+    try:
+        raw = gzip.decompress(compressed)
+    except (OSError, EOFError) as error:
+        _fail(f"{path}.data", f"invalid gzip: {error}")
+    if hashlib.sha256(raw).hexdigest() != block["sha256"]:
+        _fail(f"{path}.sha256", "digest does not match decoded data")
+    try:
+        rows = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        _fail(f"{path}.data", f"decoded data is not valid JSON: {error}")
+    if not isinstance(rows, list):
+        _fail(f"{path}.data", "decoded data must be an array")
+    for index, item in enumerate(rows):
+        row_path = f"{path}.data[{index}]"
+        row = _object(item, row_path)
+        _required(row, row_path, ("file_path", "line", "col", "matched_text", "context", "enclosing_node_id", "surface"))
+        for field in ("file_path", "matched_text", "context", "enclosing_node_id", "surface"):
+            _string(row[field], f"{row_path}.{field}", allow_empty=field == "matched_text")
+        _integer(row["line"], f"{row_path}.line", minimum=1)
+        _integer(row["col"], f"{row_path}.col")
+    return rows
 
-
-def _validate_cost(value: Any, path: str) -> None:
-    cost = _mapping(value, path)
-    for field in ("token_estimate", "char_count", "line_count"):
-        _integer(_required(cost, field, path), f"{path}.{field}")
-
-
-def _validate_readable(value: Any, index: int) -> str:
-    path = f"readable_nodes[{index}]"
-    node = _mapping(value, path)
-    identifier = _string(_required(node, "id", path), f"{path}.id")
-    _string(_required(node, "file_path", path), f"{path}.file_path")
-    _string(_required(node, "symbol_id", path), f"{path}.symbol_id", nullable=True)
-    _string(_required(node, "label", path), f"{path}.label")
-    _string(_required(node, "kind", path), f"{path}.kind")
-    _integer(_required(node, "start_line", path), f"{path}.start_line", nullable=True)
-    _integer(_required(node, "end_line", path), f"{path}.end_line", nullable=True)
-    _validate_cost(_required(node, "read_cost", path), f"{path}.read_cost")
-    _string_list(_required(node, "flags", path), f"{path}.flags")
-    return identifier or ""
-
-
-def _validate_occurrence(value: Any, path: str) -> str:
-    occurrence = _mapping(value, path)
-    _string(_required(occurrence, "file_path", path), f"{path}.file_path")
-    _integer(_required(occurrence, "line", path), f"{path}.line", minimum=1)
-    _integer(_required(occurrence, "col", path), f"{path}.col")
-    _string(_required(occurrence, "matched_text", path), f"{path}.matched_text")
-    _string(_required(occurrence, "context", path), f"{path}.context")
-    return _string(
-        _required(occurrence, "enclosing_node_id", path),
-        f"{path}.enclosing_node_id",
-    ) or ""
-
-
-def _validate_query(value: Any, index: int) -> tuple[str, Sequence[str]]:
-    path = f"query_nodes[{index}]"
-    node = _mapping(value, path)
-    identifier = _string(_required(node, "id", path), f"{path}.id") or ""
-    _string(_required(node, "term", path), f"{path}.term")
-    _string(_required(node, "kind", path), f"{path}.kind")
-    _string_list(_required(node, "clue_kinds", path), f"{path}.clue_kinds")
-    origins = _string_list(_required(node, "origin_node_ids", path), f"{path}.origin_node_ids")
-    _string(_required(node, "rule_id", path), f"{path}.rule_id", nullable=True)
-    _string_list(_required(node, "source_terms", path), f"{path}.source_terms")
-    occurrences = _list(_required(node, "occurrences", path), f"{path}.occurrences")
-    occurrence_refs = [
-        _validate_occurrence(item, f"{path}.occurrences[{occurrence_index}]")
-        for occurrence_index, item in enumerate(occurrences)
-    ]
-    _string(_required(node, "occurrence_digest", path), f"{path}.occurrence_digest")
-    arrivals = _string_list(_required(node, "arrival_node_ids", path), f"{path}.arrival_node_ids")
-    _integer(_required(node, "output_tokens", path), f"{path}.output_tokens")
-    _boolean(_required(node, "excluded", path), f"{path}.excluded")
-    _string(_required(node, "exclusion_reason", path), f"{path}.exclusion_reason", nullable=True)
-    return identifier, tuple(origins) + tuple(arrivals) + tuple(occurrence_refs)
-
-
-def _validate_framework_link(value: Any, index: int) -> tuple[str, Sequence[str], Optional[str]]:
-    path = f"framework_links[{index}]"
-    link = _mapping(value, path)
-    identifier = _string(_required(link, "id", path), f"{path}.id") or ""
-    from_id = _string(_required(link, "from_node_id", path), f"{path}.from_node_id") or ""
-    _string(_required(link, "rule_id", path), f"{path}.rule_id")
-    _string(_required(link, "specificity", path), f"{path}.specificity")
-    _string(_required(link, "resolution", path), f"{path}.resolution")
-    targets = _string_list(_required(link, "to_node_ids", path), f"{path}.to_node_ids")
-    candidates = _string_list(_required(link, "candidate_node_ids", path), f"{path}.candidate_node_ids")
-    query_id = _string(_required(link, "query_id", path), f"{path}.query_id", nullable=True)
-    _string(_required(link, "evidence_file", path), f"{path}.evidence_file")
-    _integer(_required(link, "evidence_line", path), f"{path}.evidence_line", minimum=1)
-    return identifier, (from_id, *targets, *candidates), query_id
-
-
-def _validate_scan(value: Any) -> None:
-    scan = _mapping(value, "scan")
-    _string(_required(scan, "ignore_source", "scan"), "scan.ignore_source")
-    for field in ("scanned_file_count", "generated_file_count", "generated_node_count"):
-        _integer(_required(scan, field, "scan"), f"scan.{field}")
-    excluded = _list(_required(scan, "excluded_files", "scan"), "scan.excluded_files")
-    for index, value in enumerate(excluded):
-        path = f"scan.excluded_files[{index}]"
-        entry = _mapping(value, path)
-        _string(_required(entry, "file_path", path), f"{path}.file_path")
-        _string(_required(entry, "reason", path), f"{path}.reason")
-    _string_list(_required(scan, "unknown_framework_edges", "scan"), "scan.unknown_framework_edges")
-
-
-def _unique(ids: Iterable[str], collection: str) -> set[str]:
-    seen: set[str] = set()
-    for identifier in ids:
-        if identifier in seen:
-            _fail(collection, f"duplicate id {identifier!r}")
-        seen.add(identifier)
-    return seen
-
-
-def _references_exist(references: Iterable[str], valid: set[str], path: str) -> None:
-    for identifier in references:
-        if identifier not in valid:
-            _fail(path, f"dangling reference {identifier!r}")
-
+def _occurrence_digest(rows: Sequence[Mapping[str, Any]]) -> str:
+    text = "\n".join(f"{row['file_path']}|{row['line']}|{row['col']}|{row['matched_text']}|{row['context']}|{row['enclosing_node_id']}|{row['surface']}" for row in rows)
+    return hashlib.sha256(text.encode()).hexdigest()
 
 def _validate_payload(value: Any) -> Dict[str, Any]:
-    payload = _mapping(value, "root")
-    version = _string(_required(payload, "schema_version", "root"), "schema_version")
-    if version != SUPPORTED_SCHEMA_VERSION:
-        _fail("schema_version", f"unsupported version {version!r}; expected {SUPPORTED_SCHEMA_VERSION!r}")
-    _string(_required(payload, "project_name", "root"), "project_name")
-    _validate_profile(_required(payload, "profile", "root"))
+    root = _object(value, "root")
+    if root.get("schema_version") != SUPPORTED_SCHEMA_VERSION:
+        _fail("schema_version", f"unsupported version {root.get('schema_version')!r}; expected '3'")
+    required = ("project_name", "profile", "scan", "read_units", "readable_nodes", "query_nodes", "connections", "entry_documents", "hint_store", "occurrence_store")
+    _required(root, "root", required)
+    _string(root["project_name"], "project_name")
+    profile = _object(root["profile"], "profile")
+    profile_limits = ("min_term_length", "max_file_bytes", "read_unit_token_limit", "read_query_candidate_limit", "search_output_limit", "hint_query_limit", "refinement_threshold", "refinement_query_limit", "refinement_depth_limit", "root_list_depth", "root_list_entry_limit", "occurrence_block_rows", "context_lines", "generated_marker_lines")
+    profile_lists = ("vendor_globs", "generated_globs", "generated_markers", "lockfile_names")
+    profile_versions = ("split_version", "ordering_version", "output_format_version", "query_equivalence_version", "read_limit_provenance", "search_limit_provenance")
+    _required(profile, "profile", ("id", "version", "content_hash", "transforms", "include_agent_docs", "tracked_files_only") + profile_limits + profile_lists + profile_versions)
+    _string(profile["id"], "profile.id", allow_empty=False)
+    if _integer(profile["version"], "profile.version", minimum=1) != 3:
+        _fail("profile.version", "must be 3")
+    _string(profile["content_hash"], "profile.content_hash", allow_empty=False)
+    for field in profile_limits:
+        _integer(profile[field], f"profile.{field}", minimum=0 if field == "context_lines" else 1)
+    for field in profile_lists:
+        _string_array(profile[field], f"profile.{field}")
+    for field in profile_versions:
+        _string(profile[field], f"profile.{field}", allow_empty=False)
+    _boolean(profile["include_agent_docs"], "profile.include_agent_docs")
+    _boolean(profile["tracked_files_only"], "profile.tracked_files_only")
+    for index, item in enumerate(_array(profile["transforms"], "profile.transforms")):
+        path = f"profile.transforms[{index}]"
+        transform = _object(item, path)
+        _required(transform, path, ("id", "prefixes", "suffixes"))
+        _string(transform["id"], f"{path}.id", allow_empty=False)
+        _string_array(transform["prefixes"], f"{path}.prefixes")
+        _string_array(transform["suffixes"], f"{path}.suffixes")
+    scan = _object(root["scan"], "scan")
+    _required(scan, "scan", ("ignore_source", "scanned_file_count", "excluded_files", "exclusion_counts", "snapshot_digest"))
+    _string(scan["ignore_source"], "scan.ignore_source")
+    _integer(scan["scanned_file_count"], "scan.scanned_file_count")
+    _object(scan["exclusion_counts"], "scan.exclusion_counts")
+    _string(scan["snapshot_digest"], "scan.snapshot_digest", allow_empty=False)
+    for index, item in enumerate(_array(scan["excluded_files"], "scan.excluded_files")):
+        path = f"scan.excluded_files[{index}]"
+        entry = _object(item, path)
+        _required(entry, path, ("file_path", "reason"))
+        _string(entry["file_path"], f"{path}.file_path", allow_empty=False)
+        _string(entry["reason"], f"{path}.reason", allow_empty=False)
+    unit_ids: set[str] = set()
+    for index, item in enumerate(_array(root["read_units"], "read_units")):
+        path = f"read_units[{index}]"
+        unit = _object(item, path)
+        _required(unit, path, ("id", "file_path", "start_line", "end_line", "symbol_ids", "read_cost", "oversized_symbol"))
+        unit_id = _string(unit["id"], f"{path}.id", allow_empty=False)
+        if unit_id in unit_ids:
+            _fail(f"{path}.id", "duplicate read unit id")
+        unit_ids.add(unit_id)
+        _string(unit["file_path"], f"{path}.file_path", allow_empty=False)
+        start = _integer(unit["start_line"], f"{path}.start_line", minimum=1)
+        end = _integer(unit["end_line"], f"{path}.end_line", minimum=1)
+        if end < start:
+            _fail(path, "end_line must be >= start_line")
+        _string_array(unit["symbol_ids"], f"{path}.symbol_ids")
+        _validate_node_cost(unit["read_cost"], f"{path}.read_cost")
+        _boolean(unit["oversized_symbol"], f"{path}.oversized_symbol")
+    node_ids: set[str] = set()
+    for index, item in enumerate(_array(root["readable_nodes"], "readable_nodes")):
+        path = f"readable_nodes[{index}]"
+        node = _object(item, path)
+        _required(node, path, ("id", "file_path", "symbol_id", "label", "kind", "start_line", "end_line", "read_cost", "flags", "read_unit_id"))
+        node_id = _string(node["id"], f"{path}.id", allow_empty=False)
+        if node_id in node_ids:
+            _fail(f"{path}.id", "duplicate readable node id")
+        node_ids.add(node_id)
+        for field in ("file_path", "label", "kind", "read_unit_id"):
+            _string(node[field], f"{path}.{field}", allow_empty=field == "label")
+        if node["read_unit_id"] not in unit_ids:
+            _fail(f"{path}.read_unit_id", "references an unknown read unit")
+        if node["symbol_id"] is not None:
+            _string(node["symbol_id"], f"{path}.symbol_id", allow_empty=False)
+        if (node["start_line"] is None) != (node["end_line"] is None):
+            _fail(path, "start_line and end_line must both be null or integers")
+        if node["start_line"] is not None:
+            start = _integer(node["start_line"], f"{path}.start_line", minimum=1)
+            end = _integer(node["end_line"], f"{path}.end_line", minimum=1)
+            if end < start:
+                _fail(path, "end_line must be >= start_line")
+        _validate_node_cost(node["read_cost"], f"{path}.read_cost")
+        _string_array(node["flags"], f"{path}.flags")
+    blocks: Dict[str, tuple[Dict[str, Any], list[Any]]] = {}
+    expected_start = 0
+    for index, item in enumerate(_array(root["occurrence_store"], "occurrence_store")):
+        path = f"occurrence_store[{index}]"
+        block = _object(item, path)
+        _required(block, path, ("id", "start", "end", "count", "sha256", "encoding", "data"))
+        block_id = _string(block["id"], f"{path}.id", allow_empty=False)
+        if block_id in blocks:
+            _fail(f"{path}.id", "duplicate occurrence block id")
+        start = _integer(block["start"], f"{path}.start")
+        end = _integer(block["end"], f"{path}.end")
+        count = _integer(block["count"], f"{path}.count")
+        if start != expected_start or end != start + count:
+            _fail(path, "start/end/count do not form a contiguous range")
+        _string(block["sha256"], f"{path}.sha256", allow_empty=False)
+        _string(block["encoding"], f"{path}.encoding", allow_empty=False)
+        _string(block["data"], f"{path}.data")
+        rows = _decode_block(block, path)
+        if len(rows) != count:
+            _fail(f"{path}.count", "does not match decoded row count")
+        blocks[block_id] = (block, rows)
+        expected_start = end
+    query_ids: set[str] = set()
+    for index, item in enumerate(_array(root["query_nodes"], "query_nodes")):
+        path = f"query_nodes[{index}]"
+        query = _object(item, path)
+        fields = ("id", "term", "kind", "surface", "scope", "clue_kinds", "origin_node_ids", "rule_id", "source_terms", "occurrence_ranges", "occurrence_digest", "arrival_node_ids", "total_count", "visible_count", "truncated", "output_tokens", "duplicate_suppressed_count", "candidate_filtered_count", "candidate_cap_truncated", "refinement_depth")
+        _required(query, path, fields)
+        query_id = _string(query["id"], f"{path}.id", allow_empty=False)
+        if query_id in query_ids:
+            _fail(f"{path}.id", "duplicate query id")
+        query_ids.add(query_id)
+        for field in ("term", "kind", "surface", "scope", "occurrence_digest"):
+            _string(query[field], f"{path}.{field}", allow_empty=field == "term")
+        if query["rule_id"] is not None:
+            _string(query["rule_id"], f"{path}.rule_id", allow_empty=False)
+        for field in ("clue_kinds", "origin_node_ids", "source_terms", "arrival_node_ids"):
+            _string_array(query[field], f"{path}.{field}")
+        total = _integer(query["total_count"], f"{path}.total_count")
+        visible = _integer(query["visible_count"], f"{path}.visible_count")
+        _boolean(query["truncated"], f"{path}.truncated")
+        if visible > total:
+            _fail(path, "visible_count must not exceed total_count")
+        if query["truncated"] != (visible < total):
+            _fail(f"{path}.truncated", "must equal visible_count < total_count")
+        _boolean(query["candidate_cap_truncated"], f"{path}.candidate_cap_truncated")
+        for field in ("output_tokens", "duplicate_suppressed_count", "candidate_filtered_count", "refinement_depth"):
+            _integer(query[field], f"{path}.{field}")
+        referenced_rows: list[Any] = []
+        for range_index, item_range in enumerate(_array(query["occurrence_ranges"], f"{path}.occurrence_ranges")):
+            range_path = f"{path}.occurrence_ranges[{range_index}]"
+            ref = _object(item_range, range_path)
+            _required(ref, range_path, ("block_id", "start", "count"))
+            block_id = _string(ref["block_id"], f"{range_path}.block_id", allow_empty=False)
+            if block_id not in blocks:
+                _fail(f"{range_path}.block_id", "references an unknown occurrence block")
+            start = _integer(ref["start"], f"{range_path}.start")
+            count = _integer(ref["count"], f"{range_path}.count")
+            rows = blocks[block_id][1]
+            if start + count > len(rows):
+                _fail(range_path, "range exceeds occurrence block")
+            referenced_rows.extend(rows[start:start + count])
+        if len(referenced_rows) != total:
+            _fail(f"{path}.total_count", "does not match occurrence ranges")
+        if query["occurrence_digest"] != _occurrence_digest(referenced_rows):
+            _fail(f"{path}.occurrence_digest", "does not match referenced occurrences")
+        for field in ("origin_node_ids", "arrival_node_ids"):
+            for node_id in query[field]:
+                if node_id not in node_ids:
+                    _fail(f"{path}.{field}", f"references unknown readable node {node_id!r}")
+    all_ids = node_ids | query_ids
+    hints = _object(root["hint_store"], "hint_store")
+    for hint_id, item in hints.items():
+        _string(hint_id, "hint_store key", allow_empty=False)
+        path = f"hint_store[{hint_id!r}]"
+        hint = _object(item, path)
+        _required(hint, path, ("path", "file_name", "symbol_name", "roles", "identifiers"))
+        for field in ("path", "file_name", "symbol_name"):
+            _string(hint[field], f"{path}.{field}", allow_empty=field == "symbol_name")
+        for field in ("roles", "identifiers"):
+            _string_array(hint[field], f"{path}.{field}")
+    for index, item in enumerate(_array(root["connections"], "connections")):
+        path = f"connections[{index}]"
+        connection = _object(item, path)
+        _required(connection, path, ("id", "from_id", "to_id", "kind", "specificity", "evidence"))
+        for field in ("id", "from_id", "to_id", "kind", "specificity"):
+            _string(connection[field], f"{path}.{field}", allow_empty=False)
+        if connection["from_id"] not in all_ids or connection["to_id"] not in all_ids:
+            _fail(path, "connection endpoint is not a readable or query node")
+        _object(connection["evidence"], f"{path}.evidence")
+        hint_id = connection["evidence"].get("hint_id")
+        if hint_id is not None and hint_id not in hints:
+            _fail(f"{path}.evidence.hint_id", "references an unknown hint")
+    for index, item in enumerate(_array(root["entry_documents"], "entry_documents")):
+        path = f"entry_documents[{index}]"
+        entry = _object(item, path)
+        _required(entry, path, ("node_id", "file_path", "injected"))
+        if _string(entry["node_id"], f"{path}.node_id", allow_empty=False) not in node_ids:
+            _fail(f"{path}.node_id", "references an unknown readable node")
+        _string(entry["file_path"], f"{path}.file_path", allow_empty=False)
+        _boolean(entry["injected"], f"{path}.injected")
+    return dict(root)
 
-    readable_values = _list(_required(payload, "readable_nodes", "root"), "readable_nodes")
-    readable_ids = _unique(
-        (_validate_readable(value, index) for index, value in enumerate(readable_values)),
-        "readable_nodes",
-    )
+def _default_read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
 
-    query_values = _list(_required(payload, "query_nodes", "root"), "query_nodes")
-    query_results = [_validate_query(value, index) for index, value in enumerate(query_values)]
-    query_ids = _unique((result[0] for result in query_results), "query_nodes")
-    shared_ids = readable_ids & query_ids
-    if shared_ids:
-        _fail("graph nodes", f"duplicate id {sorted(shared_ids)[0]!r}")
-    for index, result in enumerate(query_results):
-        _references_exist(result[1], readable_ids, f"query_nodes[{index}]")
-
-    link_values = _list(_required(payload, "framework_links", "root"), "framework_links")
-    link_results = [_validate_framework_link(value, index) for index, value in enumerate(link_values)]
-    _unique((result[0] for result in link_results), "framework_links")
-    for index, result in enumerate(link_results):
-        _references_exist(result[1], readable_ids, f"framework_links[{index}]")
-        if result[2] is not None:
-            _references_exist((result[2],), query_ids, f"framework_links[{index}].query_id")
-
-    unreachable = _string_list(
-        _required(payload, "unreachable_node_ids", "root"),
-        "unreachable_node_ids",
-    )
-    _references_exist(unreachable, readable_ids, "unreachable_node_ids")
-    _validate_scan(_required(payload, "scan", "root"))
-    return dict(payload)
-
-
-def _read_payload(path: Path) -> Dict[str, Any]:
+def _read_payload(path: Path, read_text: Callable[[Path], str]) -> Dict[str, Any]:
     try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise ReportInputError(f"cannot read JSON input {path}: {error}") from error
+        text = read_text(path)
+    except Exception as error:
+        raise ReportOutputError(f"cannot read JSON input {path}: {error}") from error
     try:
         value = json.loads(text)
-    except json.JSONDecodeError as error:
+    except (TypeError, json.JSONDecodeError) as error:
         raise ReportInputError(f"invalid JSON input {path}: {error}") from error
     return _validate_payload(value)
 
-
-def _read_template(name: str) -> str:
-    path = TEMPLATE_DIR / name
+def _load_templates(template_dir: Path, read_text: Callable[[Path], str]) -> Dict[str, str]:
     try:
-        return path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as error:
-        raise ReportOutputError(f"cannot read template {path}: {error}") from error
+        templates = {name: read_text(template_dir / name) for name in ("base.html",) + TEMPLATE_FILES}
+    except Exception as error:
+        raise ReportOutputError(f"cannot read report template: {error}") from error
+    for marker in ("@@TITLE@@", "@@STYLE@@", "@@COMPONENTS@@", "@@DATA@@", "@@SCRIPTS@@"):
+        if templates["base.html"].count(marker) != 1:
+            raise ReportOutputError(f"invalid report template: expected exactly one {marker}")
+    return templates
 
+def _build_document(payload: Mapping[str, Any], templates: Mapping[str, str], compress: Callable[[bytes], bytes]) -> str:
+    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    try:
+        compressed = compress(raw)
+        if not isinstance(compressed, bytes) or gzip.decompress(compressed) != raw:
+            raise ValueError("compressor did not return a gzip encoding of the payload")
+        encoded = base64.b64encode(compressed).decode("ascii")
+    except Exception as error:
+        raise ReportOutputError(f"cannot compress report payload: {error}") from error
+    components = "\n".join(templates[name] for name in TEMPLATE_FILES if name.endswith(".html"))
+    scripts = "\n".join(f"<script>\n{templates[name]}\n</script>" for name in TEMPLATE_FILES if name.endswith(".js"))
+    return (templates["base.html"].replace("@@TITLE@@", "Agent-view graph").replace("@@STYLE@@", templates["common.css"]).replace("@@COMPONENTS@@", components).replace("@@DATA@@", encoded).replace("@@SCRIPTS@@", scripts))
 
-def _safe_json(payload: Mapping[str, Any]) -> str:
-    return (
-        json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-        .replace("&", "\\u0026")
-        .replace("<", "\\u003c")
-        .replace(">", "\\u003e")
-        .replace("\u2028", "\\u2028")
-        .replace("\u2029", "\\u2029")
-    )
+def _gzip(raw: bytes) -> bytes:
+    return gzip.compress(raw, compresslevel=9, mtime=0)
 
-
-def _build_document(payload: Mapping[str, Any]) -> str:
-    base = _read_template("base.html")
-    components = "\n".join(_read_template(f"{name}.html").rstrip() for name in COMPONENTS)
-    scripts = "\n".join(f"<script>\n{_read_template(f'{name}.js').rstrip()}\n</script>" for name in SCRIPTS)
-    replacements = {
-        "@@TITLE@@": html.escape(f"{payload['project_name']} · Agent-view graph"),
-        "@@STYLE@@": _read_template("common.css").rstrip(),
-        "@@COMPONENTS@@": components,
-        "@@DATA@@": _safe_json(payload),
-        "@@SCRIPTS@@": scripts,
-    }
-    for marker in replacements:
-        if base.count(marker) != 1:
-            raise ReportOutputError(f"base template must contain exactly one {marker} marker")
-    document = "".join(replacements.get(part, part) for part in re.split("(@@[A-Z]+@@)", base))
-    return document.rstrip() + "\n"
-
-
-def generate_report(
-    json_path: Union[str, Path],
-    output_path: Union[str, Path, None] = None,
-) -> Path:
+def generate_report(json_path: Union[str, Path], output_path: Union[str, Path, None] = None, *, read_text: Optional[Callable[[Path], str]] = None, write_text: Optional[Callable[[Path, str], None]] = None, compress: Optional[Callable[[bytes], bytes]] = None, template_dir: Optional[Union[str, Path]] = None, stderr: Any = None) -> Path:
     source = Path(json_path).expanduser().resolve()
-    output = (
-        Path(output_path).expanduser().resolve()
-        if output_path is not None
-        else source.with_suffix(".html")
-    )
+    output = Path(output_path).expanduser().resolve() if output_path is not None else source.with_suffix(".html")
     if source == output:
         raise ReportOutputError("input and output paths must be different")
-    payload = _read_payload(source)
-    document = _build_document(payload)
+    reader = read_text or _default_read_text
+    payload = _read_payload(source, reader)
+    templates = _load_templates(Path(template_dir) if template_dir is not None else Path(__file__).with_name("html_template"), reader)
+    document = _build_document(payload, templates, compress or _gzip)
     try:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(document, encoding="utf-8", newline="\n")
-    except (OSError, UnicodeError) as error:
+        if write_text is None:
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(document, encoding="utf-8", newline="\n")
+        else:
+            write_text(output, document)
+    except Exception as error:
         raise ReportOutputError(f"cannot write HTML output {output}: {error}") from error
+    size = len(document.encode("utf-8"))
+    if size > SIZE_WARNING_BYTES:
+        print(f"warning: agent-view HTML is {size} bytes (threshold {SIZE_WARNING_BYTES})", file=stderr or sys.stderr)
     return output
 
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    parser = argparse.ArgumentParser(description="M1 agent-view JSON을 단일 HTML 보고서로 변환합니다.")
-    parser.add_argument("agent_view_json", help="schema_version 2 agent-view JSON 경로")
-    parser.add_argument("-o", "--output", help="출력 HTML 경로")
+    parser = argparse.ArgumentParser(description="M1 schema v3 JSON을 단일 오프라인 HTML 보고서로 변환합니다.")
+    parser.add_argument("agent_view_json")
+    parser.add_argument("-o", "--output")
     args = parser.parse_args(argv)
     try:
         output = generate_report(args.agent_view_json, args.output)
@@ -307,7 +360,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return 1
     print(output)
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

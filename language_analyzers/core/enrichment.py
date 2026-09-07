@@ -1,7 +1,9 @@
+import bisect
 import json
 import re
+import subprocess
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from .cost import cost_for_text
 from .flags import is_test_path
@@ -22,13 +24,63 @@ _CONFIG_SUFFIXES = {".json", ".yaml", ".yml", ".toml", ".properties"}
 STRING_RE = re.compile(r"(?P<quote>['\"])(?P<value>[^'\"\r\n]+)(?P=quote)")
 
 
-def enrich_repository(architecture: Any) -> Any:
+def enrich_repository(
+    architecture: Any,
+    *,
+    file_inventory: Optional[Sequence[str]] = None,
+    file_reader: Optional[Callable[[Path], str]] = None,
+) -> Any:
     root = Path(architecture.project_path)
     nodes: List[GraphNode] = architecture.nodes
     edges: List[GraphEdge] = architecture.edges
-    _add_test_relations(root, nodes, edges)
-    _add_configuration_relations(root, nodes, edges)
+    inventory = list(file_inventory) if file_inventory is not None else list(_repository_files(root))
+    reader = file_reader or (lambda path: path.read_text(encoding="utf-8"))
+    contents: Dict[str, str] = {}
+    for relative in sorted(set(inventory)):
+        if not _enrichment_candidate(relative):
+            continue
+        try:
+            contents[relative] = reader(root / relative)
+        except (OSError, UnicodeError):
+            continue
+    _add_test_relations(nodes, edges, contents)
+    _add_configuration_relations(nodes, edges, contents)
     return architecture
+
+
+def _repository_files(root: Path) -> Iterable[str]:
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "-z"],
+            cwd=str(root),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except (OSError, ValueError):
+        completed = None
+    if completed is not None and completed.returncode == 0 and completed.stdout:
+        for entry in completed.stdout.decode("utf-8", errors="replace").split("\0"):
+            if entry:
+                yield Path(entry).as_posix()
+        return
+    ignored = {".git", ".venv", "venv", "node_modules", "build", "dist", ".gradle", ".idea"}
+    for path in sorted(root.rglob("*")):
+        if path.is_file() and not any(part in ignored for part in path.relative_to(root).parts):
+            yield path.relative_to(root).as_posix()
+
+
+def _enrichment_candidate(relative: str) -> bool:
+    path = Path(relative)
+    ignored = {".git", ".venv", "venv", "node_modules", "vendor", "third_party", "build", "dist"}
+    if any(part in ignored for part in path.parts):
+        return False
+    lower_name = path.name.lower()
+    return (
+        path.suffix.lower() in _CODE_SUFFIXES | _CONFIG_SUFFIXES
+        or lower_name in _CONFIG_NAMES
+        or lower_name.endswith((".gradle", ".gradle.kts"))
+    )
 
 
 def _path_for(node: GraphNode) -> str:
@@ -41,7 +93,11 @@ def _is_test_node(node: GraphNode) -> bool:
     return "test" in (node.flags or []) or is_test_path(_path_for(node))
 
 
-def _add_test_relations(root: Path, nodes: Sequence[GraphNode], edges: List[GraphEdge]) -> None:
+def _add_test_relations(
+    nodes: Sequence[GraphNode],
+    edges: List[GraphEdge],
+    contents: Mapping[str, str],
+) -> None:
     by_id = {node.id: node for node in nodes}
     existing = {(edge.from_id, edge.to_id, edge.relation) for edge in edges}
     test_nodes = [node for node in nodes if _is_test_node(node)]
@@ -55,17 +111,11 @@ def _add_test_relations(root: Path, nodes: Sequence[GraphNode], edges: List[Grap
         _append_edge(edges, existing, source.id, target.id, RelationKind.TESTS,
                      edge.confidence, edge.resolution, edge.evidence, edge.candidates)
 
-    source_cache: Dict[str, str] = {}
     for test in test_nodes:
         path = _path_for(test)
         if not path or Path(path).suffix.lower() not in _CODE_SUFFIXES:
             continue
-        if path not in source_cache:
-            try:
-                source_cache[path] = (root / path).read_text(encoding="utf-8")
-            except (OSError, UnicodeError):
-                source_cache[path] = ""
-        file_text = source_cache[path]
+        file_text = contents.get(path, "")
         if not file_text:
             continue
         lines = file_text.splitlines()
@@ -105,7 +155,11 @@ def _add_test_relations(root: Path, nodes: Sequence[GraphNode], edges: List[Grap
             )
 
 
-def _add_configuration_relations(root: Path, nodes: List[GraphNode], edges: List[GraphEdge]) -> None:
+def _add_configuration_relations(
+    nodes: List[GraphNode],
+    edges: List[GraphEdge],
+    contents: Mapping[str, str],
+) -> None:
     existing = {(edge.from_id, edge.to_id, edge.relation) for edge in edges}
     existing_node_ids = {node.id for node in nodes}
     code_nodes_by_path: Dict[str, List[GraphNode]] = {}
@@ -114,14 +168,27 @@ def _add_configuration_relations(root: Path, nodes: List[GraphNode], edges: List
         if path and node.kind != NodeKind.CONFIGURATION and Path(path).suffix.lower() in _CODE_SUFFIXES:
             code_nodes_by_path.setdefault(path, []).append(node)
 
-    for path in _discover_config_files(root):
-        relative = path.relative_to(root).as_posix()
-        try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeError):
+    code_literals: Dict[str, Dict[str, List[int]]] = {}
+    for code_path in sorted(code_nodes_by_path):
+        code_text = contents.get(code_path)
+        if code_text is None:
             continue
-        for index, (key, line) in enumerate(config_keys(path, text)):
-            node_id = f"config:{relative}:{line}:{index}:{key}"
+        code_literals[code_path] = _index_code_literals(code_text)
+
+    for relative in sorted(contents):
+        path = Path(relative)
+        if not _is_config_path(path):
+            continue
+        text = contents[relative]
+        if _is_agent_view_artifact(text):
+            continue
+        occurrences: Dict[str, List[int]] = {}
+        for key, line in config_keys(path, text):
+            occurrences.setdefault(key, []).append(line)
+        for key in sorted(occurrences):
+            lines = sorted(occurrences[key])
+            line = lines[0]
+            node_id = f"config:{relative}:{key}"
             config_node = GraphNode(
                 id=node_id,
                 label=key,
@@ -133,48 +200,77 @@ def _add_configuration_relations(root: Path, nodes: List[GraphNode], edges: List
                 cost=cost_for_text(key),
                 symbol_path=f"{relative}:{key}",
                 provenance="repository-enrichment",
-                metadata={"file_path": relative, "key": key},
+                metadata={"file_path": relative, "key": key, "occurrence_lines": lines},
             )
             if node_id not in existing_node_ids:
                 nodes.append(config_node)
                 existing_node_ids.add(node_id)
             for code_path, candidates in code_nodes_by_path.items():
-                try:
-                    code_text = (root / code_path).read_text(encoding="utf-8")
-                except (OSError, UnicodeError):
-                    continue
-                matches = [match for match in STRING_RE.finditer(code_text) if match.group("value") == key]
-                for match in matches:
-                    use_line = code_text.count("\n", 0, match.start()) + 1
+                uses_by_consumer: Dict[str, Tuple[GraphNode, List[int]]] = {}
+                for use_line in code_literals.get(code_path, {}).get(key, []):
                     consumer = smallest_node_at_line(candidates, use_line)
                     if consumer is not None:
-                        _append_edge(
-                            edges, existing, node_id, consumer.id, RelationKind.CONFIGURES,
-                            Confidence.STATIC_CERTAIN, Resolution.EXACT,
-                            SourceSpan(code_path, use_line, use_line), [],
+                        entry = uses_by_consumer.setdefault(
+                            consumer.id,
+                            (consumer, []),
                         )
+                        entry[1].append(use_line)
+                for consumer, use_lines in uses_by_consumer.values():
+                    ordered_lines = sorted(set(use_lines))
+                    _append_edge(
+                        edges,
+                        existing,
+                        node_id,
+                        consumer.id,
+                        RelationKind.CONFIGURES,
+                        Confidence.STATIC_CERTAIN,
+                        Resolution.EXACT,
+                        SourceSpan(code_path, ordered_lines[0], ordered_lines[0]),
+                        [],
+                        metadata={"occurrence_lines": ordered_lines},
+                    )
 
 
-def _discover_config_files(root: Path) -> Iterable[Path]:
-    ignored = {".git", "node_modules", "build", "dist", ".gradle", ".idea"}
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or any(part in ignored for part in path.relative_to(root).parts):
-            continue
-        lower_name = path.name.lower()
-        if lower_name in _CONFIG_NAMES or path.suffix.lower() in _CONFIG_SUFFIXES or lower_name.endswith((".gradle", ".gradle.kts")):
-            yield path
+def _index_code_literals(text: str) -> Dict[str, List[int]]:
+    line_starts = _line_starts(text)
+    postings: Dict[str, List[int]] = {}
+    for match in STRING_RE.finditer(text):
+        postings.setdefault(match.group("value"), []).append(
+            _line_number(line_starts, match.start())
+        )
+    return postings
+
+
+def _is_agent_view_artifact(text: str) -> bool:
+    version = any(marker in text for marker in (
+        '"schema_version": "2"', '"schema_version":"2"',
+        '"schema_version": "3"', '"schema_version":"3"',
+    ))
+    return version and ('"occurrence_store"' in text or '"query_nodes"' in text)
+
+
+def _is_config_path(path: Path) -> bool:
+    lower_name = path.name.lower()
+    return (
+        lower_name in _CONFIG_NAMES
+        or path.suffix.lower() in _CONFIG_SUFFIXES
+        or lower_name.endswith((".gradle", ".gradle.kts"))
+    )
 
 
 def config_keys(path: Path, text: str) -> List[Tuple[str, int]]:
     suffix = path.suffix.lower()
     if suffix == ".json":
         try:
-            parsed = json.loads(text)
+            json.loads(text)
         except json.JSONDecodeError:
             return []
-        keys: List[str] = []
-        _json_keys(parsed, keys)
-        return [(key, _first_key_line(text, key)) for key in keys]
+        starts = _line_starts(text)
+        pattern = re.compile(r'(?P<key>"(?:\\.|[^"\\])*")\s*:')
+        return [
+            (json.loads(match.group("key")), _line_number(starts, match.start()))
+            for match in pattern.finditer(text)
+        ]
     results: List[Tuple[str, int]] = []
     separator = r"\s*=\s*" if path.name == ".env" or suffix == ".properties" else r"\s*[:=]\s*"
     pattern = re.compile(rf"^\s*([A-Za-z_][\w.-]*){separator}")
@@ -189,19 +285,12 @@ def config_keys(path: Path, text: str) -> List[Tuple[str, int]]:
     return results
 
 
-def _json_keys(value: Any, output: List[str]) -> None:
-    if isinstance(value, dict):
-        for key, nested in value.items():
-            output.append(str(key))
-            _json_keys(nested, output)
-    elif isinstance(value, list):
-        for nested in value:
-            _json_keys(nested, output)
+def _line_starts(text: str) -> List[int]:
+    return [0, *(index + 1 for index, character in enumerate(text) if character == "\n")]
 
 
-def _first_key_line(text: str, key: str) -> int:
-    match = re.search(rf"['\"]{re.escape(key)}['\"]\s*:", text)
-    return text.count("\n", 0, match.start()) + 1 if match else 1
+def _line_number(starts: Sequence[int], offset: int) -> int:
+    return bisect.bisect_right(starts, offset)
 
 
 def _first_line(text: str, value: str) -> int:
@@ -222,6 +311,7 @@ def smallest_node_at_line(nodes: Sequence[GraphNode], line: int) -> Optional[Gra
 def _append_edge(
     edges: List[GraphEdge], existing: set, source: str, target: str, relation: str,
     confidence: str, resolution: str, evidence: Optional[SourceSpan], candidates: List[str],
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
     key = (source, target, relation)
     if source == target or key in existing:
@@ -235,4 +325,5 @@ def _append_edge(
         resolution=resolution,
         evidence=evidence,
         candidates=list(candidates),
+        metadata=dict(metadata or {}),
     ))

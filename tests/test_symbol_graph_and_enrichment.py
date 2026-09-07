@@ -8,7 +8,9 @@ from unittest import mock
 from pathlib import Path
 
 from analysis import GraphAnalysisConfig, GraphAnalyzer
+from language_analyzers.core import enrichment as enrichment_module
 from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, RelationKind, SourceSpan
+from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.serialization import architecture_to_dict
 from language_analyzers.python.graph import PythonGraphAnalyzer
 
@@ -161,6 +163,123 @@ class TestCostAndScalePolicy(unittest.TestCase):
 
 
 class TestRepositoryEnrichment(unittest.TestCase):
+    def test_repeated_code_literal_is_indexed_once_and_retains_all_use_lines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources = {
+                "config.json": '{\n  "port": 1,\n  "port": 2\n}',
+                "consumer.py": (
+                    "def consume():\n"
+                    "    first = 'port'\n"
+                    "    second = 'port'\n"
+                    "    return 'port'\n"
+                ),
+            }
+            architecture = SimpleNamespace(
+                project_path=str(root),
+                nodes=[
+                    GraphNode(
+                        id="consumer",
+                        label="consume",
+                        group="symbol",
+                        category="symbol",
+                        kind="function",
+                        span=SourceSpan("consumer.py", 1, 4),
+                    )
+                ],
+                edges=[],
+            )
+            reads = []
+
+            def reader(path):
+                relative = path.relative_to(root).as_posix()
+                reads.append(relative)
+                return sources[relative]
+
+            with mock.patch.object(
+                enrichment_module,
+                "_index_code_literals",
+                wraps=enrichment_module._index_code_literals,
+            ) as index_literals:
+                enrich_repository(
+                    architecture,
+                    file_inventory=["consumer.py", "config.json"],
+                    file_reader=reader,
+                )
+
+            self.assertEqual(reads, ["config.json", "consumer.py"])
+            self.assertEqual(index_literals.call_count, 1)
+            self.assertEqual(index_literals.call_args.args, (sources["consumer.py"],))
+            config_nodes = [
+                node for node in architecture.nodes
+                if node.kind == "configuration" and node.label == "port"
+            ]
+            self.assertEqual(len(config_nodes), 1)
+            self.assertEqual(config_nodes[0].metadata["occurrence_lines"], [2, 3])
+            config_edges = [
+                edge for edge in architecture.edges
+                if edge.relation == RelationKind.CONFIGURES
+            ]
+            self.assertEqual(len(config_edges), 1)
+            self.assertEqual(config_edges[0].metadata["occurrence_lines"], [2, 3, 4])
+            self.assertEqual(config_edges[0].evidence, SourceSpan("consumer.py", 2, 2))
+
+    def test_injected_inventory_reads_each_code_and_config_file_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources = {
+                "config.json": '{"port": 1, "nested": {"port": 2}}',
+                "consumer.py": 'value = "port"\n',
+            }
+            calls = []
+            architecture = SimpleNamespace(
+                project_path=str(root),
+                nodes=[
+                    GraphNode(
+                        id="consumer",
+                        label="consumer",
+                        group="symbol",
+                        category="symbol",
+                        kind="function",
+                        span=SourceSpan("consumer.py", 1, 1),
+                    )
+                ],
+                edges=[],
+            )
+
+            def reader(path):
+                relative = path.relative_to(root).as_posix()
+                calls.append(relative)
+                return sources[relative]
+
+            enrich_repository(
+                architecture,
+                file_inventory=["consumer.py", "config.json"],
+                file_reader=reader,
+            )
+
+            self.assertEqual(calls, ["config.json", "consumer.py"])
+            config = [node for node in architecture.nodes if node.kind == "configuration"]
+            port = next(node for node in config if node.label == "port")
+            self.assertEqual(port.metadata["occurrence_lines"], [1, 1])
+            self.assertEqual(
+                len([edge for edge in architecture.edges if edge.relation == RelationKind.CONFIGURES]),
+                1,
+            )
+
+    def test_repeated_json_key_has_one_file_key_identity_and_all_lines(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "config.json").write_text('{"items":[{"port":1},{"port":2}]}', encoding="utf-8")
+            (root / "consumer.py").write_text('value = "port"\n', encoding="utf-8")
+
+            architecture = PythonGraphAnalyzer(root).analyze()
+            matches = [node for node in architecture.nodes if node.kind == "configuration" and node.label == "port"]
+
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0].id, "config:config.json:port")
+            self.assertEqual(len(matches[0].metadata["occurrence_lines"]), 2)
+
     def test_test_relations_use_references_and_exclude_test_targets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

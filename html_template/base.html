@@ -12,7 +12,38 @@
 <main class="report-shell">
 @@COMPONENTS@@
 </main>
-<script id="agent-view-data" type="application/json">@@DATA@@</script>
+<script id="agent-view-v3-payload" type="application/octet-stream">@@DATA@@</script>
+<script>
+(function () {
+  "use strict";
+  const status = document.getElementById("report-status");
+  const decode = async function (encoded) {
+    if (typeof globalThis.DecompressionStream !== "function") {
+      throw new Error('이 브라우저는 DecompressionStream("gzip")을 지원하지 않습니다. 최신 Chromium, Firefox 또는 Safari에서 이 오프라인 파일을 여세요.');
+    }
+    const bytes = Uint8Array.from(atob(encoded.trim()), function (character) { return character.charCodeAt(0); });
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+    return new TextDecoder().decode(await new Response(stream).arrayBuffer());
+  };
+  window.ReportPayload = {
+    decodeOccurrenceBlock: async function (block) { return JSON.parse(await decode(block.data)); }
+  };
+  window.ReportReady = (async function () {
+    try {
+      const encoded = document.getElementById("agent-view-v3-payload").textContent;
+      const graph = JSON.parse(await decode(encoded));
+      window.ReportPayload.data = graph;
+      status.textContent = "schema v" + graph.schema_version + " 로드 완료";
+      document.dispatchEvent(new CustomEvent("agent-view-ready", { detail: graph }));
+      return graph;
+    } catch (error) {
+      status.className = "error";
+      status.textContent = error.name + ": " + error.message;
+      throw error;
+    }
+  }());
+}());
+</script>
 @@SCRIPTS@@
 </body>
 </html>

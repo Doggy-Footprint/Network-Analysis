@@ -118,10 +118,10 @@ class AgentViewCliBehaviourTests(unittest.TestCase):
 
         self.assertEqual(
             sorted(payload),
-            ["framework_links", "profile", "project_name", "query_nodes",
-             "readable_nodes", "scan", "schema_version", "unreachable_node_ids"],
+            ["connections", "entry_documents", "hint_store", "occurrence_store", "profile", "project_name",
+             "query_nodes", "read_units", "readable_nodes", "scan", "schema_version"],
         )
-        self.assertIn("handler", [node["term"] for node in payload["query_nodes"]])
+        self.assertEqual(payload["schema_version"], "3")
 
     def test_agent_view_diff_prints_a_diff_and_ignores_a_missing_project_path(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -129,12 +129,14 @@ class AgentViewCliBehaviourTests(unittest.TestCase):
             before = root / "before.json"
             after = root / "after.json"
             before.write_text(json.dumps({
+                "schema_version": "3",
                 "readable_nodes": [{"id": "gone", "flags": [], "read_cost": {"token_estimate": 1}}],
-                "query_nodes": [], "framework_links": [], "profile": {"version": 1},
+                "query_nodes": [], "connections": [], "profile": {"version": 3},
             }), encoding="utf-8")
             after.write_text(json.dumps({
+                "schema_version": "3",
                 "readable_nodes": [{"id": "fresh", "flags": [], "read_cost": {"token_estimate": 1}}],
-                "query_nodes": [], "framework_links": [], "profile": {"version": 1},
+                "query_nodes": [], "connections": [], "profile": {"version": 3},
             }), encoding="utf-8")
 
             argv = ["code-analyzer", str(root / "does-not-exist"),
