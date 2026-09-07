@@ -7,58 +7,32 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Union
 
+from report.shared.document import (
+    ReportInputError,
+    ReportOutputError,
+    array as _array,
+    boolean as _boolean,
+    fail as _fail,
+    generate,
+    integer as _integer,
+    object_ as _object,
+    required as _required,
+    string as _string,
+    string_array as _string_array,
+)
+
 SUPPORTED_SCHEMA_VERSION = "3"
-SIZE_WARNING_BYTES = 10 * 1024 * 1024
 TEMPLATE_FILES = (
-    "common.css", "header.html", "summary.html", "distributions.html", "graph.html",
+    "header.html", "summary.html", "distributions.html", "graph.html",
     "evidence.html", "glossary.html", "summary_model.js", "graph_model.js",
     "evidence_model.js", "header.js", "summary.js", "distributions.js", "graph.js", "evidence.js",
 )
+PAYLOAD_ID = "agent-view-v3-payload"
+READY_EVENT = "agent-view-ready"
+READY_LABEL = '"schema v" + graph.schema_version + " 로드 완료"'
 
-class ReportInputError(ValueError):
-    pass
-
-class ReportOutputError(RuntimeError):
-    pass
-
-def _fail(path: str, message: str) -> None:
-    raise ReportInputError(f"{path}: {message}")
-
-def _object(value: Any, path: str) -> Dict[str, Any]:
-    if not isinstance(value, dict):
-        _fail(path, "must be an object")
-    return value
-
-def _array(value: Any, path: str) -> list[Any]:
-    if not isinstance(value, list):
-        _fail(path, "must be an array")
-    return value
-
-def _string(value: Any, path: str, *, allow_empty: bool = True) -> str:
-    if not isinstance(value, str) or (not allow_empty and not value):
-        _fail(path, "must be a string" if allow_empty else "must be a non-empty string")
-    return value
-
-def _integer(value: Any, path: str, *, minimum: int = 0) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value < minimum:
-        _fail(path, f"must be an integer >= {minimum}")
-    return value
-
-def _boolean(value: Any, path: str) -> bool:
-    if not isinstance(value, bool):
-        _fail(path, "must be a boolean")
-    return value
-
-def _required(value: Mapping[str, Any], path: str, fields: Sequence[str]) -> None:
-    for field in fields:
-        if field not in value:
-            _fail(path, f"missing required field {field!r}")
-
-def _string_array(value: Any, path: str) -> list[str]:
-    result = _array(value, path)
-    for index, item in enumerate(result):
-        _string(item, f"{path}[{index}]")
-    return result
+def _template_dir() -> Path:
+    return Path(__file__).resolve().parent / "templates"
 
 def _validate_node_cost(value: Any, path: str) -> None:
     cost = _object(value, path)
@@ -286,67 +260,32 @@ def _validate_payload(value: Any) -> Dict[str, Any]:
         _boolean(entry["injected"], f"{path}.injected")
     return dict(root)
 
-def _default_read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
-
-def _read_payload(path: Path, read_text: Callable[[Path], str]) -> Dict[str, Any]:
-    try:
-        text = read_text(path)
-    except Exception as error:
-        raise ReportOutputError(f"cannot read JSON input {path}: {error}") from error
-    try:
-        value = json.loads(text)
-    except (TypeError, json.JSONDecodeError) as error:
-        raise ReportInputError(f"invalid JSON input {path}: {error}") from error
-    return _validate_payload(value)
-
-def _load_templates(template_dir: Path, read_text: Callable[[Path], str]) -> Dict[str, str]:
-    try:
-        templates = {name: read_text(template_dir / name) for name in ("base.html",) + TEMPLATE_FILES}
-    except Exception as error:
-        raise ReportOutputError(f"cannot read report template: {error}") from error
-    for marker in ("@@TITLE@@", "@@STYLE@@", "@@COMPONENTS@@", "@@DATA@@", "@@SCRIPTS@@"):
-        if templates["base.html"].count(marker) != 1:
-            raise ReportOutputError(f"invalid report template: expected exactly one {marker}")
-    return templates
-
-def _build_document(payload: Mapping[str, Any], templates: Mapping[str, str], compress: Callable[[bytes], bytes]) -> str:
-    raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-    try:
-        compressed = compress(raw)
-        if not isinstance(compressed, bytes) or gzip.decompress(compressed) != raw:
-            raise ValueError("compressor did not return a gzip encoding of the payload")
-        encoded = base64.b64encode(compressed).decode("ascii")
-    except Exception as error:
-        raise ReportOutputError(f"cannot compress report payload: {error}") from error
-    components = "\n".join(templates[name] for name in TEMPLATE_FILES if name.endswith(".html"))
-    scripts = "\n".join(f"<script>\n{templates[name]}\n</script>" for name in TEMPLATE_FILES if name.endswith(".js"))
-    return (templates["base.html"].replace("@@TITLE@@", "Agent-view graph").replace("@@STYLE@@", templates["common.css"]).replace("@@COMPONENTS@@", components).replace("@@DATA@@", encoded).replace("@@SCRIPTS@@", scripts))
-
-def _gzip(raw: bytes) -> bytes:
-    return gzip.compress(raw, compresslevel=9, mtime=0)
-
-def generate_report(json_path: Union[str, Path], output_path: Union[str, Path, None] = None, *, read_text: Optional[Callable[[Path], str]] = None, write_text: Optional[Callable[[Path, str], None]] = None, compress: Optional[Callable[[bytes], bytes]] = None, template_dir: Optional[Union[str, Path]] = None, stderr: Any = None) -> Path:
-    source = Path(json_path).expanduser().resolve()
-    output = Path(output_path).expanduser().resolve() if output_path is not None else source.with_suffix(".html")
-    if source == output:
-        raise ReportOutputError("input and output paths must be different")
-    reader = read_text or _default_read_text
-    payload = _read_payload(source, reader)
-    templates = _load_templates(Path(template_dir) if template_dir is not None else Path(__file__).with_name("html_template"), reader)
-    document = _build_document(payload, templates, compress or _gzip)
-    try:
-        if write_text is None:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(document, encoding="utf-8", newline="\n")
-        else:
-            write_text(output, document)
-    except Exception as error:
-        raise ReportOutputError(f"cannot write HTML output {output}: {error}") from error
-    size = len(document.encode("utf-8"))
-    if size > SIZE_WARNING_BYTES:
-        print(f"warning: agent-view HTML is {size} bytes (threshold {SIZE_WARNING_BYTES})", file=stderr or sys.stderr)
-    return output
+def generate_report(
+    json_path: Union[str, Path],
+    output_path: Union[str, Path, None] = None,
+    *,
+    read_text: Optional[Callable[[Path], str]] = None,
+    write_text: Optional[Callable[[Path, str], None]] = None,
+    compress: Optional[Callable[[bytes], bytes]] = None,
+    template_dir: Optional[Union[str, Path]] = None,
+    stderr: Any = None,
+) -> Path:
+    return generate(
+        json_path,
+        output_path,
+        validate=_validate_payload,
+        template_dir=Path(template_dir) if template_dir is not None else _template_dir(),
+        names=TEMPLATE_FILES,
+        title="Agent-view graph",
+        payload_id=PAYLOAD_ID,
+        ready_event=READY_EVENT,
+        ready_label=READY_LABEL,
+        label="agent-view",
+        read_text=read_text,
+        write_text=write_text,
+        compress=compress,
+        stderr=stderr,
+    )
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser(description="M1 schema v3 JSON을 단일 오프라인 HTML 보고서로 변환합니다.")

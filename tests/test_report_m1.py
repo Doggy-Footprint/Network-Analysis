@@ -6,6 +6,7 @@ import hashlib
 import io
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -15,7 +16,8 @@ from types import SimpleNamespace
 from agent_view import build_agent_view
 from agent_view.models import AgentViewGraph
 from agent_view.serialize import graph_to_json
-from generate_html import ReportInputError, ReportOutputError, generate_report
+from report.m1.generate import generate_report
+from report.shared.document import ReportInputError, ReportOutputError
 from language_analyzers.core.graph_models import GraphNode, SourceSpan
 
 
@@ -130,6 +132,7 @@ class ReportContractTests(unittest.TestCase):
                 self.assertIn(marker, html)
             self.assertNotIn("slice(0,100)", html.replace(" ", ""))
 
+    @unittest.skipUnless(shutil.which("node"), "node is required to run the report models")
     def test_browser_bootstrap_decompresses_graph_then_occurrences_lazily(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -144,6 +147,7 @@ class ReportContractTests(unittest.TestCase):
             self.assertEqual(state["rows"], [_occurrence()])
             self.assertIn("로드 완료", state["status"])
 
+    @unittest.skipUnless(shutil.which("node"), "node is required to run the report models")
     def test_unsupported_browser_shows_usable_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -215,11 +219,10 @@ class ReportContractTests(unittest.TestCase):
             source = self.write_payload(root, value)
             stderr = io.StringIO()
             source_text = source.read_text(encoding="utf-8")
-            template_root = Path(__file__).resolve().parents[1] / "html_template"
             def large_template_reader(path):
                 if path.name == source.name:
                     return source_text
-                text = (template_root / path.name).read_text(encoding="utf-8")
+                text = path.read_text(encoding="utf-8")
                 return text + ("x" * (10 * 1024 * 1024) if path.name == "common.css" else "")
             output = generate_report(source, stderr=stderr, read_text=large_template_reader)
             self.assertGreater(output.stat().st_size, 10 * 1024 * 1024)
@@ -250,6 +253,7 @@ class ReportContractTests(unittest.TestCase):
             self.assertEqual(stderr.getvalue(), "")
             self.assertEqual(_embedded_payload(output.read_text(encoding="utf-8")), value)
 
+    @unittest.skipUnless(shutil.which("node"), "node is required to run the report models")
     def test_real_agent_view_graph_hint_round_trips_into_report_evidence(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -269,7 +273,7 @@ class ReportContractTests(unittest.TestCase):
             source.write_text(graph_to_json(graph), encoding="utf-8")
             output = generate_report(source)
             report_data = _embedded_payload(output.read_text(encoding="utf-8"))
-            model_path = Path(__file__).resolve().parents[1] / "html_template" / "evidence_model.js"
+            model_path = Path(__file__).resolve().parents[1] / "report" / "m1" / "templates" / "evidence_model.js"
             driver = f'''const model=require({json.dumps(str(model_path))});const data={json.dumps(report_data)};const item=model.build(data).find(value=>value.value.id==={json.dumps(result_connection.id)});if(!item||!item.value.resolved_hint)process.exit(2);console.log(JSON.stringify(item.value.resolved_hint));'''
             result = subprocess.run(["node", "-"], input=driver, text=True, capture_output=True, check=True)
             self.assertEqual(json.loads(result.stdout), expected_hint)

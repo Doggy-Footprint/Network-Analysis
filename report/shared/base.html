@@ -12,7 +12,7 @@
 <main class="report-shell">
 @@COMPONENTS@@
 </main>
-<script id="agent-view-v3-payload" type="application/octet-stream">@@DATA@@</script>
+<script id="@@PAYLOAD_ID@@" type="application/octet-stream">@@DATA@@</script>
 <script>
 (function () {
   "use strict";
@@ -30,11 +30,11 @@
   };
   window.ReportReady = (async function () {
     try {
-      const encoded = document.getElementById("agent-view-v3-payload").textContent;
+      const encoded = document.getElementById("@@PAYLOAD_ID@@").textContent;
       const graph = JSON.parse(await decode(encoded));
       window.ReportPayload.data = graph;
-      status.textContent = "schema v" + graph.schema_version + " 로드 완료";
-      document.dispatchEvent(new CustomEvent("agent-view-ready", { detail: graph }));
+      status.textContent = @@READY_LABEL@@;
+      document.dispatchEvent(new CustomEvent("@@READY_EVENT@@", { detail: graph }));
       return graph;
     } catch (error) {
       status.className = "error";
