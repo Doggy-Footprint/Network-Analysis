@@ -32,7 +32,7 @@ class CostWeights:
         return (
             tuple(values[axis] for axis in self.axis_priority),
             len(sample.sequence),
-            sample.id_sequence,
+            tuple(item.replace("\\", "/").encode("utf-8") for item in sample.id_sequence),
         )
 
     def sort_key(self, sample: Sample) -> tuple:

@@ -103,13 +103,15 @@ class PhaseBCliArgumentTests(unittest.TestCase):
                 self.assertIn("--phase-b", stderr.getvalue())
 
     def test_non_positive_sample_count_is_rejected(self):
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr):
-            with self.assertRaises(SystemExit) as raised:
-                self.parse(["--phase-b", "scenarios.json", "--samples", "0"])
+        for value in ("0", "-1"):
+            with self.subTest(value=value):
+                stderr = io.StringIO()
+                with contextlib.redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as raised:
+                        self.parse(["--phase-b", "scenarios.json", "--samples", value])
 
-        self.assertEqual(raised.exception.code, 2)
-        self.assertIn("--samples", stderr.getvalue())
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("--samples", stderr.getvalue())
 
 
 class PhaseBCliRunTests(unittest.TestCase):

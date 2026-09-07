@@ -122,6 +122,7 @@ class ReportTests(unittest.TestCase):
             {"node_id": "n:a1", "file_path": "a.py", "label": "A1", "read_unit_id": "r:a"},
         )
         self.assertEqual(scenario["seed_queries"]["source"], "cache")
+        self.assertEqual(scenario["seed_queries"]["generator"], SEED_SET.generator)
         self.assertEqual(scenario["seed_queries"]["resolved_query_ids"], ["q:seed"])
         self.assertEqual(scenario["seed_queries"]["unmatched_terms"], [])
         self.assertEqual(scenario["phase_a"]["root_list_query_id"], "q:root")

@@ -226,6 +226,15 @@ class CostWeightsTests(unittest.TestCase):
         self.assertEqual(self.weights.tie_break_key(first)[:2], self.weights.tie_break_key(second)[:2])
         self.assertLess(self.weights.sort_key(first), self.weights.sort_key(second))
 
+    def test_tie_break_level_three_normalizes_separators_and_compares_unicode_bytewise(self):
+        cost = CostVector().add(read_tool_calls=1)
+        windows_path = Sample(0, 0, cost, None, ("a",), "complete", (), ("pkg\\nested\\c.py#Å",))
+        normalized_path = Sample(1, 1, cost, None, ("a",), "complete", (), ("pkg/nested/c.py#Å",))
+        later_utf8 = Sample(2, 2, cost, None, ("a",), "complete", (), ("pkg/nested/c.py#ß",))
+
+        self.assertEqual(self.weights.tie_break_key(windows_path), self.weights.tie_break_key(normalized_path))
+        self.assertLess(self.weights.sort_key(normalized_path), self.weights.sort_key(later_utf8))
+
     def test_wrong_version_is_rejected(self):
         self.document["version"] = 2
         with TemporaryDirectory() as directory:

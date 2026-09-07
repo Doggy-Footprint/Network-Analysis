@@ -4,7 +4,6 @@ import gzip
 import io
 import json
 import re
-import shutil
 import subprocess
 import tempfile
 import unittest
@@ -202,7 +201,6 @@ class ReportContractTests(unittest.TestCase):
 
 
 class CostModelTests(unittest.TestCase):
-    @unittest.skipUnless(shutil.which("node"), "node is required to run the report models")
     def test_cost_model_builds_timelines_axes_and_closure_bars(self):
         value = _payload()
         model_path = Path(__file__).resolve().parents[1] / "report" / "m3" / "templates" / "cost_model.js"

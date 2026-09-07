@@ -86,6 +86,7 @@ def _scenario_payload(
         ],
         "seed_queries": {
             "source": seed_set.source,
+            "generator": dict(seed_set.generator),
             "terms": _terms(seed_set.terms),
             "resolved_query_ids": list(phase_a.seed_query_ids),
             "unmatched_terms": _terms(phase_a.unmatched_terms),

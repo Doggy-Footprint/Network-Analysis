@@ -150,13 +150,21 @@ class RunScenarioTests(unittest.TestCase):
         self.assertEqual(result.sample_count, 30)
 
     def test_adaptive_loop_uses_the_p50_weighted_cost_not_the_mean(self):
-        policy = _policy(relative_tolerance=1e-12)
+        def p50_changes_while_the_mean_is_stable(view, scenario, policy, weights, rng, index, seed):
+            if index < 6 or 10 <= index < 18:
+                tokens = 0
+            elif index < 10 or index < 20:
+                tokens = 100
+            else:
+                tokens = 30
+            return Sample(index, seed, CostVector().add(readable_node_tokens=tokens), Observations(), (), "complete", (), ())
 
-        result = run_scenario(self.view, SCENARIO, policy, self.weights, seed=5)
+        huge = CostVector().add(**{axis: 10 ** 6 for axis in AXES})
+        with mock.patch("discovery.montecarlo.run_sample", side_effect=p50_changes_while_the_mean_is_stable):
+            with mock.patch("discovery.montecarlo.compute_closure", return_value=huge):
+                result = run_scenario(self.view, SCENARIO, _policy(relative_tolerance=1e-12), self.weights, seed=5)
 
-        ordered = sorted(result.samples, key=self.weights.sort_key)
-        median = self.weights.weighted_cost(ordered[rank_index(0.5, len(ordered))].cost)
-        self.assertEqual(result.percentiles["p50"]["weighted_cost"], median)
+        self.assertEqual(result.sample_count, 40)
 
     def test_per_sample_rng_does_not_depend_on_how_many_samples_are_drawn(self):
         twelve = run_scenario(self.view, SCENARIO, _policy(), self.weights, samples=12, seed=5)
@@ -255,14 +263,16 @@ class RunScenarioTests(unittest.TestCase):
     def test_bootstrap_interval_brackets_the_point_estimate(self):
         result = run_scenario(self.view, SCENARIO, _policy(), self.weights, samples=40, seed=5)
 
-        entry = result.percentiles["p50"]
-        interval = entry["bootstrap_ci"]
-        self.assertEqual(interval["resamples"], 50)
-        self.assertEqual(interval["interval"], 0.95)
-        self.assertLessEqual(interval["low"], interval["high"])
-        self.assertLessEqual(interval["low"], entry["weighted_cost"])
-        self.assertLessEqual(entry["weighted_cost"], interval["high"])
-        self.assertIsNone(entry["bootstrap_ci_reason"])
+        for name in ("p5", "p50", "p95"):
+            with self.subTest(name=name):
+                entry = result.percentiles[name]
+                interval = entry["bootstrap_ci"]
+                self.assertEqual(interval["resamples"], 50)
+                self.assertEqual(interval["interval"], 0.95)
+                self.assertLessEqual(interval["low"], interval["high"])
+                self.assertLessEqual(interval["low"], entry["weighted_cost"])
+                self.assertLessEqual(entry["weighted_cost"], interval["high"])
+                self.assertIsNone(entry["bootstrap_ci_reason"])
 
     def test_bootstrap_resamples_with_replacement(self):
         # Without replacement every resample is a permutation of the sample set, so the rank
