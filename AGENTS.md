@@ -2,8 +2,7 @@
 
 Measures how discoverable a repository is to an AI coding agent, and how safely that agent can change it.
 Scope is limited to what an agent can reproducibly observe in the repository, so results stay deterministic and traceable instead of judging code quality or task difficulty.
-The point is to expose what is hard to find, easy to miss, and expensive to explore, and to show what restructuring would actually relieve.
-Outputs are the cost of finding a change target, the range that must be verified before changing it ranked by how likely an agent is to reach it, and the structural bottlenecks behind both, each traceable to its evidence.
+Outputs expose structural bottlenecks, which target is expensive or risky to modify, which target is expensive to explore before get down to work.
 
 # Documentation Guide
 
