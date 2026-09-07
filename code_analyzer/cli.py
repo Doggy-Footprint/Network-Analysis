@@ -9,7 +9,21 @@ import webbrowser
 from pathlib import Path
 
 from agent_view import build_agent_view, diff_agent_view, graph_to_json, load_profile
+from agent_view.profile import default_profile_path
 from analysis import GraphAnalyzer
+from discovery import (
+    CachedSeedQueryGenerator,
+    GraphView,
+    build_report,
+    default_policy_path,
+    default_weights_path,
+    load_cost_weights,
+    load_exploration_policy,
+    load_scenarios,
+    report_to_json,
+    resolve_seed_queries,
+    run_scenario,
+)
 from language_analyzers.core.serialization import architecture_to_dict
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
@@ -123,11 +137,68 @@ def parse_args():
         metavar="PATH",
         help="Override the derived-query rule profile used by --agent-view.",
     )
+    parser.add_argument(
+        "--phase-b",
+        default=None,
+        metavar="SCENARIOS",
+        help="Simulate phase A and phase B target discovery over the scenarios in the given file.",
+    )
+    parser.add_argument(
+        "--phase-b-out",
+        default="phase_b_cost.json",
+        metavar="PATH",
+        help="Output path for the phase-B cost report.",
+    )
+    parser.add_argument(
+        "--exploration-policy",
+        default=None,
+        metavar="PATH",
+        help="Override the exploration policy profile used by --phase-b.",
+    )
+    parser.add_argument(
+        "--cost-weights",
+        default=None,
+        metavar="PATH",
+        help="Override the cost weight profile used by --phase-b.",
+    )
+    parser.add_argument(
+        "--seed-queries",
+        default=None,
+        metavar="PATH",
+        help="Cached seed query fixture used by --phase-b scenarios without explicit seed queries.",
+    )
+    parser.add_argument(
+        "--samples",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Fixed Monte Carlo sample count for --phase-b, overriding the adaptive loop.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Random seed root for --phase-b, overriding the policy profile seed.",
+    )
     args = parser.parse_args()
     if (args.language or args.framework != "fastapi") and (args.entrypoint or args.app):
         parser.error("--entrypoint and --app are only supported with --framework fastapi")
     if args.agent_view_profile and not args.agent_view:
         parser.error("--agent-view-profile requires --agent-view")
+    if not args.phase_b:
+        for flag, value in (
+            ("--phase-b-out", args.phase_b_out if args.phase_b_out != "phase_b_cost.json" else None),
+            ("--exploration-policy", args.exploration_policy),
+            ("--cost-weights", args.cost_weights),
+            ("--seed-queries", args.seed_queries),
+            ("--samples", args.samples),
+            ("--seed", args.seed),
+        ):
+            if value is not None:
+                parser.error(f"{flag} requires --phase-b")
+    if args.samples is not None and args.samples < 1:
+        parser.error("--samples must be >= 1")
     return args
 
 
@@ -207,18 +278,50 @@ def main():
             json.dump(architecture_to_dict(arch), f, indent=2, ensure_ascii=False, default=str)
         print(f"[✓] Exported architecture JSON: {json_output_path}")
 
-    if args.agent_view:
-        profile = load_profile(args.agent_view_profile) if args.agent_view_profile else None
-        agent_view_path = Path(args.agent_view)
+    agent_view_graph = None
+    agent_view_profile = None
+    if args.agent_view or args.phase_b:
+        agent_view_profile = load_profile(args.agent_view_profile or default_profile_path())
+        agent_view_path = Path(args.agent_view) if args.agent_view else None
         dashboard_assets = output_html_path.with_name(f"{output_html_path.stem}_assets")
-        agent_view_path.write_text(
-            graph_to_json(build_agent_view(
-                arch,
-                profile=profile,
-                excluded_paths=(agent_view_path, output_html_path, dashboard_assets),
-            )), encoding="utf-8"
+        excluded = [output_html_path, dashboard_assets]
+        if agent_view_path is not None:
+            excluded.append(agent_view_path)
+        if args.phase_b:
+            excluded.append(Path(args.phase_b_out))
+        agent_view_graph = build_agent_view(
+            arch,
+            profile=agent_view_profile,
+            excluded_paths=tuple(excluded),
         )
+    if args.agent_view:
+        agent_view_path = Path(args.agent_view)
+        agent_view_path.write_text(graph_to_json(agent_view_graph), encoding="utf-8")
         print(f"[✓] Exported agent-view graph: {agent_view_path}")
+
+    if args.phase_b:
+        policy = load_exploration_policy(args.exploration_policy or default_policy_path())
+        weights = load_cost_weights(args.cost_weights or default_weights_path())
+        cached = CachedSeedQueryGenerator.from_path(
+            args.seed_queries or Path("fixtures") / "seed_queries.v1.json"
+        )
+        view = GraphView(agent_view_graph)
+        results = []
+        seed_sets = {}
+        for scenario in load_scenarios(args.phase_b, view):
+            resolved, seed_set = resolve_seed_queries(scenario, cached)
+            seed_sets[resolved.id] = seed_set
+            results.append(
+                run_scenario(
+                    view, resolved, policy, weights, samples=args.samples, seed=args.seed
+                )
+            )
+        payload = build_report(
+            agent_view_graph, view, results, agent_view_profile, policy, weights, seed_sets
+        )
+        phase_b_path = Path(args.phase_b_out)
+        phase_b_path.write_text(report_to_json(payload), encoding="utf-8")
+        print(f"[✓] Exported phase-B cost report: {phase_b_path}")
 
     if args.mermaid:
         if builder is None:
