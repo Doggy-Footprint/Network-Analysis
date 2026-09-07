@@ -4,6 +4,7 @@ import gzip
 import io
 import json
 import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -198,6 +199,31 @@ class ReportContractTests(unittest.TestCase):
             output = generate_report(self.write_payload(root, value), root / "report.html")
 
             self.assertEqual(_embedded_payload(output.read_text(encoding="utf-8")), value)
+
+    @unittest.skipUnless(shutil.which("node"), "node is required to run the browser bootstrap")
+    def test_browser_bootstrap_resolves_phase_b_payload_and_sets_schema_status(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            html = generate_report(self.write_payload(root)).read_text(encoding="utf-8")
+            encoded = re.search(rf'<script id="{PAYLOAD_ID}"[^>]*>([^<]+)</script>', html).group(1)
+            bootstrap = re.search(
+                r'</script>\s*<script>\s*((?:.|\n)*?)</script>', html[html.index(f'id="{PAYLOAD_ID}"'):]
+            ).group(1)
+            driver = (
+                "globalThis.window=globalThis;"
+                'const status={textContent:"",className:""};'
+                "globalThis.CustomEvent=class {constructor(name, options){this.name=name;this.detail=options.detail;}};"
+                f"globalThis.document={{getElementById:(id)=>id==={json.dumps(PAYLOAD_ID)}?{{textContent:{json.dumps(encoded)}}}:status,dispatchEvent:()=>{{}}}};"
+                f"eval({json.dumps(bootstrap)});"
+                "ReportReady.then(graph=>console.log(JSON.stringify({payload:graph,schema:graph.schema,status:status.textContent})))"
+                ".catch(error=>{console.error(error);process.exit(1);});"
+            )
+            result = subprocess.run(["node", "-"], input=driver, text=True, capture_output=True, check=True)
+            state = json.loads(result.stdout)
+
+            self.assertEqual(state["payload"], self.value)
+            self.assertEqual(state["schema"], "phase_b_cost.v1")
+            self.assertIn("phase_b_cost.v1", state["status"])
 
 
 class CostModelTests(unittest.TestCase):

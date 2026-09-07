@@ -41,12 +41,25 @@ class GraphViewTests(unittest.TestCase):
         self.assertEqual(self.view.queries_from_query["q:child"], ("q:empty",))
         self.assertEqual(self.view.arrivals["q:seed"], ("n:a1", "n:c"))
         self.assertEqual(self.view.static_out["n:a1"], ("n:b",))
+        self.assertNotIn("n:a1", self.view.direct_out)
         self.assertEqual(self.view.query_by_term[("alpha", "content")], "q:seed")
         self.assertEqual(self.view.unit_tokens("r:a"), 100)
         self.assertEqual(self.view.unit_label("r:a"), "a.py#A1,A2")
 
     def test_hint_roles_resolve_through_the_hint_store(self):
         self.assertEqual(self.view.hint_of[("q:seed", "n:a1")]["roles"], ["declaration"])
+
+    def test_direct_out_keeps_only_unique_static_connections(self):
+        view = GraphView(
+            build_graph(
+                extra_edges=(
+                    ("n:doc", "n:b", "static", "unique"),
+                    ("n:doc", "n:c", "static", "narrowing"),
+                )
+            )
+        )
+
+        self.assertEqual(view.direct_out["n:doc"], ("n:b",))
 
     def test_hint_score_sums_role_weights_and_clamps_unknown_nodes(self):
         self.assertEqual(self.view.hint_score("q:seed", "n:a1", self.policy), 3.0)

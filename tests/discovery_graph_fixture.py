@@ -146,14 +146,16 @@ def build_graph(
             dataclasses.replace(item, **replacements) if item.id == identifier else item
             for item in queries
         ]
-    for source, target, kind in tuple(EDGES) + tuple(extra_edges):
+    for edge in tuple(EDGES) + tuple(extra_edges):
+        source, target, kind = edge[:3]
+        specificity = edge[3] if len(edge) == 4 else "narrowing"
         connections.append(
             Connection(
                 id=f"c:{kind}:{source}:{target}",
                 from_id=source,
                 to_id=target,
                 kind=kind,
-                specificity="narrowing",
+                specificity=specificity,
             )
         )
 

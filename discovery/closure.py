@@ -13,7 +13,11 @@ def reachable_sets(
 ) -> Tuple[Set[str], Set[str]]:
     queries: Set[str] = {
         query_id
-        for query_id in set(phase_a.executed_query_ids) | set(seed_query_ids)
+        for query_id in (
+            set(phase_a.executed_query_ids)
+            | set(seed_query_ids)
+            | set(phase_a.initial_pending_query_ids)
+        )
         if query_id in view.queries
     }
     units: Set[str] = set(phase_a.read_units)
@@ -37,6 +41,12 @@ def reachable_sets(
                 if candidate in view.queries and candidate not in queries:
                     queries.add(candidate)
                     next_queries.add(candidate)
+            for node_id in view.nodes_in_unit.get(unit_id, ()):
+                for target_node_id in view.direct_out.get(node_id, ()):
+                    target_unit_id = view.unit_of_node[target_node_id]
+                    if target_unit_id not in units:
+                        units.add(target_unit_id)
+                        next_units.add(target_unit_id)
         frontier_queries, frontier_units = next_queries, next_units
     return queries, units
 

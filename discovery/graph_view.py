@@ -29,6 +29,7 @@ class GraphView:
         generated: Dict[str, set] = defaultdict(set)
         from_query: Dict[str, set] = defaultdict(set)
         static_out: Dict[str, set] = defaultdict(set)
+        direct_out: Dict[str, set] = defaultdict(set)
         self.hint_of: Dict[Tuple[str, str], Dict[str, Any]] = {}
         for connection in graph.connections:
             if connection.kind == "generates":
@@ -39,6 +40,8 @@ class GraphView:
                 from_query[connection.from_id].add(connection.to_id)
             elif connection.kind == "static":
                 static_out[connection.from_id].add(connection.to_id)
+                if connection.specificity == "unique":
+                    direct_out[connection.from_id].add(connection.to_id)
             elif connection.kind == "result":
                 hint = graph.hint_store.get(connection.evidence.get("hint_id"))
                 if hint is not None:
@@ -53,6 +56,11 @@ class GraphView:
         self.static_out: Dict[str, Tuple[str, ...]] = {
             node_id: tuple(sorted(target for target in values if target in self.readable))
             for node_id, values in sorted(static_out.items())
+            if node_id in self.readable
+        }
+        self.direct_out: Dict[str, Tuple[str, ...]] = {
+            node_id: tuple(sorted(target for target in values if target in self.readable))
+            for node_id, values in sorted(direct_out.items())
             if node_id in self.readable
         }
         self.arrivals: Dict[str, Tuple[str, ...]] = {

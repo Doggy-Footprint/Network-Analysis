@@ -44,6 +44,23 @@ class PhaseATests(unittest.TestCase):
         self.assertEqual(result.cost.read_tool_calls, 1)
         self.assertEqual(result.cost.readable_node_tokens, 40)
 
+    def test_entry_document_generated_queries_start_phase_b_pending(self):
+        view = GraphView(
+            build_graph(extra_edges=(("n:doc", "q:child", "generates"),))
+        )
+
+        result = run_phase_a(
+            view, Scenario("s", "t", ("n:c",), ()), _policy(root_list_query=False)
+        )
+        sample = run_sample(
+            view, Scenario("s", "t", ("n:c",), ()), _policy(root_list_query=False),
+            self.weights, random.Random(0), 0, 0,
+        )
+
+        self.assertEqual(result.initial_pending_query_ids, ("q:child",))
+        self.assertEqual(sample.status, "complete")
+        self.assertIn(("B", "search", "q:child"), _actions(sample))
+
     def test_root_list_query_is_executed_and_its_group_is_deferred(self):
         result = run_phase_a(self.view, Scenario("s", "t", ("n:a1",), ()), _policy())
 
@@ -139,6 +156,48 @@ class PhaseBTests(unittest.TestCase):
         )
         self.assertEqual(sample.cost.read_tool_calls, 2)
         self.assertEqual(sample.cost.readable_node_tokens, 40 + 60 + 100)
+
+    def test_entry_document_direct_read_finds_target_without_a_search(self):
+        view = GraphView(
+            build_graph(extra_edges=(("n:doc", "n:b", "static", "unique"),))
+        )
+        sample = self.run_sample(
+            Scenario("s", "t", ("n:b",), ()), policy=_policy(root_list_query=False), view=view
+        )
+
+        self.assertEqual(sample.status, "complete")
+        self.assertEqual(_actions(sample), [("A", "read", "r:doc"), ("A", "read", "r:b")])
+        self.assertEqual(sample.cost.exploration_turns, 0)
+
+    def test_search_result_direct_read_follows_unique_chain_once(self):
+        view = GraphView(
+            build_graph(
+                extra_edges=(
+                    ("n:a1", "n:b", "static", "unique"),
+                    ("n:b", "n:a1", "static", "unique"),
+                )
+            )
+        )
+        sample = self.run_sample(
+            Scenario("s", "t", ("n:b",), (SeedTerm("alpha", "content"),)),
+            policy=_policy(root_list_query=False), view=view,
+        )
+
+        self.assertEqual(sample.status, "complete")
+        self.assertEqual(_actions(sample).count(("B", "read", "r:a")), 1)
+        self.assertEqual(_actions(sample).count(("B", "read", "r:b")), 1)
+        self.assertEqual(sample.cost.exploration_turns, 1)
+
+    def test_narrowing_static_connection_is_not_directly_read(self):
+        view = GraphView(
+            build_graph(extra_edges=(("n:doc", "n:d", "static", "narrowing"),))
+        )
+        sample = self.run_sample(
+            Scenario("s", "t", ("n:d",), ()), policy=_policy(root_list_query=False), view=view
+        )
+
+        self.assertEqual(sample.status, "unreachable")
+        self.assertNotIn(("A", "read", "r:d"), _actions(sample))
 
     def test_target_inside_an_already_read_unit_costs_no_extra_read(self):
         scenario = Scenario("s", "t", ("n:doc",), (SeedTerm("alpha", "content"),))

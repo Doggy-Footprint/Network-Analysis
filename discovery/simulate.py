@@ -23,6 +23,7 @@ class PhaseAResult:
     executed_query_ids: Tuple[str, ...]
     open_groups: Tuple[str, ...]
     seed_query_ids: Tuple[str, ...]
+    initial_pending_query_ids: Tuple[str, ...]
     unmatched_terms: Tuple[SeedTerm, ...]
     hinted_nodes: Tuple[str, ...]
     exposed_nodes: Tuple[str, ...]
@@ -101,6 +102,25 @@ class _State:
         )
 
 
+def _read_direct_closure(state: _State, phase: str, unit_id: str, *, charge_tool_call: bool = True) -> List[str]:
+    generated: List[str] = []
+    pending_units = [(unit_id, charge_tool_call)]
+    while pending_units:
+        current_unit_id, current_charge = pending_units.pop(0)
+        if current_unit_id in state.read_units:
+            continue
+        state.read_unit(phase, current_unit_id, charge_tool_call=current_charge)
+        generated.extend(state.view.queries_from_unit.get(current_unit_id, ()))
+        direct_units: Set[str] = set()
+        for node_id in state.view.nodes_in_unit.get(current_unit_id, ()):
+            for target_node_id in state.view.direct_out.get(node_id, ()):
+                target_unit_id = state.view.unit_of_node[target_node_id]
+                if target_unit_id not in state.read_units:
+                    direct_units.add(target_unit_id)
+        pending_units.extend((target_unit_id, True) for target_unit_id in sorted(direct_units))
+    return generated
+
+
 def _seed_order_key(view: GraphView, query_id: str) -> Tuple[str, str]:
     query = view.queries[query_id]
     return query.surface, query.term
@@ -108,12 +128,17 @@ def _seed_order_key(view: GraphView, query_id: str) -> Tuple[str, str]:
 
 def run_phase_a(view: GraphView, scenario: Scenario, policy: ExplorationPolicy) -> PhaseAResult:
     state = _State(view, scenario, policy)
+    initial_pending: Set[str] = set()
 
     for document in view.entry_documents:
         unit_id = view.unit_of_node.get(document.node_id)
         if unit_id is None or unit_id in state.read_units:
             continue
-        state.read_unit("A", unit_id, charge_tool_call=not document.injected)
+        initial_pending.update(
+            _read_direct_closure(
+                state, "A", unit_id, charge_tool_call=not document.injected
+            )
+        )
 
     open_groups: List[str] = []
     if policy.root_list_query and view.root_list_query_id is not None:
@@ -154,6 +179,7 @@ def run_phase_a(view: GraphView, scenario: Scenario, policy: ExplorationPolicy) 
         executed_query_ids=tuple(sorted(state.executed)),
         open_groups=tuple(open_groups),
         seed_query_ids=tuple(seed_query_ids),
+        initial_pending_query_ids=tuple(sorted(initial_pending)),
         unmatched_terms=tuple(unmatched),
         hinted_nodes=tuple(sorted(state.hinted)),
         exposed_nodes=tuple(sorted(state.exposed)),
@@ -227,7 +253,7 @@ def run_sample(
     state.id_sequence = list(phase_a.id_sequence)
     state.turn = phase_a.turn
 
-    pending: Set[str] = set()
+    pending: Set[str] = set(phase_a.initial_pending_query_ids) - state.executed
     open_groups: List[str] = list(phase_a.open_groups)
     # ROADMAP: the seed query set is input, not a choice, so every matched seed query is
     # charged as executed in every sample even when phase A already discharged every target.
@@ -264,8 +290,7 @@ def run_sample(
             unit_id = view.unit_of_node[node_id]
             if unit_id in state.read_units:
                 continue
-            state.read_unit("B", unit_id)
-            queued.extend(view.queries_from_unit.get(unit_id, ()))
+            queued.extend(_read_direct_closure(state, "B", unit_id))
             if policy.phase_b_policy == "best-first-pivot" and any(
                 view.query_score(candidate, policy) > group_best
                 for candidate in queued

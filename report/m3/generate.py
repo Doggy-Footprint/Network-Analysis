@@ -30,7 +30,7 @@ TEMPLATE_FILES = (
 )
 PAYLOAD_ID = "phase-b-cost-payload"
 READY_EVENT = "phase-b-cost-ready"
-READY_LABEL = '"phase-b " + report.schema + " 로드 완료"'
+READY_LABEL = '"phase-b " + graph.schema + " 로드 완료"'
 
 
 def _template_dir() -> Path:

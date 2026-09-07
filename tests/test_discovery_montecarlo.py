@@ -77,6 +77,26 @@ class ClosureTests(unittest.TestCase):
             },
         )
 
+    def test_closure_includes_entry_pending_queries_and_direct_reads(self):
+        view = GraphView(
+            build_graph(
+                extra_edges=(
+                    ("n:doc", "n:b", "static", "unique"),
+                    ("n:b", "q:child", "generates"),
+                )
+            )
+        )
+        scenario = Scenario("s", "t", ("n:c",), ())
+        phase_a = run_phase_a(view, scenario, _policy(root_list_query=False))
+
+        queries, units = reachable_sets(view, phase_a.seed_query_ids, phase_a)
+        closure = compute_closure(view, scenario, _policy(root_list_query=False), phase_a.seed_query_ids, phase_a)
+
+        self.assertEqual(phase_a.initial_pending_query_ids, ("q:child",))
+        self.assertIn("q:child", queries)
+        self.assertTrue({"r:doc", "r:b", "r:c"} <= units)
+        self.assertGreaterEqual(closure.readable_node_tokens, 40 + 60 + 30)
+
 
 class RunScenarioTests(unittest.TestCase):
     def setUp(self):
