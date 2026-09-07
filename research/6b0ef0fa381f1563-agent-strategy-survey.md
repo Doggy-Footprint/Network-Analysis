@@ -1,6 +1,6 @@
 File: 6b0ef0fa381f1563-agent-strategy-survey.md
 Milestone: M2
-Version: 1
+Version: 2
 
 # Purpose
 
@@ -14,6 +14,15 @@ Sourcing method: web search across six required areas, followed by a relevance/r
 filter (drop score <=2 on either axis; collapse duplicate claims to the single
 highest-reliability source). Filtered survivors below.
 
+# Evidence status and operating rule
+
+Findings with a direct primary-product source or empirical study are the evidence basis for the current model and its already-declared scope. Findings from a third-party product description, or from developer interaction traces being transferred to agent behavior, are insufficient to establish a default. They remain recorded as **extension candidates**: an M3-or-later profile option may implement them only after primary evidence or agent-trace calibration establishes the parameter and its value.
+
+| Status | Findings | Treatment |
+|---|---|---|
+| Direct, source-bounded evidence | F2, F3, F4, F7 | Use only for the model decision directly stated by the source. |
+| Indirect or incomplete evidence | F1, F5, F6 | Do not use to confirm or set a default; retain as an extension candidate or calibration question. |
+
 # Findings
 
 ## F1 — Claude Code subagent fan-out and parallel exploration
@@ -22,7 +31,7 @@ highest-reliability source). Filtered survivors below.
 - Reliability: 3/5 (third-party writeup, not the primary vendor doc; treated as directionally indicative, not authoritative)
 - Claim: Claude Code ships a read-only "Explore" subagent that fans out concurrently across a codebase on a fast/cheap model, reading excerpts rather than whole files; subagents run with independent context and nested fan-out is supported.
 - Parameter touched: parallel batching, subagent fan-out
-- Disposition: **contradiction recorded, adoption deferred to M3.** The current model charges exploration as serial-equivalent turns and explicitly excludes parallel batching and subagent fan-out from the graph (ROADMAP.md "Exploration turns" section). This finding is real-world evidence that both are common, not edge cases. Redefining the turn unit to admit concurrent queries/reads is a cost-contract change, which M2 (survey-only) is not scoped to make — it belongs to M3, which already names parallel batching as "an uncalibrated behavior parameter" pending this survey. Source reliability (3/5) also argues against making the frozen contract change on this citation alone without a primary source.
+- Disposition: **extension candidate; default unchanged.** The source is a third-party writeup, so it is not sufficient evidence to change the serial-turn default or establish that nested fan-out is representative. Parallel batching and subagent fan-out may become explicit M3 profile options after primary product documentation and agent traces establish their behavior and cost semantics.
 
 ## F2 — Cursor semantic/embedding codebase index
 
@@ -44,11 +53,11 @@ highest-reliability source). Filtered survivors below.
 
 ## F4 — SWE-agent / OpenHands agent-computer interface (grep-loop baseline)
 
-- Source: "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering" (NeurIPS 2024), https://arxiv.org/abs/2405.15793
-- Reliability: 5/5 (peer-reviewed paper)
-- Claim: SWE-agent's interface exposes structured `find_file` / `search_file` / `search_dir` commands over filenames and file contents that return a bounded summary rather than a raw dump, and a windowed file viewer (~100 lines/turn) instead of `cat`; an ablation against a naive bash grep/cat baseline shows the structured, capped interface performs better on SWE-bench. OpenHands' interface follows the same shape.
-- Parameter touched: search surface, search output cap
-- Disposition: **adopted — confirms current defaults, no value change.** This matches the analyzer's existing design: search over both path namespace and file contents (`profiles/agent_view.v3.yaml`, search surface), a capped result output (`search_output_limit: 30`), and read-unit token limiting instead of whole-file dumps (`read_unit_token_limit: 8000`). Recorded as external evidence that a capped, structured grep-loop-style interface is not a modeling convenience but matches what outperforms naive raw search in a controlled study. No profile value changes follow from this finding.
+- Source: "SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering" (arXiv v3), https://arxiv.org/abs/2405.15793
+- Reliability: 4/5 (primary empirical paper; the cited URL is a preprint)
+- Claim: SWE-agent exposes structured `find_file` / `search_file` / `search_dir` commands over filenames and file contents, caps each search at 50 results, presents a file viewer of at most 100 lines, and collapses older observations. Its reported ablations compare summarized search, iterative search, and shell-only operation. This source does not establish OpenHands behavior.
+- Parameter touched: search surface, search output cap, context-window eviction
+- Disposition: **adopted for the source-bounded defaults; extension candidate for eviction.** The structured path/content search and capped output directly support the analyzer's existing search surface and output cap; the study does not prescribe the profile's numeric values. Observation collapse is direct evidence that context management exists in a deployed interface, but it does not establish an eviction policy or value for this analyzer. Model it, if at all, as a later profile option calibrated on agent traces.
 
 ## F5 — Noise in Mylyn interaction traces
 
@@ -56,7 +65,7 @@ highest-reliability source). Filtered survivors below.
 - Reliability: 5/5 (peer-reviewed journal)
 - Claim: Interaction-trace logs behind degree-of-interest (DOI) style navigation recommenders contain systematic noise, and this noise measurably degrades recommendation accuracy unless filtered.
 - Parameter touched: navigation-prediction (carries over to `hint-prior`)
-- Disposition: **adopted for citation; caveat deferred to M7.** This supports keeping `hint-prior` (a deterministic, hint-based ordering prior) as the phase-B/C default over `uniform`, since interaction/hint-based prioritization is an established, studied signal class. The noise-filtering caveat does not change anything now — the analyzer's hints are synthetic and deterministic, not raw developer logs — but is recorded as a concrete risk for M7, when `hint-prior`'s weights are calibrated against real agent traces: raw trace signal should not be used unfiltered.
+- Disposition: **extension candidate; default not confirmed.** The study establishes noise behavior in developer interaction traces, not in deterministic analyzer hints or agent tool logs. It therefore cannot support `hint-prior` over `uniform`. If M7 calibrates a trace-derived ordering feature, its input must be filtered and its transfer to agent traces tested.
 
 ## F6 — Consensus interaction-trace recommender
 
@@ -64,12 +73,12 @@ highest-reliability source). Filtered survivors below.
 - Reliability: 5/5 (peer-reviewed journal)
 - Claim: A recommender that aggregates multiple developers' interaction traces outperforms single-trace navigation-prediction baselines.
 - Parameter touched: navigation-prediction (carries over to `hint-prior` / M7 trace corpus)
-- Disposition: **adopted for citation, no immediate action.** Directionally supports the M3/M7 plan of collecting a trace corpus (ROADMAP.md M3 falsification gate, M7) rather than calibrating from a single trace. Does not change any M2/M3 default; recorded so M7's corpus-collection design has a citation for using multiple traces rather than one.
+- Disposition: **extension candidate; default not confirmed.** The result concerns aggregated developer traces. It is useful when designing an M7 agent-trace corpus, but does not demonstrate that aggregation improves an agent ordering policy. M7 must test that transfer before using it for calibration.
 
 ## F7 — Call-graph impact prediction validated via mutation testing
 
-- Source: "A Large-Scale Study of Call Graph-based Impact Prediction using Mutation Testing", https://arxiv.org/pdf/1812.06286
-- Reliability: 5/5 (peer-reviewed / arXiv empirical study)
+- Source: "A large-scale study of call graph-based impact prediction using mutation testing", Software Quality Journal, https://doi.org/10.1007/S11219-016-9332-8 (open version: https://arxiv.org/pdf/1812.06286)
+- Reliability: 5/5 (published empirical study)
 - Claim: Static call-graph-based change impact prediction is empirically evaluated against a mutation-testing-derived ground truth of actual fault propagation, rather than assumed correct by construction.
 - Parameter touched: change-impact-analysis (M4 zone of effect)
 - Disposition: **adopted, actioned at M4.** Confirms that static reverse-dependency propagation — the mechanism M4's zone-of-effect model already commits to — has published predictive validity (imperfect, but measured, not assumed). Recorded as: (a) evidence basis for the zone-of-effect design already specified in ROADMAP.md M4, and (b) a candidate methodology — mutation-testing-based ground truth — for M4 or M7 to validate the analyzer's own zone predictions against, alongside real agent traces.
@@ -78,32 +87,38 @@ highest-reliability source). Filtered survivors below.
 
 | Parameter | Current default | Evidence | Contradicted? | Disposition |
 |---|---|---|---|---|
-| Turn model (serial-equivalent turns) | Serial, one query→read at a time (ROADMAP.md "Exploration turns and turns") | F1 | Yes | Deferred to M3 |
-| Subagent fan-out | Not modeled | F1 | Yes (by omission) | Deferred to M3 |
+| Turn model (serial-equivalent turns) | Serial, one query→read at a time (ROADMAP.md "Exploration turns and turns") | F1 | Indirect | Default unchanged; extension candidate pending primary evidence and agent traces |
+| Subagent fan-out | Not modeled | F1 | Indirect | Extension candidate pending primary evidence and agent traces |
 | Search surface (path + content, exact + derived) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Search output cap (`search_output_limit: 30`, match-line format) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Index/repo-map preloading — semantic | Not modeled | F2 | N/A (out of declared scope) | Rejected |
 | Index/repo-map preloading — structural, as a phase-A seed mechanism | Not modeled in phase A (only entry docs + root list queries) | F3 | Yes | Deferred to M3 |
 | PageRank / centrality as a graph-wide metric | Already modeled (task-less graph-wide analysis) | F3 | No | Adopted / confirmed, no change |
 | `bfs-exhaust` (phase-B default exploration policy) | ROADMAP.md "Exploration policy and turns" | none found | Unevidenced | Recorded unevidenced; M3's already-planned `bfs-exhaust` vs `best-first-pivot` trace comparison is the falsification path |
-| `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | No | Adopted / confirmed, cited; noise-filtering caveat deferred to M7 |
-| Context-window eviction | Not modeled | none found | Unevidenced | Recorded unevidenced |
+| `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | Indirect | Default remains explicitly uncalibrated; trace-derived ordering is an M7 extension candidate |
+| Context-window eviction | Not modeled | F4 | Yes (by omission) | Extension candidate; define and calibrate a profile option before adoption |
 
 # Profile changes applied
 
-None. Every parameter the survey contradicts (turn model, subagent fan-out, structural
-repo-map preloading as a phase-A seed) belongs to profile files that do not exist yet
+None. Direct evidence does not prescribe a change to an existing profile value. Structural
+repo-map preloading is an M3 phase-A option; context-window eviction is an M3-or-later
+profile option. The indirect findings on turn model, subagent fan-out, and trace-derived
+ordering remain extension candidates rather than default changes. The relevant profile files do not exist yet
 (`profiles/exploration_policy.v1.yaml`, `profiles/cost_weights.v1.yaml` — both M3
 deliverables) or to phase-A scope itself, which is ROADMAP.md prose rather than a profile
 value. Editing the existing frozen M1 profile (`profiles/agent_view.v3.yaml`) is out of
-scope here: none of its current values (search surface, output cap, read-unit limit) are
-contradicted — F4 confirms them — so no value change is warranted, and its content is
+scope here: F4 supports the existing search surface and capped output but does not prescribe
+their values, so no value change is warranted, and its content is
 pinned by M1 golden-fixture and provenance-string tests
 (`tests/test_agent_view_graph.py::test_profile_serializes_every_behavior_limit_version_and_provenance`).
 This delta table is the recorded input M3 consumes when it creates the exploration-policy
 and cost-weight profiles.
 
 # Re-run policy
+
+Version 2 cross-check: separated direct evidence from indirect evidence, corrected F4's
+source-bounded claims, recorded F4 evidence for context-window eviction, and replaced F7's
+preprint-only citation with its published source.
 
 Per ROADMAP.md M2: "The findings file is re-run and re-versioned before each later
 milestone rather than treated as done once." Re-run before M3, M4, M6 and M7, bump
