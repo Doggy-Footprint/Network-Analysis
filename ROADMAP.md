@@ -438,7 +438,7 @@ Scalability invariants: read the repository as one immutable snapshot; exclude e
 
 Done when: the same repository and settings reproduce the same query groups, results, evidence and costs. Read-unit splitting, hint projection and query equivalence are covered by reproducibility tests.
 
-### M2. Agent strategy and tool survey
+### M2. Agent strategy and tool survey — initial pass complete, re-run before M3
 
 The behavior parameters this project treats as defaults — serial turns, grep-loop search, `bfs-exhaust`, `hint-prior` — were chosen without evidence. Several are already known to be wrong in one direction: real agents batch searches in parallel, delegate exploration to subagents, and some run against a semantic index or a precomputed repository map rather than a grep loop. Freezing the phase-B cost contract before surveying this means measuring a tool model that no shipped agent uses.
 
