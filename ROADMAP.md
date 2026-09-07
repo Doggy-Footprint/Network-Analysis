@@ -474,10 +474,6 @@ Done when: every default behavior parameter in the cost contract either has a su
 - Trace schema for validating against real agent behavior
 - Minimum procedure for comparing real agent traces against model predictions
 
-**Delivered**: `discovery/` package, `profiles/cost_weights.v1.yaml`, `profiles/exploration_policy.v1.yaml`, `fixtures/scenarios.v1.json` + `fixtures/seed_queries.v1.json`, `phase_b_cost.json` via `--phase-b`, HTML report via `report/m3/generate.py`, `fixtures/traces/m1-review-session.json` + `scripts/extract_claude_trace.py`, and `fixtures/trace_fit.json` via `scripts/trace_fit.py`.
-
-The sLLM seed-query generator is an injected interface with a version-controlled cache backend only; no model runs at analysis time, and the model id, revision, prompt and decoding settings are recorded in the fixture and carried into every result. Phase A additionally admits a structural repo map — a PageRank-ranked slice of the static graph injected before any query, enabled by default and charged as result tokens with no tool call. That is a design addition, not a survey finding; its provenance lives in `profiles/exploration_policy.v1.yaml`.
-
 **Proposed outcome**
 - `phase_b_cost.json` — per `(task, target set)`: the p5/p50/p95 runs with their full axis vectors and execution sequences, per-axis mean and standard deviation over the sample set, n, seed, bootstrap CI, closure cost, both invariant checks, the profile and policy ids used.
 - HTML report: discovery timeline per sample, cost distribution per axis, the closure-cost bar next to p95.
@@ -493,8 +489,6 @@ Additional falsification gate. Closing this milestone on reproducibility alone w
 - Record sample count, repositories, agent and tool settings.
 - Compare `hint-prior` against `uniform`, and `bfs-exhaust` against `best-first-pivot`, on the same trace set, and report which fits better.
 - No pass threshold is set here. The gate requires that the measurement is recorded and becomes the stated basis for the defaults, not that it exceeds a level.
-
-**Gate result** (`fixtures/trace_fit.json`, 1 trace, `claude-code` on `claude-opus-5`, 403 events; 8 changed files as targets, 2 excluded as analyzer artifacts with no readable node, 4 shared between the observed and predicted orders): under `bfs-exhaust` the rank correlation is undefined for both orderings. The root-list group is drained before any phase-B query is selected, so every target reached inside that one group carries the same discovery turn index and the predicted order is constant by construction — the axis the gate compares is the one this policy does not produce. Under `best-first-pivot` the correlation is 0.2 with `hint-prior` and 0.4 with `uniform`, so on this trace the uncalibrated `hint-prior` default fits worse than the uniform alternative it is meant to improve on. With one trace and four compared targets neither value is distinguishable from noise, and no default is changed on this basis. What the measurement establishes is recorded rather than acted on, per the gate's own terms; widening the trace corpus is the M7 calibration input.
 
 ### M4. C 단계 — 영향 범위 및 수정 전 검증
 
