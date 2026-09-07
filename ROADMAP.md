@@ -40,6 +40,8 @@ An agent session is modeled as three phases. The phases share one graph, one pro
 | B | Target discovery | phase A pending query set | all targets have been read | forward: query → result → read |
 | C | Pre-modification verification | the target set from phase B | the accessibility cutoff is exhausted | reverse dependency direction (see Zone of effect) |
 
+The unit of analysis is a `(task, target set)` pair, never a single target. A single-target task is the size-1 case of the same contract. Phase B ends when every member of the set has been read, so reads shared between targets are charged once rather than duplicated across independent per-target analyses. Phase C computes each target's zone separately and reports their union, with per-target provenance on every zone member, so overlap between targets is visible instead of double-counted and a verification bottleneck stays attributable to the target that caused it.
+
 Phases are sampled jointly in a single simulation run so that cross-phase correlation is preserved. Per-phase and total cost are both reported. A phase boundary is a reporting boundary, not a reset: read units read in phase B stay read in phase C and cost nothing to revisit.
 
 Phase C is not a second discovery problem with a different name. In phase B the agent does not know where the target is; in phase C it knows the target and must decide which of the target's dependents it needs to open. Modeling them with one policy would erase that difference, so each phase carries its own exploration policy parameter.
@@ -242,7 +244,7 @@ The following are early-termination risk observations, not costs. They exist to 
 
 The revisit axis is always 0 while revisit probability is 0. It is a placeholder that takes a value once the probability is set from real agent logs.
 
-The weighted cost is not a repository score; it is an objective function for selecting one exploration path. Early on it uses an explicitly temporary default weight profile, and every original axis is reported alongside the weights.
+The weighted cost is not a repository score. It is the scalar that ranks whole simulation samples so that a reported percentile is one coherent run rather than a per-axis composite; see the cost distribution section. Early on it uses an explicitly temporary default weight profile, and every original axis is reported alongside the weights.
 
 Weight values live in a version-controlled profile file in the repository, not in this document and not in code constants. Cost weight profiles and verification accessibility weights are managed the same way, and every result records the profile id and version. Replacing a temporary value is tracked in the profile file's history, and costs across the replacement are compared on the same graph.
 
@@ -254,9 +256,18 @@ Digits are excluded from that approximation and counted by a separate rule: a ru
 
 ### Cost distribution: p5 / p50 / p95
 
-There is one cost estimator: a Monte Carlo simulation over the order space the exploration policy permits. Every reported cost figure is an order statistic of that one sample distribution.
+There is one cost estimator: a Monte Carlo simulation over the order space the exploration policy permits.
 
-For each cost axis the analyzer reports p5, p50, p95, the mean, the sample count, the random seed, and a bootstrap confidence interval per percentile. Percentile uncertainty is estimated by bootstrap, not from the mean's standard error.
+**The percentile unit is a whole sample, not an axis.** Each sample is one complete simulated run producing a value on every cost axis. Samples are ranked by their weighted cost, and p5, p50 and p95 name the runs at those ranks. Every axis value reported at a percentile therefore comes from the same run, and each percentile carries the query and read sequence that produced it.
+
+The alternative — computing percentiles per axis independently — was rejected because it produces a composite that no run ever executed, and therefore no evidence path. Bottleneck attribution and what-if comparison both need a replayable sequence behind the number they move.
+
+Consequences that must be stated in every result:
+
+- Individual axes are **not** monotone across p5, p50, p95. The p5 run can have more turns than the p50 run while costing less overall. Only the weighted cost is monotone by construction.
+- The weight profile selects which run is reported at each percentile, so replacing weights changes the reported axis values even though the sample set is unchanged. The profile id and version are already required in results; this is the reason they are load-bearing rather than informational.
+
+Each percentile is reported with the full axis vector, the run's execution sequence, the mean and sample count over the whole set, the random seed, and a bootstrap confidence interval on the weighted cost at that rank. Percentile uncertainty is estimated by bootstrap, not from the mean's standard error. Per-axis means and standard deviations over the whole sample set are reported alongside, as distribution shape rather than as percentiles.
 
 Result-node selection order is weighted by a deterministic hint-based prior. Reading declaration occurrences before use occurrences, preferring exact filename matches, and deprioritizing tests are behaviors reproducible from information already charged for at search time. Discarding that information and sampling uniformly biases the distribution pessimistically. Because the prior is an uncalibrated behavior model, a uniform policy is kept alongside it: `uniform` and `hint-prior` are named profile policies, the policy used is recorded, and the prior's effect is observable and falsifiable as the difference between two runs. The default is `hint-prior`.
 
@@ -275,8 +286,8 @@ The structural upper bound is kept, but as a separate directly computed axis rat
 
 Invariants, both verified per run:
 
-- `p5 ≤ p50 ≤ p95` — holds by construction as order statistics.
-- `p95 ≤ seed reachable closure cost` — holds while revisit probability is 0. Raising revisit probability above 0 can break it, and the contract is rewritten at that point.
+- `weighted(p5) ≤ weighted(p50) ≤ weighted(p95)` — holds by construction, since the ranking is by weighted cost. It does **not** hold per axis, and a per-axis assertion would be a false invariant.
+- `axis(p95) ≤ seed reachable closure cost`, for every axis — holds while revisit probability is 0, because any single run reads a subset of the closure. This is asserted per axis on every sample, not only on p95. Raising revisit probability above 0 can break it, and the contract is rewritten at that point.
 
 Minimum sample count, convergence condition and maximum sample count are profile values. Defaults and tolerances are tuned against fixtures and real repository analysis.
 
@@ -293,6 +304,8 @@ The potential zone of effect is the full candidate range that a target change ma
 Propagation runs along the **reverse** of dependency edges: from a target to the things that depend on it. If A uses B and B uses C, then modifying B puts A in the zone and leaves C out. C is what B depends on; changing B does not change C.
 
 This is not the same as what the agent must read. To modify B correctly the agent may still need to read C to know the contract B is calling. That is forward-direction **comprehension closure**, and it is charged as phase-C read cost without making C a zone member. Conflating the two inflates every zone by the target's whole forward dependency cone.
+
+Comprehension closure is bounded by a profile depth, default 1: the direct forward dependencies of the read unit being modified are charged, and nothing deeper. Unbounded, it is the whole forward cone and dominates phase C. Depth 1 matches the observable behavior — an agent reads what B calls, not what those callees call — and the depth is a parameter rather than a constant so its effect can be measured instead of assumed. The depth used is recorded in results.
 
 Direction is declared per relation kind in the profile, not inferred. Three cases:
 
@@ -454,7 +467,7 @@ Done when: every default behavior parameter in the cost contract either has a su
 - Temporary weighted cost profile in a versioned profile file
 - Versioned tie-break cascade for sample-internal determinism
 - `uniform` and `hint-prior` result-ordering policies
-- Monte Carlo p5/p50/p95 with bootstrap CI per percentile
+- Monte Carlo p5/p50/p95 as whole-sample order statistics ranked by weighted cost, each percentile carrying its full axis vector and replayable execution sequence, with bootstrap CI
 - Seed reachable closure cost as a separately computed axis
 - 0-result queries, discovery turn index, unread target and hint observation axes
 - Multi-target termination and unreachable handling
@@ -462,7 +475,7 @@ Done when: every default behavior parameter in the cost contract either has a su
 - Minimum procedure for comparing real agent traces against model predictions
 
 **Proposed outcome**
-- `phase_b_cost.json` — per task: per-axis p5/p50/p95, mean, n, seed, bootstrap CI, closure cost, both invariant checks, the profile and policy ids used.
+- `phase_b_cost.json` — per `(task, target set)`: the p5/p50/p95 runs with their full axis vectors and execution sequences, per-axis mean and standard deviation over the sample set, n, seed, bootstrap CI, closure cost, both invariant checks, the profile and policy ids used.
 - HTML report: discovery timeline per sample, cost distribution per axis, the closure-cost bar next to p95.
 - `profiles/cost_weights.v1.yaml` and `profiles/exploration_policy.v1.yaml`.
 - A trace schema plus at least one recorded real agent trace in the same schema.
@@ -480,9 +493,9 @@ Additional falsification gate. Closing this milestone on reproducibility alone w
 
 - Relation-kind → direction table in the profile, covering ordinary dependency, contract-carrying pairs and substitutable members
 - Propagation over that table, with unlisted relation kinds defaulting to reverse-only and flagged
-- Forward comprehension closure charged as phase-C read cost without entering zone membership
-- Full potential zone and accessibility ranking
-- Accessibility weights in a versioned profile file
+- Forward comprehension closure charged as phase-C read cost without entering zone membership, bounded by a profile depth defaulting to 1
+- Full potential zone per target and their union across the target set, with per-target provenance on every member
+- Accessibility ranking, with weights in a versioned profile file
 - User cutoff mechanism and unobserved-impact reporting; defaults temporary and flagged as such
 - Tests excluded by default from ranking and cutoff, configurable to include
 - Phase-C exploration policy: how the agent traverses the zone, sampled under the same Monte Carlo contract as phase B
@@ -499,7 +512,7 @@ Choosing a mitigation before the measurement would mean the reported zone measur
 **Pre-modification checklist.** A script that, given a target, emits the ordered list of things to check before modifying it: the zone members, the evidence for each, and the accessibility rank. The rank is a rank, not a probability that an agent visits the item. Calling it a probability requires calibration against agent traces and is deferred to M7. Whether the rank predicts real agent visits at all is measured as part of M7's calibration, using the same trace corpus as the M3 gate — and if the M2 survey finds that developer-navigation predictors do not carry over to agent logs, the checklist ships as a static list with no visit-likelihood claim.
 
 **Proposed outcome**
-- `zone.json` — per target: zone members with path, relation kind, direction-table row, evidence, confidence, accessibility components, cutoff membership.
+- `zone.json` — per target set: the union of zones, each member carrying path, the targets it came from, relation kind, direction-table row, evidence, confidence, accessibility components, cutoff membership.
 - `zone_size.json` — the decision-gate measurement, with the chosen mitigation and its rationale.
 - `profiles/zone_direction.v1.yaml` and `profiles/accessibility_weights.v1.yaml`.
 - HTML report: per-target zone with direction shown on each edge, cutoff boundary, and the unobserved-impact list.
