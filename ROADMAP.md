@@ -479,6 +479,7 @@ Done when: every default behavior parameter in the cost contract either has a su
 - HTML report: discovery timeline per sample, cost distribution per axis, the closure-cost bar next to p95.
 - `profiles/cost_weights.v1.yaml` and `profiles/exploration_policy.v1.yaml`.
 - A trace schema plus at least one recorded real agent trace in the same schema.
+- A flat `versions` block in every emitted result, recording every version stamp the run actually consumed — split, ordering, output format, query equivalence, derived rules, tokenizer, exclusions, policy, tie-break, cost weights — each as an id and version, with no scoping or grouping applied. Result comparability rules are deliberately not defined here; recording the stamps as data lets a scoping rule be defined later over existing results instead of requiring reruns.
 
 Done when: fixture state transitions and cost axes match, and Monte Carlo results reproduce within the recorded error bounds under a fixed seed. Results under different policies or tie-break versions are reproduced separately and never compared.
 
