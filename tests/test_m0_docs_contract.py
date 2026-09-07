@@ -10,7 +10,7 @@ class M0DocumentationContractTests(unittest.TestCase):
         cls.roadmap = (root / "ROADMAP.md").read_text(encoding="utf-8")
 
     def test_roadmap_records_m0_as_complete_and_classifies_existing_features(self):
-        self.assertIn("### M0. Document and contract realignment — complete", self.roadmap)
+        self.assertIn("### M0. 문서 및 계약 재정렬 — 완료", self.roadmap)
         self.assertIn(
             "| Keep | language and framework analyzers, static relations and evidence, "
             "graph metrics including effective and weighted measures, renderers |",
@@ -30,7 +30,7 @@ class M0DocumentationContractTests(unittest.TestCase):
         )
 
     def test_roadmap_records_m1_as_complete(self):
-        self.assertIn("### M1. Agent-view graph — complete", self.roadmap)
+        self.assertIn("### M1. 에이전트 관점 그래프 — 완료", self.roadmap)
 
     def test_readme_states_its_blankness_is_intentional_and_only_points_at_documents(self):
         self.assertIn("Left blank for intent.", self.readme)

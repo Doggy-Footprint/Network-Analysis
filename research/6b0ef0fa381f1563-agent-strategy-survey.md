@@ -1,6 +1,6 @@
 File: 6b0ef0fa381f1563-agent-strategy-survey.md
 마일스톤: M2
-버전: 2
+버전: 3
 
 # 목적
 
@@ -14,7 +14,7 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 
 | 상태 | 발견 | 처리 |
 |---|---|---|
-| 직접적이며 출처 범위가 명확한 근거 | F2, F3, F4, F7 | 출처가 직접 진술한 모델 결정에만 사용한다. |
+| 직접적이며 출처 범위가 명확한 근거 | F2, F4, F7 | 출처가 직접 진술한 모델 결정에만 사용한다. |
 | 간접적이거나 불완전한 근거 | F1, F5, F6 | 기본값을 확인하거나 정하는 데 사용하지 않고, 확장 후보 또는 보정 질문으로 보존한다. |
 
 # 발견 사항
@@ -34,16 +34,6 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 - Claim: Cursor chunks files into semantic units via AST-based chunking, embeds chunks into vectors, and serves `@codebase` queries via vector similarity search rather than exact or path-namespace search; a Merkle tree over the tree avoids full reprocessing on change.
 - Parameter touched: index/repo-map preloading (semantic)
 - Disposition: **rejected.** This is a real, deployed design, but embedding-based semantic retrieval is exactly what ROADMAP.md's scope statement excludes: "Inference that recalls expressions outside the rule table through outside knowledge or semantic similarity is out of scope." Recording it here so the exclusion is a documented decision against known practice, not an oversight — not adopting it into the model.
-
-## F3 — Aider의 PageRank 기반 구조적 저장소 맵
-
-- Source: Aider official docs, "Repository map", https://aider.chat/docs/repomap.html
-- Reliability: 5/5 (primary vendor source)
-- Claim: Aider builds a directed graph of symbol definitions/references from tree-sitter parses (files as nodes, static dependency edges), ranks it with a PageRank-style algorithm, and preloads the top-ranked slice into every prompt up to a token budget, shrinking by dropping lowest-ranked symbols as active file context grows.
-- Parameter touched: index/repo-map preloading (structural)
-- Disposition: **partially adopted, partially deferred.** Unlike F2, this ranks a purely structural dependency graph — no embeddings, no semantic similarity — so it does not cross the project's stated boundary. Two separate things follow:
-  - The ranking mechanism itself (PageRank/centrality over static edges) is already in scope as a task-less graph-wide metric (ROADMAP.md "Task-less graph-wide analysis"). No change needed there; F3 is recorded as external validation that this metric class is used in production tools.
-  - The *preloading* mechanism — injecting a ranked structural map into every session before any query is issued — is not modeled. Phase A currently admits only entry documents and root list queries (ROADMAP.md "Agent session model" table). Adding a preloaded ranked map is a phase-A contract change and is deferred to M3, where it should be evaluated as a phase-A query-set seed alongside sLLM-generated queries.
 
 ## F4 — SWE-agent / OpenHands 에이전트-컴퓨터 인터페이스(grep 루프 기준선)
 
@@ -86,17 +76,14 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 | Search surface (path + content, exact + derived) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Search output cap (`search_output_limit: 30`, match-line format) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Index/repo-map preloading — semantic | Not modeled | F2 | N/A (out of declared scope) | Rejected |
-| Index/repo-map preloading — structural, as a phase-A seed mechanism | Not modeled in phase A (only entry docs + root list queries) | F3 | Yes | Deferred to M3 |
-| PageRank / centrality as a graph-wide metric | Already modeled (task-less graph-wide analysis) | F3 | No | Adopted / confirmed, no change |
 | `bfs-exhaust` (phase-B default exploration policy) | ROADMAP.md "Exploration policy and turns" | none found | Unevidenced | Recorded unevidenced; M3's already-planned `bfs-exhaust` vs `best-first-pivot` trace comparison is the falsification path |
 | `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | Indirect | Default remains explicitly uncalibrated; trace-derived ordering is an M7 extension candidate |
 | Context-window eviction | Not modeled | F4 | Yes (by omission) | Extension candidate; define and calibrate a profile option before adoption |
 
 # 적용한 프로필 변경
 
-None. Direct evidence does not prescribe a change to an existing profile value. Structural
-repo-map preloading is an M3 phase-A option; context-window eviction is an M3-or-later
-profile option. The indirect findings on turn model, subagent fan-out, and trace-derived
+None. Direct evidence does not prescribe a change to an existing profile value.
+Context-window eviction is an M3-or-later profile option. The indirect findings on turn model, subagent fan-out, and trace-derived
 ordering remain extension candidates rather than default changes. The relevant profile files do not exist yet
 (`profiles/exploration_policy.v1.yaml`, `profiles/cost_weights.v1.yaml` — both M3
 deliverables) or to phase-A scope itself, which is ROADMAP.md prose rather than a profile
@@ -109,6 +96,12 @@ This delta table is the recorded input M3 consumes when it creates the explorati
 and cost-weight profiles.
 
 # 재실행 정책
+
+Version 3: removed F3 (Aider PageRank repository map) and its two parameter-delta rows.
+Structural repo-map preloading is implemented in M3 as a phase-A seed mechanism enabled by
+default, and PageRank as a graph-wide metric predates this survey; carrying them here as
+survey findings made a design decision look evidence-driven when it is not. Their provenance
+now lives in `profiles/exploration_policy.v1.yaml`.
 
 Version 2 cross-check: separated direct evidence from indirect evidence, corrected F4's
 source-bounded claims, recorded F4 evidence for context-window eviction, and replaced F7's
