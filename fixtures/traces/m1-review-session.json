@@ -1,0 +1,3776 @@
+{
+  "agent": {
+    "model": "claude-opus-5",
+    "name": "claude-code",
+    "settings": {
+      "mode": "auto"
+    }
+  },
+  "events": [
+    {
+      "index": 0,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 1,
+      "kind": "list",
+      "paths": [],
+      "raw_tool": "Bash:ls",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 2,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 3,
+      "kind": "list",
+      "paths": [
+        "."
+      ],
+      "raw_tool": "Bash:find",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 4,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 5,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 6,
+      "kind": "read",
+      "paths": [
+        "ROADMAP.md"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 7,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 8,
+      "kind": "search",
+      "paths": [
+        "ROADMAP.md"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "M1"
+    },
+    {
+      "index": 9,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 10,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 11,
+      "kind": "read",
+      "paths": [
+        "ROADMAP.md"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 12,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 13,
+      "kind": "other",
+      "paths": [
+        "agent_view/*.py",
+        "tests/test_agent_view_graph.py",
+        "profiles/*.yaml"
+      ],
+      "raw_tool": "Bash:wc",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 14,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 15,
+      "kind": "read",
+      "paths": [
+        "agent_view/models.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 16,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 17,
+      "kind": "read",
+      "paths": [
+        "agent_view/__init__.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 18,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 19,
+      "kind": "read",
+      "paths": [
+        "agent_view/exact_query.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 20,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 21,
+      "kind": "read",
+      "paths": [
+        "agent_view/derived_query.py",
+        "agent_view/framework_link.py",
+        "profiles/derived_query_rules.v1.yaml"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 22,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 23,
+      "kind": "read",
+      "paths": [
+        "agent_view/occurrence.py",
+        "agent_view/readable.py",
+        "agent_view/serialize.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 24,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 25,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/activate"
+      ],
+      "raw_tool": "Bash:source",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 26,
+      "kind": "other",
+      "paths": [
+        "pytest"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 27,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 28,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 29,
+      "kind": "read",
+      "paths": [
+        "requirements.txt"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 30,
+      "kind": "list",
+      "paths": [
+        ".venv/lib/*/site-packages"
+      ],
+      "raw_tool": "Bash:ls",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 31,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 32,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 33,
+      "kind": "other",
+      "paths": [
+        "install",
+        "pytest"
+      ],
+      "raw_tool": "Bash:pip",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 34,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 35,
+      "kind": "other",
+      "paths": [
+        "pytest"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 36,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 37,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 38,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 39,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 40,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 41,
+      "kind": "read",
+      "paths": [
+        "code_analyzer/cli.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 42,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 43,
+      "kind": "list",
+      "paths": [
+        "examples/"
+      ],
+      "raw_tool": "Bash:ls",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 44,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 45,
+      "kind": "other",
+      "paths": [
+        "$SP"
+      ],
+      "raw_tool": "Bash:mkdir",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 46,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/python",
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/av1.json",
+        "$SP/out.html"
+      ],
+      "raw_tool": "Bash:time",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 47,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 48,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 49,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 50,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 51,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 52,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 53,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 54,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 55,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 56,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/av2.json",
+        "$SP/out2.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 57,
+      "kind": "other",
+      "paths": [
+        "$SP/av1.json",
+        "$SP/av2.json"
+      ],
+      "raw_tool": "Bash:shasum",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 58,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 59,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 60,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json",
+        "for",
+        "n",
+        "in",
+        "unreachable",
+        "for",
+        "i",
+        "in"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 61,
+      "kind": "other",
+      "paths": [
+        "framework",
+        "links",
+        "from",
+        "collections",
+        "import",
+        "Counter",
+        "for",
+        "l",
+        "in",
+        "excluded",
+        "files"
+      ],
+      "raw_tool": "Bash:print(n['kind'],",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 62,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 63,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 64,
+      "kind": "search",
+      "paths": [
+        "$SP/av1.json"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "/Users/hwansu"
+    },
+    {
+      "index": 65,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 66,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 67,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 68,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 69,
+      "kind": "other",
+      "paths": [
+        "$SP/copy"
+      ],
+      "raw_tool": "Bash:rm",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 70,
+      "kind": "other",
+      "paths": [
+        "examples/realworld_app",
+        "$SP/copy"
+      ],
+      "raw_tool": "Bash:cp",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 71,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "$SP/copy",
+        "fastapi",
+        "$SP/av3.json",
+        "$SP/out3.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 72,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "$SP/av1.json",
+        "$SP/av3.json"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 73,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 74,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 75,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 76,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 77,
+      "kind": "other",
+      "paths": [
+        "for",
+        "l",
+        "in",
+        "for",
+        "l",
+        "in",
+        "for",
+        "k",
+        "in",
+        "A",
+        "if",
+        "k",
+        "in",
+        "B",
+        "and"
+      ],
+      "raw_tool": "Bash:av3.json))",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 78,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:print(A[k])",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 79,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:print(B[k])",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 80,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 81,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "ArchitectureGraphBuilder\\"
+    },
+    {
+      "index": 82,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:build_agent_view\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 83,
+      "kind": "other",
+      "paths": [
+        "build",
+        "code_analyzer/cli.py"
+      ],
+      "raw_tool": "Bash:def",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 84,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 85,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 86,
+      "kind": "read",
+      "paths": [
+        "code_analyzer/cli.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 87,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 88,
+      "kind": "list",
+      "paths": [
+        "examples/nowinandroid_sample"
+      ],
+      "raw_tool": "Bash:find",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 89,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:wc",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 90,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 91,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/python",
+        "code_analyzer",
+        "examples/nowinandroid_sample",
+        "android",
+        "$SP/and.json",
+        "$SP/and.html"
+      ],
+      "raw_tool": "Bash:time",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 92,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 93,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 94,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 95,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 96,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 97,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 98,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 99,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 100,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 101,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 102,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "🧩\\"
+    },
+    {
+      "index": 103,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:⚙️\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 104,
+      "kind": "other",
+      "paths": [
+        "framework_analyzers/android/graph.py"
+      ],
+      "raw_tool": "Bash:📦\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 105,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 106,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 107,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 108,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 109,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 110,
+      "kind": "read",
+      "paths": [
+        "agent_view/profile.py",
+        "agent_view/scan.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 111,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 112,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "^def"
+    },
+    {
+      "index": 113,
+      "kind": "other",
+      "paths": [
+        "def"
+      ],
+      "raw_tool": "Bash:^",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 114,
+      "kind": "other",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:^class",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 115,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 116,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 117,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 118,
+      "kind": "other",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:788,800p'",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 119,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 120,
+      "kind": "read",
+      "paths": [
+        "adr/index.md",
+        "adr/stale.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 121,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 122,
+      "kind": "read",
+      "paths": [
+        "issues/index.md",
+        "issues/stale.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 123,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 124,
+      "kind": "search",
+      "paths": [
+        "framework_analyzers/fastapi/*.py",
+        "framework_analyzers/android/*.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "implemented_by"
+    },
+    {
+      "index": 125,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 126,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 127,
+      "kind": "read",
+      "paths": [
+        "framework_analyzers/fastapi/graph.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 128,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 129,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 130,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 131,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 132,
+      "kind": "search",
+      "paths": [
+        "framework_analyzers/fastapi/analyzer.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "file_path="
+    },
+    {
+      "index": 133,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 134,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 135,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "relative_to\\"
+    },
+    {
+      "index": 136,
+      "kind": "other",
+      "paths": [
+        "language_analyzers/",
+        "framework_analyzers/"
+      ],
+      "raw_tool": "Bash:as_posix()\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 137,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "\\.pyc"
+    },
+    {
+      "index": 138,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 139,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 140,
+      "kind": "read",
+      "paths": [
+        "language_analyzers/core/annotate.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 141,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 142,
+      "kind": "read",
+      "paths": [
+        "framework_analyzers/android/analyzer.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 143,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 144,
+      "kind": "search",
+      "paths": [
+        "framework_analyzers/fastapi/graph.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "def build_graph"
+    },
+    {
+      "index": 145,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 146,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 147,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "annotate\\"
+    },
+    {
+      "index": 148,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:_implementation_edges\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 149,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:_language_graph\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 150,
+      "kind": "other",
+      "paths": [
+        "arch",
+        "framework_analyzers/fastapi/graph.py"
+      ],
+      "raw_tool": "Bash:return",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 151,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 152,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 153,
+      "kind": "read",
+      "paths": [
+        "language_analyzers/core/annotate.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 154,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 155,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "mark_edges\\"
+    },
+    {
+      "index": 156,
+      "kind": "other",
+      "paths": [
+        "."
+      ],
+      "raw_tool": "Bash:annotate_nodes\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 157,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "\\.venv"
+    },
+    {
+      "index": 158,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 159,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "mark_edges\\"
+    },
+    {
+      "index": 160,
+      "kind": "other",
+      "paths": [
+        "framework_analyzers",
+        "language_analyzers",
+        "tests"
+      ],
+      "raw_tool": "Bash:annotate_nodes\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 161,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "Binary"
+    },
+    {
+      "index": 162,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 163,
+      "kind": "read",
+      "paths": [
+        "issues/a8c91e4b7d3f5a20-kotlin-parser-cache.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 164,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 165,
+      "kind": "read",
+      "paths": [
+        "issues/stale.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 166,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 167,
+      "kind": "read",
+      "paths": [
+        "adr/77ee4cf0755552e5-versioned-profile-files.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 168,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "AskUserQuestion",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 169,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 170,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 171,
+      "kind": "list",
+      "paths": [
+        "$SP/av1.json",
+        "$SP/and.json"
+      ],
+      "raw_tool": "Bash:ls",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 172,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:awk",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 173,
+      "kind": "other",
+      "paths": [
+        "$SP/av1.json"
+      ],
+      "raw_tool": "Bash:gzip",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 174,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:wc",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 175,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:awk",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 176,
+      "kind": "other",
+      "paths": [
+        "$SP/and.json"
+      ],
+      "raw_tool": "Bash:gzip",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 177,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:wc",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 178,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:awk",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 179,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 180,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "SCHEMA_VERSION\\"
+    },
+    {
+      "index": 181,
+      "kind": "other",
+      "paths": [
+        "agent_view",
+        "tests",
+        "code_analyzer"
+      ],
+      "raw_tool": "Bash:schema_version\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 182,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "\\.pyc"
+    },
+    {
+      "index": 183,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Write",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 184,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "ToolSearch",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 185,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "ExitPlanMode",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 186,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 187,
+      "kind": "other",
+      "paths": [
+        "import",
+        "secrets"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 188,
+      "kind": "other",
+      "paths": [
+        "for",
+        "_",
+        "in"
+      ],
+      "raw_tool": "Bash:[print(secrets.token_hex(8))",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 189,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 190,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 191,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 192,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 193,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/p1.json",
+        "$SP/p1.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 194,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 195,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 196,
+      "kind": "read",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 197,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 198,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "ArchitectureGraphBuilder\\"
+    },
+    {
+      "index": 199,
+      "kind": "other",
+      "paths": [
+        "tests/*.py"
+      ],
+      "raw_tool": "Bash:FastAPIAnalyzer\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 200,
+      "kind": "search",
+      "paths": [
+        "class"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "class"
+    },
+    {
+      "index": 201,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:realworld_app\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 202,
+      "kind": "other",
+      "paths": [
+        "tests/test_symbol_graph_and_enrichment.py"
+      ],
+      "raw_tool": "Bash:official_template\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 203,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 204,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 205,
+      "kind": "search",
+      "paths": [
+        "class"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "class"
+    },
+    {
+      "index": 206,
+      "kind": "other",
+      "paths": [
+        "test_",
+        "tests/test_analyzer.py"
+      ],
+      "raw_tool": "Bash:def",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 207,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 208,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 209,
+      "kind": "read",
+      "paths": [
+        "tests/test_analyzer.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 210,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 211,
+      "kind": "read",
+      "paths": [
+        "tests/test_analyzer.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 212,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 213,
+      "kind": "read",
+      "paths": [
+        "s"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 214,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:evidence=SourceSpan(relative_repo_path(file_path,",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 215,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:evidence=SourceSpan(file_path,",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 216,
+      "kind": "other",
+      "paths": [
+        "framework_analyzers/fastapi/graph.py"
+      ],
+      "raw_tool": "Bash:'",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 217,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests/test_analyzer.py"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 218,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 219,
+      "kind": "other",
+      "paths": [
+        "framework_analyzers/fastapi/graph.py.bak",
+        "framework_analyzers/fastapi/graph.py"
+      ],
+      "raw_tool": "Bash:mv",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 220,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests/test_analyzer.py"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 221,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 222,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 223,
+      "kind": "read",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 224,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 225,
+      "kind": "read",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 226,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 227,
+      "kind": "read",
+      "paths": [
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 228,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 229,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 230,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 231,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 232,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 233,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/n1.json",
+        "$SP/n1.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 234,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "$SP/copy",
+        "fastapi",
+        "$SP/n2.json",
+        "$SP/n2.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 235,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 236,
+      "kind": "other",
+      "paths": [
+        "for",
+        "l",
+        "in",
+        "for",
+        "l",
+        "in",
+        "for",
+        "k",
+        "in",
+        "A",
+        "if",
+        "k",
+        "in",
+        "B",
+        "and",
+        "paths",
+        "in",
+        "for",
+        "v",
+        "in",
+        "if"
+      ],
+      "raw_tool": "Bash:n2.json'))",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 237,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 238,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/python",
+        "scripts/regen_agent_view_golden.py"
+      ],
+      "raw_tool": "Bash:time",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 239,
+      "kind": "list",
+      "paths": [
+        "tests/fixtures/agent_view/"
+      ],
+      "raw_tool": "Bash:ls",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 240,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 241,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 242,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 243,
+      "kind": "read",
+      "paths": [],
+      "raw_tool": "Read",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 244,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 245,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 246,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 247,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 248,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 249,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 250,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/python",
+        "pytest",
+        "tests/test_agent_view_golden.py"
+      ],
+      "raw_tool": "Bash:time",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 251,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 252,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 253,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests/test_agent_view_golden.py"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 254,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 255,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 256,
+      "kind": "read",
+      "paths": [
+        "examples/realworld_app/Dockerfile"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 257,
+      "kind": "read",
+      "paths": [
+        "examples/realworld_app/poetry.lock"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 258,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cut",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 259,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Edit",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 260,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 261,
+      "kind": "other",
+      "paths": [
+        ".venv/bin/python",
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:time",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 262,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 263,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 264,
+      "kind": "other",
+      "paths": [
+        "f",
+        "in",
+        "tests/test_agent_view_golden.py",
+        "tests/test_agent_view_graph.py"
+      ],
+      "raw_tool": "Bash:for",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 265,
+      "kind": "other",
+      "paths": [
+        "echo"
+      ],
+      "raw_tool": "Bash:do",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 266,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "$f"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 267,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 268,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:done",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 269,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 270,
+      "kind": "read",
+      "paths": [
+        ".githooks/pre-commit"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 271,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 272,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 273,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 274,
+      "kind": "other",
+      "paths": [
+        ".githooks/verify_agents_rules.py"
+      ],
+      "raw_tool": "Bash:python3",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 275,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 276,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 277,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:scratchpad",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 278,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/f1.json",
+        "$SP/f1.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 279,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi",
+        "$SP/f2.json",
+        "$SP/f2.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 280,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "$SP/copy",
+        "fastapi",
+        "$SP/f3.json",
+        "$SP/f3.html"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 281,
+      "kind": "other",
+      "paths": [
+        "256",
+        "$SP/f1.json",
+        "$SP/f2.json"
+      ],
+      "raw_tool": "Bash:shasum",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 282,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:awk",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 283,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 284,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 285,
+      "kind": "other",
+      "paths": [
+        "for",
+        "l",
+        "in",
+        "for",
+        "l",
+        "in",
+        "for",
+        "k",
+        "in",
+        "A",
+        "if",
+        "k",
+        "in",
+        "B",
+        "and"
+      ],
+      "raw_tool": "Bash:f3.json'))",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 286,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 287,
+      "kind": "other",
+      "paths": [
+        "diff",
+        "agent_view/",
+        "language_analyzers/",
+        "framework_analyzers/"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 288,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 289,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 290,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 291,
+      "kind": "other",
+      "paths": [
+        ".githooks/verify_agents_rules.py"
+      ],
+      "raw_tool": "Bash:python3",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 292,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 293,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 294,
+      "kind": "read",
+      "paths": [
+        ".gitignore"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 295,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 296,
+      "kind": "other",
+      "paths": [
+        "config",
+        "core.hooksPath"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 297,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 298,
+      "kind": "other",
+      "paths": [
+        "check-ignore",
+        "tests/fixtures/agent_view/realworld_app.json.gz"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 299,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 300,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 301,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 302,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 303,
+      "kind": "other",
+      "paths": [
+        "log"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 304,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 305,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 306,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 307,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 308,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 309,
+      "kind": "read",
+      "paths": [
+        "README.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 310,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 311,
+      "kind": "read",
+      "paths": [
+        "tests/fixtures/agent_view/README.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 312,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 313,
+      "kind": "list",
+      "paths": [
+        "."
+      ],
+      "raw_tool": "Bash:find",
+      "surface": "path",
+      "term": ""
+    },
+    {
+      "index": 314,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 315,
+      "kind": "read",
+      "paths": [
+        "README.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 316,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 317,
+      "kind": "search",
+      "paths": [
+        "."
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "README"
+    },
+    {
+      "index": 318,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "\\.venv\\"
+    },
+    {
+      "index": 319,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 320,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:fixtures\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 321,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:node_modules\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 322,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 323,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 324,
+      "kind": "search",
+      "paths": [
+        "ROADMAP.md",
+        "AGENTS.md",
+        "CLAUDE.md",
+        ".githooks/",
+        "scripts/",
+        "code_analyzer/",
+        "agent_view/",
+        "tests/*.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "README"
+    },
+    {
+      "index": 325,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 326,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 327,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 328,
+      "kind": "read",
+      "paths": [
+        "tests/test_m0_docs_contract.py"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 329,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 330,
+      "kind": "search",
+      "paths": [
+        "language_analyzers/core/graph_models.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "class GraphNode"
+    },
+    {
+      "index": 331,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "AskUserQuestion",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 332,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Agent",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 333,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 334,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 335,
+      "kind": "other",
+      "paths": [
+        "diff"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 336,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 337,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 338,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 339,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 340,
+      "kind": "other",
+      "paths": [
+        ".githooks/verify_agents_rules.py"
+      ],
+      "raw_tool": "Bash:python3",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 341,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 342,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 343,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 344,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 345,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/nowinandroid_sample",
+        "android"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 346,
+      "kind": "other",
+      "paths": [
+        "code_analyzer",
+        "examples/realworld_app",
+        "fastapi"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 347,
+      "kind": "other",
+      "paths": [
+        "import",
+        "re",
+        "for",
+        "in"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 348,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:s=d['scan']",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 349,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:ignore_source:, s[ignore_source], ",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 350,
+      "kind": "other",
+      "paths": [
+        "emoji/newline"
+      ],
+      "raw_tool": "Bash:generated:, s[generated_file_count],files",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 351,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:emoji",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 352,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 353,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "🧩\\"
+    },
+    {
+      "index": 354,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:📦\\",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 355,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:🚀\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 356,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 357,
+      "kind": "search",
+      "paths": [
+        "examples/nowinandroid_sample"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "Video 📺"
+    },
+    {
+      "index": 358,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 359,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 360,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json",
+        "for",
+        "n",
+        "in",
+        "if",
+        "generated",
+        "in"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 361,
+      "kind": "other",
+      "paths": [
+        "for",
+        "p",
+        "in"
+      ],
+      "raw_tool": "Bash:[print('",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 362,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 363,
+      "kind": "search",
+      "paths": [
+        "examples/nowinandroid_sample"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "Video 📺"
+    },
+    {
+      "index": 364,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 365,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 366,
+      "kind": "other",
+      "paths": [
+        "diff",
+        "language_analyzers/core/flags.py"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 367,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 368,
+      "kind": "other",
+      "paths": [
+        "diff",
+        "renderers/html/renderer.py",
+        "language_analyzers/core/serialization.py",
+        "analysis/graph_metrics.py"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 369,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 370,
+      "kind": "read",
+      "paths": [
+        "tests/test_serialization_and_rendering.py"
+      ],
+      "raw_tool": "Bash:sed",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 371,
+      "kind": "search",
+      "paths": [
+        "language_analyzers/core/serialization.py"
+      ],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "SCHEMA_VERSION"
+    },
+    {
+      "index": 372,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 373,
+      "kind": "other",
+      "paths": [
+        "diff",
+        "adr/index.md",
+        "issues/index.md"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 374,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 375,
+      "kind": "search",
+      "paths": [],
+      "raw_tool": "Bash:grep",
+      "surface": "content",
+      "term": "v1\\"
+    },
+    {
+      "index": 376,
+      "kind": "other",
+      "paths": [
+        "adr/77ee4cf0755552e5-versioned-profile-files.md"
+      ],
+      "raw_tool": "Bash:derived_query_rules\"",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 377,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 378,
+      "kind": "read",
+      "paths": [
+        "adr/stale.md",
+        "issues/stale.md"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 379,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 380,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 381,
+      "kind": "other",
+      "paths": [
+        "diff",
+        "agent_view/scan.py",
+        "agent_view/profile.py",
+        "agent_view/models.py",
+        "agent_view/__init__.py"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 382,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 383,
+      "kind": "read",
+      "paths": [
+        "profiles/derived_query_rules.v2.yaml"
+      ],
+      "raw_tool": "Bash:cat",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 384,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:head",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 385,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "AskUserQuestion",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 386,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 387,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 388,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 389,
+      "kind": "other",
+      "paths": [
+        "log"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 390,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 391,
+      "kind": "other",
+      "paths": [
+        "pytest",
+        "tests"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 392,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:tail",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 393,
+      "kind": "other",
+      "paths": [
+        ".githooks/verify_agents_rules.py"
+      ],
+      "raw_tool": "Bash:python3",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 394,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 395,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 396,
+      "kind": "other",
+      "paths": [
+        "status"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 397,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:echo",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 398,
+      "kind": "other",
+      "paths": [
+        "log"
+      ],
+      "raw_tool": "Bash:git",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 399,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:cd",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 400,
+      "kind": "other",
+      "paths": [
+        "import",
+        "json",
+        "from",
+        "collections",
+        "import",
+        "Counter",
+        "for",
+        "in",
+        "for",
+        "l",
+        "in",
+        "for",
+        "q",
+        "in",
+        "if"
+      ],
+      "raw_tool": "Bash:python",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 401,
+      "kind": "other",
+      "paths": [
+        "query"
+      ],
+      "raw_tool": "Bash:framework",
+      "surface": "content",
+      "term": ""
+    },
+    {
+      "index": 402,
+      "kind": "other",
+      "paths": [],
+      "raw_tool": "Bash:unknown",
+      "surface": "content",
+      "term": ""
+    }
+  ],
+  "recorded_at": "2026-09-04T09:53:52.241Z",
+  "repository": {
+    "commit": "be067b0",
+    "name": "code-analyzer-for-agents"
+  },
+  "schema": "agent_trace.v1",
+  "source": {
+    "session_id": "ed67a89b-4b56-4bcc-b0e8-887058efd55c",
+    "tool": "claude-code",
+    "transcript_sha256": "285b366171e9e9025201594fe84bc22e52d799afdfd82ae64286bc602f4ea318"
+  },
+  "targets": [
+    "agent_view/exact_query.py",
+    "agent_view/models.py",
+    "agent_view/occurrence.py",
+    "agent_view/profile.py",
+    "analysis/graph_metrics.py",
+    "language_analyzers/core/flags.py"
+  ],
+  "task": "완료된 M1 평가하고 나한테 쉽게 설명해줘.",
+  "trace_id": "285b366171e9e902"
+}
