@@ -1,6 +1,6 @@
-# Goal: AI Agent Repository Exploration Analyzer
+# 목표: AI 에이전트 저장소 탐색 분석기
 
-## Purpose
+## 목적
 
 This project approximates, as a static graph, the process by which an AI coding agent locates a change target in a repository and checks the range that change can affect. The analyzer answers:
 
@@ -12,7 +12,7 @@ This project approximates, as a static graph, the process by which an AI coding 
 
 The graph does not reconstruct the repository's meaning. It models explicit clues available in code, documents and comments; exact search; searches derived from read identifiers through a fixed rule table; static relations; and framework rules. Inference that recalls expressions outside the rule table through outside knowledge or semantic similarity is out of scope. The result is therefore a deterministic approximation of the repository as seen from an agent's viewpoint.
 
-## Core concepts
+## 핵심 개념
 
 - `task`: a natural-language request given to an agent.
 - `query`: a search action the agent runs to expose the next candidates.
@@ -30,7 +30,7 @@ The graph does not reconstruct the repository's meaning. It models explicit clue
 - `exploration policy`: the rule governing selection order of pending queries and result nodes.
 - `session phase`: one of the three phases in the agent session model below.
 
-## Agent session model
+## 에이전트 세션 모델
 
 An agent session is modeled as three phases. The phases share one graph, one profile and one cost contract; they differ in what starts them, what ends them, and which relation directions they traverse.
 
@@ -46,11 +46,11 @@ Phases are sampled jointly in a single simulation run so that cross-phase correl
 
 Phase C is not a second discovery problem with a different name. In phase B the agent does not know where the target is; in phase C it knows the target and must decide which of the target's dependents it needs to open. Modeling them with one policy would erase that difference, so each phase carries its own exploration policy parameter.
 
-## Graph model
+## 그래프 모델
 
 The graph represents exploration actions as well as repository entities.
 
-### Readable nodes
+### 읽을 수 있는 노드
 
 Files, modules, classes, functions, methods, types, configs, tests, documents and API endpoints. The arrival point of a query result is the symbol node enclosing the occurrence.
 
@@ -67,13 +67,13 @@ Oversized files split greedily: symbols are appended in source order until addin
 
 Read units are a cost-model decision, not a node boundary. Symbol-level relation direction and zone propagation are unaffected.
 
-### Default exclusions
+### 기본 제외 항목
 
 Files an agent does not purposefully search or read are not readable nodes: lockfiles, binaries, build outputs, generated code. Exclusion rules live in a versioned config file and can be overridden per repository. Excluded files are never targets or zone members.
 
 Generated status is decided by exactly two deterministic sources: a path glob list, and a generated-marker regex list matched within a fixed number of leading lines. Both lists and the line count are config values. Results record the config version and the number of files excluded by each source. Content-based guessing is not used.
 
-### Query nodes and result groups
+### 질의 노드와 결과 그룹
 
 A query node represents the result group exposed by one search action. Query candidates are exact queries and derived queries; both are generated deterministically from already-read repository content.
 
@@ -93,13 +93,13 @@ A per-read-unit cap on generated queries applies after the filter; the cap and i
 
 This rule applies only to queries generated from a read. Hint-based generation follows its own cap below.
 
-#### Search surface
+#### 검색 표면
 
 Search targets both file contents and the path namespace. Exact and derived queries match against file contents and against normalized repository-relative paths. Path and filename form a searchable namespace, so the derived rule table is reused on path tokens. Treating paths only as strings inside file contents would systematically overestimate discovery cost for targets findable by filename alone.
 
 Search actions against the path namespace alone are list queries. The result group is the matched path set, the arrival nodes are those files, and result tokens are computed over the exposed path strings. Directory listing is a list query and is not a zero-cost node. Root tree listing during phase A is allowed by default with depth and entry caps in the profile, and its output tokens are charged normally.
 
-#### Occurrences and hints
+#### 발생 위치와 힌트
 
 Occurrences are not independent readable nodes. An occurrence is the evidence for a query result; the arrival point is the enclosing readable node. Query output cost is computed over exposed occurrences, bounded by the output cap below.
 
@@ -111,7 +111,7 @@ Information an occurrence exposes before the arrival node is read is carried as 
 
 Hints may only use text already charged on the `query result token` axis. The default output format is therefore match lines with zero context; widening the window grows the hint surface and the result token cost together. Because of this invariant, hints create no new cost axis.
 
-#### Search output cap
+#### 검색 출력 상한
 
 Real search tools truncate results at an occurrence or output-line cap. The cap is a contract parameter.
 
@@ -124,7 +124,7 @@ Without the cap, high-result queries would be overcharged and refinement would b
 
 Truncation and the refinement threshold K are different values on the same axis: K triggers narrowing behavior, the cap is what the tool actually shows. Their relative order is free in the profile, and both are recorded in results.
 
-#### Queries generated without a read
+#### 읽기 없이 생성한 질의
 
 Query node → query node edges exist: an agent re-searches an identifier visible in a result line without opening the file. Constraining every query to originate from a read would make already-charged, already-exposed clues inexpressible. Because this edge sharply raises query branching, it carries caps:
 
@@ -132,7 +132,7 @@ Query node → query node edges exist: an agent re-searches an identifier visibl
 - A per-result-group cap on generated queries lives in the profile.
 - Duplicates are removed by the query equivalence rule.
 
-#### Refinement queries
+#### 정제 질의
 
 When a result group exceeds threshold K, a narrowing refinement query is generated instead of discarding the query. Candidates are generated deterministically from the already-exposed result set only, using no repository-global knowledge:
 
@@ -142,7 +142,7 @@ When a result group exceeds threshold K, a narrowing refinement query is generat
 
 Refinement is a query → query edge, costs one search tool call, and its result group is a subset of the parent group. Because the output cap leaves large groups partially exposed, refinement has meaning inside the model: it pays extra to reveal what was truncated. Refinement depth and per-query candidate caps are required profile values recorded with K.
 
-#### Query equivalence and duplicate suppression
+#### 질의 동등성 및 중복 제거
 
 A query node's identity is the combination of query kind, normalized query string, search surface, scope and rule-table version.
 
@@ -150,7 +150,7 @@ A query node's identity is the combination of query kind, normalized query strin
 - Different scope means a different query node. A file-scoped refinement is distinct from a global query.
 - An already-executed query re-entering the pending set is discarded at zero cost, and the suppression count is recorded.
 
-### Connection specificity and framework connections
+### 연결 특이성 및 프레임워크 연결
 
 Connections divide by how far they narrow the arrival node. This is a general property of every exploration connection, not something specific to frameworks.
 
@@ -161,7 +161,7 @@ Language import and qualified-name resolution is the first kind. An agent readin
 
 Connections established by framework rules are included even without exact string-match evidence. The criterion is whether the agent can move on that rule alone, not the shape of the evidence. Each framework rule declares in its adapter whether it is uniquely identifying or candidate-narrowing, and results report the governing rule.
 
-### Entry documents
+### 진입 문서
 
 Agents read root entry documents — README, AGENTS.md, CLAUDE.md — before searching. The list lives in versioned config and is overridable per repository.
 
@@ -169,7 +169,7 @@ Entry documents are treated as read at the start of phase A, and queries generat
 
 Documents and code that entry documents mention are not treated as read in bulk. Mentions are ordinary exploration connections; when a path or identifier resolves, unique identification applies and one read reaches it. Treating mentions as discovered would make it definitionally impossible to measure whether entry documents actually lower discovery cost, and would automatically favor repositories that list files in their docs.
 
-### Boundaries of modeled exploration
+### 모델링한 탐색의 경계
 
 These actions are not made into ordinary exploration connections:
 
@@ -181,9 +181,9 @@ Derived queries, path and list queries, hint-based generation, refinement, and f
 
 A relation with no analyzable direct connection, discoverable only by running one specific exact query, is a separate diagnostic candidate.
 
-## Target discovery model
+## 대상 발견 모델
 
-### Initial query generation
+### 초기 질의 생성
 
 Without an explicit seed query, an sLLM produces the initial search term set. It receives the task only — no file listing, no graph, no ground-truth target. Generated terms form one initial pending query set, not one scenario per term.
 
@@ -196,7 +196,7 @@ Generated queries reproduce the agent's first search action; they are not target
 
 Prompt, decoding settings and actual generation output are recorded in results either way.
 
-### Exploration policy and turns
+### 탐색 정책과 턴
 
 Selection order of pending queries and result nodes is governed by the exploration policy, a parameter whose phase-B default is `bfs-exhaust`.
 
@@ -221,7 +221,7 @@ Termination is an oracle. An agent stopping after finding only part of the targe
 
 Revisiting read nodes is supported with an initial probability of 0. The probability is set later from real agent logs.
 
-## Cost contract
+## 비용 계약
 
 Costs are reported on their original axes together with a weighted cost used for path selection.
 
@@ -248,13 +248,13 @@ The weighted cost is not a repository score. It is the scalar that ranks whole s
 
 Weight values live in a version-controlled profile file in the repository, not in this document and not in code constants. Cost weight profiles and verification accessibility weights are managed the same way, and every result records the profile id and version. Replacing a temporary value is tracked in the profile file's history, and costs across the replacement are compared on the same graph.
 
-### Tokenizer
+### 토크나이저
 
 Token cost is approximated as `character count ÷ C`, rounded up. `C` is characters per token, not tokens per character, and is a profile value defaulting to 4. Replacing it records the rationale in the profile history.
 
 Digits are excluded from that approximation and counted by a separate rule: a run of digit characters is grouped three at a time from the left, each group counting as one token, with the remainder as one group. Phrasing that depends on an external implementation is not used. This rule carries a version recorded in results.
 
-### Cost distribution: p5 / p50 / p95
+### 비용 분포: p5 / p50 / p95
 
 There is one cost estimator: a Monte Carlo simulation over the order space the exploration policy permits.
 
@@ -291,15 +291,15 @@ Invariants, both verified per run:
 
 Minimum sample count, convergence condition and maximum sample count are profile values. Defaults and tolerances are tuned against fixtures and real repository analysis.
 
-### Reachability failure
+### 도달 가능성 실패
 
 An approximated graph may not reach every target. No arbitrary penalty is added to the cost. The failure state and the unreached targets are stated explicitly. Detailed failure output — failed queries, partially discovered targets — is defined in the phase-B output contract.
 
-## Zone of effect
+## 영향 범위
 
 The potential zone of effect is the full candidate range that a target change may affect and that the agent must therefore read and verify.
 
-### Directionality
+### 방향성
 
 Propagation runs along the **reverse** of dependency edges: from a target to the things that depend on it. If A uses B and B uses C, then modifying B puts A in the zone and leaves C out. C is what B depends on; changing B does not change C.
 
@@ -317,7 +317,7 @@ Direction is declared per relation kind in the profile, not inferred. Three case
 
 Exceptions are enumerated in the profile as an explicit relation-kind → direction table. A relation kind absent from the table defaults to reverse-only and is flagged in results, so adding a language or framework adapter cannot silently introduce untyped propagation.
 
-### Zone records
+### 범위 레코드
 
 Each zone node records:
 
@@ -332,13 +332,13 @@ Verification accessibility is ordered by a weighted sum over source kind, relati
 
 Tests are always in the potential zone but are excluded by default from the accessibility ranking and cutoff result; inclusion is configurable.
 
-### Zone size
+### 범위 크기
 
 Reverse reachability is unbounded in principle: a widely used utility's transitive dependent set can be most of the repository. If that is the common case, the zone stops distinguishing targets and the cutoff mechanism becomes the only thing doing work — which would mean the analyzer measures the cutoff, not the repository.
 
 This is measured before any mitigation is designed. See the phase-C milestone's decision gate.
 
-## Task-less graph-wide analysis
+## 작업 없는 전역 그래프 분석
 
 The repository is analyzed without a task. Every readable node is treated as a potential target, reported per metric:
 
@@ -352,7 +352,7 @@ The repository is analyzed without a task. Every readable node is treated as a p
 
 No single global quality score is produced. Every result must be traceable back to the related nodes, queries, edges, paths, cost components and uncertainty.
 
-## Generated evaluation scenarios
+## 생성된 평가 시나리오
 
 Targets likely to be problematic are selected from the graph-wide analysis, and an sLLM generates natural-language tasks from target information. Given `SettingsTab.kt` and `AudioSettingDialog` as targets, it might produce *change the audio output selection UI*.
 
@@ -365,7 +365,7 @@ Targets likely to be problematic are selected from the graph-wide analysis, and 
 
 Synthetic tasks do not claim to be real user tasks. They exist to evaluate how differently the same target is discovered depending on task phrasing.
 
-## Structural bottlenecks and improvement candidates
+## 구조적 병목과 개선 후보
 
 A bottleneck is explained by at least one of:
 
@@ -380,7 +380,7 @@ A bottleneck is explained by at least one of:
 
 Improvement candidates are compared as what-if results on a limitedly modified graph, without changing the repository. Cost reduction, number of affected targets and prediction confidence are reported separately.
 
-## Roadmap
+## 로드맵
 
 Every milestone defines its own output schema and traceability fields as part of its completion criteria. There is no separate output-contract milestone.
 
@@ -404,7 +404,7 @@ Existing implementation status:
 | Replace or extend | the existing symbol graph becomes M1 readable and query nodes; serialization and CLI output extend per milestone contract. Current graph metrics are M5 input and do not constitute M5 completion. |
 | Remove | previous exploration cost, task difficulty, repository cost diff, git diff impact analysis, structural friction diagnostics, Android inject-field arbitrary costs and warnings |
 
-### M0. Document and contract realignment — complete
+### M0. 문서 및 계약 재정렬 — 완료
 
 - Project purpose, graph boundary and non-goals fixed
 - Query groups, exploration turns, cost axes and the cost contract documented
@@ -414,7 +414,7 @@ Existing implementation status:
 
 Done when: every reference document uses the same purpose and vocabulary, every existing feature has a mapping-table status, no references to removed features remain, and the full test suite collects without import errors.
 
-### M1. Agent-view graph — complete
+### M1. 에이전트 관점 그래프 — 완료
 
 Scalability invariants: read the repository as one immutable snapshot; exclude explicit identified analyzer output from re-analysis; cap exposed search results by profile while preserving full occurrence evidence losslessly in deterministic compressed blocks.
 
@@ -438,7 +438,7 @@ Scalability invariants: read the repository as one immutable snapshot; exclude e
 
 Done when: the same repository and settings reproduce the same query groups, results, evidence and costs. Read-unit splitting, hint projection and query equivalence are covered by reproducibility tests.
 
-### M2. Agent strategy and tool survey — initial pass complete, re-run before M3
+### M2. 에이전트 전략 및 도구 조사 — 초기 검토 완료, M3 전에 재실행
 
 The behavior parameters this project treats as defaults — serial turns, grep-loop search, `bfs-exhaust`, `hint-prior` — were chosen without evidence. Several are already known to be wrong in one direction: real agents batch searches in parallel, delegate exploration to subagents, and some run against a semantic index or a precomputed repository map rather than a grep loop. Freezing the phase-B cost contract before surveying this means measuring a tool model that no shipped agent uses.
 
@@ -457,7 +457,7 @@ This milestone is a survey, not an implementation, and it is deliberately placed
 
 Done when: every default behavior parameter in the cost contract either has a survey citation or is explicitly recorded as unevidenced. The findings file is re-run and re-versioned before each later milestone rather than treated as done once.
 
-### M3. Phase A and B — orientation and target discovery cost
+### M3. A·B 단계 — 방향 설정 및 대상 발견 비용
 
 - Explicit query sets and sLLM-generated initial query sets
 - Injection and recording of sLLM model revision, prompt and decoding settings
@@ -490,7 +490,7 @@ Additional falsification gate. Closing this milestone on reproducibility alone w
 - Compare `hint-prior` against `uniform`, and `bfs-exhaust` against `best-first-pivot`, on the same trace set, and report which fits better.
 - No pass threshold is set here. The gate requires that the measurement is recorded and becomes the stated basis for the defaults, not that it exceeds a level.
 
-### M4. Phase C — zone of effect and pre-modification verification
+### M4. C 단계 — 영향 범위 및 수정 전 검증
 
 - Relation-kind → direction table in the profile, covering ordinary dependency, contract-carrying pairs and substitutable members
 - Propagation over that table, with unlisted relation kinds defaulting to reverse-only and flagged
@@ -521,7 +521,7 @@ Choosing a mitigation before the measurement would mean the reported zone measur
 
 Done when: per target, the full zone, the direction row applied to each edge, the cutoff result and the accessibility evidence reproduce separately; the zone-size measurement is recorded; and any unlisted relation kind is flagged rather than silently propagated.
 
-### M5. Graph-wide bottleneck analysis
+### M5. 전역 그래프 병목 분석
 
 - Graph metric and potential zone aggregation
 - Query branching, candidate dilution and search-only relations
@@ -540,7 +540,7 @@ M1 implemented the representation and cost computation for candidate-narrowing r
 
 Done when: each bottleneck is explained by path and what-if result in terms of which cost axis of which target or zone it raises, and every registered candidate-narrowing rule reports its query branching.
 
-### M6. Generated evaluation scenarios
+### M6. 생성된 평가 시나리오
 
 - Selecting targets likely to be problematic
 - Generating several natural-language tasks per target
@@ -555,7 +555,7 @@ Done when: each bottleneck is explained by path and what-if result in terms of w
 
 Done when: tasks and initial queries reproduce under the same model revision and settings, and discovery cost is compared across phrasings.
 
-### M7. Calibration and operation — deferred
+### M7. 보정 및 운영 — 연기
 
 - Behavior model calibration from real agent tool and read traces
 - Adjusting temporary weights and zone accessibility weights
@@ -572,7 +572,7 @@ Done when: tasks and initial queries reproduce under the same model revision and
 
 Done when: calibration data, model and tool settings, and the evaluation procedure are version-controlled, and existing contract fixtures still pass.
 
-## Verification principles
+## 검증 원칙
 
 - Distinguish what the graph represents as observable from the semantic inference it does not represent.
 - Record the sLLM's input, model revision, prompt and decoding settings.
@@ -585,7 +585,7 @@ Done when: calibration data, model and tool settings, and the evaluation procedu
 - Every result must be traceable to nodes, queries, edges, occurrences and path evidence.
 - Do not treat what a real agent read and what it should have read as the same ground truth.
 
-## Non-goals
+## 비목표
 
 - Predicting a task's semantic implementation difficulty or a developer's skill level.
 - Claiming to automatically determine the correct target from a task.
