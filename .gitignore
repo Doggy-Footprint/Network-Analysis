@@ -19,3 +19,5 @@ tmp/
 .DS_Store
 
 user_notes/
+
+/local-reports/

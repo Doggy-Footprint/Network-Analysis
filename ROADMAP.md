@@ -1,402 +1,121 @@
-# 목표: AI 에이전트 저장소 탐색 분석기
+# 목표: AI 에이전트를 위한 저장소 구조·탐색 병목 분석기
 
-## 목적
+## 목적과 성공 기준
 
-This project approximates, as a static graph, the process by which an AI coding agent locates a change target in a repository and checks the range that change can affect. The analyzer answers:
+프로젝트 정의의 기준은 [AGENTS.md](AGENTS.md)의 Project Definition이다.
 
-- Given a task, what must the agent search and how much must it read to find the target?
-- Before modifying the target, how far must it read and verify?
-- Where do needed nodes exist but stay easy to miss, buried in candidates or reachable only through a weak connection?
-- Which nodes, edges, queries or subgraphs increase exploration turns, tool calls and token consumption?
-- How would changing the repository structure reduce that cost and that miss risk?
+1순위는 저장소가 AI 에이전트의 탐색과 수정에 효율적인 구조인지 판단하고, 탐색 부담이나 관련 항목의 누락을 일으키는 병목을 근거와 함께 찾는 것이다. 개선 대상에는 저장소 구조와 팀이 사용하는 harness의 검색·읽기 도구 및 정책이 모두 포함된다.
 
-The graph does not reconstruct the repository's meaning. It models explicit clues available in code, documents and comments; exact search; searches derived from read identifiers through a fixed rule table; static relations; and framework rules. Inference that recalls expressions outside the rule table through outside knowledge or semantic similarity is out of scope. The result is therefore a deterministic approximation of the repository as seen from an agent's viewpoint.
+가장 중요한 성공 기준은 제안한 구조 개선 후 **실제 에이전트의 탐색 부담이 줄어드는 것**이다. 필요한 확인을 생략해서 비용만 낮아진 경우는 개선으로 인정하지 않는다. Harness 개선도 같은 기준으로 검증하며, 구조 변경 효과와 구분해서 보고한다.
 
-## 핵심 개념
+핵심 입력은 저장소 snapshot과 명시적인 harness profile이다. 전역 분석에는 작업·seed query·정답 target set이 필요하지 않다. 특정 수정 위치에 대한 분석은 target만 추가로 받는다. 변경 내용이 없을 때 결과는 변경 종류에 따라 달라질 수 있는 영향 후보이지 확정된 영향 집합이 아니다.
 
-- `task`: a natural-language request given to an agent.
-- `query`: a search action the agent runs to expose the next candidates.
-- `seed query`: the first search terms an agent runs after receiving a task.
-- `target`: one or more nodes that must be found and read to complete the task.
-- `readable node`: a repository entity the agent can read independently — file, code unit, config, test, document.
-- `exploration connection`: a connection along which a query can be formed from what has been read and a next readable node discovered.
-- `potential zone of effect`: the full candidate range that may be affected by a target change and therefore must be read and verified before modifying.
-- `verification accessibility`: a separate ranking of how likely the agent is to naturally reach and attempt verification of each zone member. It does not mean impact importance.
-- `structural bottleneck`: a node, query, edge or subgraph that repeatedly raises target-discovery or zone-verification cost.
-- `list query`: a search action whose surface is the path namespace rather than file contents.
-- `refinement query`: a query generated deterministically from an already-exposed result set to expose a subset of it.
-- `hint`: deterministic information a query result exposes before the arrival node is read. It is a property of the edge joining a query node and a readable node, not an independent node.
-- `entry document`: a repository entry document the agent reads before searching.
-- `exploration policy`: the rule governing selection order of pending queries and result nodes.
-- `session phase`: one of the three phases in the agent session model below.
+작업별 seed/target 탐색 시뮬레이션과 합성 작업 생성은 핵심 로드맵 밖의 부가 목표다. 이전 실험 계약은 Git에서 제외되는 `local-reports/` 보고서에 보존한다. 실제 작업을 사용하는 개선 효과 검증은 핵심 목표에 남는다.
 
-## 에이전트 세션 모델
+## 결과가 답해야 하는 질문
 
-An agent session is modeled as three phases. The phases share one graph, one profile and one cost contract; they differ in what starts them, what ends them, and which relation directions they traverse.
+- 어느 위치에서 후보 과다, 검색 결과 잘림, 단서 부족, 읽기 범위 제한 또는 반복 탐색이 발생하는가?
+- 어떤 수정 대상의 관련 계약·사용처·설정·테스트가 여러 곳에 흩어져 확인 부담을 높이는가?
+- 수정 시 검토할 이유가 있는 후보 중, 해당 harness로는 노출되기 어렵거나 검토 근거가 남지 않는 것은 무엇인가?
+- 병목은 저장소 구조, harness 설정, 둘의 상호작용 중 무엇에 민감한가?
+- 제안한 변경이 실제 탐색 부담을 줄였으며, 필요한 확인과 작업 결과는 유지됐는가?
 
-| Phase | Name | Starts with | Ends when | Traversal direction |
-|---|---|---|---|---|
-| A | Orientation | task text only | first query derived from task text is issued | entry documents, root list queries |
-| B | Target discovery | phase A pending query set | all targets have been read | forward: query → result → read |
-| C | Pre-modification verification | the target set from phase B | the accessibility cutoff is exhausted | reverse dependency direction (see Zone of effect) |
+단일 저장소 품질 점수나 일반적인 작업 난이도 순위로 합치지 않는다. 결과마다 대상, 근거 위치, 적용 규칙, 설정, 분석 한계와 검증 상태를 연결한다.
 
-The unit of analysis is a `(task, target set)` pair, never a single target. A single-target task is the size-1 case of the same contract. Phase B ends when every member of the set has been read, so reads shared between targets are charged once rather than duplicated across independent per-target analyses. Phase C computes each target's zone separately and reports their union, with per-target provenance on every zone member, so overlap between targets is visible instead of double-counted and a verification bottleneck stays attributable to the target that caused it.
+## 관측과 추정의 경계
 
-Phases are sampled jointly in a single simulation run so that cross-phase correlation is preserved. Per-phase and total cost are both reported. A phase boundary is a reporting boundary, not a reset: read units read in phase B stay read in phase C and cost nothing to revisit.
+동일 snapshot·profile·규칙 버전·고정 관측 자료는 동일한 정적 결과를 재생성해야 한다. 실제 에이전트 실행은 변동할 수 있으므로 반복 측정과 실행 기록으로 다룬다. 기록의 재생 가능성과 새 모델 실행의 동일성을 혼동하지 않는다.
 
-Phase C is not a second discovery problem with a different name. In phase B the agent does not know where the target is; in phase C it knows the target and must decide which of the target's dependents it needs to open. Modeling them with one policy would erase that difference, so each phase carries its own exploration policy parameter.
+| 구분 | 보고할 수 있는 내용 | 아직 주장할 수 없는 내용 |
+|---|---|---|
+| 저장소 사실 | 심볼, 참조, 경로, 문서 단서, 테스트 연결과 추출 근거 | 의미적으로 필요한 모든 관련 항목을 복원했다는 주장 |
+| 조건부 구조 분석 | 명시된 규칙 아래의 영향 후보와 탐색 장애 | 실제로 반드시 깨지는 항목, 실제 누락 확률 |
+| 관측된 행동 | 도구가 노출한 범위, 호출, 재탐색, 확인·실행의 기록 | 노출된 내용을 에이전트가 이해했다는 주장 |
+| 보정된 예측 | 검증한 harness·모델·저장소 범위 내의 누락·비용 추정 | 다른 환경으로 검증 없이 일반화한 확률 |
 
-## 그래프 모델
+가능성 검토와 출처별 한계는 [수정 위험·탐색 누락 분석 검토](research/a7f273b0e454e4d8-target-risk-feasibility.md)에 기록한다.
 
-The graph represents exploration actions as well as repository entities.
+## 분석 모델
 
-### 읽을 수 있는 노드
+### 저장소 관계와 탐색 관계
 
-Files, modules, classes, functions, methods, types, configs, tests, documents and API endpoints. The arrival point of a query result is the symbol node enclosing the occurrence.
+저장소 엔터티의 관계와 에이전트가 다음 정보를 발견하는 관계를 구분한다. 같은 엔터티를 공유할 수 있지만, 탐색 가능한 연결이 곧 변경 영향 관계는 아니다.
 
-Read cost is counted over the whole read unit containing the symbol, not the symbol's own span, because agents open files rather than slicing out symbols.
+- 저장소 관계: 호출, import, 타입·상속, 데이터·설정의 사용, 프레임워크 연결, 테스트·문서의 명시적 참조. 어댑터가 실제 추출하는 범위를 기록한다.
+- 탐색 관계: 경로·내용 검색, 목록 조회, 노출된 식별자의 재검색, 좁히기 검색, 경로 해석, harness가 제공하는 인덱스나 repo map.
+- 문서 언급은 탐색 단서와 문서 동기화 검토 후보가 될 수 있지만 런타임 영향의 증거로 자동 승격하지 않는다.
+- 분석기 내부의 완전한 그래프를 실제 에이전트가 아는 정보로 주입하지 않는다. 인덱스나 map 제공 여부와 준비 비용은 harness의 명시적인 조건이다.
 
-A read unit is a file, or a chunk when the file's tokens exceed threshold N. Chunk boundaries are symbol-aligned, not line windows, so the chunk set does not shift with parser state. N lives in the profile together with the tool limit it was derived from.
+M1의 snapshot, occurrence, hint, query 동등성, 검색 잘림 및 결정적 직렬화는 재사용할 수 있는 기반이다. 기존의 특정 읽기 단위·검색 방식·비용 기본값이 모든 harness의 행동 계약을 정의하지는 않는다.
 
-Oversized files split greedily: symbols are appended in source order until adding the next would exceed N; a single symbol over N is its own chunk; top-level text outside any symbol attaches to the adjacent chunk by position. The split rule carries a version recorded in results.
+### Harness profile
 
-- Reaching another symbol in an already-read read unit costs zero tool calls and zero tokens.
-- All targets in a read unit are considered found the moment it is read.
-- Queries generated from that read unit's symbols become candidates at that moment, bounded by the read-query candidate rule below.
-- Other chunks of the same file stay unread. Reaching them needs another read tool call or a refinement query scoped to that file.
+검색 표면, 결과 순서·상한, 출력 형식, 파일 읽기 범위, 자동 주입 문서, 사전 인덱스, 탐색 순서, 병렬 실행, 하위 에이전트, 문맥 축약을 각각 명시한다. 지원하지 않는 동작은 분석 불가 또는 관측 전용으로 표시한다.
 
-Read units are a cost-model decision, not a node boundary. Symbol-level relation direction and zone propagation are unaffected.
+외부 지식에 의한 의미 추론을 근거 없는 정적 edge로 만들지 않는다. 의미 검색을 쓰는 harness는 관측된 결과를 고정해 평가하거나 현재 분석 범위 밖으로 표시한다. 규칙 기반 검색 결과를 그 harness의 실제 검색 결과로 대체해 주장하지 않는다.
 
-### 기본 제외 항목
+프로필 값은 출처·버전·근거 상태를 가진다. 기존 `bfs-exhaust`, `hint-prior`, 재방문 0, 전체 읽기 단위 즉시 발견은 검증 전 가정이다. 프로필이 다르면 병목이 달라질 수 있으며, 같은 저장소에서 프로필을 바꾼 비교는 harness 효과를 검증하는 정식 실험이다.
 
-Files an agent does not purposefully search or read are not readable nodes: lockfiles, binaries, build outputs, generated code. Exclusion rules live in a versioned config file and can be overridden per repository. Excluded files are never targets or zone members.
+### 전역 분석
 
-Generated status is decided by exactly two deterministic sources: a path glob list, and a generated-marker regex list matched within a fixed number of leading lines. Both lists and the line count are config values. Results record the config version and the number of files excluded by each source. Content-based guessing is not used.
+작업 없이 모든 분석 가능한 위치를 후보로 다룬다. 계산 예산 때문에 표본을 쓰면 대상 선정 규칙, 포함 범위와 제외 이유를 기록한다. 병목으로 이미 선정한 대상만으로 검증 집합을 구성하지 않는다.
 
-### 질의 노드와 결과 그룹
+- 후보 과다와 결과 잘림, refinement 필요성, 특정 단서에만 의존하는 연결.
+- 증거의 분산, 우회 경로 부족, 순환·연결 단절, 높은 fan-in/out, 넓은 관련 후보 범위.
+- 읽기 출력에 비해 확인해야 할 증거가 흩어진 위치.
+- 미해결 동적·프레임워크 경계와 분석 대상에서 제외된 항목.
 
-A query node represents the result group exposed by one search action. Query candidates are exact queries and derived queries; both are generated deterministically from already-read repository content.
+검색 진단에 사용하는 query/probe의 생성 규칙과 범위를 기록한다. 이는 저장소에서 재생성한 검사 집합이며 사용자가 주는 작업 seed가 아니다. 진단 빈도를 실제 작업 발생 빈도나 에이전트 방문 확률로 해석하지 않는다.
 
-Exact queries search explicit clues verbatim: identifiers and qualified names, string literals, file and module paths, config keys, URLs and routes, error messages, and code-shaped expressions written in documents and comments.
+PageRank·중심성·영향 후보 크기는 병목 후보를 찾는 신호다. 큰 값 자체가 탐색 비용 증가나 위험을 증명하지 않는다.
 
-Derived queries transform already-read identifiers through a versioned rule table, imitating the partial-match searching an agent performs alongside exact search. They are a first-class query kind, not a fallback for empty exact results. Permitted transforms are limited to: case- and digit-boundary token splitting; combinations of split tokens with adjacent tokens; case normalization, plural/singular variation, and prefix/suffix removal registered in the rule table. External synonym dictionaries are not used.
+### 수정 대상만 주는 영향·검토 후보 분석 — 미해결 연구 과제
 
-#### Query candidates generated from a read
+목표 출력은 “이 대상을 수정할 때 이 항목을 확인할 구조적 이유가 있으며, 이 harness에서는 그 근거를 놓칠 조건이 있다”이다.
 
-Generating every exact and derived query from every identifier in a read unit would produce hundreds of pending queries per read, which does not match agent behavior. The real selection criterion is task relevance, which this analyzer places outside the model. Candidates are instead limited to three reproducible proxy signals:
+영향 후보, 대상을 이해하기 위한 의존 계약, 검증 수단을 구분해 보고한다. 호출의 역방향 도달만으로 세 집합을 통합하지 않는다. 테스트를 실제 분석된 관련 후보와 검증 수단에 포함하며, 종류만으로 누락 분석에서 일괄 제외하지 않는다.
 
-- Target identifiers of static edges leaving the read unit — calls, imports, inheritance, type references.
-- Identifiers appearing two or more times within the read unit.
-- Identifiers referenced but not declared within the read unit.
+관계별 전파 방향, 변경 종류별 조건, 전파 깊이와 종료 규칙은 M4의 연구·측정 결과로 정한다. 이전의 역방향 기본 전파, 양방향 계약 쌍, 형제 구현 전파, 이해 범위 깊이 1은 확정 계약에서 해제한다. 알 수 없는 관계 종류에 임의의 전파 의미를 부여하지 않고 미지원 경계로 보고한다.
 
-A per-read-unit cap on generated queries applies after the filter; the cap and its deterministic truncation order live in the profile. The number of identifiers dropped by the filter and whether the cap truncated are recorded on the query node, so a discovery failure caused by the cap is distinguishable in results.
+전체 도달 범위가 저장소 대부분으로 커지는지, 소수 공용 노드가 이를 지배하는지 먼저 측정한다. 출력 예산으로 잘린 항목과 분석 규칙 밖의 항목을 구분한다. 그래프에서 연결이 없거나 제외됐다는 이유로 안전하다고 판정하지 않는다.
 
-This rule applies only to queries generated from a read. Hint-based generation follows its own cap below.
+변경 내용이 없으므로 실제 파손 가능성이나 피해 크기를 수치로 단정하지 않는다. 우선은 관련 근거·조건·분석 한계를 제공하고, 위험 우선순위가 유효한지는 독립된 변경 사례로 검증한다.
 
-#### 검색 표면
+### 노출과 누락
 
-Search targets both file contents and the path namespace. Exact and derived queries match against file contents and against normalized repository-relative paths. Path and filename form a searchable namespace, so the derived rule table is reused on path tokens. Treating paths only as strings inside file contents would systematically overestimate discovery cost for targets findable by filename alone.
+다음 상태를 분리한다.
 
-Search actions against the path namespace alone are list queries. The result group is the matched path set, the arrival nodes are those files, and result tokens are computed over the exposed path strings. Directory listing is a list query and is not a zero-cost node. Root tree listing during phase A is allowed by default with depth and entry caps in the profile, and its output tokens are charged normally.
+1. 저장소에 근거가 존재하고 분석기가 추출했다.
+2. 지정된 도구·출력 조건으로 근거를 노출할 수 있다.
+3. 실행에서 해당 경로 또는 해당 코드 범위가 실제로 노출됐다.
+4. 계약 검토, 해당 테스트 실행 등 사전에 정의한 확인 행동의 근거가 있다.
 
-#### 발생 위치와 힌트
+파일을 열었다는 사실만으로 전체 심볼의 발견·검토를 완료 처리하지 않는다. 검색 결과 잘림, 읽기 창 밖의 코드, 문맥 축약으로 보존되지 않은 근거는 서로 다른 관측 상태다. 확인 행동이 로그에 없으면 우선 “확인 근거 미관측”이며 곧바로 이해 실패나 버그 원인으로 단정하지 않는다.
 
-Occurrences are not independent readable nodes. An occurrence is the evidence for a query result; the arrival point is the enclosing readable node. Query output cost is computed over exposed occurrences, bounded by the output cap below.
+정적 경로 부재는 지정된 도구·규칙 범위에서만 성립한다. 실제 누락 가능성의 순위·확률은 에이전트 traces와 독립된 검토 기준으로 검증한 뒤 제시한다. 단순 접근성 가중치의 합을 누락 확률로 부르지 않는다.
 
-Information an occurrence exposes before the arrival node is read is carried as a hint property on the query node → readable node edge. A hint is a deterministic projection of the occurrence through the search tool's output format, which is a contract parameter. Hint values are limited to:
+## 개선 효과 검증
 
-- The arrival node's path, filename and symbol name.
-- The occurrence's syntactic role: declaration, import, call, string literal, comment, document mention, test.
-- The identifier set inside the exposed line window.
+검증은 M2에서 설계하고 첫 병목 후보부터 수행한다. M7까지 연기하지 않는다.
 
-Hints may only use text already charged on the `query result token` axis. The default output format is therefore match lines with zero context; widening the window grows the hint surface and the result token cost together. Because of this invariant, hints create no new cost axis.
+- 구조 개선: harness·모델·작업·예산을 고정하고 저장소 변경 전후를 비교한다.
+- Harness 개선: 저장소·모델·작업을 고정하고 도구 또는 정책 변경 전후를 비교한다.
+- 둘을 함께 바꾸면 가능한 경우 원본/변경 저장소 × 원본/변경 harness를 비교해 상호작용을 구분한다.
+- 독립 세션에서 반복 실행하고 실행 순서·캐시·자동 주입·병렬성 조건을 기록한다.
+- 읽기·검색 호출, 실제 노출량, 중복 탐색, 확인까지의 비용을 원래 축으로 보고한다. 실행 시간과 추론 비용은 환경·모델별 관측값으로 구분한다.
+- 준비·인덱싱 비용과 유지 비용을 함께 보고한다. 비용을 사전 준비로 옮긴 효과를 숨기지 않는다.
+- 필요한 확인의 충족, 테스트·계약 검증 및 작업 결과를 함께 측정한다. 실패·중단 실행을 제외해 비용 감소를 만들지 않는다.
+- 범위 밖 저장소·작업으로 검증하고, 변화를 보인 크기와 불확실성을 보고한다. 표본 수와 개선 판정 기준은 결과를 보기 전에 정한다.
 
-#### 검색 출력 상한
+변경 사례의 수정 파일 목록이나 에이전트가 읽은 파일 목록은 그 자체로 “반드시 확인했어야 할 집합”이 아니다. 테스트·명시적 계약·독립 검토 등으로 검토 기준을 구성하고 근거가 부족하면 미확정으로 남긴다.
 
-Real search tools truncate results at an occurrence or output-line cap. The cap is a contract parameter.
+그래프 what-if는 실험 후보를 고르는 예측이다. 실제 저장소에서 가능한 변경으로 연결하고 재분석한다. 필요한 관계나 파일을 삭제해서 비용만 낮추는 변환은 개선의 증거가 아니다.
 
-- The cap value and unit live in the profile alongside the tool limit it was derived from.
-- When a result group exceeds the cap, only the cap is exposed, in lexicographic order of normalized repository-relative path and line number.
-- Only exposed occurrences are charged as result tokens and only exposed occurrences create hint edges. Arrival nodes of truncated occurrences are not discovered by that query.
-- Truncated query nodes record the truncation flag and total occurrence count. This is the evidence for candidate-dilution diagnosis.
+## 구현 상태와 재정렬
 
-Without the cap, high-result queries would be overcharged and refinement would become pure added cost that no cost-minimizing path ever selects — which would delete the agent's actual reason for narrowing a search from the model.
+기존 M0·M1·M3 완료 표시는 이전 계약의 이행 이력이다. 새 목표의 실증 완료를 뜻하지 않는다. 이번 재정렬은 문서 변경이며 기존 분석기·CLI·시뮬레이션 코드는 유지한다.
 
-Truncation and the refinement threshold K are different values on the same axis: K triggers narrowing behavior, the cap is what the tool actually shows. Their relative order is free in the profile, and both are recorded in results.
-
-#### 읽기 없이 생성한 질의
-
-Query node → query node edges exist: an agent re-searches an identifier visible in a result line without opening the file. Constraining every query to originate from a read would make already-charged, already-exposed clues inexpressible. Because this edge sharply raises query branching, it carries caps:
-
-- Candidate identifiers are limited to the exposed line window.
-- A per-result-group cap on generated queries lives in the profile.
-- Duplicates are removed by the query equivalence rule.
-
-#### 정제 질의
-
-When a result group exceeds threshold K, a narrowing refinement query is generated instead of discarding the query. Candidates are generated deterministically from the already-exposed result set only, using no repository-global knowledge:
-
-- Path prefixes at directory boundaries appearing in the results.
-- Extensions appearing in the results.
-- Token combinations registered in the rule table.
-
-Refinement is a query → query edge, costs one search tool call, and its result group is a subset of the parent group. Because the output cap leaves large groups partially exposed, refinement has meaning inside the model: it pays extra to reveal what was truncated. Refinement depth and per-query candidate caps are required profile values recorded with K.
-
-#### 질의 동등성 및 중복 제거
-
-A query node's identity is the combination of query kind, normalized query string, search surface, scope and rule-table version.
-
-- Different nodes producing the same string are the same query node; discovery provenance is expressed as multiple in-edges. Common bottlenecks across targets surface in this form.
-- Different scope means a different query node. A file-scoped refinement is distinct from a global query.
-- An already-executed query re-entering the pending set is discarded at zero cost, and the suppression count is recorded.
-
-### 연결 특이성 및 프레임워크 연결
-
-Connections divide by how far they narrow the arrival node. This is a general property of every exploration connection, not something specific to frameworks.
-
-- Uniquely identifying: move to the arrival node with a single read, no query node.
-- Candidate-narrowing: create a query node whose result group is the narrowed set.
-
-Language import and qualified-name resolution is the first kind. An agent reading `import a.b.Foo` opens that file without searching. Unique identification holds only when the resolver actually succeeded; wildcard imports, re-exports, dynamic imports and multi-candidate modules are candidate-narrowing and are reported as unresolved-boundary diagnostics.
-
-Connections established by framework rules are included even without exact string-match evidence. The criterion is whether the agent can move on that rule alone, not the shape of the evidence. Each framework rule declares in its adapter whether it is uniquely identifying or candidate-narrowing, and results report the governing rule.
-
-### 진입 문서
-
-Agents read root entry documents — README, AGENTS.md, CLAUDE.md — before searching. The list lives in versioned config and is overridable per repository.
-
-Entry documents are treated as read at the start of phase A, and queries generated from them enter the initial pending query set. Documents auto-injected by the harness cost zero read tool calls and are charged normally for tokens; auto-injection is flagged in config.
-
-Documents and code that entry documents mention are not treated as read in bulk. Mentions are ordinary exploration connections; when a path or identifier resolves, unique identification applies and one read reaches it. Treating mentions as discovered would make it definitionally impossible to measure whether entry documents actually lower discovery cost, and would automatically favor repositories that list files in their docs.
-
-### 모델링한 탐색의 경계
-
-These actions are not made into ordinary exploration connections:
-
-- Semantically recalling an expression absent from what has been read.
-- Non-deterministic search terms built from repository-external knowledge alone.
-- Selecting a target directly through analyzer-internal information no real agent has.
-
-Derived queries, path and list queries, hint-based generation, refinement, and framework connections are not in this set. Each is either already-paid exposed content or regenerates identically from a fixed rule table.
-
-A relation with no analyzable direct connection, discoverable only by running one specific exact query, is a separate diagnostic candidate.
-
-## 대상 발견 모델
-
-### 초기 질의 생성
-
-Without an explicit seed query, an sLLM produces the initial search term set. It receives the task only — no file listing, no graph, no ground-truth target. Generated terms form one initial pending query set, not one scenario per term.
-
-Model identifier and revision are profile values, not document text or code constants, so that swapping models remains a comparable change.
-
-Generated queries reproduce the agent's first search action; they are not target predictions, and sLLM generation quality is not itself under evaluation. Reproducibility is still required, and recording a model revision is not sufficient because inference-backend batching can shift output. One of the following must hold:
-
-- Run with greedy decoding and a fixed seed, recording the backend and its version.
-- Cache generation output as a version-controlled fixture and use the cache as input on later runs.
-
-Prompt, decoding settings and actual generation output are recorded in results either way.
-
-### 탐색 정책과 턴
-
-Selection order of pending queries and result nodes is governed by the exploration policy, a parameter whose phase-B default is `bfs-exhaust`.
-
-One `bfs-exhaust` turn:
-
-1. Select an unexecuted query.
-2. Expose the whole result group and charge output tokens for every exposed occurrence.
-3. Order the unique arrival nodes using hints.
-4. Read the result nodes one at a time.
-5. New queries from read nodes and hints wait until the current result group is exhausted.
-6. On exhaustion, select the next pending query.
-
-Group exhaustion is the default because it is the conservative baseline that charges every exposed result and read. Real agents pivot away from a group on a strong clue, so this default is biased toward overestimating cost. The alternative `best-first-pivot` policy prioritizes by hint and leaves a group early; it runs on the same graph with only the policy changed. Policy dominates every reported cost value, so it is a profile value and every result records the policy used. Results produced under different policies are not compared.
-
-`query → result selection → read` is one depth-1 exploration turn. Query and read tool calls and tokens are recorded on separate axes.
-
-Exploration turns are serial-equivalent turns. Real agents issue several searches per turn in parallel, so this axis is not directly comparable to turn counts in real agent logs. Parallel batching is an uncalibrated behavior parameter and stays out of the model until the strategy survey milestone reports on it.
-
-A target appearing in search results is not discovery. Discovery is assumed to happen immediately when the target node is read. Phase B ends when every target has been read. Alternative implementation sites are not considered in the baseline.
-
-Termination is an oracle. An agent stopping after finding only part of the target set is expressed as an observation axis, not a termination rule. Modeling the moment an agent believes it is done is non-deterministic and out of scope.
-
-Revisiting read nodes is supported with an initial probability of 0. The probability is set later from real agent logs.
-
-## 비용 계약
-
-Costs are reported on their original axes together with a weighted cost used for path selection.
-
-- exploration turns
-- search tool calls
-- read tool calls
-- query result tokens
-- readable node tokens
-- 0-result queries
-- revisits
-- exposed non-target candidates and duplicate occurrences
-
-0-result queries produce no result tokens and no non-target exposure but consume a turn and a search tool call. The purpose of the separate axis is not to grade the seed-query generator but to observe how far the vocabulary that arises naturally from task phrasing diverges from the repository's vocabulary.
-
-The following are early-termination risk observations, not costs. They exist to derive miss risk after the fact while keeping oracle termination, and they are excluded from the weighted cost:
-
-- Discovery turn index per target.
-- Number of targets exposed in results but never read.
-- Number of nodes that received a hint but were never read — readable nodes with at least one incoming hint edge, unread at termination.
-
-The revisit axis is always 0 while revisit probability is 0. It is a placeholder that takes a value once the probability is set from real agent logs.
-
-The weighted cost is not a repository score. It is the scalar that ranks whole simulation samples so that a reported percentile is one coherent run rather than a per-axis composite; see the cost distribution section. Early on it uses an explicitly temporary default weight profile, and every original axis is reported alongside the weights.
-
-Weight values live in a version-controlled profile file in the repository, not in this document and not in code constants. Cost weight profiles and verification accessibility weights are managed the same way, and every result records the profile id and version. Replacing a temporary value is tracked in the profile file's history, and costs across the replacement are compared on the same graph.
-
-### 토크나이저
-
-Token cost is approximated as `character count ÷ C`, rounded up. `C` is characters per token, not tokens per character, and is a profile value defaulting to 4. Replacing it records the rationale in the profile history.
-
-Digits are excluded from that approximation and counted by a separate rule: a run of digit characters is grouped three at a time from the left, each group counting as one token, with the remainder as one group. Phrasing that depends on an external implementation is not used. This rule carries a version recorded in results.
-
-### 비용 분포: p5 / p50 / p95
-
-There is one cost estimator: a Monte Carlo simulation over the order space the exploration policy permits.
-
-**The percentile unit is a whole sample, not an axis.** Each sample is one complete simulated run producing a value on every cost axis. Samples are ranked by their weighted cost, and p5, p50 and p95 name the runs at those ranks. Every axis value reported at a percentile therefore comes from the same run, and each percentile carries the query and read sequence that produced it.
-
-The alternative — computing percentiles per axis independently — was rejected because it produces a composite that no run ever executed, and therefore no evidence path. Bottleneck attribution and what-if comparison both need a replayable sequence behind the number they move.
-
-Consequences that must be stated in every result:
-
-- Individual axes are **not** monotone across p5, p50, p95. The p5 run can have more turns than the p50 run while costing less overall. Only the weighted cost is monotone by construction.
-- The weight profile selects which run is reported at each percentile, so replacing weights changes the reported axis values even though the sample set is unchanged. The profile id and version are already required in results; this is the reason they are load-bearing rather than informational.
-
-Each percentile is reported with the full axis vector, the run's execution sequence, the mean and sample count over the whole set, the random seed, and a bootstrap confidence interval on the weighted cost at that rank. Percentile uncertainty is estimated by bootstrap, not from the mean's standard error. Per-axis means and standard deviations over the whole sample set are reported alongside, as distribution shape rather than as percentiles.
-
-Result-node selection order is weighted by a deterministic hint-based prior. Reading declaration occurrences before use occurrences, preferring exact filename matches, and deprioritizing tests are behaviors reproducible from information already charged for at search time. Discarding that information and sampling uniformly biases the distribution pessimistically. Because the prior is an uncalibrated behavior model, a uniform policy is kept alongside it: `uniform` and `hint-prior` are named profile policies, the policy used is recorded, and the prior's effect is observable and falsifiable as the difference between two runs. The default is `hint-prior`.
-
-The given seed query set is input, not a choice, so every seed query is charged as executed in every sample. Ties in sample-internal ordering are broken by a versioned deterministic cascade so that a given seed reproduces a given sample:
-
-1. Lexicographic comparison of the original cost axes, with axis priority fixed in the profile independently of the weights.
-2. Shorter execution sequence.
-3. Lexicographic minimum of the id sequence, where an id combines the normalized repository-relative path and the qualified symbol name, separators normalized, compared bytewise. Depending on filesystem enumeration order or hashes would break M1's deterministic serialization.
-
-**Replaced definitions.** Earlier revisions defined an exact weighted minimum and a BFS maximum. Both are removed.
-
-- The exact minimum required searching a state space of `executed query set × read read-unit set`, exponential in the worst case, and needed a search budget, a `budget-exceeded` status and tie-set enumeration to stay tractable.
-- The BFS maximum converged, under oracle termination, to `seed-reachable closure cost − one final target`, so it varied with closure size rather than with the task and was insensitive to structural change in what-if comparison.
-
-The structural upper bound is kept, but as a separate directly computed axis rather than as a search: **seed reachable closure cost**, the total cost of reading everything reachable from the seed query set. It is cheap to compute, it explains how much of p95 is closure size rather than task difficulty, and it gives a checkable invariant.
-
-Invariants, both verified per run:
-
-- `weighted(p5) ≤ weighted(p50) ≤ weighted(p95)` — holds by construction, since the ranking is by weighted cost. It does **not** hold per axis, and a per-axis assertion would be a false invariant.
-- `axis(p95) ≤ seed reachable closure cost`, for every axis — holds while revisit probability is 0, because any single run reads a subset of the closure. This is asserted per axis on every sample, not only on p95. Raising revisit probability above 0 can break it, and the contract is rewritten at that point.
-
-Minimum sample count, convergence condition and maximum sample count are profile values. Defaults and tolerances are tuned against fixtures and real repository analysis.
-
-### 도달 가능성 실패
-
-An approximated graph may not reach every target. No arbitrary penalty is added to the cost. The failure state and the unreached targets are stated explicitly. Detailed failure output — failed queries, partially discovered targets — is defined in the phase-B output contract.
-
-## 영향 범위
-
-The potential zone of effect is the full candidate range that a target change may affect and that the agent must therefore read and verify.
-
-### 방향성
-
-Propagation runs along the **reverse** of dependency edges: from a target to the things that depend on it. If A uses B and B uses C, then modifying B puts A in the zone and leaves C out. C is what B depends on; changing B does not change C.
-
-This is not the same as what the agent must read. To modify B correctly the agent may still need to read C to know the contract B is calling. That is forward-direction **comprehension closure**, and it is charged as phase-C read cost without making C a zone member. Conflating the two inflates every zone by the target's whole forward dependency cone.
-
-Comprehension closure is bounded by a profile depth, default 1: the direct forward dependencies of the read unit being modified are charged, and nothing deeper. Unbounded, it is the whole forward cone and dominates phase C. Depth 1 matches the observable behavior — an agent reads what B calls, not what those callees call — and the depth is a parameter rather than a constant so its effect can be measured instead of assumed. The depth used is recorded in results.
-
-Direction is declared per relation kind in the profile, not inferred. Three cases:
-
-| Case | Relation kinds | Direction | Note |
-|---|---|---|---|
-| Ordinary dependency | calls, imports, type reference, inheritance, interface implementation, test-of, document mention | reverse only | dependents enter the zone; dependencies do not |
-| Contract-carrying pair | shared-state read/write, config key producer/consumer, event publish/subscribe, message enqueue/dequeue, route registration/handler | both | the relation is a contract between two parties, so a change on either side can break the other; the edge pair is materialized in one direction only, so the reverse traversal alone would miss the consumer |
-| Substitutable member | overrides of a common base, implementations of a common interface | sibling | changing one implementation can break callers that hold the base type, so the base and its other implementations are reachable in two hops through the base; this is reverse propagation, listed separately because it is the case most often mistaken for forward propagation |
-
-Exceptions are enumerated in the profile as an explicit relation-kind → direction table. A relation kind absent from the table defaults to reverse-only and is flagged in results, so adding a language or framework adapter cannot silently introduce untyped propagation.
-
-### 범위 레코드
-
-Each zone node records:
-
-- The potential impact path from the target.
-- Relation kind and direction, and which row of the direction table applied.
-- The evidence: code, query, framework rule or document mention.
-- Static analysis confidence and its limits.
-- The verification accessibility components.
-- Whether it fell inside the user cutoff.
-
-Verification accessibility is ordered by a weighted sum over source kind, relation kind, distance and static confidence. It is not an impact-importance or change-necessity score. Low accessibility does not remove a node from the potential zone; it is reported as *possible impact, unobserved in this verification scenario*.
-
-Tests are always in the potential zone but are excluded by default from the accessibility ranking and cutoff result; inclusion is configurable.
-
-### 범위 크기
-
-Reverse reachability is unbounded in principle: a widely used utility's transitive dependent set can be most of the repository. If that is the common case, the zone stops distinguishing targets and the cutoff mechanism becomes the only thing doing work — which would mean the analyzer measures the cutoff, not the repository.
-
-This is measured before any mitigation is designed. See the phase-C milestone's decision gate.
-
-## 작업 없는 전역 그래프 분석
-
-The repository is analyzed without a task. Every readable node is treated as a potential target, reported per metric:
-
-- PageRank, centrality, connected components, k-hop cost
-- Targets producing large potential zones
-- Nodes and subgraphs that must be read but have low verification accessibility
-- Cycles, bridges, articulation points, excessive query branching
-- Unresolved or dynamic boundaries
-- Points where exact queries expose excessive non-target candidates
-- Abnormally large or disconnected subgraphs
-
-No single global quality score is produced. Every result must be traceable back to the related nodes, queries, edges, paths, cost components and uncertainty.
-
-## 생성된 평가 시나리오
-
-Targets likely to be problematic are selected from the graph-wide analysis, and an sLLM generates natural-language tasks from target information. Given `SettingsTab.kt` and `AudioSettingDialog` as targets, it might produce *change the audio output selection UI*.
-
-- Several tasks per target.
-- Easy scenarios may name the filename or identifier directly.
-- At least one task contains no target identifier.
-- Generated tasks are flagged as synthetic in result metadata.
-- The seed-query sLLM receives the task only, never targets or the graph.
-- Scenarios that deliberately point at a wrong target are not generated.
-
-Synthetic tasks do not claim to be real user tasks. They exist to evaluate how differently the same target is discovered depending on task phrasing.
-
-## 구조적 병목과 개선 후보
-
-A bottleneck is explained by at least one of:
-
-- A node, query or edge where valid paths to a target or zone concentrate
-- A query that raises cost by exposing many non-target results
-- A search-only relation hard to find without one specific exact query
-- A relation whose code, config, docs and tests are far apart
-- A node repeatedly exposed or hinted but never read
-- A potential impact node easily missed due to low verification accessibility
-- A common bottleneck recurring across several targets or zones
-- A target whose removal or cost reduction lowers exploration cost
-
-Improvement candidates are compared as what-if results on a limitedly modified graph, without changing the repository. Cost reduction, number of affected targets and prediction confidence are reported separately.
-
-## 로드맵
-
-Every milestone defines its own output schema and traceability fields as part of its completion criteria. There is no separate output-contract milestone.
-
-From M1 onward every milestone delivers machine-readable JSON plus an HTML report generated from that JSON alone.
-
-| Milestone | HTML must show |
-|---|---|
-| M1 | graph composition, cost distribution, node/query/framework evidence relations |
-| M2 | surveyed agent strategies and tools, and which model parameters each one changes |
-| M3 | phase A and B discovery process with p5/p50/p95 and closure cost |
-| M4 | per-target zone, direction table applied, cutoff result, verification accessibility |
-| M5 | bottleneck ranking, evidence paths, what-if before/after |
-| M6 | discovery cost compared across targets and task phrasings |
-| M7 | calibration data coverage, before/after error comparison |
-
-Existing implementation status:
+다음은 이전 M0의 기능 정리 이력이다. 여기서 M5는 이전 번호이며 새 마일스톤의 의존성을 뜻하지 않는다.
 
 | Status | Feature |
 |---|---|
@@ -404,194 +123,77 @@ Existing implementation status:
 | Replace or extend | the existing symbol graph becomes M1 readable and query nodes; serialization and CLI output extend per milestone contract. Current graph metrics are M5 input and do not constitute M5 completion. |
 | Remove | previous exploration cost, task difficulty, repository cost diff, git diff impact analysis, structural friction diagnostics, Android inject-field arbitrary costs and warnings |
 
+`discovery/`와 `report/m3/`는 부가 시뮬레이션 구현이다. 이를 구현했다는 사실로 아래의 새 M3 또는 행동 보정이 완료됐다고 처리하지 않는다.
+
+## 로드맵
+
+새 M2~M7은 아래 범위로 재정의한다. M4의 가능성 검토는 M3과 병행하며, M5의 전후 검증 설계는 M2부터 시작한다. 각 구현은 서명·반환값·오류·경계 사례의 계약을 먼저 확정한다. 이하 산출물 이름은 제안이며 기존 스키마가 아니다.
+
 ### M0. 문서 및 계약 재정렬 — 완료
 
-- Project purpose, graph boundary and non-goals fixed
-- Query groups, exploration turns, cost axes and the cost contract documented
-- Zone of effect separated from verification accessibility
-- Keep/replace/remove mapping table for existing features
-- Code, tests and fixtures for removed features deleted
+이전 정리 이력을 유지한다. 현재 기준은 저장소·harness 병목 우선, target-only 검토 후보, 실제 개선 효과 검증이다. 작업별 시뮬레이션은 핵심 완료 조건에서 분리했다.
 
-Done when: every reference document uses the same purpose and vocabulary, every existing feature has a mapping-table status, no references to removed features remain, and the full test suite collects without import errors.
+완료 기준: 목적·미해결 가정·기존 구현 이력을 구분하고, 이전 구현의 완료 표시를 새 목표의 달성으로 사용하지 않는다.
 
 ### M1. 에이전트 관점 그래프 — 완료
 
-Scalability invariants: read the repository as one immutable snapshot; exclude explicit identified analyzer output from re-analysis; cap exposed search results by profile while preserving full occurrence evidence losslessly in deterministic compressed blocks.
+기존 `agent_view/`, `profiles/agent_view.v3.yaml`, `agent-view.json`, `report/m1/` 및 golden fixtures가 기반이다. 완료는 이전 표현·직렬화 계약에 한정한다.
 
-- Readable node and query node model
-- Token-threshold read-unit splitting; greedy sequential split, single oversized symbol allowed
-- Search surface covering file contents and path namespace; list queries
-- Exact query extraction
-- Derived query generation from a versioned rule table
-- Proxy-signal filter and per-read-unit cap for queries generated from a read
-- Connections split into uniquely identifying and candidate narrowing; import and qualified-name resolution and framework connections carry the same property
-- Code, document and comment occurrences and connection evidence
-- Occurrence hint edges over a fixed output format
-- Hint-based query generation without a read, with caps
-- Refinement queries with depth and candidate caps
-- Query equivalence and duplicate suppression
-- Entry document handling and auto-injection flag
-- Query result groups and raw output cost
-- Deterministic graph serialization and diff
+후속 변경은 저장소 관계와 탐색 관계의 구분, harness별 노출 범위, 분석 커버리지와 미해결 경계를 보존해야 한다. 기존 비용 기본값이나 읽기 즉시 발견 가정은 이후 실증을 대신하지 않는다.
 
-**Delivered**: `agent_view/` package, `profiles/agent_view.v3.yaml`, `agent-view.json` schema, HTML report via `generate_html.py` + `html_template/`, golden fixtures under `tests/fixtures/agent_view/`.
+### M2. Harness 관측 계약과 검증 기준 — 재정의, 미완료
 
-Done when: the same repository and settings reproduce the same query groups, results, evidence and costs. Read-unit splitting, hint projection and query equivalence are covered by reproducibility tests.
+기존 에이전트 전략 조사는 출처 자료로 재사용한다. 실제 팀 환경을 어떤 관측 범위로 표현할지, 어떤 결과를 개선으로 인정할지 정한다.
 
-### M2. 에이전트 전략 및 도구 조사 — 1차 조사 완료, 필요시 재조사
+산출물: profile별 지원/미지원 표, 노출·확인 행동의 trace 계약, 독립 평가 사례, 구조·harness 전후 실험 계획.
 
-The behavior parameters this project treats as defaults — serial turns, grep-loop search, `bfs-exhaust`, `hint-prior` — were chosen without evidence. Several are already known to be wrong in one direction: real agents batch searches in parallel, delegate exploration to subagents, and some run against a semantic index or a precomputed repository map rather than a grep loop. Freezing the phase-B cost contract before surveying this means measuring a tool model that no shipped agent uses.
+완료 기준: 기본값마다 근거 또는 미검증 표시가 있고, 실제 출력 범위를 재생할 수 있으며, 비용과 확인 충족을 함께 측정하는 기준이 정해져 있다. 지원할 첫 언어·harness와 수치 임계값은 근거 없이 확정하지 않는다.
 
-This milestone is a survey, not an implementation, and it is deliberately placed before the cost contract is frozen.
+### M3. 작업 없는 전역 병목 분석 — 재정의, 미완료
 
-- Survey current agent exploration designs and record, per design, which model parameters it changes: search surface, output cap, parallel batching, subagent fan-out, index or repo-map preloading, context-window eviction
-- Survey published work on predicting developer navigation — degree-of-interest models, interaction-trace recommenders, head-to-head evaluations of navigation predictors — and record what carries over from human interaction traces to agent tool logs and what does not
-- Survey change-impact-analysis literature for the pre-modification checklist in M4
-- For each finding: state whether it is adopted now, deferred to a later milestone, or rejected, with the reason
-- Record which currently modeled parameters the survey contradicts
+기존 그래프 지표를 후보 생성에 사용하고, 후보 과다·잘림·증거 분산·연결 제약·미해결 경계를 저장소 전체에서 보고한다. 기존의 작업별 발견 비용 M3은 부가 목표로 이동했다.
 
-**Proposed outcome**
-- `research/<id>-agent-strategy-survey.md` — versioned findings file, one entry per surveyed design or paper, each with source, claim, and the model parameter it touches.
-- A parameter delta table: every current profile parameter the survey contradicts, the evidence, and the disposition.
-- Profile changes that follow directly from the survey, applied before M3 begins.
+산출물: `bottlenecks.json`과 그 JSON으로 생성한 HTML. 각 후보에는 대상·근거·관련 query/probe·영향받는 profile·비용 또는 노출 장애·커버리지·검증 상태를 포함한다.
 
-Done when: every default behavior parameter in the cost contract either has a survey citation or is explicitly recorded as unevidenced. The findings file is re-run and re-versioned before each later milestone rather than treated as done once.
+완료 기준: 작업 seed/정답 target 입력 없이 후보를 찾고, 지표가 큰 이유뿐 아니라 어떤 탐색 장애를 만드는지 설명한다. 초기 후보부터 실제 관측과 대조하며 근거가 약하면 잠정 후보로 남긴다.
 
-### M3. A·B 단계 — 방향 설정 및 대상 발견 비용 — 완료
+### M4. Target-only 영향·검토 후보의 가능성 검증 — 미완료
 
-- Explicit query sets and sLLM-generated initial query sets
-- Injection and recording of sLLM model revision, prompt and decoding settings
-- Phase A orientation: entry documents, root list queries, auto-injection cost
-- Parameterized exploration policy, phase-B default `bfs-exhaust`
-- Result-group exhaustion and pending-query behavior
-- Temporary weighted cost profile in a versioned profile file
-- Versioned tie-break cascade for sample-internal determinism
-- `uniform` and `hint-prior` result-ordering policies
-- Monte Carlo p5/p50/p95 as whole-sample order statistics ranked by weighted cost, each percentile carrying its full axis vector and replayable execution sequence, with bootstrap CI
-- Seed reachable closure cost as a separately computed axis
-- 0-result queries, discovery turn index, unread target and hint observation axes
-- Multi-target termination and unreachable handling
-- Trace schema for validating against real agent behavior
-- Minimum procedure for comparing real agent traces against model predictions
+먼저 제한된 언어·관계 범위에서 호출 관계, 데이터·제어 의존, 설정·프레임워크 계약을 비교한다. 특정 방식을 사전에 정답으로 고정하지 않는다.
 
-**Proposed outcome**
-- `phase_b_cost.json` — per `(task, target set)`: the p5/p50/p95 runs with their full axis vectors and execution sequences, per-axis mean and standard deviation over the sample set, n, seed, bootstrap CI, closure cost, both invariant checks, the profile and policy ids used.
-- HTML report: discovery timeline per sample, cost distribution per axis, the closure-cost bar next to p95.
-- `profiles/cost_weights.v1.yaml` and `profiles/exploration_policy.v1.yaml`.
-- A trace schema plus at least one recorded real agent trace in the same schema.
-- A flat `versions` block in every emitted result, recording every version stamp the run actually consumed — split, ordering, output format, query equivalence, derived rules, tokenizer, exclusions, policy, tie-break, cost weights — each as an id and version, with no scoping or grouping applied. Result comparability rules are deliberately not defined here; recording the stamps as data lets a scoping rule be defined later over existing results instead of requiring reruns.
+산출물: 관계별 적용 조건, 영향 후보/이해 계약/검증 수단이 분리된 `target_review_candidates.json`, 전파 범위 크기·누락·과다 후보 평가.
 
-Done when: fixture state transitions and cost axes match, and Monte Carlo results reproduce within the recorded error bounds under a fixed seed. Results under different policies or tie-break versions are reproduced separately and never compared.
+완료 기준: 독립된 변경·변이·계약 사례로 후보의 적합성과 누락을 평가하고, target만 주었을 때 가능한 주장과 불가능한 주장을 명시한다. 범위가 지나치게 넓거나 근거가 부족하면 “관련 후보 목록” 수준으로 제한하고 위험 순위는 미검증으로 남긴다.
 
-Additional falsification gate. Closing this milestone on reproducibility alone would leave open the possibility that every cost value through M6 is unrelated to real exploration.
+### M5. 개선 후보와 실제 전후 검증 — 재정의, 미완료
 
-- Collect a minimal set of real agent traces and report the rank correlation between each trace's target discovery order and the model's predicted discovery turn index.
-- Record sample count, repositories, agent and tool settings.
-- Compare `hint-prior` against `uniform`, and `bfs-exhaust` against `best-first-pivot`, on the same trace set, and report which fits better.
-- No pass threshold is set here. The gate requires that the measurement is recorded and becomes the stated basis for the defaults, not that it exceeds a level.
+구조 개선과 harness 개선을 분리해 실험한다. M3의 탐색 병목 실험은 M4의 위험 모델 완성을 기다릴 필요가 없다. 안전성 개선 주장은 M4의 독립 검토 기준이 필요하다.
 
-### M4. C 단계 — 영향 범위 및 수정 전 검증
+산출물: 재현 가능한 변경안, 전후 snapshot/profile, 실행 자료, 탐색 부담과 확인 충족의 차이, 예측과 관측의 불일치.
 
-- Relation-kind → direction table in the profile, covering ordinary dependency, contract-carrying pairs and substitutable members
-- Propagation over that table, with unlisted relation kinds defaulting to reverse-only and flagged
-- Forward comprehension closure charged as phase-C read cost without entering zone membership, bounded by a profile depth defaulting to 1
-- Full potential zone per target and their union across the target set, with per-target provenance on every member
-- Accessibility ranking, with weights in a versioned profile file
-- User cutoff mechanism and unobserved-impact reporting; defaults temporary and flagged as such
-- Tests excluded by default from ranking and cutoff, configurable to include
-- Phase-C exploration policy: how the agent traverses the zone, sampled under the same Monte Carlo contract as phase B
-- Zone verification cost and evidence paths
+완료 기준: 독립 평가에서 필요한 확인과 작업 결과를 유지하면서 실제 탐색 부담이 줄어드는지 판정한다. 그래프 비용만 줄어든 경우 또는 관측 효과가 불확실한 경우는 개선 검증 완료로 표시하지 않는다.
 
-**Zone size decision gate.** Before any mitigation is designed, measure on fixtures and on real repositories: the distribution of `|zone| / |readable nodes|` at depth 1, 2, 3 and unbounded; how much of the zone comes from a small number of high-fan-in utility nodes; and the variance of zone size across targets in the same repository. Only after that measurement is recorded is a mitigation chosen from:
+### M6. 위험 후보와 탐색 누락의 결합 검증 — 재정의, 미완료
 
-- Bound propagation depth, report the depth used and the truncation flag.
-- Report zone size at each depth as separate axes rather than one number.
-- Treat high-fan-in nodes as a separate reported class so that generic utility fan-out is not attributed to the target.
+M4의 검토 후보와 M2~M5의 노출·확인 기록을 결합한다. 실제로 확인할 이유가 있는 항목이 해당 harness에서 누락되기 쉬운지 검증한다. 이전의 합성 작업 생성 M6은 부가 목표로 이동했다.
 
-Choosing a mitigation before the measurement would mean the reported zone measures the mitigation heuristic rather than the repository.
+산출물: 대상별 관련 근거, 누락이 발생하는 조건, 관측된 확인 누락, 추천 구조/harness 변경과 검증 상태가 연결된 보고서.
 
-**Pre-modification checklist.** A script that, given a target, emits the ordered list of things to check before modifying it: the zone members, the evidence for each, and the accessibility rank. The rank is a rank, not a probability that an agent visits the item. Calling it a probability requires calibration against agent traces and is deferred to M7. Whether the rank predicts real agent visits at all is measured as part of M7's calibration, using the same trace corpus as the M3 gate — and if the M2 survey finds that developer-navigation predictors do not carry over to agent logs, the checklist ships as a static list with no visit-likelihood claim.
+완료 기준: 영향 후보 생성 오류와 탐색·확인 누락을 별도로 평가한다. 결합 결과가 독립 사례에서 유용한지 검증하며, 근거가 부족하면 위험과 접근 장애를 나란히 제시하고 결합 순위·확률을 내지 않는다.
 
-**Proposed outcome**
-- `zone.json` — per target set: the union of zones, each member carrying path, the targets it came from, relation kind, direction-table row, evidence, confidence, accessibility components, cutoff membership.
-- `zone_size.json` — the decision-gate measurement, with the chosen mitigation and its rationale.
-- `profiles/zone_direction.v1.yaml` and `profiles/accessibility_weights.v1.yaml`.
-- HTML report: per-target zone with direction shown on each edge, cutoff boundary, and the unobserved-impact list.
-- `scripts/pre_modify_checklist.py` producing the checklist for a named target.
+### M7. 행동 보정·일반화·운영 — 범위 조정, 미완료
 
-Done when: per target, the full zone, the direction row applied to each edge, the cutoff result and the accessibility evidence reproduce separately; the zone-size measurement is recorded; and any unlisted relation kind is flagged rather than silently propagated.
+행동 관측은 M2부터 시작한다. M7은 읽기 범위, 검색 선택, 문맥 축약, 재방문, 병렬·하위 에이전트 등 관측된 차이를 더 넓은 환경에서 보정하는 단계다.
 
-### M5. 전역 그래프 병목 분석
+산출물: 버전 관리되는 평가 corpus와 profile, 환경별 오차·누락 예측 보정, 성능 예산과 회귀 검증.
 
-- Graph metric and potential zone aggregation
-- Query branching, candidate dilution and search-only relations
-- Candidate-narrowing framework rule modeling and the query branching those rules create
-- Cycles, bridges, articulation points, unresolved boundaries and abnormal subgraphs
-- Discovery bottlenecks separated from zone verification bottlenecks
-- Counterfactual cost comparison for bottleneck removal or mitigation
-
-M1 implemented the representation and cost computation for candidate-narrowing rules but registered none. Message enqueue/dequeue and event publish/subscribe — relations whose arrival node cannot be statically fixed — belong here. Registering them adds edges, so M3 and M4 results are recomputed against a new baseline.
-
-**Proposed outcome**
-- `bottlenecks.json` — ranked bottlenecks, each with its evidence paths, the cost axis it raises, which targets or zones it affects, and the what-if delta.
-- Registered candidate-narrowing framework rules in an adapter, each reporting the query branching it creates.
-- HTML report: bottleneck ranking with evidence path drill-down and a before/after what-if view.
-- Recomputed M3 and M4 baselines against the new edge set.
-
-Done when: each bottleneck is explained by path and what-if result in terms of which cost axis of which target or zone it raises, and every registered candidate-narrowing rule reports its query branching.
-
-### M6. 생성된 평가 시나리오
-
-- Selecting targets likely to be problematic
-- Generating several natural-language tasks per target
-- Difficulty variants with and without identifiers
-- Task-only seed query generation reusing the M3 sLLM execution contract, with synthetic metadata
-- Evaluation on real public repositories and fixed fixtures
-
-**Proposed outcome**
-- `scenarios.json` — generated tasks with target, phrasing variant, synthetic flag, model revision, prompt, decoding settings.
-- `scenario_cost.json` — discovery cost per target across phrasings, on the M3 cost contract.
-- HTML report: same target, cost spread across phrasings, with the identifier-present and identifier-absent split shown.
-
-Done when: tasks and initial queries reproduce under the same model revision and settings, and discovery cost is compared across phrasings.
-
-### M7. 보정 및 운영 — 연기
-
-- Behavior model calibration from real agent tool and read traces
-- Adjusting temporary weights and zone accessibility weights
-- Deciding default zone cutoff input and accessibility weight defaults
-- Measuring whether accessibility rank predicts real agent visits; only if it does may the checklist state a visit likelihood
-- Additional language and framework adapters
-- Performance budget for large graphs
-- Validation dataset versioning and regression evaluation
-
-**Proposed outcome**
-- A versioned trace corpus with agent, tool settings and repository recorded per trace.
-- Calibrated profile versions replacing every parameter flagged temporary, each with the measurement that set it.
-- Before/after error comparison against the M3 falsification gate metrics.
-
-Done when: calibration data, model and tool settings, and the evaluation procedure are version-controlled, and existing contract fixtures still pass.
-
-## 검증 원칙
-
-- Distinguish what the graph represents as observable from the semantic inference it does not represent.
-- Record the sLLM's input, model revision, prompt and decoding settings.
-- Distinguish synthetic tasks from real tasks.
-- Inject time, randomness, model and tool settings, and record the random seed.
-- Report Monte Carlo results with sample count and error.
-- Report costs with the original axes, the weight profile id and version, and the weighted result.
-- Record the exploration policy, result-ordering policy, tie-break rule version and search output format used.
-- Verify bottlenecks by cost change before and after removal or mitigation.
-- Every result must be traceable to nodes, queries, edges, occurrences and path evidence.
-- Do not treat what a real agent read and what it should have read as the same ground truth.
+완료 기준: 보정에 사용하지 않은 저장소·작업·실행으로 검증한다. 누락 확률은 해당 환경에서 보정 품질이 확인된 경우에만 출력하며, 데이터가 부족한 환경은 미검증으로 표시한다.
 
 ## 비목표
 
-- Predicting a task's semantic implementation difficulty or a developer's skill level.
-- Claiming to automatically determine the correct target from a task.
-- Treating an LLM's semantic association without reproducible evidence as a graph edge.
-- Replacing conventional code quality, security or runtime performance analysis.
-- Claiming full static recovery of dynamic runtime connections.
-- Asserting p50 cost as a specific AI model's actual cost prediction.
-- Claiming the potential zone is the definitive set of real change impact.
-- Reducing multiple metrics to one repository quality score or a general task difficulty ranking.
+- 코드 품질, 보안성, 런타임 성능 또는 작업의 의미적 구현 난이도를 대신 평가하기.
+- 자연어 작업에서 정답 수정 위치를 자동 결정하기.
+- 작업별 seed/target 가상 탐색 비용이나 합성 작업 생성을 핵심 제품 완료 조건으로 삼기.
+- 정적 영향 후보를 실제 파손 집합 또는 반드시 읽어야 할 정답 집합으로 단정하기.
+- 모든 동적 관계 복원, 에이전트 내부 이해의 직접 관측, 미보정 누락 확률 주장.
+- 시뮬레이션 비용 감소만으로 실제 구조 개선 효과를 입증했다고 주장하기.

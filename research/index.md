@@ -1,4 +1,9 @@
 File: 6b0ef0fa381f1563-agent-strategy-survey.md
-Summary: 현재 비용 계약 기본값을 대상으로 한 에이전트 탐색 설계·탐색 예측·변경 영향 분석 문헌의 M2 조사. 매개변수 변경 표와 발견별 처리 결정을 포함한다. v3에서 PageRank repo map(F3) 항목을 제거했다.
+Summary: 이전 작업별 비용 계약에 대한 M2 조사 v3. 로드맵 재정렬로 기본값 채택·완료 상태의 재검토가 필요하며 stale.md에 등록됨.
 Related Files: ROADMAP.md, profiles/agent_view.v3.yaml, profiles/exploration_policy.v1.yaml
 Related Symbols: bfs-exhaust, hint-prior, uniform, search_output_limit, read_unit_token_limit
+---
+File: a7f273b0e454e4d8-target-risk-feasibility.md
+Summary: Target-only 정적 위험 후보와 harness별 탐색 누락의 가능성, 연구 한계 및 실제 개선 효과 검증 제안.
+Related Files: ROADMAP.md, agent_view/models.py, analysis/graph_metrics.py, discovery/simulate.py, fixtures/trace_fit.json
+Related Symbols: AgentViewGraph, Connection, GraphAnalyzer
