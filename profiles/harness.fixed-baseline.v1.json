@@ -1,0 +1,11 @@
+{
+  "schema": "harness_profile.v1",
+  "id": "fixed-string-line-baseline",
+  "version": 1,
+  "provenance_status": "unverified_baseline",
+  "content_search": {"matching": "fixed_string_case_sensitive", "order": "path_lexical_then_numeric_line", "visible_lines": 30, "cap_unit": "matching_lines", "same_line_occurrences": "preserved"},
+  "path_search": {"matching": "fixed_string_case_sensitive", "order": "path_lexical_then_numeric_line", "visible_lines": 30, "cap_unit": "matching_paths"},
+  "read": {"bounds": "one_based_inclusive", "max_lines": 2000, "eof": "clamp", "truncation": "actual_omitted_lines"},
+  "features": {"fixed_string_search": "supported", "line_range_read": "supported", "semantic_search": "unsupported", "index": "unsupported", "context_compaction": "observation_only", "parallelism": "observation_only", "subagents": "observation_only"},
+  "assumptions": {"automatic_injection": "unverified_baseline", "list_depth": 2}
+}

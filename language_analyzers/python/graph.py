@@ -19,6 +19,7 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 
 from .source import PythonSourceAnalyzer, PythonSourceFile
+from agent_view.models import RepositorySnapshot
 from .symbols import (
     ModuleEntry,
     SymbolEntry,
@@ -42,6 +43,8 @@ class PythonProjectArchitecture:
     edges: List[GraphEdge] = field(default_factory=list)
     stats: Dict[str, Any] = field(default_factory=dict)
     report_collections: List[ReportCollection] = field(default_factory=list)
+    snapshot_digest: Optional[str] = None
+    snapshot_coverage: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -140,19 +143,40 @@ class _BodyScanner:
 
 
 class PythonGraphAnalyzer:
-    def __init__(self, project_path: Union[str, Path]):
-        self.project_path = Path(project_path).resolve()
+    def __init__(self, project_path: Union[str, Path], snapshot: Optional[RepositorySnapshot] = None):
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute():
+                raise ValueError("snapshot root and project path must be absolute")
+            if supplied != snapshot_root:
+                raise ValueError("project path and snapshot root do not match")
+            self.project_path = snapshot_root
 
     def analyze(self) -> PythonProjectArchitecture:
-        sources = PythonSourceAnalyzer(self.project_path).analyze()
+        source_analyzer = PythonSourceAnalyzer(self.project_path, self.snapshot)
+        sources = source_analyzer.analyze()
         nodes, edges = self.build(sources)
         architecture = PythonProjectArchitecture(
             project_name=self.project_path.name,
             project_path=str(self.project_path),
             nodes=nodes,
             edges=edges,
+            snapshot_digest=self.snapshot.digest if self.snapshot is not None else None,
+            snapshot_coverage=dict(source_analyzer.coverage) if self.snapshot is not None else {},
         )
-        enrich_repository(architecture)
+        if self.snapshot is None:
+            enrich_repository(architecture)
+        else:
+            contents = self.snapshot.content_map()
+            enrich_repository(
+                architecture,
+                file_inventory=tuple(contents),
+                file_reader=lambda path: contents[path.relative_to(self.project_path).as_posix()],
+            )
         nodes, edges = architecture.nodes, architecture.edges
         architecture.stats = {
             "total_modules": sum(node.kind == NodeKind.MODULE for node in nodes),
@@ -165,7 +189,7 @@ class PythonGraphAnalyzer:
         return architecture
 
     def build(self, sources: Sequence[PythonSourceFile]) -> Tuple[List[GraphNode], List[GraphEdge]]:
-        table = build_symbol_table(sources, self.project_path)
+        table = build_symbol_table(sources, self.project_path, resolve_root=self.snapshot is None)
         self._table = table
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}
@@ -439,6 +463,10 @@ class PythonGraphAnalyzer:
         if unresolved:
             node.metadata["unresolved_calls"] = dict(unresolved.most_common(20))
             node.metadata["unresolved_references"] = unresolved_evidence[:20]
+            if len(unresolved_evidence) > 20:
+                node.metadata["unresolved_reference_total"] = len(unresolved_evidence)
+                node.metadata["unresolved_reference_limit"] = 20
+                node.metadata["unresolved_reference_truncated"] = True
 
     # ---- resolution ----
 

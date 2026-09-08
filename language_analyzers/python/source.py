@@ -2,7 +2,9 @@ import ast
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
+
+from agent_view.models import RepositorySnapshot
 
 
 @dataclass
@@ -14,10 +16,23 @@ class PythonSourceFile:
 
 
 class PythonSourceAnalyzer:
-    def __init__(self, project_path: Union[str, Path]):
-        self.project_path = Path(project_path).resolve()
+    def __init__(self, project_path: Union[str, Path], snapshot: Optional[RepositorySnapshot] = None):
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute():
+                raise ValueError("snapshot root and project path must be absolute")
+            if supplied != snapshot_root:
+                raise ValueError("project path and snapshot root do not match")
+            self.project_path = snapshot_root
+        self.coverage = {"python_file_count": 0, "parsed_python_file_count": 0, "invalid_python_files": []}
 
     def analyze(self) -> List[PythonSourceFile]:
+        if self.snapshot is not None:
+            return self._analyze_snapshot()
         files = []
         for root, directories, filenames in os.walk(self.project_path):
             directories[:] = [
@@ -40,6 +55,23 @@ class PythonSourceAnalyzer:
                     source_code=source_code,
                     tree=tree,
                 ))
+        return files
+
+    def _analyze_snapshot(self) -> List[PythonSourceFile]:
+        self.coverage = {"python_file_count": 0, "parsed_python_file_count": 0, "invalid_python_files": []}
+        files = []
+        for relative, source_code in self.snapshot.contents:
+            if not relative.endswith(".py"):
+                continue
+            self.coverage["python_file_count"] += 1
+            file_path = self.project_path / relative
+            try:
+                tree = ast.parse(source_code, filename=str(file_path))
+            except (SyntaxError, ValueError):
+                self.coverage["invalid_python_files"].append(relative)
+                continue
+            files.append(PythonSourceFile(file_path, self._module_name(file_path), source_code, tree))
+            self.coverage["parsed_python_file_count"] += 1
         return files
 
     def _module_name(self, file_path: Path) -> str:

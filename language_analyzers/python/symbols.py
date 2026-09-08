@@ -342,8 +342,12 @@ class _ModuleCollector:
             self._register(symbol, target.id if top_level else None)
 
 
-def build_symbol_table(sources: Sequence[PythonSourceFile], project_path: Path) -> SymbolTable:
-    project_path = Path(project_path).resolve()
+def build_symbol_table(sources: Sequence[PythonSourceFile], project_path: Path, *, resolve_root: bool = True) -> SymbolTable:
+    project_path = Path(project_path)
+    if resolve_root:
+        project_path = project_path.resolve()
+    elif not project_path.is_absolute():
+        raise ValueError("project path must be absolute when resolve_root is false")
     table = SymbolTable()
     for source in sources:
         relative = source.file_path.relative_to(project_path).as_posix()

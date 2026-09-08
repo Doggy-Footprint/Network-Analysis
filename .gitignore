@@ -6,8 +6,10 @@
 # Generated visualizer reports and data exports written at the repository root
 /architecture.html
 /architecture.json
+/architecture_assets/
 /*_architecture.html
 /*_architecture.json
+/*_architecture_assets/
 
 myTODO.md
 

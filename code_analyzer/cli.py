@@ -7,9 +7,11 @@ import json
 import sys
 import webbrowser
 from pathlib import Path
+from typing import Callable, Mapping, Optional
 
-from agent_view import build_agent_view, diff_agent_view, graph_to_json, load_profile
-from agent_view.profile import default_profile_path
+from agent_view import (build_agent_view, build_snapshot, diff_agent_view, graph_to_json,
+                        list_repository_files, load_profile, read_file)
+from agent_view.profile import ProfileError, default_profile_path
 from analysis import GraphAnalyzer
 from discovery import (
     CachedSeedQueryGenerator,
@@ -35,6 +37,9 @@ from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
+from bottlenecks import (BottleneckInputError, HarnessProfileError, ObservationTraceError,
+                         analyze_bottlenecks, bottlenecks_to_json, convert_legacy_trace,
+                         parse_harness_profile, parse_observation_trace)
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
@@ -141,13 +146,13 @@ def parse_args():
         "--phase-b",
         default=None,
         metavar="SCENARIOS",
-        help="Simulate phase A and phase B target discovery over the scenarios in the given file.",
+        help="Run the auxiliary task-specific phase A/B target-discovery simulation.",
     )
     parser.add_argument(
         "--phase-b-out",
         default="phase_b_cost.json",
         metavar="PATH",
-        help="Output path for the phase-B cost report.",
+        help="Output path for the auxiliary phase-B simulation report.",
     )
     parser.add_argument(
         "--exploration-policy",
@@ -181,11 +186,14 @@ def parse_args():
         metavar="N",
         help="Random seed root for --phase-b, overriding the policy profile seed.",
     )
+    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v1 JSON.")
+    parser.add_argument("--harness-profile", metavar="PATH", help="Harness profile for --bottlenecks.")
+    parser.add_argument("--observation-trace", action="append", default=[], metavar="PATH", help="Repeatable observed harness trace for --bottlenecks.")
     args = parser.parse_args()
     if (args.language or args.framework != "fastapi") and (args.entrypoint or args.app):
         parser.error("--entrypoint and --app are only supported with --framework fastapi")
-    if args.agent_view_profile and not args.agent_view:
-        parser.error("--agent-view-profile requires --agent-view")
+    if args.agent_view_profile and not (args.agent_view or args.bottlenecks):
+        parser.error("--agent-view-profile requires --agent-view or --bottlenecks")
     if not args.phase_b:
         for flag, value in (
             ("--phase-b-out", args.phase_b_out if args.phase_b_out != "phase_b_cost.json" else None),
@@ -199,10 +207,82 @@ def parse_args():
                 parser.error(f"{flag} requires --phase-b")
     if args.samples is not None and args.samples < 1:
         parser.error("--samples must be >= 1")
+    if args.bottlenecks and args.language != "python":
+        parser.error("--bottlenecks requires --language python")
+    if args.bottlenecks and not args.harness_profile:
+        parser.error("--bottlenecks requires --harness-profile")
+    if args.harness_profile and not args.bottlenecks:
+        parser.error("--harness-profile requires --bottlenecks")
+    if args.observation_trace and not args.bottlenecks:
+        parser.error("--observation-trace requires --bottlenecks")
+    if args.agent_view_diff and args.bottlenecks:
+        parser.error("--agent-view-diff cannot be combined with --bottlenecks")
+    if args.bottlenecks:
+        output_paths = [Path(args.output).resolve(), Path(args.bottlenecks).resolve()]
+        if args.agent_view:
+            output_paths.append(Path(args.agent_view).resolve())
+        if args.phase_b:
+            output_paths.append(Path(args.phase_b_out).resolve())
+        if args.json:
+            output_paths.append(Path(args.output).resolve().with_suffix(".json"))
+        if len(output_paths) != len(set(output_paths)):
+            parser.error("analysis output paths must be distinct")
     return args
 
 
-def main():
+def _read_json(path: Path, reader: Callable[[Path], Optional[str]]):
+    text = reader(path)
+    if text is None:
+        raise OSError(f"unable to read {path}")
+    return json.loads(text)
+
+
+def _write_text(path: Path, text: str, writer: Callable[[Path, str], object]):
+    try:
+        return writer(path, text)
+    except (OSError, UnicodeError) as exc:
+        print(f"[!] Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
+
+
+def _output_paths(project_path: Path, args) -> tuple[Path, ...]:
+    output = Path(args.output).resolve()
+    paths = [output, output.with_name(f"{output.stem}_assets")]
+    if args.json:
+        paths.append(output.with_suffix(".json"))
+    if args.bottlenecks:
+        paths.append(Path(args.bottlenecks).resolve())
+    if args.agent_view:
+        paths.append(Path(args.agent_view).resolve())
+    if args.phase_b:
+        paths.append(Path(args.phase_b_out).resolve())
+    return tuple(paths)
+
+
+def _exclude_output_paths(
+    project_path: Path, paths: list[str], outputs: tuple[Path, ...]
+) -> list[str]:
+    excluded = []
+    for output in outputs:
+        try:
+            excluded.append(output.relative_to(project_path))
+        except ValueError:
+            pass
+    return [
+        path for path in paths
+        if not any(Path(path) == item or item in Path(path).parents for item in excluded)
+    ]
+
+
+def main(
+    *,
+    file_lister: Callable = list_repository_files,
+    file_reader: Callable[[Path], Optional[str]] = read_file,
+    file_writer: Callable[[Path, str], object] = lambda path, text: path.write_text(
+        text, encoding="utf-8"
+    ),
+    renderer_factory: Callable[..., HTMLRenderer] = HTMLRenderer,
+):
     args = parse_args()
 
     if args.agent_view_diff:
@@ -224,11 +304,50 @@ def main():
     print(f"[*] Analyzing {analyzer_label} project at: {project_path}")
 
     builder = None
+    repository_snapshot = None
+    bottleneck_report = None
+    harness_profile = None
+    trace_payloads = []
+    snapshot_profile = None
+    outputs = _output_paths(project_path, args)
+    if args.bottlenecks:
+        try:
+            snapshot_profile = load_profile(args.agent_view_profile or default_profile_path())
+            harness_profile = parse_harness_profile(
+                _read_json(Path(args.harness_profile).resolve(), file_reader)
+            )
+            trace_payloads = [
+                _read_json(Path(path).resolve(), file_reader)
+                for path in args.observation_trace
+            ]
+        except (OSError, UnicodeError, json.JSONDecodeError, HarnessProfileError, ProfileError) as exc:
+            print(f"[!] Error: {exc}", file=sys.stderr)
+            raise SystemExit(1)
     if args.language == "python":
-        arch = PythonGraphAnalyzer(project_path).analyze()
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
-            arch.nodes, arch.edges, project_path=arch.project_path
-        )
+        if args.bottlenecks:
+            try:
+                ignore_source, paths = file_lister(
+                    project_path, tracked_files_only=snapshot_profile.tracked_files_only
+                )
+                paths = _exclude_output_paths(project_path, paths, outputs)
+                repository_snapshot = build_snapshot(
+                    project_path,
+                    paths,
+                    profile=snapshot_profile,
+                    reader=file_reader,
+                    ignore_source=ignore_source,
+                    excluded_paths=outputs,
+                )
+                arch = PythonGraphAnalyzer(project_path, repository_snapshot).analyze()
+            except (OSError, UnicodeError, ValueError) as exc:
+                print(f"[!] Error: {exc}", file=sys.stderr)
+                raise SystemExit(1)
+        else:
+            arch = PythonGraphAnalyzer(project_path, repository_snapshot).analyze()
+        if not args.bottlenecks:
+            arch.stats["analysis"] = GraphAnalyzer().analyze(
+                arch.nodes, arch.edges, project_path=arch.project_path
+            )
     elif args.language == "typescript":
         arch = TypeScriptAnalyzer(project_path).analyze()
         arch.stats["analysis"] = GraphAnalyzer().analyze(
@@ -268,36 +387,76 @@ def main():
         )
         arch = builder.build_graph(arch)
 
-    renderer = HTMLRenderer(title=args.title, framework_label=analyzer_label)
-    output_html_path = renderer.render(arch, args.output)
+    agent_view_graph = None
+    agent_view_profile = None
+    if args.agent_view or args.phase_b or args.bottlenecks:
+        agent_view_profile = snapshot_profile or load_profile(
+            args.agent_view_profile or default_profile_path()
+        )
+        try:
+            agent_view_graph = build_agent_view(
+                arch,
+                profile=agent_view_profile,
+                snapshot=repository_snapshot,
+                excluded_paths=outputs,
+            )
+        except (OSError, UnicodeError, ValueError) as exc:
+            if not args.bottlenecks:
+                raise
+            print(f"[!] Error: {exc}", file=sys.stderr)
+            raise SystemExit(1)
+
+    if args.bottlenecks:
+        try:
+            traces = []
+            for trace_data in trace_payloads:
+                if not isinstance(trace_data, Mapping):
+                    raise ObservationTraceError("$ must be an object")
+                if trace_data.get("schema") == "harness_observation.v1":
+                    traces.append(parse_observation_trace(trace_data))
+                elif trace_data.get("schema") == "agent_trace.v1":
+                    traces.append(convert_legacy_trace(
+                        trace_data,
+                        snapshot_digest=repository_snapshot.digest,
+                        profile=harness_profile,
+                    ))
+                else:
+                    raise ObservationTraceError(
+                        "$.schema must be harness_observation.v1"
+                    )
+            bottleneck_report = analyze_bottlenecks(
+                repository_snapshot, arch, agent_view_graph, harness_profile, traces=traces
+            )
+        except (ObservationTraceError, BottleneckInputError) as exc:
+            print(f"[!] Error: {exc}", file=sys.stderr)
+            raise SystemExit(1)
+
+    try:
+        renderer = renderer_factory(title=args.title, framework_label=analyzer_label)
+        output_html_path = Path(renderer.render(arch, str(outputs[0]))).resolve()
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"[!] Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
     print(f"[✓] Generated interactive HTML dashboard: {output_html_path}")
 
     if args.json:
         json_output_path = output_html_path.with_suffix(".json")
-        with open(json_output_path, "w", encoding="utf-8") as f:
-            json.dump(architecture_to_dict(arch), f, indent=2, ensure_ascii=False, default=str)
+        _write_text(
+            json_output_path,
+            json.dumps(architecture_to_dict(arch), indent=2, ensure_ascii=False, default=str),
+            file_writer,
+        )
         print(f"[✓] Exported architecture JSON: {json_output_path}")
 
-    agent_view_graph = None
-    agent_view_profile = None
-    if args.agent_view or args.phase_b:
-        agent_view_profile = load_profile(args.agent_view_profile or default_profile_path())
-        agent_view_path = Path(args.agent_view) if args.agent_view else None
-        dashboard_assets = output_html_path.with_name(f"{output_html_path.stem}_assets")
-        excluded = [output_html_path, dashboard_assets]
-        if agent_view_path is not None:
-            excluded.append(agent_view_path)
-        if args.phase_b:
-            excluded.append(Path(args.phase_b_out))
-        agent_view_graph = build_agent_view(
-            arch,
-            profile=agent_view_profile,
-            excluded_paths=tuple(excluded),
-        )
     if args.agent_view:
-        agent_view_path = Path(args.agent_view)
-        agent_view_path.write_text(graph_to_json(agent_view_graph), encoding="utf-8")
+        agent_view_path = Path(args.agent_view).resolve()
+        _write_text(agent_view_path, graph_to_json(agent_view_graph), file_writer)
         print(f"[✓] Exported agent-view graph: {agent_view_path}")
+
+    if args.bottlenecks:
+        bottleneck_path = Path(args.bottlenecks).resolve()
+        _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
+        print(f"[✓] Exported bottleneck report: {bottleneck_path}")
 
     if args.phase_b:
         policy = load_exploration_policy(args.exploration_policy or default_policy_path())
@@ -319,9 +478,9 @@ def main():
         payload = build_report(
             agent_view_graph, view, results, agent_view_profile, policy, weights, seed_sets
         )
-        phase_b_path = Path(args.phase_b_out)
-        phase_b_path.write_text(report_to_json(payload), encoding="utf-8")
-        print(f"[✓] Exported phase-B cost report: {phase_b_path}")
+        phase_b_path = Path(args.phase_b_out).resolve()
+        _write_text(phase_b_path, report_to_json(payload), file_writer)
+        print(f"[✓] Exported auxiliary phase-B simulation report: {phase_b_path}")
 
     if args.mermaid:
         if builder is None:
