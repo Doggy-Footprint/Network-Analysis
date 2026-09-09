@@ -14,9 +14,9 @@ Candidate metrics may include PageRank and directed in/out degree from the origi
 
 Legacy `agent_trace.v1` conversion uses caller-supplied snapshot and profile context. Its binding is unverified, returned ranges and text remain unknown, and output comparison stays disabled.
 
-## Future before-and-after evaluation
+## M8 before-and-after evaluation
 
-No agent before-and-after experiment has been performed for this implementation. A future evaluation must freeze these items before execution:
+No agent before-and-after experiment has been performed for this implementation. M2–M7 prepare the inputs and retain live-dependent results as `unverified`; M8 must freeze these items before repeated live execution:
 
 - repository snapshot, harness profile, model and harness versions, task, required confirmation set, and outcome criteria;
 - structural and harness changes as separate comparison factors;

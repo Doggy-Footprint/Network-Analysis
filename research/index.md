@@ -4,12 +4,12 @@ Related Files: ROADMAP.md, profiles/agent_view.v3.yaml, profiles/exploration_pol
 Related Symbols: bfs-exhaust, hint-prior, uniform, search_output_limit, read_unit_token_limit
 ---
 File: a7f273b0e454e4d8-target-risk-feasibility.md
-Summary: Target-only 정적 위험 후보와 harness별 탐색 누락의 가능성, 연구 한계 및 실제 개선 효과 검증 제안.
+Summary: Target-only 정적 위험 후보와 harness별 탐색 누락의 가능성, 연구 한계 및 M8 실제 개선 효과 검증 제안.
 Related Files: ROADMAP.md, agent_view/models.py, analysis/graph_metrics.py, discovery/simulate.py, fixtures/trace_fit.json
 Related Symbols: AgentViewGraph, Connection, GraphAnalyzer
 ---
 File: 4f38a2c1d760be95-harness-evaluation-contract.md
-Summary: Defines fixed harness support, trace interpretation, and constraints for future before-and-after experiments.
+Summary: Defines fixed harness support, trace interpretation, and constraints for M8 repeated live before-and-after experiments.
 Related Files: profiles/harness.fixed-baseline.v1.json, bottlenecks/core.py, ROADMAP.md
 Related Symbols: HarnessProfile, ObservationTrace, analyze_bottlenecks
 ---

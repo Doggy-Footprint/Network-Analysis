@@ -25,7 +25,7 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 - Reliability: 3/5 (third-party writeup, not the primary vendor doc; treated as directionally indicative, not authoritative)
 - Claim: Claude Code ships a read-only "Explore" subagent that fans out concurrently across a codebase on a fast/cheap model, reading excerpts rather than whole files; subagents run with independent context and nested fan-out is supported.
 - Parameter touched: parallel batching, subagent fan-out
-- Disposition: **extension candidate; default unchanged.** The source is a third-party writeup, so it is not sufficient evidence to change the serial-turn default or establish that nested fan-out is representative. Parallel batching and subagent fan-out may become explicit M3 profile options after primary product documentation and agent traces establish their behavior and cost semantics.
+- Disposition: **extension candidate; default unchanged.** The source is a third-party writeup, so it is not sufficient evidence to change the serial-turn default or establish that nested fan-out is representative. Parallel batching and subagent fan-out may become explicit profile options after M8 agent traces establish their behavior and cost semantics.
 
 ## F2 — Cursor 의미/임베딩 코드베이스 인덱스
 
@@ -41,7 +41,7 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 - Reliability: 4/5 (primary empirical paper; the cited URL is a preprint)
 - Claim: SWE-agent exposes structured `find_file` / `search_file` / `search_dir` commands over filenames and file contents, caps each search at 50 results, presents a file viewer of at most 100 lines, and collapses older observations. Its reported ablations compare summarized search, iterative search, and shell-only operation. This source does not establish OpenHands behavior.
 - Parameter touched: search surface, search output cap, context-window eviction
-- Disposition: **adopted for the source-bounded defaults; extension candidate for eviction.** The structured path/content search and capped output directly support the analyzer's existing search surface and output cap; the study does not prescribe the profile's numeric values. Observation collapse is direct evidence that context management exists in a deployed interface, but it does not establish an eviction policy or value for this analyzer. Model it, if at all, as a later profile option calibrated on agent traces.
+- Disposition: **adopted for the source-bounded defaults; extension candidate for eviction.** The structured path/content search and capped output directly support the analyzer's existing search surface and output cap; the study does not prescribe the profile's numeric values. Observation collapse is direct evidence that context management exists in a deployed interface, but it does not establish an eviction policy or value for this analyzer. Model it, if at all, as a later profile option calibrated on M8 agent traces.
 
 ## F5 — Mylyn 상호작용 흔적의 잡음
 
@@ -49,15 +49,15 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 - Reliability: 5/5 (peer-reviewed journal)
 - Claim: Interaction-trace logs behind degree-of-interest (DOI) style navigation recommenders contain systematic noise, and this noise measurably degrades recommendation accuracy unless filtered.
 - Parameter touched: navigation-prediction (carries over to `hint-prior`)
-- Disposition: **extension candidate; default not confirmed.** The study establishes noise behavior in developer interaction traces, not in deterministic analyzer hints or agent tool logs. It therefore cannot support `hint-prior` over `uniform`. If M7 calibrates a trace-derived ordering feature, its input must be filtered and its transfer to agent traces tested.
+- Disposition: **extension candidate; default not confirmed.** The study establishes noise behavior in developer interaction traces, not in deterministic analyzer hints or agent tool logs. It therefore cannot support `hint-prior` over `uniform`. If M8 calibrates a trace-derived ordering feature, its input must be filtered and its transfer to agent traces tested.
 
 ## F6 — 합의 기반 상호작용 흔적 추천기
 
 - Source: "Consensus task interaction trace recommender to guide developers' software navigation", Empirical Software Engineering (Springer), https://link.springer.com/article/10.1007/s10664-024-10528-7
 - Reliability: 5/5 (peer-reviewed journal)
 - Claim: A recommender that aggregates multiple developers' interaction traces outperforms single-trace navigation-prediction baselines.
-- Parameter touched: navigation-prediction (carries over to `hint-prior` / M7 trace corpus)
-- Disposition: **extension candidate; default not confirmed.** The result concerns aggregated developer traces. It is useful when designing an M7 agent-trace corpus, but does not demonstrate that aggregation improves an agent ordering policy. M7 must test that transfer before using it for calibration.
+- Parameter touched: navigation-prediction (carries over to `hint-prior` / M8 trace corpus)
+- Disposition: **extension candidate; default not confirmed.** The result concerns aggregated developer traces. It is useful when preparing the M8 agent-trace corpus, but does not demonstrate that aggregation improves an agent ordering policy. M8 must test that transfer before using it for calibration.
 
 ## F7 — 변이 테스트로 검증한 호출 그래프 영향 예측
 
@@ -65,25 +65,25 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 - Reliability: 5/5 (published empirical study)
 - Claim: Static call-graph-based change impact prediction is empirically evaluated against a mutation-testing-derived ground truth of actual fault propagation, rather than assumed correct by construction.
 - Parameter touched: change-impact-analysis (M4 zone of effect)
-- Disposition: **adopted, actioned at M4.** Confirms that static reverse-dependency propagation — the mechanism M4's zone-of-effect model already commits to — has published predictive validity (imperfect, but measured, not assumed). Recorded as: (a) evidence basis for the zone-of-effect design already specified in ROADMAP.md M4, and (b) a candidate methodology — mutation-testing-based ground truth — for M4 or M7 to validate the analyzer's own zone predictions against, alongside real agent traces.
+- Disposition: **adopted, actioned at M4.** Confirms that static reverse-dependency propagation — the mechanism M4's zone-of-effect model already commits to — has published predictive validity (imperfect, but measured, not assumed). Recorded as: (a) evidence basis for the zone-of-effect design already specified in ROADMAP.md M4, and (b) a candidate methodology — mutation-testing-based ground truth — for M4's deterministic checks and M8's validation of the analyzer's zone predictions alongside real agent traces.
 
 # 매개변수 변경 표
 
 | Parameter | Current default | Evidence | Contradicted? | Disposition |
 |---|---|---|---|---|
-| Turn model (serial-equivalent turns) | Serial, one query→read at a time (ROADMAP.md "Exploration turns and turns") | F1 | Indirect | Default unchanged; extension candidate pending primary evidence and agent traces |
-| Subagent fan-out | Not modeled | F1 | Indirect | Extension candidate pending primary evidence and agent traces |
+| Turn model (serial-equivalent turns) | Serial, one query→read at a time (ROADMAP.md "Exploration turns and turns") | F1 | Indirect | Default unchanged; extension candidate pending primary evidence and M8 agent traces |
+| Subagent fan-out | Not modeled | F1 | Indirect | Extension candidate pending primary evidence and M8 agent traces |
 | Search surface (path + content, exact + derived) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Search output cap (`search_output_limit: 30`, match-line format) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Index/repo-map preloading — semantic | Not modeled | F2 | N/A (out of declared scope) | Rejected |
-| `bfs-exhaust` (phase-B default exploration policy) | ROADMAP.md "Exploration policy and turns" | none found | Unevidenced | Recorded unevidenced; M3's already-planned `bfs-exhaust` vs `best-first-pivot` trace comparison is the falsification path |
-| `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | Indirect | Default remains explicitly uncalibrated; trace-derived ordering is an M7 extension candidate |
+| `bfs-exhaust` (phase-B default exploration policy) | ROADMAP.md "Exploration policy and turns" | none found | Unevidenced | Recorded unevidenced; M8's `bfs-exhaust` vs `best-first-pivot` trace comparison is the falsification path |
+| `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | Indirect | Default remains explicitly uncalibrated; trace-derived ordering is an M8 extension candidate |
 | Context-window eviction | Not modeled | F4 | Yes (by omission) | Extension candidate; define and calibrate a profile option before adoption |
 
 # 적용한 프로필 변경
 
 None. Direct evidence does not prescribe a change to an existing profile value.
-Context-window eviction is an M3-or-later profile option. The indirect findings on turn model, subagent fan-out, and trace-derived
+Context-window eviction is a future profile option whose live calibration belongs to M8. The indirect findings on turn model, subagent fan-out, and trace-derived
 ordering remain extension candidates rather than default changes. The relevant profile files do not exist yet
 (`profiles/exploration_policy.v1.yaml`, `profiles/cost_weights.v1.yaml` — both M3
 deliverables) or to phase-A scope itself, which is ROADMAP.md prose rather than a profile
