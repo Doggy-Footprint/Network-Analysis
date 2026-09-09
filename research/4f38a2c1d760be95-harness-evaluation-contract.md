@@ -12,6 +12,8 @@ Candidate metrics may include PageRank and directed in/out degree from the origi
 
 `harness_observation.v1` binds each trace to a snapshot digest and the complete profile content hash. Events preserve repeated calls, returned quantities, unknown fields represented by null, truncation or failure status, and explicit confirmation evidence. Comparisons use only returned fields whose values are known. A trace with no confirmation evidence remains unobserved for confirmation.
 
+`harness_support.v1` records the support and provenance state for every scalar profile setting. `harness_evaluation_case.v1` fixes confirmation, outcome, snapshot, profile, and comparison-cell inputs. `harness_evaluation_run.v1` binds an embedded observation trace to one cell. `python -m bottlenecks.evaluation` deterministically evaluates or compares these recorded inputs without calling an agent or live harness.
+
 Legacy `agent_trace.v1` conversion uses caller-supplied snapshot and profile context. Its binding is unverified, returned ranges and text remain unknown, and output comparison stays disabled.
 
 ## M2–M7 handoff to M8
@@ -27,7 +29,7 @@ M2–M7 use deterministic fixtures, replay, and independent change, mutation, or
 | M6 | Review evidence joined to static exposure conditions, with extraction errors evaluated separately | Actual exploration or confirmation omissions and combined usefulness |
 | M7 | Versioned corpus and profiles, calibration/validation split, execution conditions, calibration procedure and static regression results | Calibration quality and generalization across environments |
 
-These are evaluation inputs, not new artifact schemas or a declaration that the milestones are complete. Fixed trace comparison remains available before M8; collecting live traces and using them to validate behavior belongs to M8.
+These are evaluation inputs. Fixed trace comparison remains available before M8; collecting live traces and using them to validate behavior belongs to M8.
 
 ## M8 before-and-after evaluation
 

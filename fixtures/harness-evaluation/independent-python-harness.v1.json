@@ -1,0 +1,15 @@
+{
+  "schema": "harness_evaluation_case.v1",
+  "id": "independent-python-harness",
+  "language": "python",
+  "task": "Locate the change boundary.",
+  "confirmations": [{"id": "boundary", "description": "The relevant boundary was confirmed."}],
+  "outcomes": [{"id": "completed", "description": "The task completed."}],
+  "comparison": {
+    "factor": "harness",
+    "cells": [
+      {"id": "harness-before", "repository_variant": "before", "harness_variant": "before", "snapshot_digest": "snapshot-shared", "profile": {"id": "fixed-string-line-baseline", "version": 1, "content_hash": "08e10a27427fb0c2c27662c890c2d2f083dc74f2da8746b26ad15c4cd2adb66a"}},
+      {"id": "harness-after", "repository_variant": "before", "harness_variant": "after", "snapshot_digest": "snapshot-shared", "profile": {"id": "fixed-string-line-baseline", "version": 1, "content_hash": "4a9edaa590d428ffaf79192934b546965306862ac220121734227f275523f33b"}}
+    ]
+  }
+}

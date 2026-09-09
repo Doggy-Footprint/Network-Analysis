@@ -1,0 +1,30 @@
+{
+  "schema": "harness_support.v1",
+  "profile": {"id": "fixed-string-line-baseline", "version": 1, "content_hash": "08e10a27427fb0c2c27662c890c2d2f083dc74f2da8746b26ad15c4cd2adb66a"},
+  "language_scope": ["python"],
+  "settings": [
+    {"pointer":"/provenance_status","value":"unverified_baseline","support":"observation_only","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/content_search/cap_unit","value":"matching_lines","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/content_search/matching","value":"fixed_string_case_sensitive","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/content_search/order","value":"path_lexical_then_numeric_line","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/content_search/same_line_occurrences","value":"preserved","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/content_search/visible_lines","value":30,"support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/path_search/cap_unit","value":"matching_paths","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/path_search/matching","value":"fixed_string_case_sensitive","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/path_search/order","value":"path_lexical_then_numeric_line","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/path_search/visible_lines","value":30,"support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/read/bounds","value":"one_based_inclusive","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/read/eof","value":"clamp","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/read/max_lines","value":2000,"support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/read/truncation","value":"actual_omitted_lines","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/context_compaction","value":"observation_only","support":"observation_only","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/fixed_string_search","value":"supported","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/index","value":"unsupported","support":"unsupported","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/line_range_read","value":"supported","support":"replayed","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/parallelism","value":"observation_only","support":"observation_only","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/semantic_search","value":"unsupported","support":"unsupported","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/features/subagents","value":"observation_only","support":"observation_only","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/assumptions/automatic_injection","value":"unverified_baseline","support":"observation_only","provenance":{"status":"unverified","evidence":[]}},
+    {"pointer":"/assumptions/list_depth","value":2,"support":"replayed","provenance":{"status":"unverified","evidence":[]}}
+  ]
+}

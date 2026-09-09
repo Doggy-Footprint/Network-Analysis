@@ -9,7 +9,7 @@ Related Files: ROADMAP.md, agent_view/models.py, analysis/graph_metrics.py, disc
 Related Symbols: AgentViewGraph, Connection, GraphAnalyzer
 ---
 File: 4f38a2c1d760be95-harness-evaluation-contract.md
-Summary: Defines fixed harness support, trace interpretation, M2–M7 handoff inputs, and M8 live evaluation constraints.
-Related Files: profiles/harness.fixed-baseline.v1.json, bottlenecks/core.py, ROADMAP.md
-Related Symbols: HarnessProfile, ObservationTrace, analyze_bottlenecks
+Summary: Defines fixed harness support, evaluation envelopes, deterministic comparison, M2–M7 handoff inputs, and M8 live evaluation constraints.
+Related Files: profiles/harness.fixed-baseline.v1.json, profiles/harness.fixed-baseline.support.v1.json, bottlenecks/evaluation.py, ROADMAP.md
+Related Symbols: HarnessProfile, ObservationTrace, EvaluationCase, EvaluationRun, compare_runs
 ---
