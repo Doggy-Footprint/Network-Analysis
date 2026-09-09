@@ -61,8 +61,6 @@
 | Replace or extend | the existing symbol graph becomes M1 readable and query nodes; serialization and CLI output extend per milestone contract. Current graph metrics are M5 input and do not constitute M5 completion. |
 | Remove | previous exploration cost, task difficulty, repository cost diff, git diff impact analysis, structural friction diagnostics, Android inject-field arbitrary costs and warnings |
 
-`discovery/`와 `report/m3/`는 부가 시뮬레이션 구현이다. 이를 구현했다는 사실로 아래의 새 M3 또는 행동 보정이 완료됐다고 처리하지 않는다.
-
 ## 로드맵
 
 새 M2~M7은 아래 범위로 재정의한다. M4의 가능성 검토는 M3과 병행하며, M5의 전후 검증 설계는 M2부터 시작한다. 각 구현은 서명·반환값·오류·경계 사례의 계약을 먼저 확정한다. 아직 구현하지 않은 단계의 산출물 이름은 제안이다.
@@ -88,6 +86,8 @@
 산출물: profile별 지원/미지원 표, 노출·확인 행동의 trace 계약, 독립 평가 사례, 구조·harness 전후 실험 계획.
 
 완료 기준: 기본값마다 근거 또는 미검증 표시가 있고, 실제 출력 범위를 재생할 수 있으며, 비용과 확인 충족을 함께 측정하는 기준이 정해져 있다. 지원할 첫 언어·harness와 수치 임계값은 근거 없이 확정하지 않는다.
+
+`discovery/`와 `report/m3/`는 부가 시뮬레이션 구현이다. 이를 구현했다는 사실로 아래의 새 M3 또는 행동 보정이 완료됐다고 처리하지 않는다.
 
 ### M3. 작업 없는 전역 병목 분석 — 미완료
 
