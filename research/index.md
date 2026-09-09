@@ -1,5 +1,5 @@
 File: 6b0ef0fa381f1563-agent-strategy-survey.md
-Summary: 이전 작업별 비용 계약에 대한 M2 조사 v3. 로드맵 재정렬로 기본값 채택·완료 상태의 재검토가 필요하며 stale.md에 등록됨.
+Summary: 이전 작업별 비용 계약의 조사 기록 v4. M8 이관에 따른 적용 범위를 구분했으며 출처·채택 판단의 재검토가 필요해 stale.md 등록 유지.
 Related Files: ROADMAP.md, profiles/agent_view.v3.yaml, profiles/exploration_policy.v1.yaml
 Related Symbols: bfs-exhaust, hint-prior, uniform, search_output_limit, read_unit_token_limit
 ---
@@ -9,7 +9,7 @@ Related Files: ROADMAP.md, agent_view/models.py, analysis/graph_metrics.py, disc
 Related Symbols: AgentViewGraph, Connection, GraphAnalyzer
 ---
 File: 4f38a2c1d760be95-harness-evaluation-contract.md
-Summary: Defines fixed harness support, trace interpretation, and constraints for M8 repeated live before-and-after experiments.
+Summary: Defines fixed harness support, trace interpretation, M2–M7 handoff inputs, and M8 live evaluation constraints.
 Related Files: profiles/harness.fixed-baseline.v1.json, bottlenecks/core.py, ROADMAP.md
 Related Symbols: HarnessProfile, ObservationTrace, analyze_bottlenecks
 ---

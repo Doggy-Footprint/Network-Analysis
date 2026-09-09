@@ -1,8 +1,14 @@
 File: 6b0ef0fa381f1563-agent-strategy-survey.md
 마일스톤: M2
-버전: 3
+버전: 4
 
-# 목적
+# 현재 적용 범위
+
+이 문서는 이전 작업별 탐색 비용 모델의 조사 기록이다. 아래 발견의 채택·거절 표현과 기본값 표는 당시 판단이며, 현재 핵심 모델의 채택 결정이나 검증 완료를 뜻하지 않는다. 출처를 재조사하지 않았으므로 `stale.md` 등록을 유지한다.
+
+현재 M2는 관측 계약과 평가 기준을 준비하고, M2~M7은 결정적 검사와 M8 입력 준비를 수행한다. 실제 행동 대조와 보정은 M8에서 수행한다. 현재 단계와 완료 기준은 [ROADMAP.md](../ROADMAP.md#로드맵), 정적 기준선과 실측의 경계는 [Harness 평가 계약](4f38a2c1d760be95-harness-evaluation-contract.md)에 따른다.
+
+# 당시 조사 목적
 
 M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기본값으로 취급하는 행동 매개변수(직렬 탐색 턴, grep 루프 방식 검색, `bfs-exhaust`, `hint-prior`)에 관한 발표된 근거와 M4 수정 전 체크리스트를 위한 변경 영향 분석 문헌을 조사한다. 각 발견에는 출처, 주장, 영향을 받는 모델 매개변수, 처리 결정(즉시 채택 / 연기 / 거절) 및 사유를 기록한다.
 
@@ -82,20 +88,11 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 
 # 적용한 프로필 변경
 
-None. Direct evidence does not prescribe a change to an existing profile value.
-Context-window eviction is a future profile option whose live calibration belongs to M8. The indirect findings on turn model, subagent fan-out, and trace-derived
-ordering remain extension candidates rather than default changes. The relevant profile files do not exist yet
-(`profiles/exploration_policy.v1.yaml`, `profiles/cost_weights.v1.yaml` — both M3
-deliverables) or to phase-A scope itself, which is ROADMAP.md prose rather than a profile
-value. Editing the existing frozen M1 profile (`profiles/agent_view.v3.yaml`) is out of
-scope here: F4 supports the existing search surface and capped output but does not prescribe
-their values, so no value change is warranted, and its content is
-pinned by M1 golden-fixture and provenance-string tests
-(`tests/test_agent_view_graph.py::test_profile_serializes_every_behavior_limit_version_and_provenance`).
-This delta table is the recorded input M3 consumes when it creates the exploration-policy
-and cost-weight profiles.
+이 조사로 변경한 profile 값은 없다. 현재 `profiles/exploration_policy.v1.yaml`과 `profiles/cost_weights.v1.yaml`은 존재하며 부가 탐색 시뮬레이션의 설정이다. 이들의 구현이나 fixture 통과는 실제 행동 근거가 아니다. 현재 harness 기준선은 `profiles/harness.fixed-baseline.v1.json`이며 실제 일치 여부는 M8까지 미검증으로 남긴다.
 
-# 재실행 정책
+# 버전 이력
+
+Version 4: M8 검증 이관에 맞춰 현재 적용 범위와 과거 판단을 분리하고, 이미 존재하는 profile을 향후 산출물로 설명하던 문구와 이전 로드맵의 재조사 일정 인용을 정리했다. 출처의 재검증이나 기본값 변경은 수행하지 않았다.
 
 Version 3: removed F3 (Aider PageRank repository map) and its two parameter-delta rows.
 Structural repo-map preloading is implemented in M3 as a phase-A seed mechanism enabled by
@@ -107,7 +104,4 @@ Version 2 cross-check: separated direct evidence from indirect evidence, correct
 source-bounded claims, recorded F4 evidence for context-window eviction, and replaced F7's
 preprint-only citation with its published source.
 
-Per ROADMAP.md M2: "The findings file is re-run and re-versioned before each later
-milestone rather than treated as done once." Re-run before M3, M4, M6 and M7, bump
-`Version:` in this file's header, and append new findings rather than deleting superseded
-ones — a superseded finding's disposition is updated in place with a note on why.
+이전 로드맵의 단계별 재조사 일정은 현재 완료 조건으로 승계하지 않는다. 이 기록의 근거를 새 profile이나 후보 방법에 사용하려면 출처 범위와 현재 계약에 대한 적용 가능성을 다시 확인하고 버전을 갱신한다. 실제 에이전트 행동에 대한 적합성 판정은 M8에서 수행한다.

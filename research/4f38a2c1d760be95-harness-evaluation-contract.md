@@ -14,6 +14,21 @@ Candidate metrics may include PageRank and directed in/out degree from the origi
 
 Legacy `agent_trace.v1` conversion uses caller-supplied snapshot and profile context. Its binding is unverified, returned ranges and text remain unknown, and output comparison stays disabled.
 
+## M2–M7 handoff to M8
+
+M2–M7 use deterministic fixtures, replay, and independent change, mutation, or contract cases without live harness or agent calls. A passing fixture checks the declared static contract; it does not establish agreement with a live harness. The milestone completion criteria are maintained in [ROADMAP.md](../ROADMAP.md#로드맵).
+
+| Prepared in | Inputs handed to M8 | Claims remaining `unverified` until live evaluation |
+|---|---|---|
+| M2 | Profile support and provenance, trace contract, independent case definitions, confirmation and outcome criteria, comparison plan | Team harness baseline agreement |
+| M3 | Global candidates with evidence, probes, profile conditions and coverage | Candidate behavior in agent runs |
+| M4 | Independent review candidates and change, mutation or contract cases with omission and excess-candidate checks | Usefulness during agent review |
+| M5 | Reproducible changes, before/after snapshots and profiles, deterministic what-if expectations | Reduced effort with confirmations and outcomes preserved |
+| M6 | Review evidence joined to static exposure conditions, with extraction errors evaluated separately | Actual exploration or confirmation omissions and combined usefulness |
+| M7 | Versioned corpus and profiles, calibration/validation split, execution conditions, calibration procedure and static regression results | Calibration quality and generalization across environments |
+
+These are evaluation inputs, not new artifact schemas or a declaration that the milestones are complete. Fixed trace comparison remains available before M8; collecting live traces and using them to validate behavior belongs to M8.
+
 ## M8 before-and-after evaluation
 
 No agent before-and-after experiment has been performed for this implementation. M2–M7 prepare the inputs and retain live-dependent results as `unverified`; M8 must freeze these items before repeated live execution:
