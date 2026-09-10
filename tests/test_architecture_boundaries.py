@@ -73,21 +73,6 @@ class TestArchitectureBoundaries(unittest.TestCase):
                 source_path,
             )
 
-    def test_discovery_does_not_import_framework_analyzers(self):
-        root = Path(__file__).resolve().parents[1]
-        for source_path in (root / "discovery").rglob("*.py"):
-            tree = ast.parse(source_path.read_text(encoding="utf-8"))
-            imported = []
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    imported.extend(alias.name for alias in node.names)
-                elif isinstance(node, ast.ImportFrom) and node.module:
-                    imported.append(node.module)
-            self.assertFalse(
-                any(name == "framework_analyzers" or name.startswith("framework_analyzers.") for name in imported),
-                source_path,
-            )
-
     def test_framework_analyzers_do_not_cross_import(self):
         root = Path(__file__).resolve().parents[1]
         pairs = (

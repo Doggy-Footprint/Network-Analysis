@@ -82,23 +82,16 @@ M3에서 B단계 비용 계약을 확정하기 전에, 분석기가 현재 기�
 | Search surface (path + content, exact + derived) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Search output cap (`search_output_limit: 30`, match-line format) | `profiles/agent_view.v3.yaml` | F4 | No | Adopted / confirmed, no change |
 | Index/repo-map preloading — semantic | Not modeled | F2 | N/A (out of declared scope) | Rejected |
-| `bfs-exhaust` (phase-B default exploration policy) | ROADMAP.md "Exploration policy and turns" | none found | Unevidenced | Recorded unevidenced; M8's `bfs-exhaust` vs `best-first-pivot` trace comparison is the falsification path |
 | `hint-prior` (vs `uniform` result-ordering) | ROADMAP.md "Cost distribution" | F5, F6 | Indirect | Default remains explicitly uncalibrated; trace-derived ordering is an M8 extension candidate |
 | Context-window eviction | Not modeled | F4 | Yes (by omission) | Extension candidate; define and calibrate a profile option before adoption |
 
 # 적용한 프로필 변경
 
-이 조사로 변경한 profile 값은 없다. 현재 `profiles/exploration_policy.v1.yaml`과 `profiles/cost_weights.v1.yaml`은 존재하며 부가 탐색 시뮬레이션의 설정이다. 이들의 구현이나 fixture 통과는 실제 행동 근거가 아니다. 현재 harness 기준선은 `profiles/harness.fixed-baseline.v1.json`이며 실제 일치 여부는 M8까지 미검증으로 남긴다.
+이 조사로 변경한 profile 값은 없다. 현재 harness 기준선은 `profiles/harness.fixed-baseline.v1.json`이며 실제 일치 여부는 M8까지 미검증으로 남긴다.
 
 # 버전 이력
 
 Version 4: M8 검증 이관에 맞춰 현재 적용 범위와 과거 판단을 분리하고, 이미 존재하는 profile을 향후 산출물로 설명하던 문구와 이전 로드맵의 재조사 일정 인용을 정리했다. 출처의 재검증이나 기본값 변경은 수행하지 않았다.
-
-Version 3: removed F3 (Aider PageRank repository map) and its two parameter-delta rows.
-Structural repo-map preloading is implemented in M3 as a phase-A seed mechanism enabled by
-default, and PageRank as a graph-wide metric predates this survey; carrying them here as
-survey findings made a design decision look evidence-driven when it is not. Their provenance
-now lives in `profiles/exploration_policy.v1.yaml`.
 
 Version 2 cross-check: separated direct evidence from indirect evidence, corrected F4's
 source-bounded claims, recorded F4 evidence for context-window eviction, and replaced F7's

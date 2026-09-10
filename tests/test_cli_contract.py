@@ -18,6 +18,12 @@ class RemovedCliArgumentsTests(unittest.TestCase):
             ["--diagnostics"],
             ["--diagnostics-output", "diagnostics.json"],
             ["--graph-cost-config", "costs.json"],
+            ["--phase-b", "scenarios.json"],
+            ["--phase-b-out", "cost.json"],
+            ["--exploration-policy", "policy.yaml"],
+            ["--cost-weights", "weights.yaml"],
+            ["--samples", "12"],
+            ["--seed", "7"],
         ]
 
         for arguments in removed_arguments:
@@ -57,100 +63,6 @@ class AgentViewCliArgumentTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.code, 2)
         self.assertIn("--agent-view-profile", stderr.getvalue())
-
-
-class PhaseBCliArgumentTests(unittest.TestCase):
-    def parse(self, arguments):
-        with patch.object(sys, "argv", ["code-analyzer", ".", *arguments]):
-            return parse_args()
-
-    def test_phase_b_arguments_are_accepted(self):
-        args = self.parse([
-            "--phase-b", "scenarios.json", "--phase-b-out", "cost.json",
-            "--exploration-policy", "policy.yaml", "--cost-weights", "weights.yaml",
-            "--samples", "12", "--seed", "7",
-        ])
-
-        self.assertEqual(args.phase_b, "scenarios.json")
-        self.assertEqual(args.phase_b_out, "cost.json")
-        self.assertEqual(args.exploration_policy, "policy.yaml")
-        self.assertEqual(args.cost_weights, "weights.yaml")
-        self.assertEqual(args.samples, 12)
-        self.assertEqual(args.seed, 7)
-
-    def test_phase_b_out_defaults(self):
-        self.assertEqual(
-            self.parse(["--phase-b", "scenarios.json"]).phase_b_out,
-            "phase_b_cost.json",
-        )
-
-    def test_RFCI_E01_seed_queries_argument_is_removed(self):
-        stderr = io.StringIO()
-        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as raised:
-            self.parse(["--phase-b", "scenarios.json", "--seed-queries", "seeds.json"])
-        self.assertEqual(raised.exception.code, 2)
-        self.assertIn("--seed-queries", stderr.getvalue())
-
-    def test_RFCI_E02_phase_b_uses_scenario_seed_queries(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            project = root / "project"
-            project.mkdir()
-            (project / "app.py").write_text("def answer():\n    return 42\n", encoding="utf-8")
-            scenarios = root / "scenarios.json"
-            scenarios.write_text(json.dumps({
-                "schema": "scenarios.v1",
-                "scenarios": [{
-                    "id": "answer",
-                    "task": "Change answer behavior",
-                    "targets": ["app.py"],
-                    "seed_queries": [{"term": "answer", "surface": "content"}],
-                }],
-            }), encoding="utf-8")
-            output = root / "phase-b.json"
-            with patch.object(sys, "argv", [
-                "code-analyzer", str(project), "--language", "python",
-                "--phase-b", str(scenarios), "--phase-b-out", str(output),
-                "--samples", "1", "-o", str(root / "architecture.html"),
-            ]), contextlib.redirect_stdout(io.StringIO()):
-                main()
-
-            payload = json.loads(output.read_text(encoding="utf-8"))
-        self.assertEqual(payload["scenarios"][0]["seed_queries"]["source"], "explicit")
-        self.assertEqual(
-            payload["scenarios"][0]["seed_queries"]["terms"],
-            [{"term": "answer", "surface": "content"}],
-        )
-
-    def test_each_companion_flag_without_phase_b_exits_with_code_two(self):
-        companions = [
-            ["--phase-b-out", "cost.json"],
-            ["--exploration-policy", "policy.yaml"],
-            ["--cost-weights", "weights.yaml"],
-            ["--samples", "12"],
-            ["--seed", "7"],
-        ]
-
-        for arguments in companions:
-            with self.subTest(arguments=arguments):
-                stderr = io.StringIO()
-                with contextlib.redirect_stderr(stderr):
-                    with self.assertRaises(SystemExit) as raised:
-                        self.parse(arguments)
-                self.assertEqual(raised.exception.code, 2)
-                self.assertIn(arguments[0], stderr.getvalue())
-                self.assertIn("--phase-b", stderr.getvalue())
-
-    def test_non_positive_sample_count_is_rejected(self):
-        for value in ("0", "-1"):
-            with self.subTest(value=value):
-                stderr = io.StringIO()
-                with contextlib.redirect_stderr(stderr):
-                    with self.assertRaises(SystemExit) as raised:
-                        self.parse(["--phase-b", "scenarios.json", "--samples", value])
-
-                self.assertEqual(raised.exception.code, 2)
-                self.assertIn("--samples", stderr.getvalue())
 
 
 class RemovedDiagnosticsApiTests(unittest.TestCase):

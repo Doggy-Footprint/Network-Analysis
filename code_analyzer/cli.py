@@ -13,18 +13,6 @@ from agent_view import (build_agent_view, build_snapshot, diff_agent_view, graph
                         list_repository_files, load_profile, read_file)
 from agent_view.profile import ProfileError, default_profile_path
 from analysis import GraphAnalyzer
-from discovery import (
-    ExplicitSeedQueries,
-    GraphView,
-    build_report,
-    default_policy_path,
-    default_weights_path,
-    load_cost_weights,
-    load_exploration_policy,
-    load_scenarios,
-    report_to_json,
-    run_scenario,
-)
 from language_analyzers.core.serialization import architecture_to_dict
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
@@ -141,44 +129,6 @@ def parse_args():
         metavar="PATH",
         help="Override the derived-query rule profile used by --agent-view.",
     )
-    parser.add_argument(
-        "--phase-b",
-        default=None,
-        metavar="SCENARIOS",
-        help="Run the auxiliary task-specific phase A/B target-discovery simulation.",
-    )
-    parser.add_argument(
-        "--phase-b-out",
-        default="phase_b_cost.json",
-        metavar="PATH",
-        help="Output path for the auxiliary phase-B simulation report.",
-    )
-    parser.add_argument(
-        "--exploration-policy",
-        default=None,
-        metavar="PATH",
-        help="Override the exploration policy profile used by --phase-b.",
-    )
-    parser.add_argument(
-        "--cost-weights",
-        default=None,
-        metavar="PATH",
-        help="Override the cost weight profile used by --phase-b.",
-    )
-    parser.add_argument(
-        "--samples",
-        type=int,
-        default=None,
-        metavar="N",
-        help="Fixed Monte Carlo sample count for --phase-b, overriding the adaptive loop.",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=None,
-        metavar="N",
-        help="Random seed root for --phase-b, overriding the policy profile seed.",
-    )
     parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v1 JSON.")
     parser.add_argument("--harness-profile", metavar="PATH", help="Harness profile for --bottlenecks.")
     parser.add_argument("--observation-trace", action="append", default=[], metavar="PATH", help="Repeatable observed harness trace for --bottlenecks.")
@@ -187,18 +137,6 @@ def parse_args():
         parser.error("--entrypoint and --app are only supported with --framework fastapi")
     if args.agent_view_profile and not (args.agent_view or args.bottlenecks):
         parser.error("--agent-view-profile requires --agent-view or --bottlenecks")
-    if not args.phase_b:
-        for flag, value in (
-            ("--phase-b-out", args.phase_b_out if args.phase_b_out != "phase_b_cost.json" else None),
-            ("--exploration-policy", args.exploration_policy),
-            ("--cost-weights", args.cost_weights),
-            ("--samples", args.samples),
-            ("--seed", args.seed),
-        ):
-            if value is not None:
-                parser.error(f"{flag} requires --phase-b")
-    if args.samples is not None and args.samples < 1:
-        parser.error("--samples must be >= 1")
     if args.bottlenecks and args.language != "python":
         parser.error("--bottlenecks requires --language python")
     if args.bottlenecks and not args.harness_profile:
@@ -213,8 +151,6 @@ def parse_args():
         output_paths = [Path(args.output).resolve(), Path(args.bottlenecks).resolve()]
         if args.agent_view:
             output_paths.append(Path(args.agent_view).resolve())
-        if args.phase_b:
-            output_paths.append(Path(args.phase_b_out).resolve())
         if args.json:
             output_paths.append(Path(args.output).resolve().with_suffix(".json"))
         if len(output_paths) != len(set(output_paths)):
@@ -246,8 +182,6 @@ def _output_paths(project_path: Path, args) -> tuple[Path, ...]:
         paths.append(Path(args.bottlenecks).resolve())
     if args.agent_view:
         paths.append(Path(args.agent_view).resolve())
-    if args.phase_b:
-        paths.append(Path(args.phase_b_out).resolve())
     return tuple(paths)
 
 
@@ -381,7 +315,7 @@ def main(
 
     agent_view_graph = None
     agent_view_profile = None
-    if args.agent_view or args.phase_b or args.bottlenecks:
+    if args.agent_view or args.bottlenecks:
         agent_view_profile = snapshot_profile or load_profile(
             args.agent_view_profile or default_profile_path()
         )
@@ -449,28 +383,6 @@ def main(
         bottleneck_path = Path(args.bottlenecks).resolve()
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
-
-    if args.phase_b:
-        policy = load_exploration_policy(args.exploration_policy or default_policy_path())
-        weights = load_cost_weights(args.cost_weights or default_weights_path())
-        view = GraphView(agent_view_graph)
-        results = []
-        seed_sets = {}
-        for scenario in load_scenarios(args.phase_b, view):
-            seed_set = ExplicitSeedQueries(scenario.seed_terms).generate(scenario.task)
-            resolved = scenario
-            seed_sets[resolved.id] = seed_set
-            results.append(
-                run_scenario(
-                    view, resolved, policy, weights, samples=args.samples, seed=args.seed
-                )
-            )
-        payload = build_report(
-            agent_view_graph, view, results, agent_view_profile, policy, weights, seed_sets
-        )
-        phase_b_path = Path(args.phase_b_out).resolve()
-        _write_text(phase_b_path, report_to_json(payload), file_writer)
-        print(f"[✓] Exported auxiliary phase-B simulation report: {phase_b_path}")
 
     if args.mermaid:
         if builder is None:
