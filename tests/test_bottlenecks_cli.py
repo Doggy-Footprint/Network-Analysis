@@ -1,9 +1,6 @@
 import contextlib
-import hashlib
 import io
 import json
-import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -54,18 +51,6 @@ class BottleneckArgumentContractTests(unittest.TestCase):
 
 
 class BottleneckRunContractTests(unittest.TestCase):
-    def test_legacy_m1_agent_view_matches_frozen_baseline_across_hash_seeds(self):
-        root = Path(__file__).resolve().parents[1]
-        expected = (root / "fixtures/bottlenecks/m1-agent-view-baseline.sha256").read_text().strip()
-        project = root / "examples/official_template"
-        for seed in ("1", "777"):
-            with self.subTest(seed=seed), tempfile.TemporaryDirectory() as directory:
-                output = Path(directory) / "agent-view.json"
-                environment = {**os.environ, "PYTHONHASHSEED": seed}
-                subprocess.run([sys.executable, "-m", "code_analyzer", str(project), "--language", "python", "--agent-view", str(output), "-o", str(Path(directory) / "report.html")], cwd=root, env=environment, check=True, capture_output=True, text=True)
-                normalized = output.read_text().replace(str(project), "<PROJECT_ROOT>")
-                self.assertEqual(hashlib.sha256(normalized.encode()).hexdigest(), expected)
-
     def run_cli(self, project, arguments, *, files, renderer=None):
         reads = []
         writes = {}

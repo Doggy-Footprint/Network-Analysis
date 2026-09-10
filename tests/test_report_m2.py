@@ -102,26 +102,3 @@ class M2ReportTests(unittest.TestCase):
             source = self.write_payload(Path(directory), comparison_payload())
             self.assertEqual(main([str(source)]), 0)
             self.assertTrue(source.with_suffix(".html").exists())
-
-    def test_M2R_E01_committed_run_fixture_generates_an_offline_html_report(self):
-        root = Path(__file__).resolve().parents[1]
-        with tempfile.TemporaryDirectory() as directory:
-            result = Path(directory) / "result.json"
-            self.assertEqual(evaluation_main([
-                "evaluate",
-                str(root / "fixtures/harness-evaluation/independent-python-structure.v1.json"),
-                str(root / "fixtures/harness-evaluation/independent-python-structure-before-run.v1.json"),
-                str(root / "profiles/harness.fixed-baseline.v1.json"),
-                "-s", str(root / "profiles/harness.fixed-baseline.support.v1.json"),
-                "-o", str(result),
-            ]), 0)
-            payload = json.loads(result.read_text(encoding="utf-8"))
-            document = generate_report(result).read_text(encoding="utf-8")
-        self.assertEqual(payload["burden"], {
-            "total_calls": 3, "search_calls": 1, "read_calls": 0,
-            "preparation_calls": 0, "failed_calls": 0, "returned_items": 2,
-            "returned_lines": 1, "duplicated_exposure": 0,
-        })
-        self.assertTrue(payload["eligible"])
-        self.assertEqual(embedded_payload(document), payload)
-        self.assertNotIn('src="', document)

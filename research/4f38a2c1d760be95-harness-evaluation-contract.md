@@ -18,7 +18,7 @@ Legacy `agent_trace.v1` conversion uses caller-supplied snapshot and profile con
 
 ## M2–M7 handoff to M8
 
-M2–M7 use deterministic fixtures, replay, and independent change, mutation, or contract cases without live harness or agent calls. A passing fixture checks the declared static contract; it does not establish agreement with a live harness. The milestone completion criteria are maintained in [ROADMAP.md](../ROADMAP.md#로드맵).
+M2–M7 use deterministic replay and independent inline change, mutation, or contract cases without live harness or agent calls. Their tests verify functional results, errors, and invariants without pinning a full-output hash or golden artifact. Passing checks the declared static contract; it does not establish agreement with a live harness. The milestone completion criteria are maintained in [ROADMAP.md](../ROADMAP.md#로드맵).
 
 | Prepared in | Inputs handed to M8 | Claims remaining `unverified` until live evaluation |
 |---|---|---|

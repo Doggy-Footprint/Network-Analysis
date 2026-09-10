@@ -252,49 +252,5 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(report_to_json(payload), report_to_json(self.payload))
 
 
-class ProducedReportTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
-        from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
-        from agent_view import build_agent_view
-
-        cls.root = Path(__file__).resolve().parents[1]
-        architecture = FastAPIAnalyzer(str(cls.root / "examples" / "realworld_app")).analyze()
-        architecture = ArchitectureGraphBuilder().build_graph(architecture)
-        cls.graph = build_agent_view(architecture, profile=load_profile(default_profile_path()))
-        cls.view = GraphView(cls.graph)
-
-    def test_every_committed_scenario_target_resolves_against_the_example_repository(self):
-        scenarios = load_scenarios(self.root / "fixtures" / "scenarios.v1.json", self.view)
-
-        self.assertEqual(len(scenarios), 3)
-        self.assertTrue(any(len(item.target_node_ids) >= 2 for item in scenarios))
-        self.assertTrue(any(item.seed_terms for item in scenarios))
-        self.assertTrue(any(not item.seed_terms for item in scenarios))
-        for scenario in scenarios:
-            with self.subTest(scenario=scenario.id):
-                self.assertTrue(scenario.target_node_ids)
-                for node_id in scenario.target_node_ids:
-                    self.assertIn(node_id, self.view.readable)
-
-    def test_committed_seed_terms_are_not_all_zero_result_queries(self):
-        cached = CachedSeedQueryGenerator.from_path(
-            self.root / "fixtures" / "seed_queries.v1.json"
-        )
-        policy = load_exploration_policy(default_policy_path())
-
-        for scenario in load_scenarios(self.root / "fixtures" / "scenarios.v1.json", self.view):
-            with self.subTest(scenario=scenario.id):
-                resolved, seed_set = resolve_seed_queries(scenario, cached)
-                phase_a = run_phase_a(self.view, resolved, policy)
-
-                self.assertTrue(seed_set.terms)
-                self.assertTrue(
-                    phase_a.seed_query_ids,
-                    f"every seed term of {scenario.id} degenerated to a zero-result query",
-                )
-
-
 if __name__ == "__main__":
     unittest.main()

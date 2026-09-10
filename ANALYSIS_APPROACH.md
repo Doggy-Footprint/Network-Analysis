@@ -269,7 +269,7 @@ M8은 고정된 입력으로 실제 harness를 반복 실행하고 구조 변경
 
 | 대상 | 기존 근거 또는 구현 | 변경 전 확인할 조건 |
 |---|---|---|
-| 읽기·query·occurrence·hint | `agent_view/`, `profiles/agent_view.v3.yaml` | golden fixture, 직렬화·출력·근거 재현성 |
+| 읽기·query·occurrence·hint | `agent_view/`, `profiles/agent_view.v3.yaml` | 기능 결과·오류·불변성과 직렬화·출력·근거 재현성 |
 | 언어·프레임워크 관계 | `language_analyzers/`, `framework_analyzers/` | 지원 관계와 resolver의 실제 의미, 미지원 경계 |
 | 전역 지표 | `analysis/graph_metrics.py` | 지표의 그래프 범위·비용 가정과 장애 근거 |
 | JSON 기반 보고서 | `report/m1/`, `report/shared/` | 결과와 표시의 일치, 근거 drill-down |

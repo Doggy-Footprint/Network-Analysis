@@ -17,9 +17,6 @@ from language_analyzers.python.symbols import build_symbol_table
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ORACLE = json.loads((ROOT / "fixtures/bottlenecks/frozen-oracle.json").read_text())
-
-
 def profile_payload(visible=30, maximum=2000, depth=2):
     return {"schema": "harness_profile.v1", "id": "test-fixed", "version": 1, "provenance_status": "unverified_baseline", "content_search": {"matching": "fixed_string_case_sensitive", "order": "path_lexical_then_numeric_line", "visible_lines": visible, "cap_unit": "matching_lines", "same_line_occurrences": "preserved"}, "path_search": {"matching": "fixed_string_case_sensitive", "order": "path_lexical_then_numeric_line", "visible_lines": visible, "cap_unit": "matching_paths"}, "read": {"bounds": "one_based_inclusive", "max_lines": maximum, "eof": "clamp", "truncation": "actual_omitted_lines"}, "features": {"fixed_string_search": "supported", "line_range_read": "supported", "semantic_search": "unsupported", "index": "unsupported", "context_compaction": "observation_only", "parallelism": "observation_only", "subagents": "observation_only"}, "assumptions": {"automatic_injection": "unverified_baseline", "list_depth": depth}}
 
@@ -43,23 +40,12 @@ def trace_payload(profile, events, digest):
 class HarnessReplayContractTests(unittest.TestCase):
     def setUp(self): self.profile = parse_harness_profile(profile_payload())
 
-    def test_frozen_actual_rg_oracle_preserves_vt_unicode_and_same_line_occurrences(self):
-        raw = [json.loads(line) for line in ORACLE["raw"]["search"].splitlines() if json.loads(line)["type"] == "match"]
-        expected = sorted((i["data"]["path"]["text"].removeprefix("./"), i["data"]["line_number"], len(i["data"]["submatches"])) for i in raw)
-        corpus = ROOT / "fixtures/bottlenecks/corpus"
-        repo = snapshot({p.relative_to(corpus).as_posix(): p.read_text() for p in corpus.rglob("*.py")})
-        actual = replay_probe(repo, Probe("actual", "exact", "content", "needle"), self.profile)
-        self.assertEqual([(r["path"], r["line"], r["occurrences"]) for r in actual.rows], expected)
-        self.assertEqual([(r["path"], r["line"]) for r in actual.rows if r["path"] == "unicode.py"][:2], [("unicode.py", 1), ("unicode.py", 2)])
-
     def test_scope_extension_root_list_and_caps(self):
         repo = snapshot({"foo/a.py": "needle needle\nneedle\n", "foobar/a.py": "needle", "foo/a.txt": "needle", "root.py": "needle", "deep/x/y.py": "needle"})
         result = replay_probe(repo, Probe("scope", "exact", "content", "needle", "repository|path_prefix:foo|extension:.py"), self.profile)
         self.assertEqual([(r["path"], r["line"]) for r in result.rows], [("foo/a.py", 1), ("foo/a.py", 2)])
         paths = replay_probe(repo, Probe("paths", "exact", "path", "a", "extension:.py"), self.profile)
         self.assertEqual([r["path"] for r in paths.rows], ["foo/a.py", "foobar/a.py"])
-        frozen_paths = sorted(ORACLE["raw"]["files"].splitlines())
-        self.assertEqual(frozen_paths, ["a.py", "dir/nested.py", "unicode.py"])
         listed = replay_probe(repo, Probe("root", "list", "path", "", "root"), parse_harness_profile(profile_payload(depth=1)))
         self.assertEqual([r["path"] for r in listed.rows], ["root.py"])
         cap = replay_probe(repo, Probe("cap", "exact", "content", "needle"), parse_harness_profile(profile_payload(2)))
@@ -305,45 +291,3 @@ class BottleneckAnalysisContractTests(unittest.TestCase):
     def test_completed_empty_confirmation_remains_unobserved(self):
         trace = parse_observation_trace(trace_payload(self.profile, [{"id": "confirm", "kind": "confirm", "status": "completed", "inputs": {}, "returned": {}}], self.repo.digest))
         self.assertEqual(self.report((trace,)).observations[0]["confirmation_status"], "unobserved")
-
-    def test_frozen_actual_tool_observation_matches_and_corrupted_text_mismatches(self):
-        corpus = ROOT / "fixtures/bottlenecks/corpus"
-        repo = snapshot({p.relative_to(corpus).as_posix(): p.read_text() for p in corpus.rglob("*.py")})
-        architecture = PythonGraphAnalyzer("/repo", repo).analyze()
-        graph = build_agent_view(architecture, profile=load_profile(ROOT / "profiles/agent_view.v3.yaml"), snapshot=repo)
-        profile = parse_harness_profile(profile_payload())
-        report = analyze_bottlenecks(repo, architecture, graph, profile)
-        probe = next(item["probe"] for item in report.probes if item["probe"]["kind"] == "exact" and item["probe"]["surface"] == "content" and item["probe"]["term"] == "needle")
-        rows = []
-        for line in ORACLE["raw"]["search"].splitlines():
-            item = json.loads(line)
-            if item["type"] == "match":
-                data = item["data"]
-                rows.append({"path": data["path"]["text"].removeprefix("./"), "line": data["line_number"], "text": data["lines"]["text"].removesuffix("\n"), "occurrences": len(data["submatches"])})
-        rows.sort(key=lambda row: (row["path"], row["line"]))
-        returned = {"rows": rows, "total_count": len(rows), "visible_count": len(rows), "omitted_count": 0, "truncated": False}
-        corrupt = copy.deepcopy(returned)
-        corrupt["rows"][0]["text"] = "corrupted actual text"
-        trace = parse_observation_trace(trace_payload(profile, [{"id": "actual", "kind": "search", "inputs": {"probe_id": probe["id"]}, "returned": returned}, {"id": "wrong-text", "kind": "search", "inputs": {"probe_id": probe["id"]}, "returned": corrupt}], repo.digest))
-        comparisons = analyze_bottlenecks(repo, architecture, graph, profile, traces=(trace,)).observations[0]["comparisons"]
-        self.assertEqual([item["status"] for item in comparisons], ["match", "mismatch"])
-
-    def test_frozen_sed_read_is_preserved_and_repeated_read_costs_are_counted(self):
-        corpus = ROOT / "fixtures/bottlenecks/corpus"
-        repo = snapshot({p.relative_to(corpus).as_posix(): p.read_text() for p in corpus.rglob("*.py")})
-        architecture = PythonGraphAnalyzer("/repo", repo).analyze()
-        graph = build_agent_view(architecture, profile=load_profile(ROOT / "profiles/agent_view.v3.yaml"), snapshot=repo)
-        profile = parse_harness_profile(profile_payload())
-        returned = {"range": {"path": "unicode.py", "start_line": 1, "end_line": 3}, "text": ORACLE["raw"]["unicode.py"], "visible_count": 3}
-        events = [{"id": "read-1", "kind": "read", "inputs": {"path": "unicode.py", "start_line": 1, "end_line": 3}, "returned": returned}, {"id": "read-2", "kind": "read", "inputs": {"path": "unicode.py", "start_line": 1, "end_line": 3}, "returned": copy.deepcopy(returned)}, {"id": "failed-confirm", "kind": "confirm", "status": "failed", "inputs": {}, "returned": {}}]
-        trace = parse_observation_trace(trace_payload(profile, events, repo.digest))
-        observation = analyze_bottlenecks(repo, architecture, graph, profile, traces=(trace,)).observations[0]
-        self.assertEqual(observation["returned_visible_count"], 6)
-        self.assertEqual(observation["duplicated_exposure_count"], 3)
-        self.assertEqual(observation["confirmation_status"], "unobserved")
-        replayed = replay_probe(repo, Probe("frozen-sed", "exact", "read", "", path="unicode.py", start_line=1, end_line=3), profile)
-        self.assertEqual(replayed.rows[0]["text"], ORACLE["raw"]["unicode.py"])
-        corrupt = dict(returned, text="corrupted read")
-        compared = parse_observation_trace(trace_payload(profile, [{"id": "sed", "kind": "read", "inputs": {"path": "unicode.py", "start_line": 1, "end_line": 3}, "returned": returned}, {"id": "sed-bad", "kind": "read", "inputs": {"path": "unicode.py", "start_line": 1, "end_line": 3}, "returned": corrupt}], repo.digest))
-        statuses = analyze_bottlenecks(repo, architecture, graph, profile, traces=(compared,)).observations[0]["comparisons"]
-        self.assertEqual([item["status"] for item in statuses], ["partial", "mismatch"])

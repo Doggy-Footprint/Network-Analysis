@@ -68,26 +68,65 @@ class PhaseBCliArgumentTests(unittest.TestCase):
         args = self.parse([
             "--phase-b", "scenarios.json", "--phase-b-out", "cost.json",
             "--exploration-policy", "policy.yaml", "--cost-weights", "weights.yaml",
-            "--seed-queries", "seeds.json", "--samples", "12", "--seed", "7",
+            "--samples", "12", "--seed", "7",
         ])
 
         self.assertEqual(args.phase_b, "scenarios.json")
         self.assertEqual(args.phase_b_out, "cost.json")
         self.assertEqual(args.exploration_policy, "policy.yaml")
         self.assertEqual(args.cost_weights, "weights.yaml")
-        self.assertEqual(args.seed_queries, "seeds.json")
         self.assertEqual(args.samples, 12)
         self.assertEqual(args.seed, 7)
 
     def test_phase_b_out_defaults(self):
-        self.assertEqual(self.parse(["--phase-b", "scenarios.json"]).phase_b_out, "phase_b_cost.json")
+        self.assertEqual(
+            self.parse(["--phase-b", "scenarios.json"]).phase_b_out,
+            "phase_b_cost.json",
+        )
+
+    def test_RFCI_E01_seed_queries_argument_is_removed(self):
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr), self.assertRaises(SystemExit) as raised:
+            self.parse(["--phase-b", "scenarios.json", "--seed-queries", "seeds.json"])
+        self.assertEqual(raised.exception.code, 2)
+        self.assertIn("--seed-queries", stderr.getvalue())
+
+    def test_RFCI_E02_phase_b_uses_scenario_seed_queries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            project = root / "project"
+            project.mkdir()
+            (project / "app.py").write_text("def answer():\n    return 42\n", encoding="utf-8")
+            scenarios = root / "scenarios.json"
+            scenarios.write_text(json.dumps({
+                "schema": "scenarios.v1",
+                "scenarios": [{
+                    "id": "answer",
+                    "task": "Change answer behavior",
+                    "targets": ["app.py"],
+                    "seed_queries": [{"term": "answer", "surface": "content"}],
+                }],
+            }), encoding="utf-8")
+            output = root / "phase-b.json"
+            with patch.object(sys, "argv", [
+                "code-analyzer", str(project), "--language", "python",
+                "--phase-b", str(scenarios), "--phase-b-out", str(output),
+                "--samples", "1", "-o", str(root / "architecture.html"),
+            ]), contextlib.redirect_stdout(io.StringIO()):
+                main()
+
+            payload = json.loads(output.read_text(encoding="utf-8"))
+        self.assertEqual(payload["scenarios"][0]["seed_queries"]["source"], "explicit")
+        self.assertEqual(
+            payload["scenarios"][0]["seed_queries"]["terms"],
+            [{"term": "answer", "surface": "content"}],
+        )
 
     def test_each_companion_flag_without_phase_b_exits_with_code_two(self):
         companions = [
             ["--phase-b-out", "cost.json"],
             ["--exploration-policy", "policy.yaml"],
             ["--cost-weights", "weights.yaml"],
-            ["--seed-queries", "seeds.json"],
             ["--samples", "12"],
             ["--seed", "7"],
         ]
@@ -112,82 +151,6 @@ class PhaseBCliArgumentTests(unittest.TestCase):
 
                 self.assertEqual(raised.exception.code, 2)
                 self.assertIn("--samples", stderr.getvalue())
-
-
-class PhaseBCliRunTests(unittest.TestCase):
-    maxDiff = None
-
-    def run_cli(self, directory, extra):
-        root = Path(__file__).resolve().parents[1]
-        output = Path(directory) / "cost.json"
-        arguments = [
-            "code-analyzer", str(root / "examples" / "realworld_app"),
-            "-o", str(Path(directory) / "arch.html"),
-            "--phase-b", str(root / "fixtures" / "scenarios.v1.json"),
-            "--phase-b-out", str(output),
-            "--seed-queries", str(root / "fixtures" / "seed_queries.v1.json"),
-            "--samples", "3",
-            *extra,
-        ]
-        with patch.object(sys, "argv", arguments):
-            with contextlib.redirect_stdout(io.StringIO()):
-                main()
-        return output
-
-    def test_phase_b_writes_the_report_where_told_without_agent_view(self):
-        with tempfile.TemporaryDirectory() as directory:
-            output = self.run_cli(directory, ["--seed", "11"])
-
-            self.assertTrue(output.is_file())
-            payload = json.loads(output.read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], "phase_b_cost.v1")
-            self.assertEqual(len(payload["scenarios"]), 3)
-            self.assertEqual(payload["scenarios"][0]["sample_count"], 3)
-            self.assertIsNone(payload["scenarios"][0]["converged"])
-            self.assertFalse((Path(directory) / "view.json").exists())
-
-    def test_phase_b_also_works_alongside_agent_view(self):
-        with tempfile.TemporaryDirectory() as directory:
-            view = Path(directory) / "view.json"
-            output = self.run_cli(directory, ["--seed", "11", "--agent-view", str(view)])
-
-            self.assertTrue(view.is_file())
-            self.assertEqual(json.loads(view.read_text(encoding="utf-8"))["schema_version"], "3")
-            self.assertEqual(
-                json.loads(output.read_text(encoding="utf-8"))["schema"], "phase_b_cost.v1"
-            )
-
-    def test_seed_reaches_the_run_and_changes_the_payload(self):
-        with tempfile.TemporaryDirectory() as directory:
-            first = self.run_cli(directory, ["--seed", "11"]).read_text(encoding="utf-8")
-        with tempfile.TemporaryDirectory() as directory:
-            same = self.run_cli(directory, ["--seed", "11"]).read_text(encoding="utf-8")
-        with tempfile.TemporaryDirectory() as directory:
-            other = self.run_cli(directory, ["--seed", "12"]).read_text(encoding="utf-8")
-
-        self.assertEqual(first, same)
-        self.assertNotEqual(first, other)
-        self.assertEqual(json.loads(first)["scenarios"][0]["seed"], 11)
-        self.assertEqual(json.loads(other)["scenarios"][0]["seed"], 12)
-
-    def test_sample_count_reaches_the_run(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(__file__).resolve().parents[1]
-            output = Path(directory) / "cost.json"
-            arguments = [
-                "code-analyzer", str(root / "examples" / "realworld_app"),
-                "-o", str(Path(directory) / "arch.html"),
-                "--phase-b", str(root / "fixtures" / "scenarios.v1.json"),
-                "--phase-b-out", str(output),
-                "--samples", "5", "--seed", "11",
-            ]
-            with patch.object(sys, "argv", arguments):
-                with contextlib.redirect_stdout(io.StringIO()):
-                    main()
-
-            payload = json.loads(output.read_text(encoding="utf-8"))
-            for scenario in payload["scenarios"]:
-                self.assertEqual(scenario["sample_count"], 5)
 
 
 class RemovedDiagnosticsApiTests(unittest.TestCase):

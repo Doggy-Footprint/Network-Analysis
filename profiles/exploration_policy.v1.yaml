@@ -40,7 +40,7 @@ provenance:
   revisit_probability: "0 by contract until set from real agent logs; the revisit axis stays 0 while it is 0."
   structural_repo_map: "Design addition, not a survey finding. Preloading a PageRank-ranked structural map before any query is a phase-A seed mechanism; enabled by default so the baseline reports it, and switchable off to measure its effect."
   hint_prior: "temporary, unevidenced role weights. Declaration over use, path matches over content matches, tests deprioritized."
-  sampling: "temporary. Tuned against fixtures, not against agent traces."
+  sampling: "temporary. Tuned against static cases, not against agent traces."
 history:
   - version: 1
     change: "Initial policy profile for M3 phase A and phase B."

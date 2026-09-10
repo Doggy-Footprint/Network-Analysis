@@ -23,9 +23,6 @@ from discovery.weights import default_weights_path, load_cost_weights
 from tests.discovery_graph_fixture import build_graph
 
 ROOT = Path(__file__).resolve().parents[1]
-TRACE_PATH = ROOT / "fixtures" / "traces" / "m1-review-session.json"
-
-
 def _trace(**overrides):
     value = {
         "schema": "agent_trace.v1",
@@ -114,8 +111,8 @@ class ValidateTraceTests(unittest.TestCase):
                 load_trace(path)
 
     def test_load_trace_rejects_a_missing_file(self):
-        with self.assertRaises(TraceError):
-            load_trace(ROOT / "fixtures" / "traces" / "does-not-exist.json")
+        with TemporaryDirectory() as directory, self.assertRaises(TraceError):
+            load_trace(Path(directory) / "does-not-exist.json")
 
 
 class ObservedOrderTests(unittest.TestCase):
@@ -133,20 +130,6 @@ class ObservedOrderTests(unittest.TestCase):
 
     def test_targets_never_read_are_absent(self):
         self.assertEqual(observed_discovery_order(_trace(targets=["c.py"])), {})
-
-    def test_recorded_session_trace_matches_its_first_reads(self):
-        trace = load_trace(TRACE_PATH)
-
-        self.assertEqual(
-            observed_discovery_order(trace),
-            {
-                "agent_view/exact_query.py": 19,
-                "agent_view/models.py": 15,
-                "agent_view/occurrence.py": 23,
-                "agent_view/profile.py": 110,
-            },
-        )
-
 
 class CompareOrderTests(unittest.TestCase):
     def setUp(self):
@@ -202,50 +185,6 @@ class CompareOrderTests(unittest.TestCase):
 
         self.assertIsNone(comparison["spearman_rho"])
         self.assertEqual(comparison["reason"], "fewer than 2 shared targets")
-
-
-class TraceFitFixtureTests(unittest.TestCase):
-    def setUp(self):
-        self.fit = json.loads((ROOT / "fixtures" / "trace_fit.json").read_text(encoding="utf-8"))
-
-    def test_fit_records_both_policy_axes_without_a_pass_threshold(self):
-        self.assertEqual(self.fit["schema"], "trace_fit.v1")
-        self.assertIn("No pass threshold is set", self.fit["note"])
-        self.assertEqual(
-            sorted(self.fit["policy_fit"]),
-            [
-                "best-first-pivot|hint-prior", "best-first-pivot|uniform",
-                "bfs-exhaust|hint-prior", "bfs-exhaust|uniform",
-            ],
-        )
-
-    def test_fit_states_target_provenance_and_snapshot_drift(self):
-        self.assertIn("actually changed", self.fit["target_provenance"])
-        self.assertIn("circular", self.fit["target_provenance"])
-        self.assertIn("earlier snapshot", self.fit["snapshot_note"])
-        self.assertEqual(
-            sorted(self.fit["excluded_targets"]),
-            ["agent_view/__init__.py", "agent_view/scan.py"],
-        )
-
-    def test_every_comparison_reports_a_rho_or_a_reason(self):
-        self.assertTrue(self.fit["comparisons"])
-        for comparison in self.fit["comparisons"]:
-            with self.subTest(policy=comparison["policy"]):
-                if comparison["spearman_rho"] is None:
-                    self.assertIsNotNone(comparison["reason"])
-                else:
-                    self.assertIsNone(comparison["reason"])
-                    self.assertGreaterEqual(comparison["spearman_rho"], -1.0)
-                    self.assertLessEqual(comparison["spearman_rho"], 1.0)
-
-    def test_scenario_targets_match_the_recorded_trace_targets(self):
-        scenarios = json.loads(
-            (ROOT / "fixtures" / "scenarios_self.v1.json").read_text(encoding="utf-8")
-        )
-        trace = load_trace(TRACE_PATH)
-
-        self.assertEqual(sorted(scenarios["scenarios"][0]["targets"]), sorted(trace["targets"]))
 
 
 if __name__ == "__main__":

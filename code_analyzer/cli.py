@@ -14,7 +14,7 @@ from agent_view import (build_agent_view, build_snapshot, diff_agent_view, graph
 from agent_view.profile import ProfileError, default_profile_path
 from analysis import GraphAnalyzer
 from discovery import (
-    CachedSeedQueryGenerator,
+    ExplicitSeedQueries,
     GraphView,
     build_report,
     default_policy_path,
@@ -23,7 +23,6 @@ from discovery import (
     load_exploration_policy,
     load_scenarios,
     report_to_json,
-    resolve_seed_queries,
     run_scenario,
 )
 from language_analyzers.core.serialization import architecture_to_dict
@@ -167,12 +166,6 @@ def parse_args():
         help="Override the cost weight profile used by --phase-b.",
     )
     parser.add_argument(
-        "--seed-queries",
-        default=None,
-        metavar="PATH",
-        help="Cached seed query fixture used by --phase-b scenarios without explicit seed queries.",
-    )
-    parser.add_argument(
         "--samples",
         type=int,
         default=None,
@@ -199,7 +192,6 @@ def parse_args():
             ("--phase-b-out", args.phase_b_out if args.phase_b_out != "phase_b_cost.json" else None),
             ("--exploration-policy", args.exploration_policy),
             ("--cost-weights", args.cost_weights),
-            ("--seed-queries", args.seed_queries),
             ("--samples", args.samples),
             ("--seed", args.seed),
         ):
@@ -461,14 +453,12 @@ def main(
     if args.phase_b:
         policy = load_exploration_policy(args.exploration_policy or default_policy_path())
         weights = load_cost_weights(args.cost_weights or default_weights_path())
-        cached = CachedSeedQueryGenerator.from_path(
-            args.seed_queries or Path("fixtures") / "seed_queries.v1.json"
-        )
         view = GraphView(agent_view_graph)
         results = []
         seed_sets = {}
         for scenario in load_scenarios(args.phase_b, view):
-            resolved, seed_set = resolve_seed_queries(scenario, cached)
+            seed_set = ExplicitSeedQueries(scenario.seed_terms).generate(scenario.task)
+            resolved = scenario
             seed_sets[resolved.id] = seed_set
             results.append(
                 run_scenario(
