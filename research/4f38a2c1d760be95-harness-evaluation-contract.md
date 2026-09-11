@@ -41,3 +41,5 @@ No agent before-and-after experiment has been performed for this implementation.
 - success as reduced observed exploration burden with the required confirmations and task outcome preserved.
 
 Runs that fail or stop during preparation remain in the evaluation set with their incurred calls. Duplicate reads and searches remain separate calls and contribute duplicate exposure. Structural replay and harness-output agreement are reported separately from agent outcomes. Probability, general risk score, and claims about real effort require independent calibration and are not outputs of the current baseline.
+
+M8 must validate whether PageRank adds reproducible predictive value beyond the existing candidate-selection rule for observed exploration burden, required confirmations, or task outcomes. PageRank may be reintroduced for candidate selection, risk ranking, or effort estimation only when that value holds on the frozen validation split under the recorded implementation parameters; otherwise it remains explanatory only.
