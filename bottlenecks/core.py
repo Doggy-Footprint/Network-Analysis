@@ -341,6 +341,36 @@ def _probe_id(kind: str, surface: str, term: str, scope: str) -> str:
     return "p:" + hashlib.sha256(f"{kind}|{surface}|{term}|{scope}".encode()).hexdigest()[:16]
 
 
+def _candidate_obstacle(kind: str) -> Mapping[str, str]:
+    obstacles = {
+        "multiple_results": {
+            "axis": "result_dilution",
+            "explanation": "The generated probe reaches multiple locations, so static results require refinement before a relevant location can be isolated.",
+        },
+        "output_truncated": {
+            "axis": "output_truncation",
+            "explanation": "The fixed visible-result cap omits generated probe results, leaving locations outside the returned output.",
+        },
+        "evidence_spread": {
+            "axis": "evidence_spread",
+            "explanation": "The static relation evidence is split across files or exceeds one configured read window.",
+        },
+        "read_limit": {
+            "axis": "read_limit",
+            "explanation": "The readable node exceeds the configured maximum lines for one read operation.",
+        },
+        "connection_constraint": {
+            "axis": "connection_constraint",
+            "explanation": "Replayed generated probes expose at most one independent visible search clue for this readable node.",
+        },
+        "unresolved_boundary": {
+            "axis": "unresolved_boundary",
+            "explanation": "The static Python relation analysis records an unresolved or dynamic boundary requiring additional evidence.",
+        },
+    }
+    return obstacles[kind]
+
+
 def _analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: PythonProjectArchitecture, graph: AgentViewGraph, profile: HarnessProfile, *, traces: Sequence[ObservationTrace] = ()) -> BottleneckReport:
     if not isinstance(snapshot, RepositorySnapshot) or not isinstance(architecture, PythonProjectArchitecture) or not isinstance(graph, AgentViewGraph) or not isinstance(profile, HarnessProfile):
         raise BottleneckInputError("analysis inputs have invalid types")
@@ -542,6 +572,9 @@ def _analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: PythonProje
     rank = pagerank(outgoing, graph_metric_config)
     readable_symbols = {node.id: node.symbol_id for node in graph.readable_nodes if node.symbol_id}
     for candidate in candidates:
+        candidate["validation_status"] = "unverified"
+        candidate["affected_profile_ids"] = [profile.id]
+        candidate["obstacle"] = _candidate_obstacle(candidate["kind"])
         target_ids = set()
         if candidate["target"] in architecture_ids:
             target_ids.add(candidate["target"])

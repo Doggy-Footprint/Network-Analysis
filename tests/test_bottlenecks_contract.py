@@ -147,6 +147,41 @@ class BottleneckAnalysisContractTests(unittest.TestCase):
         self.assertGreaterEqual(spread["metrics"]["file_count"], 2)
         self.assertTrue(all(item["status"] == "static_candidate" for item in candidates))
 
+    def test_m3_ec_01_static_candidates_include_profile_validation_and_obstacle(self):
+        for candidate in self.report().candidates:
+            with self.subTest(candidate=candidate["id"]):
+                self.assertEqual(candidate["status"], "static_candidate")
+                self.assertEqual(candidate["validation_status"], "unverified")
+                self.assertEqual(candidate["affected_profile_ids"], [self.profile.id])
+                self.assertEqual(set(candidate["obstacle"]), {"axis", "explanation"})
+                self.assertIsInstance(candidate["obstacle"]["axis"], str)
+                self.assertTrue(candidate["obstacle"]["explanation"])
+
+    def test_m3_ec_02_candidate_obstacles_identify_static_exploration_barriers(self):
+        expected_axes = {
+            "multiple_results": "result_dilution",
+            "output_truncated": "output_truncation",
+            "evidence_spread": "evidence_spread",
+            "read_limit": "read_limit",
+            "connection_constraint": "connection_constraint",
+            "unresolved_boundary": "unresolved_boundary",
+        }
+        for candidate in self.report().candidates:
+            with self.subTest(candidate=candidate["id"]):
+                self.assertEqual(candidate["obstacle"]["axis"], expected_axes[candidate["kind"]])
+                self.assertNotIn("agent", candidate["obstacle"]["explanation"].lower())
+
+    def test_m3_ec_02_output_truncation_only_candidate_has_output_truncation_axis(self):
+        repo = snapshot({"a.py": "def repeated():\n    needle\n    needle\n"})
+        architecture = PythonGraphAnalyzer("/repo", repo).analyze()
+        base = build_agent_view(architecture, profile=load_profile(ROOT / "profiles/agent_view.v3.yaml"), snapshot=repo)
+        query = replace(base.query_nodes[0], kind="exact", surface="content", term="needle", scope="repository")
+        graph = replace(base, query_nodes=[query], connections=[])
+        report = analyze_bottlenecks(repo, architecture, graph, parse_harness_profile(profile_payload(visible=1)))
+        candidate = next(item for item in report.candidates if item["kind"] == "output_truncated")
+        self.assertEqual(candidate["reasons"], ["output_truncated"])
+        self.assertEqual(candidate["obstacle"]["axis"], "output_truncation")
+
     def test_pagerank_is_attached_explanation_not_candidate_selection_or_score(self):
         baseline = self.report()
         with patch("bottlenecks.core.pagerank", side_effect=lambda outgoing, _config: {node_id: 999.0 - index for index, node_id in enumerate(outgoing)}):

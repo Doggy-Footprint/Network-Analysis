@@ -131,6 +131,42 @@ def test_render_displays_contract_fields_without_changing_payload(payload: dict)
         assert text in document
 
 
+def test_m3_ec_03_renderer_accepts_legacy_candidates_without_additive_fields(payload: dict) -> None:
+    original = copy.deepcopy(payload)
+    document = render_report(payload)
+    assert embedded_payload(document) == original
+
+
+def test_renderer_validates_additive_candidate_fields_when_present(payload: dict) -> None:
+    candidate = payload["candidates"][0]
+    candidate.update({
+        "validation_status": "unverified",
+        "affected_profile_ids": ["fixed"],
+        "obstacle": {"axis": "result_dilution", "explanation": "Static result rows require refinement."},
+    })
+    document = render_report(payload)
+    assert embedded_payload(document) == payload
+    for text in ("result_dilution", "Static result rows require refinement.", "unverified"):
+        assert text in document
+
+
+@pytest.mark.parametrize(
+    ("mutate", "path"),
+    [
+        (lambda candidate: candidate.update(validation_status="observed"), "validation_status"),
+        (lambda candidate: candidate.update(affected_profile_ids=[1]), "affected_profile_ids[0]"),
+        (lambda candidate: candidate.update(obstacle={"explanation": "Static barrier."}), "missing required field 'axis'"),
+        (lambda candidate: candidate.update(obstacle={"axis": "result_dilution"}), "missing required field 'explanation'"),
+        (lambda candidate: candidate.update(obstacle={"axis": 1, "explanation": "Static barrier."}), "obstacle.axis"),
+        (lambda candidate: candidate.update(obstacle={"axis": "result_dilution", "explanation": 1}), "obstacle.explanation"),
+    ],
+)
+def test_renderer_rejects_malformed_present_additive_candidate_fields(payload: dict, mutate, path: str) -> None:
+    mutate(payload["candidates"][0])
+    with pytest.raises(ReportInputError, match=re.escape(path)):
+        render_report(payload)
+
+
 def test_render_accepts_actual_core_output() -> None:
     root = Path(__file__).resolve().parents[1]
     contents = (

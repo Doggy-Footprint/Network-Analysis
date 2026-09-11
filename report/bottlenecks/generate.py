@@ -1,6 +1,7 @@
 import argparse
 import html
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
@@ -8,6 +9,110 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 from report.shared.document import ReportInputError, ReportOutputError
 
 SUPPORTED_SCHEMA = "bottlenecks.v1"
+
+INLINE_CSS = """
+:root {
+  color-scheme: light dark;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+}
+body {
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: 2rem;
+  background: Canvas;
+  color: CanvasText;
+}
+h1 { margin-top: 0; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.panel {
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, CanvasText 4%, Canvas);
+}
+.panel h2 { margin: 0 0 0.75rem; font-size: 1rem; }
+.bar-row { display: grid; grid-template-columns: minmax(7rem, 1fr) 3fr auto; gap: 0.5rem; align-items: center; margin: 0.35rem 0; }
+.bar-track { height: 0.7rem; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, CanvasText 12%, Canvas); }
+.bar { height: 100%; min-width: 2px; border-radius: inherit; background: #4f46e5; }
+.metric-chart { min-width: 16rem; }
+.metric-chart .bar { background: #0891b2; }
+.bar-label, .bar-value { overflow-wrap: anywhere; }
+.bar-value { font-variant-numeric: tabular-nums; }
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem 1rem;
+  margin: 1.5rem 0 1rem;
+}
+.filter-bar label { font-weight: 600; }
+.filter-bar input {
+  display: block;
+  box-sizing: border-box;
+  width: min(32rem, 80vw);
+  margin-top: 0.25rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid GrayText;
+  border-radius: 0.35rem;
+  background: Field;
+  color: FieldText;
+  font: inherit;
+}
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+th, td {
+  padding: 0.65rem;
+  border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas);
+  text-align: left;
+  vertical-align: top;
+}
+th { background: color-mix(in srgb, CanvasText 8%, Canvas); }
+tbody tr:nth-child(even) { background: color-mix(in srgb, CanvasText 4%, Canvas); }
+pre {
+  max-width: 42rem;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+details {
+  margin: 0.6rem 0;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas);
+  border-radius: 0.35rem;
+}
+summary { cursor: pointer; font-weight: 600; }
+[hidden] { display: none !important; }
+""".strip()
+
+INLINE_JS = """
+(() => {
+  const input = document.getElementById('candidate-filter');
+  const count = document.getElementById('candidate-count');
+  const rows = Array.from(document.querySelectorAll('[data-candidate-row]'));
+  const applyFilter = () => {
+    const query = input.value.trim().toLocaleLowerCase();
+    let visible = 0;
+    rows.forEach((row) => {
+      const matches = row.textContent.toLocaleLowerCase().includes(query);
+      row.hidden = !matches;
+      if (matches) visible += 1;
+    });
+    count.textContent = `${visible} of ${rows.length} candidates`;
+  };
+  input.addEventListener('input', applyFilter);
+  applyFilter();
+})();
+""".strip()
 
 
 def _error(path: str, message: str) -> None:
@@ -117,6 +222,16 @@ def _validate(payload: Any) -> Mapping[str, Any]:
         _required(candidate, path, required)
         for field in ("id", "target", "kind", "status", "coverage"):
             _string(candidate[field], f"{path}.{field}")
+        if "validation_status" in candidate:
+            if _string(candidate["validation_status"], f"{path}.validation_status") != "unverified":
+                _error(f"{path}.validation_status", "must equal 'unverified'")
+        if "affected_profile_ids" in candidate:
+            _strings(candidate["affected_profile_ids"], f"{path}.affected_profile_ids")
+        if "obstacle" in candidate:
+            obstacle = _object(candidate["obstacle"], f"{path}.obstacle")
+            _required(obstacle, f"{path}.obstacle", ("axis", "explanation"))
+            _string(obstacle["axis"], f"{path}.obstacle.axis")
+            _string(obstacle["explanation"], f"{path}.obstacle.explanation")
         _object(candidate["metrics"], f"{path}.metrics")
         _strings(candidate["reasons"], f"{path}.reasons")
         evidence = candidate["evidence"]
@@ -163,17 +278,53 @@ def _details(title: str, value: Any) -> str:
     return f"<details><summary>{html.escape(title)}</summary><pre>{_visible(value)}</pre></details>"
 
 
+def _numeric_metrics(metrics: Mapping[str, Any]) -> list[tuple[str, float]]:
+    return [
+        (key, float(value))
+        for key, value in sorted(metrics.items())
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    ]
+
+
+def _bar_rows(values: Sequence[tuple[str, float]]) -> str:
+    maximum = max((value for _, value in values), default=0)
+    return "".join(
+        "<div class='bar-row'>"
+        f"<span class='bar-label'>{html.escape(label)}</span>"
+        f"<div class='bar-track'><div class='bar' style='width: {value / maximum * 100 if maximum else 0:.2f}%'></div></div>"
+        f"<output class='bar-value'>{value:g}</output></div>"
+        for label, value in values
+    )
+
+
+def _candidate_metrics(candidate: Mapping[str, Any]) -> str:
+    metrics = _numeric_metrics(candidate["metrics"])
+    chart = f"<div class='metric-chart'>{_bar_rows(metrics)}</div>" if metrics else "<span>None</span>"
+    return f"{chart}{_details('Raw metrics', candidate['metrics'])}"
+
+
+def _kind_summary(candidates: Sequence[Mapping[str, Any]]) -> str:
+    counts: dict[str, float] = {}
+    for candidate in candidates:
+        kind = candidate["kind"]
+        counts[kind] = counts.get(kind, 0) + 1
+    values = [(kind, count) for kind, count in sorted(counts.items())]
+    return _bar_rows(values) if values else "<span>No candidates.</span>"
+
+
 def render_report(payload: Any) -> str:
     data = _validate(payload)
     rows = []
     for candidate in data["candidates"]:
         rows.append(
-            "<tr>"
+            "<tr data-candidate-row>"
             f"<td>{html.escape(candidate['target'])}</td>"
             f"<td>{html.escape(candidate['kind'])}</td>"
-            f"<td><pre>{_visible(candidate['metrics'])}</pre></td>"
+            f"<td>{_candidate_metrics(candidate)}</td>"
             f"<td><pre>{_visible(candidate['evidence'])}</pre></td>"
+            f"<td><pre>{_visible(candidate.get('obstacle'))}</pre></td>"
             f"<td>{html.escape(candidate['status'])}</td>"
+            f"<td>{html.escape(candidate.get('validation_status', ''))}</td>"
             "</tr>"
         )
     embedded = _json(data).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
@@ -189,11 +340,20 @@ def render_report(payload: Any) -> str:
         )
     )
     return (
-        "<!doctype html><html><head><meta charset='utf-8'><title>Repository bottlenecks</title></head><body>"
+        "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<title>Repository bottlenecks</title><style>{INLINE_CSS}</style></head><body>"
         f"<h1>Repository bottlenecks</h1>{_details('Snapshot', data['snapshot'])}{details}"
-        "<table><thead><tr><th>Target</th><th>Kind</th><th>Metrics</th><th>Evidence</th><th>Status</th></tr></thead>"
-        f"<tbody>{''.join(rows)}</tbody></table>"
-        f"<script id='bottlenecks-data' type='application/json'>{embedded}</script></body></html>"
+        "<section class='summary-grid' aria-label='Candidate summary'>"
+        f"<div class='panel'><h2>Candidates ({len(rows)})</h2>{_kind_summary(data['candidates'])}</div>"
+        f"<div class='panel'><h2>Probes</h2><strong>{len(data['probes'])}</strong></div>"
+        "</section>"
+        "<div class='filter-bar'><label for='candidate-filter'>Filter candidates"
+        "<input id='candidate-filter' type='search' placeholder='Target, kind, evidence, or status'></label>"
+        f"<output id='candidate-count' for='candidate-filter'>{len(rows)} of {len(rows)} candidates</output></div>"
+        "<div class='table-wrap'>"
+        "<table><thead><tr><th>Target</th><th>Kind</th><th>Metrics</th><th>Evidence</th><th>Obstacle</th><th>Status</th><th>Validation</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table></div>"
+        f"<script id='bottlenecks-data' type='application/json'>{embedded}</script><script>{INLINE_JS}</script></body></html>"
     )
 
 
