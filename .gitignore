@@ -22,4 +22,8 @@ tmp/
 
 user_notes/
 
-/local-reports/
+local-reports/*
+!local-reports/.gitkeep
+
+contracts/*
+!contracts/.gitkeep
