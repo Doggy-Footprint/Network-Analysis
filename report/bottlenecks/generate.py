@@ -8,7 +8,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 
 from report.shared.document import ReportInputError, ReportOutputError
 
-SUPPORTED_SCHEMA = "bottlenecks.v1"
+SUPPORTED_SCHEMA = "bottlenecks.v2"
 
 INLINE_CSS = """
 :root {
@@ -172,8 +172,54 @@ def _required(value: Mapping[str, Any], path: str, fields: Sequence[str]) -> Non
             _error(path, f"missing required field {field!r}")
 
 
+def _finite_values(value: Any, path: str = "$") -> None:
+    if isinstance(value, float) and not math.isfinite(value):
+        _error(path, "must be finite")
+    if isinstance(value, dict):
+        for key, item in value.items():
+            _finite_values(item, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            _finite_values(item, f"{path}[{index}]")
+
+
 def _validate(payload: Any) -> Mapping[str, Any]:
+    _finite_values(payload)
     root = _object(payload, "$")
+    if root.get("schema") == SUPPORTED_SCHEMA:
+        _required(root, "$", ("schema", "snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network", "probes", "candidates", "limitations"))
+        if set(root) != {"schema", "snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network", "probes", "candidates", "limitations"}:
+            _error("$", "contains unknown fields")
+        for field in ("snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network"):
+            _object(root[field], f"$.{field}")
+        _strings(root["limitations"], "$.limitations")
+        probe_ids: set[str] = set()
+        for index, item in enumerate(_array(root["probes"], "$.probes")):
+            entry = _object(item, f"$.probes[{index}]")
+            _required(entry, f"$.probes[{index}]", ("probe", "output"))
+            probe = _object(entry["probe"], f"$.probes[{index}].probe")
+            probe_id = _string(probe.get("id"), f"$.probes[{index}].probe.id")
+            if probe_id in probe_ids:
+                _error(f"$.probes[{index}].probe.id", "must be unique")
+            probe_ids.add(probe_id)
+            output = _object(entry["output"], f"$.probes[{index}].output")
+            for key in ("total_count", "visible_count", "omitted_count"):
+                _integer(output.get(key), f"$.probes[{index}].output.{key}")
+            if output["visible_count"] > output["total_count"] or output["omitted_count"] != output["total_count"] - output["visible_count"]:
+                _error(f"$.probes[{index}].output", "has inconsistent counts")
+        candidate_ids: set[str] = set()
+        for index, item in enumerate(_array(root["candidates"], "$.candidates")):
+            entry = _object(item, f"$.candidates[{index}]")
+            _required(entry, f"$.candidates[{index}]", ("id", "kind", "target", "probe_ids", "metrics", "evidence", "coverage", "status"))
+            candidate_id = _string(entry["id"], f"$.candidates[{index}].id")
+            if candidate_id in candidate_ids:
+                _error(f"$.candidates[{index}].id", "must be unique")
+            candidate_ids.add(candidate_id)
+            if _string(entry["kind"], f"$.candidates[{index}].kind") not in {"output_truncation", "multiple_results", "evidence_spread", "read_limit", "connection_constraint", "unresolved_boundary"}:
+                _error(f"$.candidates[{index}].kind", "is unsupported")
+            if _string(entry["status"], f"$.candidates[{index}].status") != "static_candidate":
+                _error(f"$.candidates[{index}].status", "must equal 'static_candidate'")
+        return root
     fields = ("schema", "snapshot", "profile", "versions", "coverage", "probes", "candidates", "observations", "limitations")
     _required(root, "$", fields)
     if _string(root["schema"], "$.schema") != SUPPORTED_SCHEMA:
@@ -334,9 +380,10 @@ def render_report(payload: Any) -> str:
             ("Profile and settings", "profile"),
             ("Versions", "versions"),
             ("Coverage", "coverage"),
+            ("Dependency network", "dependency_network"),
+            ("Exploration network", "exploration_network"),
             ("Limitations", "limitations"),
             ("Probes", "probes"),
-            ("Observation comparison", "observations"),
         )
     )
     return (

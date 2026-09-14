@@ -24,9 +24,9 @@ from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
-from bottlenecks import (BottleneckInputError, HarnessProfileError, ObservationTraceError,
-                         analyze_bottlenecks, bottlenecks_to_json, convert_legacy_trace,
-                         parse_harness_profile, parse_observation_trace)
+from bottlenecks import (BottleneckInputError, HarnessProfileError, analyze_bottlenecks,
+                         bottlenecks_to_json, parse_harness_profile)
+from report.bottlenecks import render_report as render_bottlenecks_report
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
@@ -129,26 +129,27 @@ def parse_args():
         metavar="PATH",
         help="Override the derived-query rule profile used by --agent-view.",
     )
-    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v1 JSON.")
+    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v2 JSON.")
     parser.add_argument("--harness-profile", metavar="PATH", help="Harness profile for --bottlenecks.")
-    parser.add_argument("--observation-trace", action="append", default=[], metavar="PATH", help="Repeatable observed harness trace for --bottlenecks.")
+    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v2 HTML.")
     args = parser.parse_args()
     if (args.language or args.framework != "fastapi") and (args.entrypoint or args.app):
         parser.error("--entrypoint and --app are only supported with --framework fastapi")
     if args.agent_view_profile and not (args.agent_view or args.bottlenecks):
         parser.error("--agent-view-profile requires --agent-view or --bottlenecks")
-    if args.bottlenecks and args.language != "python":
-        parser.error("--bottlenecks requires --language python")
     if args.bottlenecks and not args.harness_profile:
         parser.error("--bottlenecks requires --harness-profile")
     if args.harness_profile and not args.bottlenecks:
         parser.error("--harness-profile requires --bottlenecks")
-    if args.observation_trace and not args.bottlenecks:
-        parser.error("--observation-trace requires --bottlenecks")
+    if args.bottlenecks_html and not args.bottlenecks:
+        parser.error("--bottlenecks-html requires --bottlenecks")
     if args.agent_view_diff and args.bottlenecks:
         parser.error("--agent-view-diff cannot be combined with --bottlenecks")
     if args.bottlenecks:
-        output_paths = [Path(args.output).resolve(), Path(args.bottlenecks).resolve()]
+        output = Path(args.output).resolve()
+        output_paths = [output, output.with_name(f"{output.stem}_assets"), Path(args.bottlenecks).resolve()]
+        if args.bottlenecks_html:
+            output_paths.append(Path(args.bottlenecks_html).resolve())
         if args.agent_view:
             output_paths.append(Path(args.agent_view).resolve())
         if args.json:
@@ -180,6 +181,8 @@ def _output_paths(project_path: Path, args) -> tuple[Path, ...]:
         paths.append(output.with_suffix(".json"))
     if args.bottlenecks:
         paths.append(Path(args.bottlenecks).resolve())
+    if args.bottlenecks_html:
+        paths.append(Path(args.bottlenecks_html).resolve())
     if args.agent_view:
         paths.append(Path(args.agent_view).resolve())
     return tuple(paths)
@@ -233,7 +236,6 @@ def main(
     repository_snapshot = None
     bottleneck_report = None
     harness_profile = None
-    trace_payloads = []
     snapshot_profile = None
     outputs = _output_paths(project_path, args)
     if args.bottlenecks:
@@ -242,13 +244,22 @@ def main(
             harness_profile = parse_harness_profile(
                 _read_json(Path(args.harness_profile).resolve(), file_reader)
             )
-            trace_payloads = [
-                _read_json(Path(path).resolve(), file_reader)
-                for path in args.observation_trace
-            ]
         except (OSError, UnicodeError, json.JSONDecodeError, HarnessProfileError, ProfileError) as exc:
             print(f"[!] Error: {exc}", file=sys.stderr)
             raise SystemExit(1)
+        if args.language != "python":
+            try:
+                ignore_source, paths = file_lister(
+                    project_path, tracked_files_only=snapshot_profile.tracked_files_only
+                )
+                paths = _exclude_output_paths(project_path, paths, outputs)
+                repository_snapshot = build_snapshot(
+                    project_path, paths, profile=snapshot_profile, reader=file_reader,
+                    ignore_source=ignore_source, excluded_paths=outputs,
+                )
+            except (OSError, UnicodeError, ValueError) as exc:
+                print(f"[!] Error: {exc}", file=sys.stderr)
+                raise SystemExit(1)
     if args.language == "python":
         if args.bottlenecks:
             try:
@@ -334,26 +345,10 @@ def main(
 
     if args.bottlenecks:
         try:
-            traces = []
-            for trace_data in trace_payloads:
-                if not isinstance(trace_data, Mapping):
-                    raise ObservationTraceError("$ must be an object")
-                if trace_data.get("schema") == "harness_observation.v1":
-                    traces.append(parse_observation_trace(trace_data))
-                elif trace_data.get("schema") == "agent_trace.v1":
-                    traces.append(convert_legacy_trace(
-                        trace_data,
-                        snapshot_digest=repository_snapshot.digest,
-                        profile=harness_profile,
-                    ))
-                else:
-                    raise ObservationTraceError(
-                        "$.schema must be harness_observation.v1"
-                    )
             bottleneck_report = analyze_bottlenecks(
-                repository_snapshot, arch, agent_view_graph, harness_profile, traces=traces
+                repository_snapshot, arch, agent_view_graph, harness_profile
             )
-        except (ObservationTraceError, BottleneckInputError) as exc:
+        except BottleneckInputError as exc:
             print(f"[!] Error: {exc}", file=sys.stderr)
             raise SystemExit(1)
 
@@ -383,6 +378,10 @@ def main(
         bottleneck_path = Path(args.bottlenecks).resolve()
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
+        if args.bottlenecks_html:
+            html_path = Path(args.bottlenecks_html).resolve()
+            _write_text(html_path, render_bottlenecks_report(json.loads(bottlenecks_to_json(bottleneck_report))), file_writer)
+            print(f"[✓] Exported bottleneck HTML: {html_path}")
 
     if args.mermaid:
         if builder is None:

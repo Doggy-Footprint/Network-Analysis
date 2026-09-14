@@ -1,143 +1,18 @@
-# 목표: AI 에이전트를 위한 저장소 구조·탐색 병목 분석기
+# Roadmap
 
-## 목적과 성공 기준
+The project measures repository structures that an AI coding agent can reproducibly observe. It reports dependency-network token metrics and static exploration-network obstacles without claims about agent behavior, probability, or change risk.
 
-프로젝트 정의의 기준은 [AGENTS.md](AGENTS.md)의 Project Definition이다.
+## Completed baseline
 
-1순위는 저장소가 AI 에이전트의 탐색과 수정에 효율적인 구조인지 판단하고, 탐색 부담이나 관련 항목의 누락을 일으키는 병목을 근거와 함께 찾는 것이다. 개선 대상에는 저장소 구조와 팀이 사용하는 harness의 검색·읽기 도구 및 정책이 모두 포함된다.
+- Python, TypeScript, Kotlin, FastAPI, and Android produce the shared node/edge architecture shape.
+- Dependency analysis reports independent centrality, fan, neighborhood, and token-cost rankings from sparse adjacency.
+- Static harness profiles produce query/read exposure counts and evidence-backed exploration candidates.
+- One CLI run can write architecture HTML/JSON, agent-view JSON, and `bottlenecks.v2` JSON/HTML for every analyzer mode.
+- JSON is deterministic, HTML consumes validated JSON, and observation/evaluation surfaces have been removed.
 
-가장 중요한 성공 기준은 제안한 구조 개선 후 **실제 에이전트의 탐색 부담이 줄어드는 것**이다. 필요한 확인을 생략해서 비용만 낮아진 경우는 개선으로 인정하지 않는다. Harness 개선도 같은 기준으로 검증하며, 구조 변경 효과와 구분해서 보고한다. 이 실제 harness 검증은 M2~M7 산출물을 고정한 뒤 M8에서 통합 수행한다.
+## Remaining network work
 
-핵심 입력은 저장소 snapshot과 명시적인 harness profile이다. 전역 분석에는 작업·seed query·정답 target set이 필요하지 않다. 특정 수정 위치에 대한 분석은 target만 추가로 받는다. 변경 내용이 없을 때 결과는 변경 종류에 따라 달라질 수 있는 영향 후보이지 확정된 영향 집합이 아니다.
-
-작업별 seed/target 탐색 시뮬레이션과 합성 작업 생성은 핵심 로드맵 밖의 부가 목표다. 이전 실험 계약은 Git에서 제외되는 `local-reports/` 보고서에 보존한다. 실제 작업을 사용하는 개선 효과 검증은 핵심 목표에 남으며 M8에서 수행한다.
-
-## 결과가 답해야 하는 질문
-
-- 어느 위치에서 후보 과다, 검색 결과 잘림, 단서 부족, 읽기 범위 제한 또는 반복 탐색이 발생하는가?
-- 어떤 수정 대상의 관련 계약·사용처·설정·테스트가 여러 곳에 흩어져 확인 부담을 높이는가?
-- 수정 시 검토할 이유가 있는 후보 중, 해당 harness로는 노출되기 어렵거나 검토 근거가 남지 않는 것은 무엇인가?
-- 병목은 저장소 구조, harness 설정, 둘의 상호작용 중 무엇에 민감한가?
-- 제안한 변경이 실제 탐색 부담을 줄였으며, 필요한 확인과 작업 결과는 유지됐는가?
-
-단일 저장소 품질 점수나 일반적인 작업 난이도 순위로 합치지 않는다. 결과마다 대상, 근거 위치, 적용 규칙, 설정, 분석 한계와 검증 상태를 연결한다.
-
-## 관측과 추정의 경계
-
-동일 snapshot·profile·규칙 버전·고정 관측 자료는 동일한 정적 결과를 재생성해야 한다. 실제 에이전트 실행은 변동할 수 있으므로 반복 측정과 실행 기록으로 다룬다. 기록의 재생 가능성과 새 모델 실행의 동일성을 혼동하지 않는다.
-
-| 구분 | 보고할 수 있는 내용 | 아직 주장할 수 없는 내용 |
-|---|---|---|
-| 저장소 사실 | 심볼, 참조, 경로, 문서 단서, 테스트 연결과 추출 근거 | 의미적으로 필요한 모든 관련 항목을 복원했다는 주장 |
-| 조건부 구조 분석 | 명시된 규칙 아래의 영향 후보와 탐색 장애 | 실제로 반드시 깨지는 항목, 실제 누락 확률 |
-| 관측된 행동 | 도구가 노출한 범위, 호출, 재탐색, 확인·실행의 기록 | 노출된 내용을 에이전트가 이해했다는 주장 |
-| 보정된 예측 | 검증한 harness·모델·저장소 범위 내의 누락·비용 추정 | 다른 환경으로 검증 없이 일반화한 확률 |
-
-가능성 검토와 출처별 한계는 [수정 위험·탐색 누락 분석 검토](research/a7f273b0e454e4d8-target-risk-feasibility.md)에 기록한다.
-
-## 상세 접근 방식
-
-구체적인 문제 해결 방식과 계약은 [저장소·Harness 병목 분석 접근 방식](ANALYSIS_APPROACH.md)에서 관리한다. 공통 제약, 이전 기준선, 검토 후보와 부가 목표 전용 가정을 구분하며, 기존 상세 규칙은 이 문서에 중복하지 않는다.
-
-| 관련 단계 | 상세 문서 |
-|---|---|
-| M1·M2: 그래프와 관측 기반 | [분석 모델](ANALYSIS_APPROACH.md#분석-모델), [Snapshot과 읽기 표현](ANALYSIS_APPROACH.md#snapshot과-읽기-표현) |
-| M1·M3: 검색 장애 분석 | [검색 계약 상세](ANALYSIS_APPROACH.md#검색-계약-상세) |
-| M4·M6: 수정 위험·누락 | [Target-only 방법의 검토 후보](ANALYSIS_APPROACH.md#target-only-방법의-검토-후보) |
-| M3·M6: 후보와 결과 근거 | [병목 판정과 결과 추적성](ANALYSIS_APPROACH.md#병목-판정과-결과-추적성) |
-| M2~M7: 평가 입력 준비, M8: 실제 개선 검증 | [개선 효과 검증](ANALYSIS_APPROACH.md#개선-효과-검증) |
-
-## 구현 상태와 재정렬
-
-현재 구현 기준선은 Python snapshot 분석, agent-view 그래프, 고정 harness profile 재생, 정적 병목 후보, 관측 trace 비교다. 실제 harness 검증과 후보의 실제 에이전트 대조는 M8 전까지 수행하지 않으며, 그 검증이 필요한 결과는 `unverified`로 전달한다. 지원 범위와 M8 실험 기준은 [Harness profile support and evaluation constraints](research/4f38a2c1d760be95-harness-evaluation-contract.md)에 기록한다.
-
-작업별 seed/target 시뮬레이션 결과는 전역 병목 분석의 검증 근거로 사용하지 않는다.
-
-다음은 이전 M0의 기능 정리 이력이다. 여기서 M5는 이전 번호이며 새 마일스톤의 의존성을 뜻하지 않는다.
-
-| Status | Feature |
-|---|---|
-| Keep | language and framework analyzers, static relations and evidence, graph metrics including effective and weighted measures, renderers |
-| Replace or extend | the existing symbol graph becomes M1 readable and query nodes; serialization and CLI output extend per milestone contract. Current graph metrics are M5 input and do not constitute M5 completion. |
-| Remove | previous exploration cost, task difficulty, repository cost diff, git diff impact analysis, structural friction diagnostics, Android inject-field arbitrary costs and warnings |
-
-## 로드맵
-
-새 M2~M8은 아래 범위로 재정의한다. M4의 가능성 검토는 M3과 병행하며, M8의 전후 검증 설계와 입력 준비는 M2부터 시작한다. M2~M7은 실제 harness 또는 agent를 호출하지 않고 정적·결정적 검증을 수행한다. 이 단계의 테스트는 https://github.com/koldakov/futuramaapi의 db2603c 커밋을 이용해 기능을 테스트한다. 이는 별도로 커밋하지 않는다. 각 구현은 서명·반환값·오류·경계 사례의 계약을 먼저 확정한다. 아직 구현하지 않은 단계의 산출물 이름은 제안이다.
-
-실제 검증의 연기만으로 M2~M7을 완료 처리하지 않는다. 각 단계의 정적 검사와 평가 자료 준비를 완료 기준으로 확인한다. 단계별 인계 자료는 [M8 평가 입력](research/4f38a2c1d760be95-harness-evaluation-contract.md#m2m7-handoff-to-m8)에 모은다.
-
-### M0. 문서 및 계약 재정렬 — 완료
-
-이전 정리 이력을 유지한다. 현재 기준은 저장소·harness 병목 우선, target-only 검토 후보, 실제 개선 효과 검증이다. 작업별 시뮬레이션은 핵심 완료 조건에서 분리했다.
-
-완료 기준: 목적·미해결 가정·기존 구현 이력을 구분하고, 이전 구현의 완료 표시를 새 목표의 달성으로 사용하지 않는다.
-
-### M1. 에이전트 관점 그래프 — 완료
-
-후속 변경은 저장소 관계와 탐색 관계의 구분, harness별 노출 범위, 분석 커버리지와 미해결 경계를 보존해야 한다. 기존 비용 기본값이나 읽기 즉시 발견 가정은 이후 실증을 대신하지 않는다.
-
-### M2. Harness 관측 계약과 검증 기준 — 완료
-
-기존 에이전트 전략 조사는 출처 자료로 재사용한다. 실제 팀 환경을 어떤 관측 범위로 표현할지, 어떤 결과를 개선으로 인정할지 정한다.
-
-산출물: profile별 지원/미지원 표, 노출·확인 행동의 trace 계약, 독립 평가 사례 정의, 구조·harness 전후 실험 계획.
-
-완료 기준: 기본값마다 근거 또는 미검증 표시가 있고, 기능 입력의 결과·오류·불변성을 검증하며, M8에서 비용과 확인 충족을 함께 측정할 기준이 정해져 있다. 실제 harness 일치 여부는 `unverified`로 남긴다. 지원할 첫 언어·harness와 수치 임계값은 근거 없이 확정하지 않는다.
-
-### M3. 작업 없는 전역 병목 분석 — 완료
-
-기존 그래프 지표를 후보 생성에 사용하고, 후보 과다·잘림·증거 분산·연결 제약·미해결 경계를 저장소 전체에서 보고한다. 기존의 작업별 발견 비용 M3은 부가 목표로 이동했다.
-
-산출물: `bottlenecks.json`과 그 JSON으로 생성한 HTML. 각 후보에는 대상·근거·관련 query/probe·영향받는 profile·비용 또는 노출 장애·커버리지·검증 상태를 포함한다.
-
-완료 기준: 작업 seed/정답 target 입력 없이 후보를 찾고, 지표가 큰 이유뿐 아니라 어떤 탐색 장애를 만드는지 설명한다. 정적 근거가 약하거나 실제 관측이 필요한 후보는 `unverified`로 M8에 전달한다.
-
-### M4. Target-only 영향·검토 후보의 가능성 검증 — 미완료
-
-먼저 제한된 언어·관계 범위에서 호출 관계, 데이터·제어 의존, 설정·프레임워크 계약을 비교한다. 특정 방식을 사전에 정답으로 고정하지 않는다.
-
-산출물: 관계별 적용 조건, 영향 후보/이해 계약/검증 수단이 분리된 `target_review_candidates.json`, 전파 범위 크기·누락·과다 후보 평가.
-
-완료 기준: 독립된 변경·변이·계약 사례로 후보의 적합성과 누락을 평가하고, target만 주었을 때 가능한 주장과 불가능한 주장을 명시한다. 범위가 지나치게 넓거나 근거가 부족하면 “관련 후보 목록” 수준으로 제한하고 위험 순위는 미검증으로 남긴다.
-
-### M5. 개선 후보와 전후 평가 자료 — 미완료
-
-구조 개선과 harness 개선을 분리한 what-if와 평가 자료를 준비한다. M3의 탐색 병목 후보 준비는 M4의 위험 모델 완성을 기다릴 필요가 없다. 안전성 개선 주장의 M8 평가 기준에는 M4의 독립 검토 기준이 필요하다.
-
-산출물: 재현 가능한 변경안, 전후 snapshot/profile, 정적 what-if 결과, M8 실행 자료와 예측·관측 비교 형식.
-
-완료 기준: 구조 변경과 harness 변경을 분리한 입력과 결정적 기대값을 준비한다. 실제 탐색 부담, 확인 충족, 작업 결과와 예측 일치 여부는 `unverified`로 M8에 전달하며 개선 검증 완료로 표시하지 않는다.
-
-### M6. 위험 후보와 정적 노출 장애의 결합 — 미완료
-
-M4의 검토 후보와 M2~M5의 정적 노출 조건을 결합한다. 확인할 구조적 이유가 있는 항목이 profile 조건에서 노출되기 어려운 후보인지 산출한다. 실제 harness에서의 누락 검증은 M8로 연기한다. 이전의 합성 작업 생성 M6은 부가 목표로 이동했다.
-
-산출물: 대상별 관련 근거, 누락 후보가 발생하는 조건, 추천 구조/harness 변경과 `unverified` 검증 상태가 연결된 보고서.
-
-완료 기준: 변이·계약 사례로 영향 후보 생성 오류와 정적 노출 장애를 별도로 평가한다. 실제 탐색·확인 누락과 결합 결과의 유용성은 `unverified`로 M8에 전달하며, 근거가 부족하면 위험과 접근 장애를 나란히 제시하고 결합 순위·확률을 내지 않는다.
-
-### M7. 행동 보정·일반화 평가 준비 — 미완료
-
-M7은 읽기 범위, 검색 선택, 문맥 축약, 재방문, 병렬·하위 에이전트 등 M8에서 관측할 차이에 대한 평가 corpus와 실행 프로토콜을 준비하는 단계다.
-
-산출물: 버전 관리되는 평가 corpus와 profile, 환경별 오차·누락 예측 보정 절차, 성능 예산과 정적 회귀 검증.
-
-완료 기준: 보정용·검증용 corpus 분할과 고정 실행 조건을 확정하고 기능 회귀를 통과한다. 실제 실행 기반 보정 품질과 누락 확률은 `unverified`로 M8에 전달한다.
-
-### M8. 실제 Harness 통합 검증 — 미완료
-
-M2~M7에서 준비한 snapshot, profile, 모델·harness 버전, 작업, 확인 집합과 결과 기준을 고정하고 실제 harness를 반복 실행한다. 구조 변경과 harness 변경은 별도 요인으로 비교한다.
-
-산출물: 실행별 검색·읽기 노출, 반복 호출, 준비 비용, 실패·중단, 확인 근거와 최종 작업 결과를 보존한 trace 및 예측·관측 비교 보고서.
-
-완료 기준: 실패·중단을 포함한 반복 실행으로 노출, 확인, 비용, 작업 결과와 예측 대비 관측을 함께 판정한다. 필요한 확인과 작업 결과를 유지하면서 탐색 부담이 줄어든 경우에만 실제 개선으로 인정하고, 보정되지 않은 환경은 `unverified`로 남긴다.
-
-## 비목표
-
-- 코드 품질, 보안성, 런타임 성능 또는 작업의 의미적 구현 난이도를 대신 평가하기.
-- 자연어 작업에서 정답 수정 위치를 자동 결정하기.
-- 작업별 seed/target 가상 탐색 비용이나 합성 작업 생성을 핵심 제품 완료 조건으로 삼기.
-- 정적 영향 후보를 실제 파손 집합 또는 반드시 읽어야 할 정답 집합으로 단정하기.
-- 모든 동적 관계 복원, 에이전트 내부 이해의 직접 관측, 미보정 누락 확률 주장.
-- 시뮬레이션 비용 감소만으로 실제 구조 개선 효과를 입증했다고 주장하기.
+1. Make every analyzer consume one immutable repository snapshot directly; Python already does, while the other analyzers currently scan the same filesystem independently.
+2. Expand language and framework relation coverage only with deterministic resolver evidence and explicit unresolved boundaries.
+3. Benchmark graph construction, query generation, and sampled betweenness on large repositories; record scale limits without changing metric meaning.
+4. Add fixed local cross-language acceptance fixtures when broader real-world coverage is needed, avoiding network-dependent correctness tests.

@@ -207,9 +207,6 @@ def test_m3_ec_06_futuramaapi_analysis_is_deterministic_and_embeds_unchanged_jso
     payload = json.loads(first)
     for candidate in payload["candidates"]:
         assert candidate["status"] == "static_candidate"
-        assert candidate["validation_status"] == "unverified"
-        assert candidate["affected_profile_ids"] == [payload["profile"]["id"]]
-        assert set(candidate["obstacle"]) == {"axis", "explanation"}
     document = render_report(payload)
     match = re.search(r"<script id='bottlenecks-data' type='application/json'>(.*?)</script>", document, re.DOTALL)
     assert match
