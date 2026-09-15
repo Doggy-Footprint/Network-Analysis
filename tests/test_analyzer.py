@@ -346,18 +346,32 @@ class FastAPISchemaFieldTypeUsesTests(unittest.TestCase):
 
 
 class FastAPIRealFixtureSmokeTests(unittest.TestCase):
-    """Acceptance-level smoke coverage against real, network-fetched FastAPI apps
+    """Acceptance-level coverage against real, network-fetched FastAPI apps
     (fixtures.registry), in addition to (not replacing) TestFastAPIVisualizer's
-    precise synthetic-app assertions above -- see contracts/fixture-unification.md
-    Phase 2 dispatch report for why the precise assertions were not ported onto
-    these fixtures.
+    precise synthetic-app assertions above.
+
+    Expected values below were hand-derived by reading the fixture sources at
+    their pinned commits (see fixtures/registry.py), not by reading the
+    analyzer's own output. Two of them expose real analyzer limitations rather
+    than "clean" behavior:
+
+    - Both fixtures build their FastAPI() app via `FastAPI(**settings.fastapi_kwargs)`
+      / `FastAPI(title=settings.PROJECT_NAME, ...)`: the title/version are
+      attribute lookups, not `ast.Constant`s, so the analyzer's literal-only
+      extraction (analyzer.py's `_check_app_or_router_instantiation`) falls back
+      to its "FastAPI App" / "0.1.0" defaults in both apps.
+    - Every route module in both fixtures imports its sibling modules via an
+      absolute `from app.x.y import z` path, but the analyzer is pointed at the
+      `app/` directory itself as project root, so its own module keys never
+      carry the `app.` prefix that those imports spell out. `_resolve_target_router_module`
+      therefore never matches a real router, `_resolve_router_hierarchy` never
+      finds a target to attach a prefix to, and every endpoint's `full_path`
+      degrades to its bare decorator path with no router prefix ever applied.
     """
 
     def _assert_pipeline_smoke(self, project_path):
         analyzer = FastAPIAnalyzer(str(project_path))
         arch = analyzer.analyze()
-        self.assertEqual(len(arch.apps), 1)
-        self.assertGreater(len(arch.endpoints), 0)
 
         builder = ArchitectureGraphBuilder(include_models=True, include_dependencies=True)
         arch = builder.build_graph(arch)
@@ -381,11 +395,143 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
 
     def test_fastapi_realworld_fixture_analyzes_without_crashing(self):
         root = fixture_root("fastapi-realworld")
-        self._assert_pipeline_smoke(root / "app")
+        project_path = root / "app"
+        analyzer = FastAPIAnalyzer(str(project_path))
+        arch = analyzer.analyze()
+
+        self.assertEqual(len(arch.apps), 1)
+        self.assertEqual(arch.apps[0].title, "FastAPI App")
+        self.assertEqual(arch.apps[0].version, "0.1.0")
+
+        # app/api/routes/api.py wires: authentication(+/users), users(+/user),
+        # profiles(+/profiles), articles(articles_common: 3 + articles_resource: 5),
+        # comments(+3), tags(+1) = 2+2+3+3+5+3+1 = 19, hand-counted from the
+        # @router.<method> decorators across every routes/*.py file.
+        self.assertEqual(len(arch.endpoints), 19)
+        self.assertEqual(
+            {ep.http_method for ep in arch.endpoints if ep.http_method not in ("GET", "POST", "PUT", "DELETE")},
+            set(),
+        )
+
+        login_ep = next(ep for ep in arch.endpoints if ep.function_name == "login")
+        self.assertEqual(login_ep.http_method, "POST")
+        self.assertEqual(login_ep.response_model, "UserInResponse")
+        self.assertIn("UserInLogin", login_ep.request_schemas)
+        # app/api/routes/api.py includes authentication.router with prefix="/users",
+        # but that include_router call is discovered via an absolute `app.`-rooted
+        # import the analyzer can't resolve back to its own module key (see class
+        # docstring), so the prefix never attaches: full_path stays the bare decorator path.
+        self.assertEqual(login_ep.full_path, "/login")
+
+        favorite_ep = next(ep for ep in arch.endpoints if ep.function_name == "mark_article_as_favorite")
+        self.assertEqual(favorite_ep.http_method, "POST")
+        self.assertEqual(favorite_ep.response_model, "ArticleInResponse")
+        self.assertEqual(favorite_ep.full_path, "/{slug}/favorite")
+
+        schema_names = [s.name for s in arch.schemas]
+        # 19 classes under app/models/schemas/ (any class there counts, per
+        # in_model_file) + Article, Comment, Profile, RWModel, User, UserInDB
+        # under app/models/domain/ + DateTimeModelMixin, IDModelMixin in
+        # app/models/common.py = 19 + 6 + 2 = 27.
+        self.assertEqual(len(schema_names), 27)
+        self.assertIn("UserInResponse", schema_names)
+        self.assertIn("UserWithToken", schema_names)
+
+        dep_names = [d.name for d in arch.dependencies]
+        self.assertIn("get_current_user_authorizer", dep_names)
+        self.assertIn("get_repository", dep_names)
+
+        builder = ArchitectureGraphBuilder(include_models=True, include_dependencies=True)
+        built = builder.build_graph(arch)
+        self.assertEqual(built.stats["total_endpoints"], 19)
+        self.assertEqual(
+            built.stats["methods_breakdown"],
+            {"GET": 7, "POST": 6, "PUT": 2, "DELETE": 4},
+        )
+
+        # app/models/schemas/users.py: UserInResponse.user is typed UserWithToken,
+        # a class name unique across the whole fixture, so the field-type-uses
+        # rule must resolve it as a STATIC_CERTAIN/UNIQUE_NAME edge.
+        node_by_id = {node.id: node for node in built.nodes}
+        type_uses_pairs = {
+            (node_by_id[edge.from_id].label, node_by_id[edge.to_id].label)
+            for edge in built.edges
+            if str(edge.relation) == "TYPE_USES"
+            and edge.from_id in node_by_id and edge.to_id in node_by_id
+        }
+        self.assertIn(("UserInResponse", "UserWithToken"), type_uses_pairs)
+
+        self._assert_pipeline_smoke(project_path)
 
     def test_fastapi_official_template_fixture_analyzes_without_crashing(self):
         root = fixture_root("fastapi-official-template")
-        self._assert_pipeline_smoke(root / "backend" / "app")
+        project_path = root / "backend" / "app"
+        analyzer = FastAPIAnalyzer(str(project_path))
+        arch = analyzer.analyze()
+
+        self.assertEqual(len(arch.apps), 1)
+        self.assertEqual(arch.apps[0].title, "FastAPI App")
+        self.assertEqual(arch.apps[0].version, "0.1.0")
+
+        # utils.py(2) + items.py(5) + users.py(10) + login.py(5) + private.py(1)
+        # = 23, hand-counted from @router.<method> decorators.
+        self.assertEqual(len(arch.endpoints), 23)
+
+        read_user_me = next(ep for ep in arch.endpoints if ep.function_name == "read_user_me")
+        self.assertEqual(read_user_me.http_method, "GET")
+        self.assertEqual(read_user_me.response_model, "UserPublic")
+        # app/api/main.py includes users.router (defined with prefix="/users") with
+        # no extra prefix, but that include_router call sits behind the same
+        # absolute-import module-key mismatch as fastapi-realworld, so the
+        # "/users" prefix never attaches to app/api/routes/users.py's endpoints.
+        self.assertEqual(read_user_me.full_path, "/me")
+
+        delete_user = next(ep for ep in arch.endpoints if ep.function_name == "delete_user")
+        self.assertEqual(delete_user.http_method, "DELETE")
+        self.assertIsNone(delete_user.response_model)
+        self.assertEqual(delete_user.full_path, "/{user_id}")
+
+        schema_names = {s.name for s in arch.schemas}
+        # Every class in models.py directly subclassing SQLModel (is_schema's
+        # "Model" substring check), plus PrivateUserCreate(BaseModel) in
+        # api/routes/private.py. Classes that subclass a *sibling* base class
+        # (UserBase, ItemBase -- e.g. UserPublic, User, ItemPublic, Item,
+        # UserCreate, ItemCreate) do NOT match, since is_schema only inspects
+        # each class's own direct base names and models.py isn't inside a
+        # models/schemas/entities *directory*.
+        self.assertEqual(
+            schema_names,
+            {
+                "UserBase", "UserRegister", "UserUpdate", "UserUpdateMe", "UpdatePassword",
+                "UsersPublic", "ItemBase", "ItemUpdate", "ItemsPublic", "Message", "Token",
+                "TokenPayload", "NewPassword", "PrivateUserCreate",
+            },
+        )
+        self.assertNotIn("UserPublic", schema_names)
+        self.assertNotIn("Item", schema_names)
+
+        builder = ArchitectureGraphBuilder(include_models=True, include_dependencies=True)
+        built = builder.build_graph(arch)
+        self.assertEqual(built.stats["total_endpoints"], 23)
+        self.assertEqual(
+            built.stats["methods_breakdown"],
+            {"GET": 6, "POST": 10, "PATCH": 3, "DELETE": 3, "PUT": 1},
+        )
+
+        # UsersPublic.data/ItemsPublic.data are typed list[UserPublic]/list[ItemPublic],
+        # but UserPublic/ItemPublic aren't registered schemas (see above), so the
+        # FastAPI-specific field-type-uses rule (metadata id
+        # "fastapi.model_field_type_uses") never fires for this fixture -- unlike
+        # the generic Python-source-level TYPE_USES edges from include_language_graph,
+        # which resolve class attribute annotations independently of schema registration.
+        schema_type_uses = [
+            edge for edge in built.edges
+            if str(edge.relation) == "TYPE_USES"
+            and (edge.metadata or {}).get("framework_rule", {}).get("id") == "fastapi.model_field_type_uses"
+        ]
+        self.assertEqual(schema_type_uses, [])
+
+        self._assert_pipeline_smoke(project_path)
 
 
 class FastAPINameCollisionTests(unittest.TestCase):

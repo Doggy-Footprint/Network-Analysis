@@ -163,10 +163,13 @@ export function execute() {
 
 @unittest.skipUnless(_HAS_TREE_SITTER, "tree-sitter and tree-sitter-language-pack are not installed")
 class TestTypeScriptRealFixtureSmoke(unittest.TestCase):
-    """Acceptance-level smoke coverage against a real, network-fetched NestJS app
+    """Acceptance-level coverage against a real, network-fetched NestJS app
     (fixtures.registry), in addition to (not replacing) TestTypeScriptAnalyzer's
-    precise hand-written-snippet assertions above -- see contracts/fixture-unification.md
-    Phase 2 dispatch report for why the precise assertions were not ported onto it.
+    precise hand-written-snippet assertions above.
+
+    Expected values were hand-derived by reading the fixture source at its
+    pinned commit (fixtures/registry.py), not by reading the analyzer's own
+    output.
     """
 
     def test_full_pipeline_against_real_nestjs_realworld_repository(self):
@@ -181,9 +184,38 @@ class TestTypeScriptRealFixtureSmoke(unittest.TestCase):
             self.assertIn(edge.from_id, node_ids)
             self.assertIn(edge.to_id, node_ids)
 
+        # 35 `.ts` files under src/ (find src -type f -name '*.ts' | wc -l);
+        # src/config.ts.example is not a recognized source extension and is
+        # excluded from discovery, so it contributes no module.
+        self.assertEqual(architecture.stats["total_files"], 35)
+
+        labels = self._node_labels(architecture)
+        self.assertTrue({"UserController", "UserService", "findMe", "findByEmail", "login", "generateJWT"}.issubset(labels), labels)
+
+        node_by_id = {node.id: node for node in architecture.nodes}
+        call_pairs = {
+            (node_by_id[edge.from_id].label, node_by_id[edge.to_id].label)
+            for edge in architecture.edges
+            if "CALL" in str(edge.relation).upper()
+            and edge.from_id in node_by_id and edge.to_id in node_by_id
+        }
+        # src/user/user.controller.ts: findMe calls this.userService.findByEmail(...),
+        # login calls this.userService.generateJWT(...). Both callee names are
+        # unique across the whole fixture (grep -rn for each in src/), so the
+        # analyzer's simple-name fallback (member-expression receivers other
+        # than a bare `this` skip the constructor-injection lookup and resolve
+        # by name) resolves each deterministically to UserService's method,
+        # not merely ambiguously.
+        self.assertIn(("findMe", "findByEmail"), call_pairs)
+        self.assertIn(("login", "generateJWT"), call_pairs)
+
         with tempfile.TemporaryDirectory() as directory:
             report_path = Path(directory) / "architecture.html"
             self.assertTrue(HTMLRenderer().render(architecture, str(report_path)).exists())
+
+    @staticmethod
+    def _node_labels(architecture):
+        return {str(node.label) for node in architecture.nodes}
 
 
 if __name__ == "__main__":
