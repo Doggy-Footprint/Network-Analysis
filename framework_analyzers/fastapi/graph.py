@@ -4,6 +4,7 @@ Converts extracted architecture metadata into an interactive network graph (node
 and computes architecture metrics.
 """
 
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
@@ -125,6 +126,7 @@ class ArchitectureGraphBuilder:
         nodes: List[GraphNode] = []
         edges: List[GraphEdge] = []
         node_ids: Set[str] = set()
+        root = Path(arch.project_path)
 
         for app in arch.apps:
             node = GraphNode(
@@ -174,7 +176,12 @@ class ArchitectureGraphBuilder:
                         relation="MIDDLEWARE_OF",
                         label="middleware",
                         dashes=True,
-                        color="#94A3B8"
+                        color="#94A3B8",
+                        confidence=Confidence.FRAMEWORK_INFERRED,
+                        resolution=Resolution.UNIQUE_NAME,
+                        evidence=SourceSpan(
+                            relative_repo_path(app.file_path, root), app.line_number, app.line_number,
+                        ),
                     ))
 
         for router in arch.routers:
@@ -214,7 +221,12 @@ class ArchitectureGraphBuilder:
                         to_id=target_id,
                         relation="INCLUDES",
                         label=lbl,
-                        color="#818CF8"
+                        color="#818CF8",
+                        confidence=Confidence.FRAMEWORK_INFERRED,
+                        resolution=Resolution.UNIQUE_NAME,
+                        evidence=SourceSpan(
+                            relative_repo_path(app.file_path, root), app.line_number, app.line_number,
+                        ),
                     ))
 
         for router in arch.routers:
@@ -227,7 +239,12 @@ class ArchitectureGraphBuilder:
                         to_id=target_id,
                         relation="INCLUDES",
                         label=lbl,
-                        color="#C084FC"
+                        color="#C084FC",
+                        confidence=Confidence.FRAMEWORK_INFERRED,
+                        resolution=Resolution.UNIQUE_NAME,
+                        evidence=SourceSpan(
+                            relative_repo_path(router.file_path, root), router.line_number, router.line_number,
+                        ),
                     ))
 
         for ep in arch.endpoints:
@@ -269,12 +286,16 @@ class ArchitectureGraphBuilder:
             nodes.append(node)
             node_ids.add(node.id)
 
+            ep_evidence = SourceSpan(relative_repo_path(ep.file_path, root), ep.line_number, ep.line_number)
             if ep.router_id and ep.router_id in node_ids:
                 edges.append(GraphEdge(
                     from_id=ep.router_id,
                     to_id=ep.id,
                     relation="ROUTES",
-                    color="#A855F7"
+                    color="#A855F7",
+                    confidence=Confidence.FRAMEWORK_INFERRED,
+                    resolution=Resolution.UNIQUE_NAME,
+                    evidence=ep_evidence,
                 ))
             else:
                 matching_router = next((r for r in arch.routers if r.module == ep.module), None)
@@ -283,14 +304,20 @@ class ArchitectureGraphBuilder:
                         from_id=matching_router.id,
                         to_id=ep.id,
                         relation="ROUTES",
-                        color="#A855F7"
+                        color="#A855F7",
+                        confidence=Confidence.FRAMEWORK_INFERRED,
+                        resolution=Resolution.UNIQUE_NAME,
+                        evidence=ep_evidence,
                     ))
                 elif arch.apps and arch.apps[0].id in node_ids:
                     edges.append(GraphEdge(
                         from_id=arch.apps[0].id,
                         to_id=ep.id,
                         relation="ROUTES",
-                        color="#818CF8"
+                        color="#818CF8",
+                        confidence=Confidence.FRAMEWORK_INFERRED,
+                        resolution=Resolution.UNIQUE_NAME,
+                        evidence=ep_evidence,
                     ))
 
         if self.include_dependencies:
@@ -401,6 +428,12 @@ class ArchitectureGraphBuilder:
         annotate_nodes(nodes, arch.project_path, self.PROVENANCE, "python")
         mark_edges(edges, nodes=nodes, rule_namespace="fastapi",
                    rule_specificity=self.FRAMEWORK_RULE_SPECIFICITY)
+        # mark_edges unconditionally sets confidence=FRAMEWORK_INFERRED on every edge it
+        # sees, so the model-field TYPE_USES edges (which must stay STATIC_CERTAIN, per
+        # contract Section E) are built after that call, mirroring how _implementation_edges
+        # is appended post-mark_edges below.
+        if self.include_models:
+            edges.extend(self._schema_field_type_uses_edges(arch, node_ids))
         if self.include_language_graph:
             language_nodes, language_edges = self._language_graph(arch)
             known = {node.id for node in nodes}
@@ -463,6 +496,39 @@ class ArchitectureGraphBuilder:
                 evidence=SourceSpan(relative_repo_path(file_path, root), line, line),
                 metadata={"framework_rule": {"id": "fastapi.implemented_by", "specificity": "unique"}},
             ))
+        return edges
+
+    def _schema_field_type_uses_edges(self, arch: ProjectArchitecture, node_ids: Set[str]) -> List[GraphEdge]:
+        schema_by_name: Dict[str, List[SchemaInfo]] = {}
+        for schema in arch.schemas:
+            schema_by_name.setdefault(schema.name, []).append(schema)
+
+        edges: List[GraphEdge] = []
+        for schema in arch.schemas:
+            if schema.id not in node_ids:
+                continue
+            for schema_field in schema.fields:
+                target_name = self._unwrap_field_type(schema_field.type_annotation)
+                matches = [s for s in schema_by_name.get(target_name, []) if s.id in node_ids]
+                if not matches:
+                    continue
+                others = matches[1:]
+                edges.append(GraphEdge(
+                    from_id=schema.id,
+                    to_id=matches[0].id,
+                    relation=RelationKind.TYPE_USES,
+                    label="uses",
+                    dashes=True,
+                    color="#E879F9",
+                    confidence=Confidence.STATIC_CERTAIN,
+                    resolution=Resolution.AMBIGUOUS if others else Resolution.UNIQUE_NAME,
+                    candidates=[s.id for s in others],
+                    evidence=SourceSpan(schema.file_path, schema.line_number, schema.line_number),
+                    metadata={"framework_rule": {
+                        "id": "fastapi.model_field_type_uses",
+                        "specificity": "ambiguous" if others else "unique",
+                    }},
+                ))
         return edges
 
     @staticmethod
@@ -575,6 +641,16 @@ class ArchitectureGraphBuilder:
             d for d in dependencies
             if d.name == clean_name or d.name == name or d.id.endswith(f"_{clean_name}")
         ]
+
+    @staticmethod
+    def _unwrap_field_type(type_annotation: str) -> str:
+        match = re.match(r"^\w+\[(.*)\]$", type_annotation.strip())
+        if not match:
+            return type_annotation.strip()
+        inner = match.group(1)
+        if "," in inner:
+            inner = inner.rsplit(",", 1)[-1]
+        return inner.strip()
 
     @staticmethod
     def _find_schemas_by_name(name: str, schemas: List[SchemaInfo]) -> List[SchemaInfo]:

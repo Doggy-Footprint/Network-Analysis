@@ -10,8 +10,9 @@ from framework_analyzers.android.models import (
     AndroidProjectArchitecture,
     ComposableInfo,
     DiBindingInfo,
+    ViewModelInfo,
 )
-from language_analyzers.core.graph_models import GraphNode, NodeKind, RelationKind, Resolution
+from language_analyzers.core.graph_models import GraphNode, NodeKind, RelationKind, Resolution, SourceSpan
 
 
 class AndroidGraphContractTests(unittest.TestCase):
@@ -255,6 +256,76 @@ class AndroidNameCollisionTests(unittest.TestCase):
         self.assertEqual([edge.to_id for edge in from_overload], ["composable_overload_b"])
         self.assertEqual(from_overload[0].candidates, [])
         self.assertEqual(str(from_overload[0].resolution), str(Resolution.UNIQUE_NAME))
+
+
+class AndroidFrameworkEvidenceTests(unittest.TestCase):
+    def _architecture(self, root, viewmodels=(), di_bindings=()):
+        return AndroidProjectArchitecture(
+            project_name="sample",
+            project_path=str(root),
+            viewmodels=list(viewmodels),
+            di_bindings=list(di_bindings),
+        )
+
+    def test_and_1_unique_injected_type_match_produces_injects_edge_with_evidence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "FooViewModel.kt"
+            source.write_text("class FooViewModel\n", encoding="utf-8")
+            viewmodel = ViewModelInfo(
+                id="viewmodel", name="FooViewModel", module="feature",
+                file_path=str(source), line_number=5, end_line_number=5,
+                injected_types=["Repository"],
+            )
+            binding = DiBindingInfo(
+                id="binding", name="Repository", kind="inject_constructor", module="feature",
+                file_path=str(source), line_number=9, end_line_number=9,
+                injected_type="Repository",
+            )
+            architecture = self._architecture(root, viewmodels=[viewmodel], di_bindings=[binding])
+
+            with patch("framework_analyzers.android.graph.KotlinAnalyzer") as analyzer:
+                analyzer.return_value.build.return_value = ([], [])
+                result = AndroidArchitectureGraphBuilder().build_graph(architecture)
+
+        injects = next(edge for edge in result.edges if edge.relation == "INJECTS")
+        self.assertEqual(str(injects.confidence), "framework_inferred")
+        self.assertEqual(str(injects.resolution), str(Resolution.UNIQUE_NAME))
+        self.assertEqual(injects.evidence, SourceSpan(str(source), 9, 9))
+        self.assertEqual(injects.metadata["framework_rule"]["specificity"], "unique")
+
+    def test_and_2_no_injected_type_match_produces_no_injects_edge(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "FooViewModel.kt"
+            source.write_text("class FooViewModel\n", encoding="utf-8")
+            viewmodel = ViewModelInfo(
+                id="viewmodel", name="FooViewModel", module="feature",
+                file_path=str(source), line_number=5, end_line_number=5,
+                injected_types=["Unmatched"],
+            )
+            binding = DiBindingInfo(
+                id="binding", name="Repository", kind="inject_constructor", module="feature",
+                file_path=str(source), line_number=9, end_line_number=9,
+                injected_type="Repository",
+            )
+            architecture = self._architecture(root, viewmodels=[viewmodel], di_bindings=[binding])
+
+            with patch("framework_analyzers.android.graph.KotlinAnalyzer") as analyzer:
+                analyzer.return_value.build.return_value = ([], [])
+                result = AndroidArchitectureGraphBuilder().build_graph(architecture)
+
+        self.assertFalse(any(edge.relation == "INJECTS" for edge in result.edges))
+
+    def test_and_3_ambiguous_named_edge_gets_confidence_evidence_and_rule(self):
+        edges = AndroidNameCollisionTests().build()
+        caller = next(edge for edge in edges if edge.from_id == "composable_Caller")
+
+        self.assertEqual(str(caller.resolution), str(Resolution.AMBIGUOUS))
+        self.assertEqual(caller.candidates, ["composable_overload_b"])
+        self.assertEqual(str(caller.confidence), "framework_inferred")
+        self.assertIsNotNone(caller.evidence)
+        self.assertEqual(caller.metadata["framework_rule"]["specificity"], "ambiguous")
 
 
 if __name__ == "__main__":

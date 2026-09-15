@@ -60,6 +60,7 @@ class _Symbol:
     signature: Optional[str] = None
     heritage: List[Tuple[str, str, int]] = field(default_factory=list)
     annotations: List[Tuple[str, int]] = field(default_factory=list)
+    type_parameter_constraints: List[Tuple[str, int]] = field(default_factory=list)
     body: Any = None
     parameters: List[str] = field(default_factory=list)
 
@@ -293,6 +294,7 @@ class TypeScriptAnalyzer:
         symbol = self._make_symbol(module, node, name, kind, exported, scope, parent)
         symbol.heritage = self._heritage(module, node)
         symbol.signature = self._signature(module, node, name, kind)
+        symbol.type_parameter_constraints = self._type_parameter_constraint_names(module, node)
         if kind == NodeKind.CLASS:
             body = ts.child_of_type(node, "class_body")
             if body is not None:
@@ -301,6 +303,7 @@ class TypeScriptAnalyzer:
             symbol.body = ts.child_of_type(node, "statement_block")
             symbol.parameters = self._parameters(module, node)
             symbol.annotations = self._annotations(module, node)
+            symbol.type_parameter_constraints = self._type_parameter_constraint_names(module, node)
 
     def _collect_class_members(self, module: _Module, body, owner: _Symbol, scope: List[str]):
         for member in body.named_children:
@@ -312,6 +315,7 @@ class TypeScriptAnalyzer:
                 symbol.body = ts.child_of_type(member, "statement_block")
                 symbol.parameters = self._parameters(module, member)
                 symbol.annotations = self._annotations(module, member)
+                symbol.type_parameter_constraints = self._type_parameter_constraint_names(module, member)
                 symbol.signature = f"{name}({', '.join(symbol.parameters)})"
             elif member.type == "public_field_definition":
                 name = ts.declared_name(module.source, member)
@@ -319,6 +323,7 @@ class TypeScriptAnalyzer:
                     continue
                 symbol = self._make_symbol(module, member, name, NodeKind.FIELD, False, scope, owner)
                 symbol.annotations = self._annotations(module, member)
+                symbol.type_parameter_constraints = self._type_parameter_constraint_names(module, member)
                 symbol.body = member
 
     def _collect_variable(self, module: _Module, statement, declarator, exported, scope, parent):
@@ -331,6 +336,7 @@ class TypeScriptAnalyzer:
         kind = NodeKind.FUNCTION if is_function else NodeKind.CONSTANT
         symbol = self._make_symbol(module, statement, name, kind, exported, scope, parent)
         symbol.annotations = self._annotations(module, declarator)
+        symbol.type_parameter_constraints = self._type_parameter_constraint_names(module, declarator)
         if is_function:
             symbol.body = value
             symbol.parameters = self._parameters(module, value)
@@ -375,6 +381,20 @@ class TypeScriptAnalyzer:
             if item.type == "type_annotation":
                 for name in ts.type_names(module.source, item):
                     found.append((name, ts.start_line(item)))
+        return found
+
+    @staticmethod
+    def _type_parameter_constraint_names(module: _Module, node) -> List[Tuple[str, int]]:
+        found: List[Tuple[str, int]] = []
+        type_parameters = ts.child_of_type(node, "type_parameters")
+        if type_parameters is None:
+            return found
+        for parameter in ts.children_of_type(type_parameters, "type_parameter"):
+            constraint = ts.child_of_type(parameter, "constraint")
+            if constraint is None:
+                continue
+            for name in ts.type_names(module.source, constraint):
+                found.append((name, ts.start_line(constraint)))
         return found
 
     @staticmethod
@@ -561,6 +581,15 @@ class TypeScriptAnalyzer:
                     symbol.id, target, RelationKind.TYPE_USES, confidence, resolution,
                     SourceSpan(symbol.file_key, line, line), candidates,
                 )
+        for name, line in symbol.type_parameter_constraints:
+            target, resolution, confidence, candidates = self._resolve_name(module, name)
+            if target and self._symbols.get(target) and self._symbols[target].kind in (
+                NodeKind.CLASS, NodeKind.INTERFACE, NodeKind.ENUM, NodeKind.TYPE_ALIAS
+            ):
+                self._add_edge(
+                    symbol.id, target, RelationKind.TYPE_USES, confidence, resolution,
+                    SourceSpan(symbol.file_key, line, line), candidates,
+                )
 
     def _scan_bodies(self, module: _Module):
         for symbol in self._symbols.values():
@@ -587,6 +616,20 @@ class TypeScriptAnalyzer:
         for node in nodes:
             if node.type not in ("call_expression", "new_expression"):
                 continue
+            type_arguments = node.child_by_field_name("type_arguments")
+            if type_arguments is not None:
+                for type_name in ts.type_names(module.source, type_arguments):
+                    type_target, type_resolution, type_confidence, type_candidates = self._resolve_name(
+                        module, type_name
+                    )
+                    if type_target and self._symbols.get(type_target) and self._symbols[type_target].kind in (
+                        NodeKind.CLASS, NodeKind.INTERFACE, NodeKind.ENUM, NodeKind.TYPE_ALIAS
+                    ):
+                        self._add_edge(
+                            source_id, type_target, RelationKind.TYPE_USES, type_confidence, type_resolution,
+                            SourceSpan(module.file_key, ts.start_line(type_arguments), ts.start_line(type_arguments)),
+                            type_candidates,
+                        )
             if node.type == "new_expression":
                 constructor = node.child_by_field_name("constructor")
                 name = ts.node_text(module.source, constructor) if constructor is not None else None

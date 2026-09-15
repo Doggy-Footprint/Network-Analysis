@@ -9,7 +9,7 @@ from pathlib import Path
 
 from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core import enrichment as enrichment_module
-from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, RelationKind, SourceSpan
+from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, NodeKind, RelationKind, SourceSpan
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.serialization import architecture_to_dict
 from language_analyzers.python.graph import PythonGraphAnalyzer
@@ -662,6 +662,71 @@ class TestLanguageRelations(unittest.TestCase):
             self.assertTrue(ambiguous)
             self.assertEqual(set(ambiguous[0].candidates), duplicate_ids - {ambiguous[0].to_id})
             self.assertTrue(all(edge.evidence is not None for edge in ambiguous))
+
+    def test_kt1_extension_function_receiver_produces_type_uses_edge(self):
+        from language_analyzers.kotlin import KotlinAnalyzer
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "main.kt").write_text(
+                "package demo\n"
+                "class Foo\n"
+                "fun Foo.bar(): Int { return 1 }\n",
+                encoding="utf-8",
+            )
+
+            architecture = KotlinAnalyzer(root).analyze()
+            by_id = {node.id: node for node in architecture.nodes}
+            endpoints = {(by_id[edge.from_id].label, by_id[edge.to_id].label, edge.relation) for edge in architecture.edges}
+            self.assertIn(("bar", "Foo", RelationKind.TYPE_USES), endpoints)
+
+    def test_kt2_nullable_receiver_produces_type_uses_edge(self):
+        from language_analyzers.kotlin import KotlinAnalyzer
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "main.kt").write_text(
+                "package demo\n"
+                "class Foo\n"
+                "fun Foo?.baz(): Int { return 1 }\n",
+                encoding="utf-8",
+            )
+
+            architecture = KotlinAnalyzer(root).analyze()
+            by_id = {node.id: node for node in architecture.nodes}
+            endpoints = {(by_id[edge.from_id].label, by_id[edge.to_id].label, edge.relation) for edge in architecture.edges}
+            self.assertIn(("baz", "Foo", RelationKind.TYPE_USES), endpoints)
+
+    def test_kt3_regular_function_has_no_receiver_and_no_new_edge(self):
+        from language_analyzers.kotlin import KotlinAnalyzer
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "main.kt").write_text(
+                "package demo\n"
+                "fun regular(): Int { return 1 }\n",
+                encoding="utf-8",
+            )
+
+            architecture = KotlinAnalyzer(root).analyze()
+            regular = next(node for node in architecture.nodes if node.label == "regular")
+            self.assertEqual(regular.kind, NodeKind.FUNCTION)
+            self.assertFalse(any(edge.from_id == regular.id and edge.relation == RelationKind.TYPE_USES for edge in architecture.edges))
+
+    def test_kt4_unresolvable_receiver_type_produces_no_edge_and_no_error(self):
+        from language_analyzers.kotlin import KotlinAnalyzer
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "main.kt").write_text(
+                "package demo\n"
+                "fun ExternalLib.helper(): Int { return 1 }\n",
+                encoding="utf-8",
+            )
+
+            architecture = KotlinAnalyzer(root).analyze()
+            helper = next(node for node in architecture.nodes if node.label == "helper")
+            self.assertFalse(any(edge.from_id == helper.id and edge.relation == RelationKind.TYPE_USES for edge in architecture.edges))
 
     def test_kotlin_direct_analyzer_shape_and_cli(self):
         from code_analyzer import cli

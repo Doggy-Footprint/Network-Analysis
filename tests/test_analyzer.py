@@ -12,8 +12,8 @@ from pathlib import Path
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 import framework_analyzers.fastapi.graph as fastapi_graph
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
-from framework_analyzers.fastapi.models import EndpointInfo, ProjectArchitecture, SchemaInfo
-from language_analyzers.core.graph_models import Resolution
+from framework_analyzers.fastapi.models import EndpointInfo, ProjectArchitecture, SchemaFieldInfo, SchemaInfo
+from language_analyzers.core.graph_models import Confidence, RelationKind, Resolution, SourceSpan
 from renderers.html import HTMLRenderer
 
 
@@ -262,6 +262,86 @@ class FastAPIFrameworkRuleDeclarationTests(unittest.TestCase):
             set(ArchitectureGraphBuilder.FRAMEWORK_RULE_SPECIFICITY.values()) - {"unique", "narrowing"},
             set(),
         )
+
+
+class FastAPISchemaFieldTypeUsesTests(unittest.TestCase):
+    def _build(self, schemas):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "api.py").write_text("x = 1\n", encoding="utf-8")
+            architecture = ProjectArchitecture(
+                project_name="sample",
+                project_path=str(root),
+                schemas=schemas,
+            )
+            return ArchitectureGraphBuilder(include_language_graph=False).build_graph(architecture)
+
+    def test_fa_1_field_typed_as_another_model_produces_type_uses_edge(self):
+        owner = SchemaInfo(id="schema-owner", name="Owner", module="api",
+                            file_path="owner.py", line_number=1, end_line_number=1)
+        model = SchemaInfo(
+            id="schema-model", name="Model", module="api",
+            file_path="model.py", line_number=5, end_line_number=5,
+            fields=[SchemaFieldInfo(name="owner", type_annotation="Owner")],
+        )
+
+        result = self._build([owner, model])
+
+        edge = next(e for e in result.edges if e.relation == RelationKind.TYPE_USES)
+        self.assertEqual((edge.from_id, edge.to_id), ("schema-model", "schema-owner"))
+        self.assertEqual(str(edge.confidence), str(Confidence.STATIC_CERTAIN))
+        self.assertEqual(str(edge.resolution), str(Resolution.UNIQUE_NAME))
+        self.assertEqual(edge.evidence, SourceSpan("model.py", 5, 5))
+        self.assertEqual(
+            edge.metadata["framework_rule"],
+            {"id": "fastapi.model_field_type_uses", "specificity": "unique"},
+        )
+
+    def test_fa_2_wrapped_field_types_are_stripped_before_matching(self):
+        owner = SchemaInfo(id="schema-owner", name="Owner", module="api",
+                            file_path="owner.py", line_number=1, end_line_number=1)
+        model = SchemaInfo(
+            id="schema-model", name="Model", module="api",
+            file_path="model.py", line_number=5, end_line_number=5,
+            fields=[
+                SchemaFieldInfo(name="owner", type_annotation="Optional[Owner]"),
+                SchemaFieldInfo(name="owners", type_annotation="List[Owner]"),
+            ],
+        )
+
+        result = self._build([owner, model])
+
+        edges = [e for e in result.edges if e.relation == RelationKind.TYPE_USES]
+        self.assertEqual(len(edges), 2)
+        self.assertTrue(all(e.to_id == "schema-owner" for e in edges))
+
+    def test_fa_3_primitive_field_type_produces_no_type_uses_edge(self):
+        model = SchemaInfo(
+            id="schema-model", name="Model", module="api",
+            file_path="model.py", line_number=5, end_line_number=5,
+            fields=[SchemaFieldInfo(name="name", type_annotation="str")],
+        )
+
+        result = self._build([model])
+
+        self.assertFalse(any(e.relation == RelationKind.TYPE_USES for e in result.edges))
+
+    def test_fa_4_two_models_sharing_a_class_name_produce_ambiguous_type_uses(self):
+        owner_a = SchemaInfo(id="schema-owner-a", name="Owner", module="api.v1",
+                              file_path="a.py", line_number=1, end_line_number=1)
+        owner_b = SchemaInfo(id="schema-owner-b", name="Owner", module="api.v2",
+                              file_path="b.py", line_number=1, end_line_number=1)
+        model = SchemaInfo(
+            id="schema-model", name="Model", module="api",
+            file_path="model.py", line_number=5, end_line_number=5,
+            fields=[SchemaFieldInfo(name="owner", type_annotation="Owner")],
+        )
+
+        result = self._build([owner_a, owner_b, model])
+
+        edge = next(e for e in result.edges if e.relation == RelationKind.TYPE_USES)
+        self.assertEqual(str(edge.resolution), str(Resolution.AMBIGUOUS))
+        self.assertEqual(set(edge.candidates) | {edge.to_id}, {"schema-owner-a", "schema-owner-b"})
 
 
 class FastAPINameCollisionTests(unittest.TestCase):

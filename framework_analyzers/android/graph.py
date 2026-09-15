@@ -130,11 +130,15 @@ class AndroidArchitectureGraphBuilder:
                 return None, []
             return usable[0], [item.id for item in usable[1:]]
 
-        def named_edge(from_id, target, others, relation, **style) -> GraphEdge:
+        def named_edge(from_id, target, others, relation, *, rule_id: str, evidence: SourceSpan,
+                       confidence: str = Confidence.FRAMEWORK_INFERRED, **style) -> GraphEdge:
             return GraphEdge(
                 from_id=from_id, to_id=target.id, relation=relation,
+                confidence=confidence,
                 resolution=Resolution.AMBIGUOUS if others else Resolution.UNIQUE_NAME,
                 candidates=list(others),
+                evidence=evidence,
+                metadata={"framework_rule": {"id": rule_id, "specificity": "ambiguous" if others else "unique"}},
                 **style,
             )
 
@@ -160,12 +164,21 @@ class AndroidArchitectureGraphBuilder:
             for call_name in c.calls:
                 target, others = resolve(composable_by_name, call_name, exclude_id=c.id)
                 if target:
-                    edges.append(named_edge(c.id, target, others, "CALLS", color="#10B981"))
+                    edges.append(named_edge(
+                        c.id, target, others, "CALLS",
+                        rule_id="android.composable_calls",
+                        evidence=SourceSpan(c.file_path, c.line_number, c.line_number),
+                        color="#10B981",
+                    ))
             if c.uses_viewmodel:
                 target, others = resolve(viewmodel_by_name, c.uses_viewmodel, require_node=False)
                 if target:
-                    edges.append(named_edge(c.id, target, others, "USES_VIEWMODEL",
-                                            label="uses", dashes=True, color="#3B82F6"))
+                    edges.append(named_edge(
+                        c.id, target, others, "USES_VIEWMODEL",
+                        rule_id="android.composable_uses_viewmodel",
+                        evidence=SourceSpan(c.file_path, c.line_number, c.line_number),
+                        label="uses", dashes=True, color="#3B82F6",
+                    ))
 
         for v in arch.viewmodels:
             add_node(GraphNode(
@@ -214,20 +227,39 @@ class AndroidArchitectureGraphBuilder:
             for m in arch.di_modules:
                 for b in arch.di_bindings:
                     if b.owner_module_id == m.id and b.id in node_ids:
-                        edges.append(GraphEdge(from_id=m.id, to_id=b.id,
-                                                relation="PROVIDES" if b.kind == "provides" else "BINDS",
-                                                dashes=True, color="#A855F7"))
+                        edges.append(GraphEdge(
+                            from_id=m.id, to_id=b.id,
+                            relation="PROVIDES" if b.kind == "provides" else "BINDS",
+                            confidence=Confidence.FRAMEWORK_INFERRED, resolution=Resolution.UNIQUE_NAME,
+                            evidence=SourceSpan(b.file_path, b.line_number, b.line_number),
+                            metadata={"framework_rule": {
+                                "id": "android.module_provides_binding", "specificity": "unique",
+                            }},
+                            dashes=True, color="#A855F7",
+                        ))
                 for target_name in m.install_in:
                     target, others = resolve(component_by_name, target_name)
                     if target:
-                        edges.append(named_edge(m.id, target, others, "INSTALLS_IN", color="#818CF8"))
+                        edges.append(named_edge(
+                            m.id, target, others, "INSTALLS_IN",
+                            rule_id="android.di_module_installs_in",
+                            evidence=SourceSpan(m.file_path, m.line_number, m.line_number),
+                            color="#818CF8",
+                        ))
 
             for v in arch.viewmodels:
                 for injected_type in v.injected_types:
                     binding = binding_by_injected_type.get(injected_type) or binding_by_provided_type.get(injected_type)
                     if binding and binding.id in node_ids:
-                        edges.append(GraphEdge(from_id=v.id, to_id=binding.id, relation="INJECTS",
-                                                label="injects", dashes=True, color="#38BDF8"))
+                        edges.append(GraphEdge(
+                            from_id=v.id, to_id=binding.id, relation="INJECTS",
+                            confidence=Confidence.FRAMEWORK_INFERRED, resolution=Resolution.UNIQUE_NAME,
+                            evidence=SourceSpan(binding.file_path, binding.line_number, binding.line_number),
+                            metadata={"framework_rule": {
+                                "id": "android.viewmodel_injects_binding", "specificity": "unique",
+                            }},
+                            label="injects", dashes=True, color="#38BDF8",
+                        ))
                     api, api_others = resolve(
                         api_by_name, injected_type, require_node=False,
                         predicate=lambda item: any(
@@ -235,8 +267,12 @@ class AndroidArchitectureGraphBuilder:
                         ),
                     )
                     if api:
-                        edges.append(named_edge(v.id, api, api_others, "CALLS_API",
-                                                label="calls", dashes=True, color="#A855F7"))
+                        edges.append(named_edge(
+                            v.id, api, api_others, "CALLS_API",
+                            rule_id="android.viewmodel_calls_api",
+                            evidence=SourceSpan(v.file_path, v.line_number, v.line_number),
+                            label="calls", dashes=True, color="#A855F7",
+                        ))
 
         if self.include_models:
             for e in arch.room_entities:
@@ -270,8 +306,12 @@ class AndroidArchitectureGraphBuilder:
                 if self.include_models and method.return_type:
                     entity, others = resolve(entity_by_name, method.return_type)
                     if entity:
-                        edges.append(named_edge(method.id, entity, others, "QUERIES",
-                                                label="queries", dashes=True, color="#E879F9"))
+                        edges.append(named_edge(
+                            method.id, entity, others, "QUERIES",
+                            rule_id="android.dao_method_queries",
+                            evidence=SourceSpan(d.file_path, method.line_number, method.line_number),
+                            label="queries", dashes=True, color="#E879F9",
+                        ))
 
         for db in arch.room_databases:
             add_node(GraphNode(
@@ -285,12 +325,22 @@ class AndroidArchitectureGraphBuilder:
             for dao_type in db.dao_accessors:
                 dao, others = resolve(dao_by_name, dao_type)
                 if dao:
-                    edges.append(named_edge(db.id, dao, others, "CONTAINS", color="#F43F5E"))
+                    edges.append(named_edge(
+                        db.id, dao, others, "CONTAINS",
+                        rule_id="android.database_contains_dao",
+                        evidence=SourceSpan(db.file_path, db.line_number, db.line_number),
+                        color="#F43F5E",
+                    ))
             if self.include_models:
                 for entity_name in db.entity_names:
                     entity, others = resolve(entity_by_name, entity_name)
                     if entity:
-                        edges.append(named_edge(db.id, entity, others, "DEFINES_ENTITY", color="#F43F5E"))
+                        edges.append(named_edge(
+                            db.id, entity, others, "DEFINES_ENTITY",
+                            rule_id="android.database_defines_entity",
+                            evidence=SourceSpan(db.file_path, db.line_number, db.line_number),
+                            color="#F43F5E",
+                        ))
 
         for api in arch.retrofit_apis:
             add_node(GraphNode(
@@ -323,7 +373,12 @@ class AndroidArchitectureGraphBuilder:
             for composable_name in af.hosted_composables:
                 target, others = resolve(composable_by_name, composable_name)
                 if target:
-                    edges.append(named_edge(af.id, target, others, "HOSTS", color="#9CA3AF"))
+                    edges.append(named_edge(
+                        af.id, target, others, "HOSTS",
+                        rule_id="android.activity_hosts_composable",
+                        evidence=SourceSpan(af.file_path, af.line_number, af.line_number),
+                        color="#9CA3AF",
+                    ))
 
         annotate_nodes(nodes, arch.project_path, "android", "kotlin")
         mark_edges(edges, nodes=nodes, rule_namespace="android",

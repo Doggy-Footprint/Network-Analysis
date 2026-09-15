@@ -181,6 +181,71 @@ class TestSyntaxAwareExtraction(TypeScriptFixture):
 
         self.assertIn(("ts:svc.ts#find", "ts:models.ts#User", RelationKind.TYPE_USES), edges)
 
+    def test_ts1_class_type_parameter_constraint_produces_type_uses_edge(self):
+        self.write("base.ts", "export class Base {}\n")
+        self.write(
+            "repo.ts",
+            'import { Base } from "./base";\n\nexport class Repo<T extends Base> {}\n',
+        )
+
+        _, edges, _ = self.graph()
+
+        self.assertIn(("ts:repo.ts#Repo", "ts:base.ts#Base", RelationKind.TYPE_USES), edges)
+
+    def test_ts2_multiple_type_parameter_constraints_produce_one_edge_each(self):
+        self.write("widget.ts", "export class Widget {}\nexport class Other {}\n")
+        self.write(
+            "main.ts",
+            'import { Widget, Other } from "./widget";\n\n'
+            "export function make<T extends Widget, U extends Other>() {}\n",
+        )
+
+        _, edges, _ = self.graph()
+
+        self.assertIn(("ts:main.ts#make", "ts:widget.ts#Widget", RelationKind.TYPE_USES), edges)
+        self.assertIn(("ts:main.ts#make", "ts:widget.ts#Other", RelationKind.TYPE_USES), edges)
+
+    def test_ts3_unconstrained_type_parameter_produces_no_edge_and_no_error(self):
+        self.write("foo.ts", "export class Foo<T> {}\n")
+
+        nodes, edges, _ = self.graph()
+
+        constraint_edges = [
+            key for key in edges if key[0] == "ts:foo.ts#Foo" and key[2] == RelationKind.TYPE_USES
+        ]
+        self.assertEqual(constraint_edges, [])
+        self.assertIn("ts:foo.ts#Foo", nodes)
+
+    def test_ts4_unresolvable_call_type_argument_does_not_affect_the_call_edge(self):
+        self.write("container.ts", "export class Container {}\n")
+        self.write(
+            "main.ts",
+            'import { Container } from "./container";\n\n'
+            "export function make() {\n  return new Container<Item>();\n}\n",
+        )
+
+        nodes, edges, _ = self.graph()
+
+        self.assertIn(("ts:main.ts#make", "ts:container.ts#Container", RelationKind.INSTANTIATES), edges)
+        type_use_edges = [
+            key for key in edges if key[0] == "ts:main.ts#make" and key[2] == RelationKind.TYPE_USES
+        ]
+        self.assertEqual(type_use_edges, [])
+        self.assertNotIn("Item", nodes["ts:main.ts#make"].metadata.get("unresolved_calls", {}))
+
+    def test_ts5_call_type_argument_resolves_even_when_call_itself_is_unresolved(self):
+        self.write("baz.ts", "export class Baz {}\n")
+        self.write(
+            "main.ts",
+            'import { Baz } from "./baz";\n\n'
+            "export function run() {\n  return foo.bar<Baz>();\n}\n",
+        )
+
+        _, edges, _ = self.graph()
+
+        self.assertIn(("ts:main.ts#run", "ts:baz.ts#Baz", RelationKind.TYPE_USES), edges)
+        self.assertNotIn(("ts:main.ts#run", "ts:baz.ts#Baz", RelationKind.CALLS), edges)
+
 
 class TestReexportAndDynamicImports(TypeScriptFixture):
     def test_star_reexport_marks_a_barrel_and_links_every_exported_symbol(self):

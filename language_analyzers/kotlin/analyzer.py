@@ -40,6 +40,8 @@ class _KotlinSymbol:
     qualname: str
     node: Any
     parent: Optional[str]
+    is_extension: bool = False
+    receiver_type: Optional[str] = None
 
 
 class KotlinAnalyzer:
@@ -147,6 +149,11 @@ class KotlinAnalyzer:
         qualname = ".".join(scope + [name])
         symbol_id = self._symbol_id(key, qualname)
         symbol = _KotlinSymbol(symbol_id, name, kind, key, qualname, node, parent)
+        if node.type == "function_declaration":
+            receiver_type = ka.receiver_type_name(node, source)
+            if receiver_type is not None:
+                symbol.is_extension = True
+                symbol.receiver_type = receiver_type
         self._symbols[symbol_id] = symbol
         self._by_name.setdefault(name, []).append(symbol_id)
         if parent:
@@ -224,6 +231,11 @@ class KotlinAnalyzer:
                 if target:
                     relation = RelationKind.IMPLEMENTS if symbol.kind == NodeKind.CLASS and self._symbols[target].kind == NodeKind.INTERFACE else RelationKind.INHERITS
                     self._add_edge(symbol.id, target, relation, SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
+        if symbol.is_extension:
+            target, resolution, confidence, candidates = self._resolve(symbol.receiver_type)
+            if target:
+                self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
+                               SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
         for name, targets in self._by_name.items():
             if name == symbol.name or not re.search(rf"\b{re.escape(name)}\b", header):
                 continue

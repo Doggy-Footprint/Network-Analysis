@@ -152,6 +152,26 @@ def supertype_names(node, source: bytes) -> List[str]:
     return names
 
 
+def receiver_type_name(node, source: bytes) -> Optional[str]:
+    for child in node.children:
+        if child.type != "receiver_type":
+            continue
+        for grandchild in child.children:
+            user_type = None
+            if grandchild.type == "user_type":
+                user_type = grandchild
+            elif grandchild.type == "nullable_type":
+                for c in grandchild.children:
+                    if c.type == "user_type":
+                        user_type = c
+                        break
+            if user_type is not None:
+                for c in user_type.children:
+                    if c.type == "type_identifier":
+                        return node_text(source, c)
+    return None
+
+
 def primary_constructor(node) -> Optional[Any]:
     for child in node.children:
         if child.type == "primary_constructor":
