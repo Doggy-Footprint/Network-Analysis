@@ -39,6 +39,36 @@ FIXTURES: Mapping[str, FixtureSpec] = {
         commit="db2603ce931b4b42846afcb3681d021d57618876",
         content_sha256="9fe2403f78985ad5502272088b53ed034db4f9e32f834e361b5ca2ba8aef69d5",
     ),
+    "fastapi-realworld": FixtureSpec(
+        name="fastapi-realworld",
+        remote="https://github.com/nsidnev/fastapi-realworld-example-app",
+        commit="029eb7781c60d5f563ee8990a0cbfb79b244538c",
+        content_sha256="076cca4f9888722576c6f468febc95182cf456376bea89d96d6837cbb06bc6b6",
+    ),
+    "fastapi-official-template": FixtureSpec(
+        name="fastapi-official-template",
+        remote="https://github.com/fastapi/full-stack-fastapi-template",
+        commit="cb740b656d7a0a6c5e12c7bf8e50343ec94ee9c7",
+        content_sha256="aacdb64ab7e27539bb51f9dca866d1b10a60106825bd9dffd062ef67c5c8d37b",
+        subpaths={"backend": "backend"},
+    ),
+    "android-nowinandroid": FixtureSpec(
+        name="android-nowinandroid",
+        remote="https://github.com/android/nowinandroid",
+        commit="12f80da6518e161ed16a06a68e71fb8a873576d6",
+        content_sha256="7fd26f1ea2d87856440af18bccc5dd82ed763b132259fb89987007ba7236d617",
+        subpaths={
+            "feature/topic": "feature_topic",
+            "core/data": "core_data",
+            "core/database": "core_database",
+        },
+    ),
+    "typescript-nestjs-realworld": FixtureSpec(
+        name="typescript-nestjs-realworld",
+        remote="https://github.com/lujakob/nestjs-realworld-example-app",
+        commit="c1c2cc4e448b279ff083272df1ac50d20c3304fa",
+        content_sha256="43daf15449e6f271cb0afb9932e382a56d6574344dce4986ddd9e4a90572368c",
+    ),
 }
 
 
@@ -70,6 +100,31 @@ def _run_git(
     return completed.stdout.strip()
 
 
+def _prune_subpaths(spec: FixtureSpec, path: Path) -> None:
+    subpaths = spec.subpaths
+    for source_prefix in subpaths:
+        if not (path / source_prefix).exists():
+            raise FixtureAcquisitionError(
+                f"cannot acquire fixture {spec.name!r}: configured source_prefix "
+                f"{source_prefix!r} not found in checked-out tree at commit {spec.commit}"
+            )
+
+    for source_prefix, local_name in subpaths.items():
+        source = path / source_prefix
+        dest = path / local_name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(source), str(dest))
+
+    keep = {".git"} | {local_name.split("/")[0] for local_name in subpaths.values()}
+    for entry in path.iterdir():
+        if entry.name in keep:
+            continue
+        if entry.is_dir():
+            shutil.rmtree(entry)
+        else:
+            entry.unlink()
+
+
 def _clone(
     spec: FixtureSpec,
     path: Path,
@@ -78,6 +133,8 @@ def _clone(
     _run_git(run, ("git", "init", "--quiet", str(path)), None, spec.name)
     _run_git(run, ("git", "-C", str(path), "fetch", "--depth=1", spec.remote, spec.commit), None, spec.name)
     _run_git(run, ("git", "-C", str(path), "checkout", "--quiet", "--detach", "FETCH_HEAD"), None, spec.name)
+    if spec.subpaths:
+        _prune_subpaths(spec, path)
 
 
 def _head(

@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from fixtures.registry import fixture_root
+
 try:
     import tree_sitter_language_pack  # noqa: F401
     _HAS_TREE_SITTER = True
@@ -477,14 +479,11 @@ class MainActivity : ComponentActivity() {
         self.assertFalse(any(node.provenance == "kotlin-core" for node in no_language.nodes))
 
 
-NOWINANDROID_SAMPLE = Path(__file__).resolve().parents[1] / "examples" / "nowinandroid_sample"
-
-
 @unittest.skipUnless(_HAS_TREE_SITTER, "tree-sitter-language-pack not installed")
-@unittest.skipUnless(NOWINANDROID_SAMPLE.exists(), "examples/nowinandroid_sample not present on disk")
 class TestAndroidRealSampleSmoke(unittest.TestCase):
     def test_full_pipeline_against_real_sample(self):
-        analyzer = AndroidAnalyzer(str(NOWINANDROID_SAMPLE))
+        nowinandroid_sample = fixture_root("android-nowinandroid")
+        analyzer = AndroidAnalyzer(str(nowinandroid_sample))
         arch = analyzer.analyze()
 
         builder = AndroidArchitectureGraphBuilder()

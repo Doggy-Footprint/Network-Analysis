@@ -331,3 +331,88 @@ def test_ec_08_clone_subprocess_nonzero_exit_raises_with_stderr_in_message(tmp_p
 
     with pytest.raises(FixtureAcquisitionError, match="fatal: fetch failed"):
         fixture_root("widget", environment={}, run=run, fixtures_dir=tmp_path)
+
+
+# --- subpaths (EC-16/EC-17/EC-18) ---------------------------------------
+
+UPSTREAM_SUBPATH_FILES = {
+    "keep/a.txt": b"keep-a",
+    "keep/sub/b.txt": b"keep-b",
+    "drop/c.txt": b"drop-c",
+    "top_level.txt": b"top-level",
+}
+PRUNED_SUBPATH_FILES = {"kept/a.txt": b"keep-a", "kept/sub/b.txt": b"keep-b"}
+PRUNED_SUBPATH_HASH = _hand_computed_hash(PRUNED_SUBPATH_FILES)
+
+SUBPATH_SPEC = FixtureSpec(
+    name="widget-sub",
+    remote="https://example.invalid/widget-sub.git",
+    commit=GOOD_COMMIT,
+    content_sha256=PRUNED_SUBPATH_HASH,
+    subpaths={"keep": "kept"},
+)
+
+
+def _fake_checkout_run(target: Path, files_after_checkout: Dict[str, bytes], head: str):
+    def run(command: Sequence[str], cwd: Optional[Path]) -> subprocess.CompletedProcess[str]:
+        if command[:2] == ("git", "init"):
+            target.mkdir(parents=True, exist_ok=True)
+            (target / ".git").mkdir(exist_ok=True)
+            return _completed()
+        if command[:4] == ("git", "-C", str(target), "fetch"):
+            return _completed()
+        if command == ("git", "-C", str(target), "checkout", "--quiet", "--detach", "FETCH_HEAD"):
+            _write_tree(target, files_after_checkout)
+            return _completed()
+        if command == ("git", "rev-parse", "HEAD"):
+            return _completed(f"{head}\n")
+        raise AssertionError(f"unexpected command {command!r}")
+
+    return run
+
+
+def test_ec_16_fresh_clone_prunes_and_renames_subpaths_before_hashing(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setitem(registry.FIXTURES, "widget-sub", SUBPATH_SPEC)
+    target = tmp_path / "widget-sub"
+    run = _fake_checkout_run(target, UPSTREAM_SUBPATH_FILES, GOOD_COMMIT)
+
+    root = fixture_root("widget-sub", environment={}, run=run, fixtures_dir=tmp_path)
+
+    assert root == target
+    assert (target / ".git").is_dir()  # preserved
+    assert not (target / "drop").exists()  # pruned
+    assert not (target / "top_level.txt").exists()  # pruned
+    assert not (target / "keep").exists()  # renamed away, not left behind
+    assert (target / "kept" / "a.txt").read_bytes() == b"keep-a"
+    assert (target / "kept" / "sub" / "b.txt").read_bytes() == b"keep-b"
+    assert compute_content_sha256(target) == PRUNED_SUBPATH_HASH
+
+
+def test_ec_17_cache_hit_rehashes_pruned_tree_without_repruning(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setitem(registry.FIXTURES, "widget-sub", SUBPATH_SPEC)
+    target = tmp_path / "widget-sub"
+    # Already pruned from a prior EC-16 run: only the renamed destination + .git remain,
+    # the original "keep"/"drop" source_prefix locations no longer exist.
+    _write_tree(target, PRUNED_SUBPATH_FILES)
+    (target / ".git").mkdir(exist_ok=True)
+    calls = []
+
+    def run(command: Sequence[str], cwd: Optional[Path]) -> subprocess.CompletedProcess[str]:
+        calls.append((tuple(command), cwd))
+        return _completed(f"{GOOD_COMMIT}\n")
+
+    root = fixture_root("widget-sub", environment={}, run=run, fixtures_dir=tmp_path)
+
+    assert root == target
+    assert calls == [(("git", "rev-parse", "HEAD"), target)]  # no fetch/checkout: no re-prune attempted
+    assert (target / "kept" / "a.txt").exists()
+
+
+def test_ec_18_fresh_clone_missing_source_prefix_raises_acquisition_error(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setitem(registry.FIXTURES, "widget-sub", SUBPATH_SPEC)
+    target = tmp_path / "widget-sub"
+    files_without_keep = {"drop/c.txt": b"drop-c", "top_level.txt": b"top-level"}
+    run = _fake_checkout_run(target, files_without_keep, GOOD_COMMIT)
+
+    with pytest.raises(FixtureAcquisitionError):
+        fixture_root("widget-sub", environment={}, run=run, fixtures_dir=tmp_path)

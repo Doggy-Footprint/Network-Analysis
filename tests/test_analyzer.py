@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from fixtures.registry import fixture_root
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 import framework_analyzers.fastapi.graph as fastapi_graph
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
@@ -342,6 +343,49 @@ class FastAPISchemaFieldTypeUsesTests(unittest.TestCase):
         edge = next(e for e in result.edges if e.relation == RelationKind.TYPE_USES)
         self.assertEqual(str(edge.resolution), str(Resolution.AMBIGUOUS))
         self.assertEqual(set(edge.candidates) | {edge.to_id}, {"schema-owner-a", "schema-owner-b"})
+
+
+class FastAPIRealFixtureSmokeTests(unittest.TestCase):
+    """Acceptance-level smoke coverage against real, network-fetched FastAPI apps
+    (fixtures.registry), in addition to (not replacing) TestFastAPIVisualizer's
+    precise synthetic-app assertions above -- see contracts/fixture-unification.md
+    Phase 2 dispatch report for why the precise assertions were not ported onto
+    these fixtures.
+    """
+
+    def _assert_pipeline_smoke(self, project_path):
+        analyzer = FastAPIAnalyzer(str(project_path))
+        arch = analyzer.analyze()
+        self.assertEqual(len(arch.apps), 1)
+        self.assertGreater(len(arch.endpoints), 0)
+
+        builder = ArchitectureGraphBuilder(include_models=True, include_dependencies=True)
+        arch = builder.build_graph(arch)
+        self.assertGreater(len(arch.nodes), 0)
+        self.assertGreater(len(arch.edges), 0)
+
+        framework_edges = [edge for edge in arch.edges if str(edge.confidence) == "framework_inferred"]
+        self.assertGreater(len(framework_edges), 0)
+        undeclared = [edge.relation for edge in framework_edges if "framework_rule" not in (edge.metadata or {})]
+        self.assertEqual(undeclared, [])
+        absolute_evidence = [
+            edge.evidence.file_path for edge in framework_edges
+            if edge.evidence is not None and Path(edge.evidence.file_path).is_absolute()
+        ]
+        self.assertEqual(absolute_evidence, [])
+
+        with tempfile.TemporaryDirectory() as directory:
+            out_html = Path(directory) / "output.html"
+            rendered_file = HTMLRenderer(title="Fixture Smoke Test").render(arch, str(out_html))
+            self.assertTrue(rendered_file.exists())
+
+    def test_fastapi_realworld_fixture_analyzes_without_crashing(self):
+        root = fixture_root("fastapi-realworld")
+        self._assert_pipeline_smoke(root / "app")
+
+    def test_fastapi_official_template_fixture_analyzes_without_crashing(self):
+        root = fixture_root("fastapi-official-template")
+        self._assert_pipeline_smoke(root / "backend" / "app")
 
 
 class FastAPINameCollisionTests(unittest.TestCase):

@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from fixtures.registry import fixture_root
 from renderers.html import HTMLRenderer
 
 try:
@@ -158,6 +159,31 @@ export function execute() {
                 any(name == "framework_analyzers" or name.startswith("framework_analyzers.") for name in imports),
                 source_path,
             )
+
+
+@unittest.skipUnless(_HAS_TREE_SITTER, "tree-sitter and tree-sitter-language-pack are not installed")
+class TestTypeScriptRealFixtureSmoke(unittest.TestCase):
+    """Acceptance-level smoke coverage against a real, network-fetched NestJS app
+    (fixtures.registry), in addition to (not replacing) TestTypeScriptAnalyzer's
+    precise hand-written-snippet assertions above -- see contracts/fixture-unification.md
+    Phase 2 dispatch report for why the precise assertions were not ported onto it.
+    """
+
+    def test_full_pipeline_against_real_nestjs_realworld_repository(self):
+        root = fixture_root("typescript-nestjs-realworld")
+        module = importlib.import_module("language_analyzers.typescript")
+        architecture = module.TypeScriptAnalyzer(str(root / "src")).analyze()
+
+        self.assertGreater(len(architecture.nodes), 0)
+        self.assertGreater(len(architecture.edges), 0)
+        node_ids = {node.id for node in architecture.nodes}
+        for edge in architecture.edges:
+            self.assertIn(edge.from_id, node_ids)
+            self.assertIn(edge.to_id, node_ids)
+
+        with tempfile.TemporaryDirectory() as directory:
+            report_path = Path(directory) / "architecture.html"
+            self.assertTrue(HTMLRenderer().render(architecture, str(report_path)).exists())
 
 
 if __name__ == "__main__":
