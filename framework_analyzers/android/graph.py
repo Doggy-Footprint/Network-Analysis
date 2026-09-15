@@ -14,7 +14,7 @@ from language_analyzers.core.annotate import annotate_nodes, mark_edges
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 from language_analyzers.core.graph_models import Confidence, RelationKind, Resolution, SourceSpan
-from language_analyzers.kotlin import KotlinAnalyzer
+from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 
 from .models import AndroidProjectArchitecture, GraphEdge, GraphNode
 
@@ -84,10 +84,11 @@ class AndroidArchitectureGraphBuilder:
     }
 
     def __init__(self, include_models: bool = True, include_dependencies: bool = True,
-                 include_language_graph: bool = True):
+                 include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
+        self.parse_cache = parse_cache
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "CALLS": "unique",
@@ -385,7 +386,7 @@ class AndroidArchitectureGraphBuilder:
                    rule_specificity=self.FRAMEWORK_RULE_SPECIFICITY)
         if self.include_language_graph:
             try:
-                language_nodes, language_edges = KotlinAnalyzer(arch.project_path).build()
+                language_nodes, language_edges = KotlinAnalyzer(arch.project_path, parse_cache=self.parse_cache).build()
             except ImportError:
                 language_nodes, language_edges = [], []
             known_ids = {node.id for node in nodes}

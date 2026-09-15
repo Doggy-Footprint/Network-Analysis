@@ -41,23 +41,27 @@ FRAGMENT_SUPERTYPES = {"Fragment", "DialogFragment"}
 
 
 class AndroidAnalyzer:
-    def __init__(self, project_path: Union[str, Path], entrypoint: Optional[str] = None):
+    def __init__(
+        self,
+        project_path: Union[str, Path],
+        entrypoint: Optional[str] = None,
+        parse_cache: Optional[ka.KotlinParseCache] = None,
+    ):
         self.project_path = Path(project_path).resolve()
         self.entrypoint = entrypoint  # unused; kept for CLI symmetry with FastAPIAnalyzer
+        self._parse_cache = parse_cache if parse_cache is not None else ka.KotlinParseCache()
 
     def analyze(self) -> AndroidProjectArchitecture:
         arch = AndroidProjectArchitecture(
             project_name=self.project_path.name,
             project_path=str(self.project_path),
         )
-        parser = ka.get_kotlin_parser()
 
         for file_path in self._discover_files():
             try:
-                source = file_path.read_bytes()
+                source, root = self._parse_cache.read_and_parse(file_path)
             except OSError:
                 continue
-            root = parser.parse(source).root_node
             module = self._module_for(file_path)
             for decl in ka.top_level_declarations(root):
                 self._extract_declaration(decl, source, module, arch)

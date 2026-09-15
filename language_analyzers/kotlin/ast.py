@@ -6,6 +6,7 @@ since Kotlin wildcard imports make exact resolution impossible from syntax alone
 """
 
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 _PARSER = None
@@ -23,6 +24,23 @@ def get_kotlin_parser():
             ) from exc
         _PARSER = get_parser("kotlin")
     return _PARSER
+
+
+class KotlinParseCache:
+    """Shared across AndroidAnalyzer/KotlinAnalyzer so files discovered by both are
+    read and parsed at most once per cache instance."""
+
+    def __init__(self) -> None:
+        self._cache: Dict[Path, Tuple[bytes, Any]] = {}
+
+    def read_and_parse(self, path: Path) -> Tuple[bytes, Any]:
+        cached = self._cache.get(path)
+        if cached is not None:
+            return cached
+        source = path.read_bytes()
+        root = get_kotlin_parser().parse(source).root_node
+        self._cache[path] = (source, root)
+        return self._cache[path]
 
 
 def node_text(source: bytes, node) -> str:

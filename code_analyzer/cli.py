@@ -21,7 +21,7 @@ from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 from framework_analyzers.fastapi.dynamic_analyzer import DynamicFastAPIAnalyzer
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
 from language_analyzers.python.graph import PythonGraphAnalyzer
-from language_analyzers.kotlin import KotlinAnalyzer
+from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
 from bottlenecks import (BottleneckInputError, HarnessProfileError, analyze_bottlenecks,
@@ -296,12 +296,14 @@ def main(
             arch.nodes, arch.edges, project_path=arch.project_path
         )
     elif args.framework == "android":
-        analyzer = AndroidAnalyzer(str(project_path), entrypoint=args.entrypoint)
+        parse_cache = KotlinParseCache()
+        analyzer = AndroidAnalyzer(str(project_path), entrypoint=args.entrypoint, parse_cache=parse_cache)
         arch = analyzer.analyze()
         builder = AndroidArchitectureGraphBuilder(
             include_models=not args.no_models,
             include_dependencies=not args.no_deps,
             include_language_graph=not args.no_language_graph,
+            parse_cache=parse_cache,
         )
         arch = builder.build_graph(arch)
     else:

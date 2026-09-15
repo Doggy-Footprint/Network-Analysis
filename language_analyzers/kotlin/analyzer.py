@@ -45,8 +45,9 @@ class _KotlinSymbol:
 
 
 class KotlinAnalyzer:
-    def __init__(self, project_path: Union[str, Path]):
+    def __init__(self, project_path: Union[str, Path], parse_cache: Optional[ka.KotlinParseCache] = None):
         self.project_path = Path(project_path).resolve()
+        self._parse_cache = parse_cache if parse_cache is not None else ka.KotlinParseCache()
 
     def analyze(self) -> KotlinProjectArchitecture:
         nodes, edges = self.build()
@@ -68,7 +69,6 @@ class KotlinAnalyzer:
         return architecture
 
     def build(self) -> tuple[List[GraphNode], List[GraphEdge]]:
-        parser = ka.get_kotlin_parser()
         self._files: Dict[str, Tuple[bytes, str, Any]] = {}
         self._symbols: Dict[str, _KotlinSymbol] = {}
         self._by_name: Dict[str, List[str]] = {}
@@ -78,12 +78,11 @@ class KotlinAnalyzer:
 
         for path in self._discover_files():
             try:
-                source = path.read_bytes()
+                source, root = self._parse_cache.read_and_parse(path)
             except OSError:
                 continue
             key = path.relative_to(self.project_path).as_posix()
             text = source.decode("utf-8", "replace")
-            root = parser.parse(source).root_node
             self._files[key] = (source, text, root)
             self._collect_file(key, source, text, root)
 
