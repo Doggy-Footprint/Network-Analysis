@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Links shared, gitignored directories (.fixtures, .venv) into newly created
+# linked worktrees. Installed via scripts/install-hooks.sh (git config
+# core.hooksPath .githooks). Must never fail a checkout: always exits 0.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "post-checkout: python3 not found, skipping worktree symlink setup" >&2
+  exit 0
+fi
+
+python3 "$repo_root/.githooks/link_worktree_shared.py" || {
+  echo "post-checkout: link_worktree_shared.py failed, continuing" >&2
+  exit 0
+}
