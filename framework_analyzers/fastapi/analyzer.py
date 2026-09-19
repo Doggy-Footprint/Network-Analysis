@@ -174,11 +174,42 @@ class FastAPIAnalyzer:
             if call_name in ("FastAPI", "get_application") or "FastAPI" in call_name:
                 title = "FastAPI App"
                 version = "0.1.0"
-                for kw in node.value.keywords:
-                    if kw.arg == "title" and isinstance(kw.value, ast.Constant):
-                        title = str(kw.value.value)
-                    elif kw.arg == "version" and isinstance(kw.value, ast.Constant):
-                        version = str(kw.value.value)
+                title_source = "default"
+                version_source = "default"
+                title_expr = None
+                version_expr = None
+
+                if "FastAPI" not in call_name:
+                    title_source = version_source = "unresolved"
+                    title_expr = version_expr = ast.unparse(node.value)
+                else:
+                    kwargs_expr = None
+                    for kw in node.value.keywords:
+                        if kw.arg is None:
+                            kwargs_expr = f"**{ast.unparse(kw.value)}"
+                        elif kw.arg == "title":
+                            if isinstance(kw.value, ast.Constant):
+                                title = str(kw.value.value)
+                                title_source = "literal"
+                                title_expr = None
+                            else:
+                                title_source = "unresolved"
+                                title_expr = ast.unparse(kw.value)
+                        elif kw.arg == "version":
+                            if isinstance(kw.value, ast.Constant):
+                                version = str(kw.value.value)
+                                version_source = "literal"
+                                version_expr = None
+                            else:
+                                version_source = "unresolved"
+                                version_expr = ast.unparse(kw.value)
+                    if kwargs_expr:
+                        if title_source == "default":
+                            title_source = "unresolved"
+                            title_expr = kwargs_expr
+                        if version_source == "default":
+                            version_source = "unresolved"
+                            version_expr = kwargs_expr
 
                 app_info = AppInfo(
                     id=f"app_{file_ast.module_name}_{var_name}",
@@ -189,6 +220,10 @@ class FastAPIAnalyzer:
                     file_path=str(file_ast.file_path),
                     line_number=node.lineno,
                     end_line_number=getattr(node, "end_lineno", node.lineno) or node.lineno,
+                    title_source=title_source,
+                    version_source=version_source,
+                    title_expr=title_expr,
+                    version_expr=version_expr,
                 )
                 file_ast.apps[var_name] = app_info
                 self.apps.append(app_info)
@@ -551,6 +586,15 @@ class FastAPIAnalyzer:
                 elif self.apps:
                     self.apps[0].middlewares.append(mw_info)
 
+    def _strip_root_package(self, module: str) -> str:
+        root = self.project_path.name
+        if module == root:
+            return ""
+        prefix = f"{root}."
+        if module.startswith(prefix):
+            return module[len(prefix):]
+        return module
+
     def _resolve_target_router_module(self, target_expr: str, file_ast: PythonFileAST) -> Optional[str]:
         parts = target_expr.split(".")
         root_name = parts[0]
@@ -558,12 +602,24 @@ class FastAPIAnalyzer:
         if root_name in file_ast.from_imports:
             mod, orig = file_ast.from_imports[root_name]
             potential_submodule = f"{mod}.{orig}" if mod else orig
-            if potential_submodule in self.file_asts:
-                return potential_submodule
+            # The stripped form is only accepted when it is a real module key, so
+            # projects whose keys genuinely start with the root package name keep resolving.
+            for candidate in (
+                potential_submodule,
+                self._strip_root_package(potential_submodule),
+                mod,
+                self._strip_root_package(mod),
+            ):
+                if candidate in self.file_asts:
+                    return candidate
             return mod
 
         if root_name in file_ast.imports:
-            return file_ast.imports[root_name]
+            raw = file_ast.imports[root_name]
+            for candidate in (raw, self._strip_root_package(raw)):
+                if candidate in self.file_asts:
+                    return candidate
+            return raw
 
         return file_ast.module_name
 

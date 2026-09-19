@@ -48,6 +48,8 @@ class DynamicFastAPIAnalyzer:
             var_name=app_name,
             title=getattr(self.app_instance, "title", "FastAPI App"),
             version=getattr(self.app_instance, "version", "0.1.0"),
+            title_source="literal",
+            version_source="literal",
             module=mod_name,
             file_path="",
             line_number=0,

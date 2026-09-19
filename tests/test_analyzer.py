@@ -352,21 +352,7 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
 
     Expected values below were hand-derived by reading the fixture sources at
     their pinned commits (see fixtures/registry.py), not by reading the
-    analyzer's own output. Two of them expose real analyzer limitations rather
-    than "clean" behavior:
-
-    - Both fixtures build their FastAPI() app via `FastAPI(**settings.fastapi_kwargs)`
-      / `FastAPI(title=settings.PROJECT_NAME, ...)`: the title/version are
-      attribute lookups, not `ast.Constant`s, so the analyzer's literal-only
-      extraction (analyzer.py's `_check_app_or_router_instantiation`) falls back
-      to its "FastAPI App" / "0.1.0" defaults in both apps.
-    - Every route module in both fixtures imports its sibling modules via an
-      absolute `from app.x.y import z` path, but the analyzer is pointed at the
-      `app/` directory itself as project root, so its own module keys never
-      carry the `app.` prefix that those imports spell out. `_resolve_target_router_module`
-      therefore never matches a real router, `_resolve_router_hierarchy` never
-      finds a target to attach a prefix to, and every endpoint's `full_path`
-      degrades to its bare decorator path with no router prefix ever applied.
+    analyzer's own output.
     """
 
     def _assert_pipeline_smoke(self, project_path):
@@ -402,6 +388,10 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
         self.assertEqual(len(arch.apps), 1)
         self.assertEqual(arch.apps[0].title, "FastAPI App")
         self.assertEqual(arch.apps[0].version, "0.1.0")
+        self.assertEqual(arch.apps[0].title_source, "unresolved")
+        self.assertEqual(arch.apps[0].title_expr, "get_application()")
+        self.assertEqual(arch.apps[0].version_source, "unresolved")
+        self.assertEqual(arch.apps[0].version_expr, "get_application()")
 
         # app/api/routes/api.py wires: authentication(+/users), users(+/user),
         # profiles(+/profiles), articles(articles_common: 3 + articles_resource: 5),
@@ -417,16 +407,12 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
         self.assertEqual(login_ep.http_method, "POST")
         self.assertEqual(login_ep.response_model, "UserInResponse")
         self.assertIn("UserInLogin", login_ep.request_schemas)
-        # app/api/routes/api.py includes authentication.router with prefix="/users",
-        # but that include_router call is discovered via an absolute `app.`-rooted
-        # import the analyzer can't resolve back to its own module key (see class
-        # docstring), so the prefix never attaches: full_path stays the bare decorator path.
-        self.assertEqual(login_ep.full_path, "/login")
+        self.assertEqual(login_ep.full_path, "/users/login")
 
         favorite_ep = next(ep for ep in arch.endpoints if ep.function_name == "mark_article_as_favorite")
         self.assertEqual(favorite_ep.http_method, "POST")
         self.assertEqual(favorite_ep.response_model, "ArticleInResponse")
-        self.assertEqual(favorite_ep.full_path, "/{slug}/favorite")
+        self.assertEqual(favorite_ep.full_path, "/articles/{slug}/favorite")
 
         schema_names = [s.name for s in arch.schemas]
         # 19 classes under app/models/schemas/ (any class there counts, per
@@ -472,6 +458,10 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
         self.assertEqual(len(arch.apps), 1)
         self.assertEqual(arch.apps[0].title, "FastAPI App")
         self.assertEqual(arch.apps[0].version, "0.1.0")
+        self.assertEqual(arch.apps[0].title_source, "unresolved")
+        self.assertEqual(arch.apps[0].title_expr, "settings.PROJECT_NAME")
+        self.assertEqual(arch.apps[0].version_source, "default")
+        self.assertIsNone(arch.apps[0].version_expr)
 
         # utils.py(2) + items.py(5) + users.py(10) + login.py(5) + private.py(1)
         # = 23, hand-counted from @router.<method> decorators.
@@ -480,16 +470,12 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
         read_user_me = next(ep for ep in arch.endpoints if ep.function_name == "read_user_me")
         self.assertEqual(read_user_me.http_method, "GET")
         self.assertEqual(read_user_me.response_model, "UserPublic")
-        # app/api/main.py includes users.router (defined with prefix="/users") with
-        # no extra prefix, but that include_router call sits behind the same
-        # absolute-import module-key mismatch as fastapi-realworld, so the
-        # "/users" prefix never attaches to app/api/routes/users.py's endpoints.
-        self.assertEqual(read_user_me.full_path, "/me")
+        self.assertEqual(read_user_me.full_path, "/users/me")
 
         delete_user = next(ep for ep in arch.endpoints if ep.function_name == "delete_user")
         self.assertEqual(delete_user.http_method, "DELETE")
         self.assertIsNone(delete_user.response_model)
-        self.assertEqual(delete_user.full_path, "/{user_id}")
+        self.assertEqual(delete_user.full_path, "/users/{user_id}")
 
         schema_names = {s.name for s in arch.schemas}
         # Every class in models.py directly subclassing SQLModel (is_schema's
@@ -532,6 +518,316 @@ class FastAPIRealFixtureSmokeTests(unittest.TestCase):
         self.assertEqual(schema_type_uses, [])
 
         self._assert_pipeline_smoke(project_path)
+
+
+class FastAPIRouterPrefixResolutionTests(unittest.TestCase):
+    def _write(self, root: Path, relative: str, source: str):
+        target = root / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(source, encoding="utf-8")
+
+    def _build_project(self, root: Path, package: str):
+        self._write(root, f"{package}/__init__.py", "")
+        self._write(root, f"{package}/api/__init__.py", "")
+        self._write(root, f"{package}/api/routes/__init__.py", "")
+        self._write(root, f"{package}/api/routes/authentication.py", """
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.post("/login")
+def login():
+    return {}
+""")
+        self._write(root, f"{package}/api/routes/api.py", """
+from fastapi import APIRouter
+
+from app.api.routes import authentication
+
+router = APIRouter()
+router.include_router(authentication.router, prefix="/users")
+""")
+
+    def test_rp_1_absolute_app_rooted_import_resolves_to_stripped_module_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "app"
+            root.mkdir()
+            self._build_project(root, ".")
+            analyzer = FastAPIAnalyzer(str(root))
+            arch = analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "authentication.router", analyzer.file_asts["api.routes.api"]
+            )
+
+        self.assertEqual(resolved, "api.routes.authentication")
+        login = next(ep for ep in arch.endpoints if ep.function_name == "login")
+        self.assertEqual(login.full_path, "/users/login")
+
+    def test_rp_2_module_keys_carrying_app_prefix_are_not_stripped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"
+            root.mkdir()
+            self._build_project(root, "app")
+            analyzer = FastAPIAnalyzer(str(root))
+            arch = analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "authentication.router", analyzer.file_asts["app.api.routes.api"]
+            )
+
+        self.assertEqual(resolved, "app.api.routes.authentication")
+        login = next(ep for ep in arch.endpoints if ep.function_name == "login")
+        self.assertEqual(login.full_path, "/users/login")
+
+    def test_rp_3_unknown_module_falls_back_to_imported_module_string(self):
+        """@characterization: pins the pre-existing legacy fallback to the module part only."""
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "app"
+            root.mkdir()
+            self._write(root, "api.py", """
+from fastapi import APIRouter
+
+from vendor.pkg import elsewhere
+
+router = APIRouter()
+router.include_router(elsewhere.router, prefix="/users")
+""")
+            analyzer = FastAPIAnalyzer(str(root))
+            analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "elsewhere.router", analyzer.file_asts["api"]
+            )
+
+        self.assertEqual(resolved, "vendor.pkg")
+
+    def test_rp_4_plain_import_is_normalized_against_module_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "app"
+            root.mkdir()
+            self._write(root, "__init__.py", "")
+            self._write(root, "api/__init__.py", "")
+            self._write(root, "api/routes/__init__.py", "")
+            self._write(root, "api/routes/users.py", """
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.get("/me")
+def read_user_me():
+    return {}
+""")
+            self._write(root, "api/main.py", """
+from fastapi import APIRouter
+
+import app.api.routes.users as users_module
+
+router = APIRouter()
+router.include_router(users_module.router, prefix="/users")
+""")
+            analyzer = FastAPIAnalyzer(str(root))
+            arch = analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "users_module.router", analyzer.file_asts["api.main"]
+            )
+
+        self.assertEqual(resolved, "api.routes.users")
+        me = next(ep for ep in arch.endpoints if ep.function_name == "read_user_me")
+        self.assertEqual(me.full_path, "/users/me")
+
+
+    def test_rp_5_stripped_segment_follows_the_actual_root_basename(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "svc"
+            root.mkdir()
+            self._write(root, "__init__.py", "")
+            self._write(root, "api/__init__.py", "")
+            self._write(root, "api/routes/__init__.py", "")
+            self._write(root, "api/routes/authentication.py", """
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.post("/login")
+def login():
+    return {}
+""")
+            self._write(root, "api/routes/api.py", """
+from fastapi import APIRouter
+
+from svc.api.routes import authentication
+
+router = APIRouter()
+router.include_router(authentication.router, prefix="/users")
+""")
+            analyzer = FastAPIAnalyzer(str(root))
+            arch = analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "authentication.router", analyzer.file_asts["api.routes.api"]
+            )
+
+        self.assertEqual(resolved, "api.routes.authentication")
+        login = next(ep for ep in arch.endpoints if ep.function_name == "login")
+        self.assertEqual(login.full_path, "/users/login")
+
+    def test_rp_6_exact_key_match_wins_over_the_stripped_candidate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "app"
+            root.mkdir()
+            self._write(root, "__init__.py", "")
+            self._write(root, "api/__init__.py", "")
+            self._write(root, "api/routes/__init__.py", "")
+            self._write(root, "api/routes/authentication.py", """
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.post("/login")
+def login_stripped():
+    return {}
+""")
+            self._write(root, "app/__init__.py", "")
+            self._write(root, "app/api/__init__.py", "")
+            self._write(root, "app/api/routes/__init__.py", "")
+            self._write(root, "app/api/routes/authentication.py", """
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.post("/login")
+def login_raw():
+    return {}
+""")
+            self._write(root, "api/routes/api.py", """
+from fastapi import APIRouter
+
+from app.api.routes import authentication
+
+router = APIRouter()
+router.include_router(authentication.router, prefix="/users")
+""")
+            analyzer = FastAPIAnalyzer(str(root))
+            arch = analyzer.analyze()
+            resolved = analyzer._resolve_target_router_module(
+                "authentication.router", analyzer.file_asts["api.routes.api"]
+            )
+
+        self.assertEqual(resolved, "app.api.routes.authentication")
+        raw_ep = next(ep for ep in arch.endpoints if ep.function_name == "login_raw")
+        stripped_ep = next(ep for ep in arch.endpoints if ep.function_name == "login_stripped")
+        self.assertEqual(raw_ep.full_path, "/users/login")
+        self.assertEqual(stripped_ep.full_path, "/login")
+
+
+class FastAPIAppTitleVersionSourceTests(unittest.TestCase):
+    def _analyze_main(self, source: str):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "main.py").write_text(source, encoding="utf-8")
+            arch = FastAPIAnalyzer(str(root)).analyze()
+        return arch.apps[0]
+
+    def test_tv_1_literal_title_and_version(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+app = FastAPI(title="X", version="1.0")
+""")
+        self.assertEqual(app.title, "X")
+        self.assertEqual(app.title_source, "literal")
+        self.assertIsNone(app.title_expr)
+        self.assertEqual(app.version, "1.0")
+        self.assertEqual(app.version_source, "literal")
+        self.assertIsNone(app.version_expr)
+
+    def test_tv_2_no_relevant_keyword_keeps_defaults(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+app = FastAPI(openapi_url="/o.json")
+""")
+        self.assertEqual(app.title, "FastAPI App")
+        self.assertEqual(app.title_source, "default")
+        self.assertIsNone(app.title_expr)
+        self.assertEqual(app.version, "0.1.0")
+        self.assertEqual(app.version_source, "default")
+        self.assertIsNone(app.version_expr)
+
+    def test_tv_3_non_literal_title_is_unresolved_with_expression(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+from app.core.config import settings
+
+app = FastAPI(title=settings.PROJECT_NAME)
+""")
+        self.assertEqual(app.title, "FastAPI App")
+        self.assertEqual(app.title_source, "unresolved")
+        self.assertEqual(app.title_expr, "settings.PROJECT_NAME")
+        self.assertEqual(app.version_source, "default")
+        self.assertIsNone(app.version_expr)
+
+    def test_tv_4_kwargs_expansion_marks_both_fields_unresolved(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+from app.core.config import settings
+
+app = FastAPI(**settings.fastapi_kwargs)
+""")
+        self.assertEqual(app.title, "FastAPI App")
+        self.assertEqual(app.version, "0.1.0")
+        self.assertEqual(app.title_source, "unresolved")
+        self.assertEqual(app.version_source, "unresolved")
+        self.assertEqual(app.title_expr, "**settings.fastapi_kwargs")
+        self.assertEqual(app.version_expr, "**settings.fastapi_kwargs")
+
+    def test_tv_5_factory_call_marks_both_fields_unresolved(self):
+        app = self._analyze_main("""
+from app.main import get_application
+
+app = get_application()
+""")
+        self.assertEqual(app.title, "FastAPI App")
+        self.assertEqual(app.version, "0.1.0")
+        self.assertEqual(app.title_source, "unresolved")
+        self.assertEqual(app.version_source, "unresolved")
+        self.assertEqual(app.title_expr, "get_application()")
+        self.assertEqual(app.version_expr, "get_application()")
+
+    def test_tv_6_explicit_literal_wins_over_kwargs_expansion(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+from app.core.config import kw
+
+app = FastAPI(title="X", **kw)
+""")
+        self.assertEqual(app.title, "X")
+        self.assertEqual(app.title_source, "literal")
+        self.assertIsNone(app.title_expr)
+        self.assertEqual(app.version, "0.1.0")
+        self.assertEqual(app.version_source, "unresolved")
+        self.assertEqual(app.version_expr, "**kw")
+
+
+    def test_tv_7_non_literal_version_is_unresolved_with_expression(self):
+        app = self._analyze_main("""
+from fastapi import FastAPI
+
+from app.core.config import settings
+
+app = FastAPI(version=settings.VERSION)
+""")
+        self.assertEqual(app.version, "0.1.0")
+        self.assertEqual(app.version_source, "unresolved")
+        self.assertEqual(app.version_expr, "settings.VERSION")
+        self.assertEqual(app.title, "FastAPI App")
+        self.assertEqual(app.title_source, "default")
+        self.assertIsNone(app.title_expr)
 
 
 class FastAPINameCollisionTests(unittest.TestCase):

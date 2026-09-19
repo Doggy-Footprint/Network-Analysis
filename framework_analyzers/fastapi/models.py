@@ -97,6 +97,10 @@ class AppInfo:
     event_handlers: List[Dict[str, Any]] = field(default_factory=list)
     inclusions: List[RouterInclusion] = field(default_factory=list)
     endpoints: List[str] = field(default_factory=list)
+    title_source: str = "default"
+    version_source: str = "default"
+    title_expr: Optional[str] = None
+    version_expr: Optional[str] = None
 
 
 @dataclass
