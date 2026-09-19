@@ -28,3 +28,7 @@ local-reports/*
 
 contracts/*
 !contracts/.gitkeep
+agent-docs/contracts/.running/
+agent-docs/contracts/.seed/
+.harness/sessions/.running/
+.harness/**/__pycache__

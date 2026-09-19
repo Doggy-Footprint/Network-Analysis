@@ -1,10 +1,13 @@
 ---
 name: implementer
 description: Implements a contract-workflow interface contract without seeing its tests. Use only in that workflow's Implement + Test step, in parallel with test-implementer.
-tools: Read, Write, Edit, Grep, Glob, Bash
-disallowedTools: mcp__*
-model: sonnet
-effort: medium
+claude.tools: Read, Write, Edit, Grep, Glob, Bash
+claude.disallowedTools: mcp__*
+claude.model: sonnet
+claude.effort: medium
+codex.model: gpt-5.6-terra
+codex.model_reasoning_effort: medium
+codex.sandbox_mode: workspace-write
 ---
 
 You implement the confirmed contract; you do not choose its behavior.

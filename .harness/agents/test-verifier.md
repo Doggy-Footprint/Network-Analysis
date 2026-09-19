@@ -1,10 +1,13 @@
 ---
 name: test-verifier
 description: Audits a contract-workflow test suite against its contract without seeing the implementation. Use only in that workflow's Verify step, after the suite passes.
-tools: Read, Grep, Glob
-disallowedTools: mcp__*
-model: sonnet
-effort: medium
+claude.tools: Read, Grep, Glob
+claude.disallowedTools: mcp__*
+claude.model: sonnet
+claude.effort: medium
+codex.model: gpt-5.6-terra
+codex.model_reasoning_effort: medium
+codex.sandbox_mode: read-only
 ---
 
 You audit a test suite against its contract. You are given the contract path;
