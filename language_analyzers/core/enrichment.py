@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 import bisect
 import json
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from .cost import cost_for_text
 from .flags import is_test_path
@@ -29,8 +34,16 @@ def enrich_repository(
     *,
     file_inventory: Optional[Sequence[str]] = None,
     file_reader: Optional[Callable[[Path], str]] = None,
+    snapshot: Optional[RepositorySnapshot] = None,
 ) -> Any:
     root = Path(architecture.project_path)
+    if snapshot is not None:
+        snapshot_root = Path(snapshot.root)
+        if not root.is_absolute() or not snapshot_root.is_absolute() or root != snapshot_root:
+            raise ValueError("project path and snapshot root must be absolute and match")
+        snapshot_contents = snapshot.content_map()
+        file_inventory = tuple(snapshot_contents)
+        file_reader = lambda path: snapshot_contents[path.relative_to(root).as_posix()]
     nodes: List[GraphNode] = architecture.nodes
     edges: List[GraphEdge] = architecture.edges
     inventory = list(file_inventory) if file_inventory is not None else list(_repository_files(root))
@@ -41,7 +54,7 @@ def enrich_repository(
             continue
         try:
             contents[relative] = reader(root / relative)
-        except (OSError, UnicodeError):
+        except (OSError, UnicodeError, KeyError):
             continue
     _add_test_relations(nodes, edges, contents)
     _add_configuration_relations(nodes, edges, contents)

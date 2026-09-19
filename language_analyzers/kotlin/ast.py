@@ -42,6 +42,14 @@ class KotlinParseCache:
         self._cache[path] = (source, root)
         return self._cache[path]
 
+    def parse_snapshot(self, path: Path, source: bytes) -> Tuple[bytes, Any]:
+        cached = self._cache.get(path)
+        if cached is not None and cached[0] == source:
+            return cached
+        parsed = (source, get_kotlin_parser().parse(source).root_node)
+        self._cache[path] = parsed
+        return parsed
+
 
 def node_text(source: bytes, node) -> str:
     return source[node.start_byte:node.end_byte].decode("utf-8", "replace")

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Graph Builder and Topology Solver for FastAPI Architecture.
 Converts extracted architecture metadata into an interactive network graph (nodes and edges)
@@ -7,7 +9,10 @@ and computes architecture metrics.
 import re
 from collections import Counter
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from analysis import GraphAnalyzer
 from language_analyzers.core.annotate import annotate_nodes, mark_edges, relative_repo_path
@@ -107,10 +112,12 @@ class ArchitectureGraphBuilder:
         include_models: bool = True,
         include_dependencies: bool = True,
         include_language_graph: bool = True,
+        snapshot: Optional[RepositorySnapshot] = None,
     ):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
+        self.snapshot = snapshot
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "MIDDLEWARE_OF": "unique",
@@ -123,6 +130,7 @@ class ArchitectureGraphBuilder:
     }
 
     def build_graph(self, arch: ProjectArchitecture) -> ProjectArchitecture:
+        self._validate_snapshot(arch.project_path)
         nodes: List[GraphNode] = []
         edges: List[GraphEdge] = []
         node_ids: Set[str] = set()
@@ -427,7 +435,7 @@ class ArchitectureGraphBuilder:
         methods_counter = Counter([ep.http_method for ep in arch.endpoints])
         deps_counter = Counter([d for ep in arch.endpoints for d in ep.dependencies])
 
-        annotate_nodes(nodes, arch.project_path, self.PROVENANCE, "python")
+        annotate_nodes(nodes, arch.project_path, self.PROVENANCE, "python", snapshot=self.snapshot)
         mark_edges(edges, nodes=nodes, rule_namespace="fastapi",
                    rule_specificity=self.FRAMEWORK_RULE_SPECIFICITY)
         # mark_edges unconditionally sets confidence=FRAMEWORK_INFERRED on every edge it
@@ -445,7 +453,12 @@ class ArchitectureGraphBuilder:
 
         arch.nodes = nodes
         arch.edges = edges
-        enrich_repository(arch)
+        if self.snapshot is None:
+            enrich_repository(arch)
+        else:
+            contents = self.snapshot.content_map()
+            enrich_repository(arch, file_inventory=tuple(contents),
+                              file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
         arch.stats = {
             "total_apps": len(arch.apps),
             "total_routers": len(arch.routers),
@@ -468,10 +481,17 @@ class ArchitectureGraphBuilder:
 
         return arch
 
-    @staticmethod
-    def _language_graph(arch: ProjectArchitecture):
-        analyzer = PythonGraphAnalyzer(arch.project_path)
-        return analyzer.build(PythonSourceAnalyzer(arch.project_path).analyze())
+    def _validate_snapshot(self, project_path: str) -> None:
+        if self.snapshot is None:
+            return
+        supplied = Path(project_path)
+        snapshot_root = Path(self.snapshot.root)
+        if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+            raise ValueError("project path and snapshot root must be absolute and match")
+
+    def _language_graph(self, arch: ProjectArchitecture):
+        analyzer = PythonGraphAnalyzer(arch.project_path, self.snapshot)
+        return analyzer.build(PythonSourceAnalyzer(arch.project_path, self.snapshot).analyze())
 
     @staticmethod
     def _implementation_edges(arch: ProjectArchitecture, known_ids: Set[str]) -> List[GraphEdge]:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Graph Builder for Android Architecture.
 Converts extracted Compose/Hilt-Dagger/Room/Retrofit metadata into an interactive
@@ -7,7 +9,10 @@ framework-neutral analysis layer.
 
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from analysis import GraphAnalyzer
 from language_analyzers.core.annotate import annotate_nodes, mark_edges
@@ -84,11 +89,13 @@ class AndroidArchitectureGraphBuilder:
     }
 
     def __init__(self, include_models: bool = True, include_dependencies: bool = True,
-                 include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None):
+                 include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None,
+                 snapshot: Optional[RepositorySnapshot] = None):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.parse_cache = parse_cache
+        self.snapshot = snapshot
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "CALLS": "unique",
@@ -106,6 +113,7 @@ class AndroidArchitectureGraphBuilder:
     }
 
     def build_graph(self, arch: AndroidProjectArchitecture) -> AndroidProjectArchitecture:
+        self._validate_snapshot(arch.project_path)
         nodes: List[GraphNode] = []
         edges: List[GraphEdge] = []
         node_ids: Set[str] = set()
@@ -381,12 +389,14 @@ class AndroidArchitectureGraphBuilder:
                         color="#9CA3AF",
                     ))
 
-        annotate_nodes(nodes, arch.project_path, "android", "kotlin")
+        annotate_nodes(nodes, arch.project_path, "android", "kotlin", snapshot=self.snapshot)
         mark_edges(edges, nodes=nodes, rule_namespace="android",
                    rule_specificity=self.FRAMEWORK_RULE_SPECIFICITY)
         if self.include_language_graph:
             try:
-                language_nodes, language_edges = KotlinAnalyzer(arch.project_path, parse_cache=self.parse_cache).build()
+                language_nodes, language_edges = KotlinAnalyzer(
+                    arch.project_path, parse_cache=self.parse_cache, snapshot=self.snapshot
+                ).build()
             except ImportError:
                 language_nodes, language_edges = [], []
             known_ids = {node.id for node in nodes}
@@ -397,7 +407,12 @@ class AndroidArchitectureGraphBuilder:
 
         arch.nodes = nodes
         arch.edges = edges
-        enrich_repository(arch)
+        if self.snapshot is None:
+            enrich_repository(arch)
+        else:
+            contents = self.snapshot.content_map()
+            enrich_repository(arch, file_inventory=tuple(contents),
+                              file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
         arch.stats = {
             "total_composables": len(arch.composables),
             "total_viewmodels": len(arch.viewmodels),
@@ -413,6 +428,14 @@ class AndroidArchitectureGraphBuilder:
         arch.report_collections = self._build_report_collections(arch)
 
         return arch
+
+    def _validate_snapshot(self, project_path: str) -> None:
+        if self.snapshot is None:
+            return
+        supplied = Path(project_path)
+        snapshot_root = Path(self.snapshot.root)
+        if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+            raise ValueError("project path and snapshot root must be absolute and match")
 
     def _implementation_edges(self, arch: AndroidProjectArchitecture, nodes: List[GraphNode]) -> List[GraphEdge]:
         symbol_ids = {

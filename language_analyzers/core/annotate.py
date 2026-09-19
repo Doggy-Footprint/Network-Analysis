@@ -1,5 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Dict, Iterable, Mapping, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Sequence
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from .cost import cost_for_span
 from .graph_models import Confidence, GraphEdge, GraphNode, Resolution, SourceSpan
@@ -20,10 +25,15 @@ def annotate_nodes(
     project_path: str,
     provenance: str,
     language: str,
+    snapshot: Optional[RepositorySnapshot] = None,
 ) -> None:
     """Framework adapters build nodes from dataclasses that only carry line numbers.
     Lift those onto the typed span/cost fields so no later layer has to re-derive a range."""
     root = Path(project_path)
+    if snapshot is not None:
+        snapshot_root = Path(snapshot.root)
+        if not root.is_absolute() or not snapshot_root.is_absolute() or root != snapshot_root:
+            raise ValueError("project path and snapshot root must be absolute and match")
     sources: Dict[Path, Optional[str]] = {}
     for node in nodes:
         node.provenance = node.provenance or provenance
@@ -34,19 +44,28 @@ def annotate_nodes(
         start = metadata.get("line_number")
         if not raw_path or not start:
             continue
-        relative = relative_repo_path(raw_path, root)
         absolute = Path(raw_path)
         if not absolute.is_absolute():
             absolute = root / absolute
+        if snapshot is None:
+            relative = relative_repo_path(raw_path, root)
+        else:
+            try:
+                relative = absolute.relative_to(root).as_posix()
+            except ValueError:
+                relative = Path(raw_path).as_posix()
         end = metadata.get("end_line_number") or start
         span = SourceSpan(relative, int(start), int(end))
         node.span = span
         metadata["file_path"] = relative
         if absolute not in sources:
-            try:
-                sources[absolute] = absolute.read_text(encoding="utf-8")
-            except (OSError, UnicodeError):
-                sources[absolute] = None
+            if snapshot is not None:
+                sources[absolute] = snapshot.content_map().get(relative)
+            else:
+                try:
+                    sources[absolute] = absolute.read_text(encoding="utf-8")
+                except (OSError, UnicodeError):
+                    sources[absolute] = None
         source = sources[absolute]
         if source is not None:
             node.cost = cost_for_span(source, span)

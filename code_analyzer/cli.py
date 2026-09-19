@@ -238,72 +238,58 @@ def main(
     harness_profile = None
     snapshot_profile = None
     outputs = _output_paths(project_path, args)
+    try:
+        snapshot_profile = load_profile(args.agent_view_profile or default_profile_path())
+        inventory = file_lister(
+            project_path, tracked_files_only=snapshot_profile.tracked_files_only
+        )
+        if isinstance(inventory, tuple) and len(inventory) == 2:
+            ignore_source, paths = inventory
+        else:
+            ignore_source, paths = "", inventory
+        paths = _exclude_output_paths(project_path, paths, outputs)
+        repository_snapshot = build_snapshot(
+            project_path, paths, profile=snapshot_profile, reader=file_reader,
+            ignore_source=ignore_source, excluded_paths=outputs,
+        )
+    except (OSError, UnicodeError, ValueError, ProfileError) as exc:
+        print(f"[!] Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
     if args.bottlenecks:
         try:
-            snapshot_profile = load_profile(args.agent_view_profile or default_profile_path())
             harness_profile = parse_harness_profile(
                 _read_json(Path(args.harness_profile).resolve(), file_reader)
             )
-        except (OSError, UnicodeError, json.JSONDecodeError, HarnessProfileError, ProfileError) as exc:
+        except (OSError, UnicodeError, json.JSONDecodeError, HarnessProfileError) as exc:
             print(f"[!] Error: {exc}", file=sys.stderr)
             raise SystemExit(1)
-        if args.language != "python":
-            try:
-                ignore_source, paths = file_lister(
-                    project_path, tracked_files_only=snapshot_profile.tracked_files_only
-                )
-                paths = _exclude_output_paths(project_path, paths, outputs)
-                repository_snapshot = build_snapshot(
-                    project_path, paths, profile=snapshot_profile, reader=file_reader,
-                    ignore_source=ignore_source, excluded_paths=outputs,
-                )
-            except (OSError, UnicodeError, ValueError) as exc:
-                print(f"[!] Error: {exc}", file=sys.stderr)
-                raise SystemExit(1)
     if args.language == "python":
-        if args.bottlenecks:
-            try:
-                ignore_source, paths = file_lister(
-                    project_path, tracked_files_only=snapshot_profile.tracked_files_only
-                )
-                paths = _exclude_output_paths(project_path, paths, outputs)
-                repository_snapshot = build_snapshot(
-                    project_path,
-                    paths,
-                    profile=snapshot_profile,
-                    reader=file_reader,
-                    ignore_source=ignore_source,
-                    excluded_paths=outputs,
-                )
-                arch = PythonGraphAnalyzer(project_path, repository_snapshot).analyze()
-            except (OSError, UnicodeError, ValueError) as exc:
-                print(f"[!] Error: {exc}", file=sys.stderr)
-                raise SystemExit(1)
-        else:
-            arch = PythonGraphAnalyzer(project_path, repository_snapshot).analyze()
+        arch = PythonGraphAnalyzer(project_path, snapshot=repository_snapshot).analyze()
         if not args.bottlenecks:
             arch.stats["analysis"] = GraphAnalyzer().analyze(
                 arch.nodes, arch.edges, project_path=arch.project_path
             )
     elif args.language == "typescript":
-        arch = TypeScriptAnalyzer(project_path).analyze()
+        arch = TypeScriptAnalyzer(project_path, snapshot=repository_snapshot).analyze()
         arch.stats["analysis"] = GraphAnalyzer().analyze(
             arch.nodes, arch.edges, project_path=arch.project_path
         )
     elif args.language == "kotlin":
-        arch = KotlinAnalyzer(project_path).analyze()
+        arch = KotlinAnalyzer(project_path, snapshot=repository_snapshot).analyze()
         arch.stats["analysis"] = GraphAnalyzer().analyze(
             arch.nodes, arch.edges, project_path=arch.project_path
         )
     elif args.framework == "android":
         parse_cache = KotlinParseCache()
-        analyzer = AndroidAnalyzer(str(project_path), entrypoint=args.entrypoint, parse_cache=parse_cache)
+        analyzer = AndroidAnalyzer(str(project_path), entrypoint=args.entrypoint, parse_cache=parse_cache,
+                                   snapshot=repository_snapshot)
         arch = analyzer.analyze()
         builder = AndroidArchitectureGraphBuilder(
             include_models=not args.no_models,
             include_dependencies=not args.no_deps,
             include_language_graph=not args.no_language_graph,
             parse_cache=parse_cache,
+            snapshot=repository_snapshot,
         )
         arch = builder.build_graph(arch)
     else:
@@ -313,16 +299,19 @@ def main(
             arch = dyn_analyzer.analyze()
             if not arch:
                 print("[!] Dynamic introspection failed. Falling back to static AST analysis...")
-                analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint)
+                analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
+                                           snapshot=repository_snapshot)
                 arch = analyzer.analyze()
         else:
-            analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint)
+            analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
+                                       snapshot=repository_snapshot)
             arch = analyzer.analyze()
 
         builder = ArchitectureGraphBuilder(
             include_models=not args.no_models,
             include_dependencies=not args.no_deps,
             include_language_graph=not args.no_language_graph,
+            snapshot=repository_snapshot,
         )
         arch = builder.build_graph(arch)
 

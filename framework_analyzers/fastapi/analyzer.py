@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Static AST Analysis Engine for FastAPI Codebases.
 Parses Python files without executing code, extracting apps, routers,
@@ -6,7 +8,10 @@ endpoints, dependency injection chains, models, and middlewares.
 
 import ast
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from language_analyzers.python import PythonSourceAnalyzer
 
@@ -44,9 +49,21 @@ class PythonFileAST:
 class FastAPIAnalyzer:
     HTTP_METHODS = {"get", "post", "put", "delete", "patch", "options", "head", "trace", "api_route"}
 
-    def __init__(self, project_path: str, entrypoint: Optional[str] = None):
-        self.project_path = Path(project_path).resolve()
-        self.entrypoint = Path(entrypoint).resolve() if entrypoint else None
+    def __init__(self, project_path: str, entrypoint: Optional[str] = None,
+                 snapshot: Optional[RepositorySnapshot] = None):
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+                raise ValueError("project path and snapshot root must be absolute and match")
+            self.project_path = snapshot_root
+        self.entrypoint = (
+            (self.project_path / entrypoint) if snapshot is not None and entrypoint else
+            Path(entrypoint).resolve() if entrypoint else None
+        )
         self.file_asts: Dict[str, PythonFileAST] = {}
         self.path_to_module: Dict[Path, str] = {}
 
@@ -79,7 +96,7 @@ class FastAPIAnalyzer:
         return arch
 
     def _discover_and_parse_files(self):
-        for source_file in PythonSourceAnalyzer(self.project_path).analyze():
+        for source_file in PythonSourceAnalyzer(self.project_path, self.snapshot).analyze():
             file_ast = PythonFileAST(
                 file_path=source_file.file_path,
                 module_name=source_file.module_name,

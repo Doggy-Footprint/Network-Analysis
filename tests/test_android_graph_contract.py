@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from agent_view import RepositorySnapshot
 import framework_analyzers.android.graph as android_graph
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.android.models import (
@@ -16,6 +17,22 @@ from language_analyzers.core.graph_models import GraphNode, NodeKind, RelationKi
 
 
 class AndroidGraphContractTests(unittest.TestCase):
+    def test_C_3_builder_rejects_mismatched_or_relative_snapshot_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            architecture = AndroidProjectArchitecture(project_name="sample", project_path=str(root))
+            mismatched = RepositorySnapshot(
+                str(root.parent), "agent_view.v3", (("Main.kt", "class Main\n"),), (), "0" * 64,
+            )
+            relative = RepositorySnapshot(
+                "relative-root", "agent_view.v3", (("Main.kt", "class Main\n"),), (), "0" * 64,
+            )
+
+            with self.assertRaises(ValueError):
+                AndroidArchitectureGraphBuilder(snapshot=mismatched).build_graph(architecture)
+            with self.assertRaises(ValueError):
+                AndroidArchitectureGraphBuilder(snapshot=relative).build_graph(architecture)
+
     def test_removed_cost_constructor_argument_is_rejected(self):
         with self.assertRaises(TypeError):
             AndroidArchitectureGraphBuilder(unresolved_inject_field_cost=4.0)

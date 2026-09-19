@@ -1,3 +1,4 @@
+import os
 import tempfile
 import unittest
 import importlib.util
@@ -7,6 +8,7 @@ from types import SimpleNamespace
 from unittest import mock
 from pathlib import Path
 
+from agent_view import RepositorySnapshot
 from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core import enrichment as enrichment_module
 from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, NodeKind, RelationKind, SourceSpan
@@ -163,6 +165,36 @@ class TestCostAndScalePolicy(unittest.TestCase):
 
 
 class TestRepositoryEnrichment(unittest.TestCase):
+    def test_C_2_snapshot_enrichment_uses_only_captured_inventory_and_contents(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            architecture = SimpleNamespace(
+                project_path=str(root),
+                nodes=[
+                    GraphNode(
+                        id="route", label="route", group="symbol", category="symbol", kind="function",
+                        span=SourceSpan("main.py", 1, 2),
+                    )
+                ],
+                edges=[],
+            )
+            snapshot = RepositorySnapshot(
+                str(root), "agent_view.v3",
+                ((".env", "FEATURE_KEY=on\n"), ("main.py", "def route():\n    return 'FEATURE_KEY'\n")),
+                (), "0" * 64,
+            )
+
+            with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
+                    mock.patch.object(Path, "read_text", side_effect=AssertionError("repository read")), \
+                    mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")), \
+                    mock.patch.object(os, "walk", side_effect=AssertionError("repository traversal")):
+                enrich_repository(architecture, snapshot=snapshot)
+
+            config_edges = [edge for edge in architecture.edges if edge.relation == RelationKind.CONFIGURES]
+            self.assertEqual(len(config_edges), 1)
+            self.assertEqual(config_edges[0].to_id, "route")
+            self.assertEqual(config_edges[0].evidence, SourceSpan("main.py", 2, 2))
+
     def test_repeated_code_literal_is_indexed_once_and_retains_all_use_lines(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

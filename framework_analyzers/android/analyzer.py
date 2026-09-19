@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Kotlin/Android AST entry point.
 Walks .kt files with tree-sitter, extracts Compose/Hilt-Dagger/Room/Retrofit/ViewModel
@@ -6,7 +8,10 @@ declarations, and links them into an AndroidProjectArchitecture.
 
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from language_analyzers.kotlin import ast as ka
 from .models import (
@@ -46,8 +51,17 @@ class AndroidAnalyzer:
         project_path: Union[str, Path],
         entrypoint: Optional[str] = None,
         parse_cache: Optional[ka.KotlinParseCache] = None,
+        snapshot: Optional[RepositorySnapshot] = None,
     ):
-        self.project_path = Path(project_path).resolve()
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+                raise ValueError("project path and snapshot root must be absolute and match")
+            self.project_path = snapshot_root
         self.entrypoint = entrypoint  # unused; kept for CLI symmetry with FastAPIAnalyzer
         self._parse_cache = parse_cache if parse_cache is not None else ka.KotlinParseCache()
 
@@ -59,7 +73,11 @@ class AndroidAnalyzer:
 
         for file_path in self._discover_files():
             try:
-                source, root = self._parse_cache.read_and_parse(file_path)
+                if self.snapshot is None:
+                    source, root = self._parse_cache.read_and_parse(file_path)
+                else:
+                    source = self.snapshot.content_map()[file_path.relative_to(self.project_path).as_posix()].encode("utf-8")
+                    source, root = self._parse_cache.parse_snapshot(file_path, source)
             except OSError:
                 continue
             module = self._module_for(file_path)
@@ -71,6 +89,10 @@ class AndroidAnalyzer:
         return arch
 
     def _discover_files(self) -> List[Path]:
+        if self.snapshot is not None:
+            return sorted(self.project_path / relative for relative, _source in self.snapshot.contents
+                          if relative.endswith(".kt")
+                          and not any(part in EXCLUDED_DIRS for part in Path(relative).parts))
         files = []
         for dirpath, dirnames, filenames in os.walk(self.project_path):
             dirnames[:] = [d for d in dirnames if d not in EXCLUDED_DIRS]

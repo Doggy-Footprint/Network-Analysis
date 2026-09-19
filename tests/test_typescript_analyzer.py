@@ -1,10 +1,13 @@
 import ast
 import importlib
+import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from agent_view import RepositorySnapshot
 from fixtures.registry import fixture_root
 from renderers.html import HTMLRenderer
 
@@ -142,6 +145,36 @@ export function execute() {
         greeting = next(node for node in architecture.nodes if node.label == "greeting")
         self.assertEqual(greeting.metadata["file_path"], "src/한국어.ts")
         self.assertEqual(greeting.metadata["line_number"], 1)
+
+    def test_C_2_snapshot_analysis_uses_captured_source_after_repository_is_removed(self):
+        source = "export function capturedOnly() { return 1; }\n"
+        self._write("src/captured.ts", source)
+        snapshot = RepositorySnapshot(
+            str(self.directory), "agent_view.v3", (("src/captured.ts", source),), (), "0" * 64,
+        )
+        (self.directory / "src" / "captured.ts").unlink()
+        module = importlib.import_module("language_analyzers.typescript")
+
+        with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
+                mock.patch.object(Path, "read_text", side_effect=AssertionError("repository read")), \
+                mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")), \
+                mock.patch.object(os, "walk", side_effect=AssertionError("repository traversal")):
+            architecture = module.TypeScriptAnalyzer(str(self.directory), snapshot=snapshot).analyze()
+
+        self.assertEqual(architecture.stats["total_files"], 1)
+        self.assertIn("capturedOnly", self._node_labels(architecture))
+
+    def test_C_3_snapshot_root_must_match_an_absolute_project_path(self):
+        source = "export const captured = 1;\n"
+        snapshot = RepositorySnapshot(
+            str(self.directory), "agent_view.v3", (("captured.ts", source),), (), "0" * 64,
+        )
+        module = importlib.import_module("language_analyzers.typescript")
+
+        with self.assertRaises(ValueError):
+            module.TypeScriptAnalyzer(str(self.directory.parent), snapshot=snapshot).analyze()
+        with self.assertRaises(ValueError):
+            module.TypeScriptAnalyzer("relative-project", snapshot=snapshot).analyze()
 
     def test_language_analyzer_package_does_not_depend_on_framework_analyzers(self):
         module = importlib.import_module("language_analyzers.typescript")

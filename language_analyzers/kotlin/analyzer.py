@@ -1,8 +1,13 @@
+from __future__ import annotations
+
 import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
@@ -45,8 +50,17 @@ class _KotlinSymbol:
 
 
 class KotlinAnalyzer:
-    def __init__(self, project_path: Union[str, Path], parse_cache: Optional[ka.KotlinParseCache] = None):
-        self.project_path = Path(project_path).resolve()
+    def __init__(self, project_path: Union[str, Path], parse_cache: Optional[ka.KotlinParseCache] = None,
+                 snapshot: Optional[RepositorySnapshot] = None):
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+                raise ValueError("project path and snapshot root must be absolute and match")
+            self.project_path = snapshot_root
         self._parse_cache = parse_cache if parse_cache is not None else ka.KotlinParseCache()
 
     def analyze(self) -> KotlinProjectArchitecture:
@@ -57,7 +71,12 @@ class KotlinAnalyzer:
             nodes=nodes,
             edges=edges,
         )
-        enrich_repository(architecture)
+        if self.snapshot is None:
+            enrich_repository(architecture)
+        else:
+            contents = self.snapshot.content_map()
+            enrich_repository(architecture, file_inventory=tuple(contents),
+                              file_reader=lambda path: contents[path.relative_to(self.project_path).as_posix()])
         architecture.stats = {
             "total_files": len(self._files),
             "total_symbols": len(self._symbols),
@@ -78,7 +97,11 @@ class KotlinAnalyzer:
 
         for path in self._discover_files():
             try:
-                source, root = self._parse_cache.read_and_parse(path)
+                if self.snapshot is None:
+                    source, root = self._parse_cache.read_and_parse(path)
+                else:
+                    source = self.snapshot.content_map()[path.relative_to(self.project_path).as_posix()].encode("utf-8")
+                    source, root = self._parse_cache.parse_snapshot(path, source)
             except OSError:
                 continue
             key = path.relative_to(self.project_path).as_posix()
@@ -96,6 +119,11 @@ class KotlinAnalyzer:
         return list(self._nodes.values()), list(self._edges.values())
 
     def _discover_files(self) -> List[Path]:
+        if self.snapshot is not None:
+            return sorted(self.project_path / relative for relative, _source in self.snapshot.contents
+                          if relative.endswith(".kt")
+                          and not any(part in {".git", ".gradle", ".idea", "build"}
+                                      for part in Path(relative).parts))
         ignored = {".git", ".gradle", ".idea", "build"}
         return sorted(
             path for path in self.project_path.rglob("*.kt")

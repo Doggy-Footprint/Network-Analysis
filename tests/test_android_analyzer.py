@@ -4,11 +4,14 @@ Requires tree-sitter + tree-sitter-language-pack; skips cleanly when unavailable
 (the repo's main Python environment intentionally does not install them).
 """
 
+import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from agent_view import RepositorySnapshot
 from fixtures.registry import fixture_root
 
 try:
@@ -354,6 +357,33 @@ class MainActivity : ComponentActivity() {
         self.assertEqual(activity.kind, "activity")
         self.assertTrue(activity.is_hilt_entry_point)
         self.assertIn("TopicRoute", activity.hosted_composables)
+
+    def test_C_2_snapshot_preserves_android_and_kotlin_graph_after_source_is_deleted(self):
+        source = (
+            "import androidx.compose.runtime.Composable\n"
+            "@Composable\n"
+            "fun CapturedScreen() { val key = \"ANDROID_KEY\" }\n"
+        )
+        snapshot = RepositorySnapshot(
+            str(self.project_path.resolve()),
+            "agent_view.v3",
+            (("CapturedScreen.kt", source), (".env", "ANDROID_KEY=value\n")),
+            (),
+            "0" * 64,
+        )
+        (self.project_path / "CapturedScreen.kt").write_text("class Changed\n", encoding="utf-8")
+
+        with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
+                mock.patch.object(Path, "read_text", side_effect=AssertionError("repository read")), \
+                mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")), \
+                mock.patch.object(os, "walk", side_effect=AssertionError("repository traversal")):
+            framework = AndroidAnalyzer(self.project_path.resolve(), snapshot=snapshot).analyze()
+            architecture = AndroidArchitectureGraphBuilder(snapshot=snapshot).build_graph(framework)
+
+        self.assertEqual([item.name for item in framework.composables], ["CapturedScreen"])
+        self.assertTrue(any(node.provenance == "kotlin-core" for node in architecture.nodes))
+        self.assertTrue(all(node.cost is not None for node in architecture.nodes))
+        self.assertTrue(any(edge.relation == "CONFIGURES" for edge in architecture.edges))
 
     def test_graph_building_and_rendering(self):
         self._create_sample_android_app()

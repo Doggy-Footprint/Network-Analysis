@@ -4,12 +4,14 @@ Requires tree-sitter + tree-sitter-language-pack; skips cleanly when unavailable
 (the repo's main Python environment intentionally does not install them).
 """
 
+import os
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
+from agent_view import RepositorySnapshot
 try:
     import tree_sitter_language_pack  # noqa: F401
     _HAS_TREE_SITTER = True
@@ -174,6 +176,33 @@ class TestKotlinParseCache(unittest.TestCase):
         shared_paths = [p.resolve() for p in shared_calls]
         for path in overlap:
             self.assertEqual(shared_paths.count(path), 1)
+
+    def test_C_2_parse_snapshot_caches_by_source_bytes_without_reading_its_path(self):
+        cache = KotlinParseCache()
+        virtual_path = self.project_path / "removed.kt"
+
+        with mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")):
+            first_source, first_root = cache.parse_snapshot(virtual_path, SAMPLE_KT.encode("utf-8"))
+            second_source, second_root = cache.parse_snapshot(virtual_path, SAMPLE_KT.encode("utf-8"))
+            changed_source, changed_root = cache.parse_snapshot(virtual_path, OTHER_KT.encode("utf-8"))
+
+        self.assertIs(first_source, second_source)
+        self.assertIs(first_root, second_root)
+        self.assertEqual(changed_source, OTHER_KT.encode("utf-8"))
+        self.assertIsNot(changed_root, first_root)
+
+    def test_C_2_kotlin_analyzer_uses_snapshot_after_the_captured_file_is_deleted(self):
+        snapshot = RepositorySnapshot(
+            str(self.project_path.resolve()), "agent_view.v3", (("Sample.kt", SAMPLE_KT),), (), "0" * 64,
+        )
+        self.kt_file.unlink()
+
+        with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
+                mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")), \
+                mock.patch.object(os, "walk", side_effect=AssertionError("repository traversal")):
+            nodes, _ = KotlinAnalyzer(self.project_path.resolve(), snapshot=snapshot).build()
+
+        self.assertIn("Sample", {node.label for node in nodes})
 
 
 @unittest.skipUnless(_HAS_TREE_SITTER, "tree-sitter-language-pack not installed")

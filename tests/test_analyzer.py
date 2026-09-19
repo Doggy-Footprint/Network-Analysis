@@ -8,7 +8,9 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
+from agent_view import RepositorySnapshot
 from fixtures.registry import fixture_root
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 import framework_analyzers.fastapi.graph as fastapi_graph
@@ -118,7 +120,6 @@ app.include_router(users_router, prefix="/api/v1")
         self.assertEqual(me_ep.response_model, "UserResponse")
         self.assertEqual(me_ep.summary, "Get current user")
         self.assertIn("Return current authenticated user profile.", me_ep.docstring)
-
         self.assertEqual(me_ep.full_path, "/api/v1/users/me")
 
         schema_names = [s.name for s in arch.schemas]
@@ -128,6 +129,66 @@ app.include_router(users_router, prefix="/api/v1")
         dep_names = [d.name for d in arch.dependencies]
         self.assertIn("get_db", dep_names)
         self.assertIn("get_current_user", dep_names)
+
+    def test_C_2_snapshot_preserves_fastapi_analysis_language_graph_and_enrichment(self):
+        source = (
+            "from fastapi import FastAPI\n"
+            "app = FastAPI(title='Captured API')\n"
+            "@app.get('/captured')\n"
+            "def captured_route():\n"
+            "    return 'FEATURE_KEY'\n"
+        )
+        snapshot = RepositorySnapshot(
+            str(self.project_path.resolve()),
+            "agent_view.v3",
+            (("main.py", source), (".env", "FEATURE_KEY=enabled\n")),
+            (),
+            "0" * 64,
+        )
+        (self.project_path / "main.py").write_text("raise RuntimeError('new filesystem state')\n", encoding="utf-8")
+
+        with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
+                mock.patch.object(Path, "read_text", side_effect=AssertionError("repository read")), \
+                mock.patch.object(Path, "read_bytes", side_effect=AssertionError("repository read")), \
+                mock.patch.object(os, "walk", side_effect=AssertionError("repository traversal")):
+            framework = FastAPIAnalyzer(str(self.project_path.resolve()), snapshot=snapshot).analyze()
+            architecture = ArchitectureGraphBuilder(snapshot=snapshot).build_graph(framework)
+
+        self.assertEqual([endpoint.function_name for endpoint in framework.endpoints], ["captured_route"])
+        self.assertTrue(any(node.label == "captured_route" for node in architecture.nodes))
+        self.assertTrue(any(node.provenance == "python-core" for node in architecture.nodes))
+        self.assertTrue(all(node.cost is not None for node in architecture.nodes))
+        nodes = {node.id: node for node in architecture.nodes}
+        config_edges = [edge for edge in architecture.edges if edge.relation == RelationKind.CONFIGURES]
+        self.assertTrue(config_edges)
+        self.assertTrue(any(nodes[edge.to_id].label == "captured_route" for edge in config_edges))
+
+    def test_C_3_fastapi_snapshot_root_must_match_an_absolute_project_path(self):
+        (self.project_path / "main.py").write_text("from fastapi import FastAPI\napp = FastAPI()\n", encoding="utf-8")
+        snapshot = RepositorySnapshot(
+            str(self.project_path.resolve()), "agent_view.v3", (("main.py", "from fastapi import FastAPI\n"),), (), "0" * 64,
+        )
+
+        with self.assertRaises(ValueError):
+            FastAPIAnalyzer(str(self.project_path.parent.resolve()), snapshot=snapshot).analyze()
+        with self.assertRaises(ValueError):
+            FastAPIAnalyzer("relative-project", snapshot=snapshot).analyze()
+        framework = FastAPIAnalyzer(str(self.project_path.resolve())).analyze()
+        different_root = RepositorySnapshot(
+            str(self.project_path.parent.resolve()), "agent_view.v3", (), (), "0" * 64,
+        )
+        with self.assertRaises(ValueError):
+            ArchitectureGraphBuilder(snapshot=different_root).build_graph(framework)
+
+    def test_C_4_fastapi_without_snapshot_discovers_the_current_filesystem(self):
+        (self.project_path / "main.py").write_text(
+            "from fastapi import FastAPI\napp = FastAPI()\n@app.get('/')\ndef filesystem_route():\n    return 1\n",
+            encoding="utf-8",
+        )
+
+        architecture = FastAPIAnalyzer(str(self.project_path.resolve())).analyze()
+
+        self.assertEqual([endpoint.function_name for endpoint in architecture.endpoints], ["filesystem_route"])
 
     def test_graph_building_and_rendering(self):
         self._create_sample_fastapi_app()

@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+
+if TYPE_CHECKING:
+    from agent_view.models import RepositorySnapshot
 
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span
@@ -92,8 +97,16 @@ class _Module:
 
 
 class TypeScriptAnalyzer:
-    def __init__(self, project_path: Union[str, Path]):
-        self.project_path = Path(project_path).resolve()
+    def __init__(self, project_path: Union[str, Path], snapshot: Optional[RepositorySnapshot] = None):
+        self.snapshot = snapshot
+        if snapshot is None:
+            self.project_path = Path(project_path).resolve()
+        else:
+            supplied = Path(project_path)
+            snapshot_root = Path(snapshot.root)
+            if not supplied.is_absolute() or not snapshot_root.is_absolute() or supplied != snapshot_root:
+                raise ValueError("project path and snapshot root must be absolute and match")
+            self.project_path = snapshot_root
 
     def analyze(self) -> TypeScriptProjectArchitecture:
         modules = [self._parse(path) for path in self._discover_files()]
@@ -134,7 +147,7 @@ class TypeScriptAnalyzer:
             },
             report_collections=[self._symbol_collection(nodes)],
         )
-        enrich_repository(architecture)
+        self._enrich(architecture)
         architecture.stats["nodes_by_kind"] = dict(Counter(node.kind for node in architecture.nodes))
         architecture.stats["edges_by_relation"] = dict(Counter(edge.relation for edge in architecture.edges))
         return architecture
@@ -142,6 +155,11 @@ class TypeScriptAnalyzer:
     # ---- discovery & parsing ----
 
     def _discover_files(self) -> List[Path]:
+        if self.snapshot is not None:
+            return sorted(self.project_path / relative for relative, _source in self.snapshot.contents
+                          if Path(relative).suffix in SOURCE_EXTENSIONS
+                          and not any(part in IGNORED_DIRECTORIES or part.startswith(".")
+                                      for part in Path(relative).parts))
         result = []
         for path in self.project_path.rglob("*"):
             if not path.is_file() or path.suffix not in SOURCE_EXTENSIONS:
@@ -153,10 +171,16 @@ class TypeScriptAnalyzer:
         return sorted(result)
 
     def _parse(self, path: Path) -> Optional[_Module]:
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            return None
+        if self.snapshot is not None:
+            source_map = self.snapshot.content_map()
+            text = source_map.get(path.relative_to(self.project_path).as_posix())
+            if text is None:
+                return None
+        else:
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                return None
         source = text.encode("utf-8")
         tree = ts.parser_for_suffix(path.suffix).parse(source)
         file_key = path.relative_to(self.project_path).as_posix()
@@ -170,6 +194,14 @@ class TypeScriptAnalyzer:
             end_line=max(1, text.count("\n") + 1),
             flags=flag_names.path_flags(file_key),
         )
+
+    def _enrich(self, architecture: TypeScriptProjectArchitecture) -> None:
+        if self.snapshot is None:
+            enrich_repository(architecture)
+            return
+        contents = self.snapshot.content_map()
+        enrich_repository(architecture, file_inventory=tuple(contents),
+                          file_reader=lambda path: contents[path.relative_to(self.project_path).as_posix()])
 
     @staticmethod
     def _file_id(file_key: str) -> str:
