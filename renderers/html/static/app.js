@@ -22,6 +22,8 @@ let currentLayout = 'force'; // 'force', 'hierarchical_lr', 'hierarchical_ud'
 let physicsEnabled = true;
 let currentSpringLength = 240;
 let selectedNodeId = null;
+const GRAPH_NODE_CAP = 200;
+const populatedCollections = new Set();
 
 let activeFilters = {};
 let activeConfidence = {};
@@ -49,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   lucide.createIcons();
   initNetwork();
-  Object.keys(ARCH_DATA.collections || {}).forEach(populateCollectionView);
 
   window.addEventListener('resize', () => {
     if (network) network.setSize('100%', '100%');
@@ -63,8 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function initNetwork() {
   const container = document.getElementById('network-container');
 
-  nodesDataSet = new vis.DataSet(ARCH_DATA.nodes);
-  edgesDataSet = new vis.DataSet(ARCH_DATA.edges);
+  const subset = selectGraphSubset(ARCH_DATA.nodes, ARCH_DATA.edges, GRAPH_NODE_CAP);
+  nodesDataSet = new vis.DataSet(subset.nodes);
+  edgesDataSet = new vis.DataSet(subset.edges);
 
   const data = {
     nodes: nodesDataSet,
@@ -183,6 +185,36 @@ function initNetwork() {
   });
 }
 
+function selectGraphSubset(nodes, edges, cap, focusId = null) {
+  const byId = new Map(nodes.map(node => [String(node.id), node]));
+  const degrees = new Map(nodes.map(node => [String(node.id), 0]));
+  const validEdges = edges.filter(edge => byId.has(String(edge.from)) && byId.has(String(edge.to)));
+  validEdges.forEach(edge => {
+    degrees.set(String(edge.from), degrees.get(String(edge.from)) + 1);
+    degrees.set(String(edge.to), degrees.get(String(edge.to)) + 1);
+  });
+  const ranked = (a, b) => degrees.get(String(b.id)) - degrees.get(String(a.id)) ||
+    (String(a.id) < String(b.id) ? -1 : String(a.id) > String(b.id) ? 1 : 0);
+  let candidates = nodes;
+  if (focusId !== null) {
+    const focusKey = String(focusId);
+    const focus = byId.get(focusKey);
+    if (!focus) return null;
+    const neighborIds = new Set();
+    validEdges.forEach(edge => {
+      if (String(edge.from) === focusKey) neighborIds.add(String(edge.to));
+      if (String(edge.to) === focusKey) neighborIds.add(String(edge.from));
+    });
+    neighborIds.delete(focusKey);
+    candidates = [focus, ...nodes.filter(node => neighborIds.has(String(node.id))).sort(ranked)];
+  } else {
+    candidates = [...nodes].sort(ranked);
+  }
+  const selectedNodes = candidates.slice(0, Math.max(0, cap));
+  const ids = new Set(selectedNodes.map(node => String(node.id)));
+  return { nodes: selectedNodes, edges: validEdges.filter(edge => ids.has(String(edge.from)) && ids.has(String(edge.to))) };
+}
+
 function highlightNodeNeighborhood(nodeId) {
   const connectedNodes = new Set(network.getConnectedNodes(nodeId));
   connectedNodes.add(nodeId);
@@ -231,6 +263,11 @@ function switchTab(tabId) {
   view.classList.remove('hidden');
   activeBtn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
   activeBtn.classList.remove('text-slate-400');
+
+  if (Object.prototype.hasOwnProperty.call(ARCH_DATA.collections || {}, tabId) && !populatedCollections.has(tabId)) {
+    populateCollectionView(tabId);
+    populatedCollections.add(tabId);
+  }
 
   if (tabId === 'graph' && network) {
     setTimeout(() => {
@@ -426,10 +463,15 @@ function applyFilters() {
     return activeConfidence[e.confidence || 'static_certain'] !== false;
   });
 
-  nodesDataSet.clear();
-  nodesDataSet.add(filteredNodes);
+  showGraphSubset(selectGraphSubset(filteredNodes, filteredEdges, GRAPH_NODE_CAP));
+  selectedNodeId = null;
+}
+
+function showGraphSubset(subset) {
   edgesDataSet.clear();
-  edgesDataSet.add(filteredEdges);
+  nodesDataSet.clear();
+  nodesDataSet.add(subset.nodes);
+  edgesDataSet.add(subset.edges);
 }
 
 function handleSearch(query) {
@@ -448,23 +490,11 @@ function handleSearch(query) {
     return lbl.includes(q) || meta.includes(q);
   });
 
-  const matchedIds = new Set(matchedNodes.map(n => n.id));
-
-  ARCH_DATA.edges.forEach(e => {
-    if (matchedIds.has(e.from)) matchedIds.add(e.to);
-    if (matchedIds.has(e.to)) matchedIds.add(e.from);
-  });
-
-  const nodesToShow = ARCH_DATA.nodes.filter(n => matchedIds.has(n.id));
-  const edgesToShow = ARCH_DATA.edges.filter(e => matchedIds.has(e.from) && matchedIds.has(e.to));
-
-  nodesDataSet.clear();
-  nodesDataSet.add(nodesToShow);
-  edgesDataSet.clear();
-  edgesDataSet.add(edgesToShow);
-
   if (matchedNodes.length > 0) {
+    showGraphSubset(selectGraphSubset(ARCH_DATA.nodes, ARCH_DATA.edges, GRAPH_NODE_CAP, matchedNodes[0].id));
     network.focus(matchedNodes[0].id, { scale: 1.15, animation: { duration: 350 } });
+  } else {
+    showGraphSubset({ nodes: [], edges: [] });
   }
 }
 
@@ -797,12 +827,17 @@ function populateCollectionView(key) {
 }
 
 function focusNodeInGraph(nodeId) {
+  const sourceNode = ARCH_DATA.nodes.find(node => String(node.id) === String(nodeId));
+  if (!sourceNode) return;
+  if (!nodesDataSet.get(sourceNode.id)) {
+    showGraphSubset(selectGraphSubset(ARCH_DATA.nodes, ARCH_DATA.edges, GRAPH_NODE_CAP, sourceNode.id));
+  }
   switchTab('graph');
-  const node = nodesDataSet.get(nodeId);
+  const node = nodesDataSet.get(sourceNode.id);
   if (node) {
-    selectedNodeId = nodeId;
-    network.focus(nodeId, { scale: 1.3, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
-    highlightNodeNeighborhood(nodeId);
+    selectedNodeId = node.id;
+    network.focus(node.id, { scale: 1.3, animation: { duration: 500, easingFunction: 'easeInOutQuad' } });
+    highlightNodeNeighborhood(node.id);
     showInspector(node);
   }
 }
