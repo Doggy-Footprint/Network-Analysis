@@ -32,3 +32,5 @@ agent-docs/contracts/.running/
 agent-docs/contracts/.seed/
 .harness/sessions/.running/
 .harness/**/__pycache__
+
+output/
