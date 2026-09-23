@@ -23,6 +23,9 @@ tmp/
 **/.gradle/
 .DS_Store
 
+ref/
+!ref/.gitkeep
+
 user_notes/
 
 local-reports/*
@@ -30,9 +33,10 @@ local-reports/*
 
 contracts/*
 !contracts/.gitkeep
-agent-docs/contracts/.running/
-agent-docs/contracts/.seed/
 .harness/sessions/.running/
 .harness/**/__pycache__
 
 output/
+agent-docs/specs/.active
+agent-docs/specs/.running/
+agent-docs/specs/.seed/
