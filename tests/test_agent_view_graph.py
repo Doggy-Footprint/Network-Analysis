@@ -109,7 +109,7 @@ class V3ContractTests(unittest.TestCase):
             "tokenizer_version": "chars-div4-digit-group3-v1",
             "read_limit_provenance": "Harness command: sed -n '1,2000p' FILE; measured ceiling: 8000 estimated tokens",
             "search_limit_provenance": "Harness command: rg --json TERM ROOT | head -n 30; configured visible occurrence ceiling: 30",
-            "tokenizer_provenance": "ROADMAP.md cost contract: characters per token defaulting to 4, digit runs grouped three at a time from the left",
+            "tokenizer_provenance": "language_analyzers/core/cost.py estimate_tokens: non-digit characters per 4 and digit runs per 3",
             "query_candidate_limit_provenance": "Harness trace field: follow_up_queries_after_read; retained positions: 1-3",
         })
         self.assertNotIn("max_arrival_nodes", profile)

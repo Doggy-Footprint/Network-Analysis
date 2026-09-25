@@ -1,8 +1,8 @@
 # Project Definition
 
-Measures how discoverable a repository is to an AI coding agent, and how safely that agent can change it.
-Scope is limited to what an agent can reproducibly observe in the repository, so results stay deterministic and traceable instead of judging code quality or task difficulty.
-Outputs expose structural bottlenecks, which target is expensive or risky to modify, which target is expensive to explore before get down to work.
+Measures repository structures that an AI coding agent can reproducibly observe while exploring code and locating the targets.
+Scope is limited to deterministic, traceable analysis of repository contents rather than judgments about code quality, task difficulty, or agent behavior.
+Outputs expose structural bottlenecks: which targets are costly to explore and which have high dependency-network token costs. They do not measure change risk or safety outcomes.
 
 <!-- harness:begin 0.10.0 -->
 # Documentation Guide

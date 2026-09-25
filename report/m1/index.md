@@ -45,7 +45,7 @@ Related Symbols: build, search, boundaries, loadQuery
 ---
 File: glossary.html
 Summary: 비전문가를 위한 M1 핵심 용어 설명
-Related Files: ROADMAP.md
+Related Files: profiles/agent_view.v3.yaml
 Related Symbols: readable node, query node, framework link
 ---
 File: common.css
