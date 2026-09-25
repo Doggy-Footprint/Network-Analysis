@@ -158,7 +158,7 @@ Applies to every subagent dispatch.
 2. The return payload always carries what the file cannot reconstruct: assumptions made, alternatives rejected, what was searched for and not found, what remains unresolved.
 3. One dispatch, one subject. Reuse a session only for iterations on the same contract; discard it when the subject or the contract version changes.
 
-<!-- harness:begin 0.9.0 -->
+<!-- harness:begin 0.10.0 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
