@@ -1,8 +1,9 @@
 # Project Definition
 
-Measures repository structures that an AI coding agent can reproducibly observe while exploring code and locating the targets.
+Measures repository structures that an AI coding agent can reproducibly observe while exploring code and locating targets.
 Scope is limited to deterministic, traceable analysis of repository contents rather than judgments about code quality, task difficulty, or agent behavior.
-Outputs expose structural bottlenecks: which targets are costly to explore and which have high dependency-network token costs. They do not measure change risk or safety outcomes.
+Outputs expose structural bottlenecks: which targets are costly to explore and which have high dependency-network token costs.
+Rather than providing precise analysis tailored to a specific agent runtime, this project aims to broadly explore structural bottlenecks across diverse agent runtimes and exploration strategies.
 
 <!-- harness:begin 0.10.0 -->
 # Documentation Guide
