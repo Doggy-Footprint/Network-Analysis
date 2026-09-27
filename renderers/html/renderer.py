@@ -2,9 +2,12 @@ import html
 import json
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from language_analyzers.core.serialization import architecture_to_dict
+from report.shared.labels import short_labels
+
+FILE_LIKE_CATEGORIES = {"file", "module", "package"}
 
 # vis.js line styling per edge confidence. Confidence is a semantic field the analyzers
 # produce; turning it into a dash pattern belongs here so no analyzer carries presentation.
@@ -36,7 +39,8 @@ class HTMLRenderer:
             )
 
         raw_data = architecture_to_dict(arch)
-        raw_data["nodes"] = [self._vis_node(node) for node in raw_data["nodes"]]
+        short_label_by_id = self._short_label_map(raw_data["nodes"])
+        raw_data["nodes"] = [self._vis_node(node, short_label_by_id) for node in raw_data["nodes"]]
         raw_data["edges"] = [self._vis_edge(edge) for edge in raw_data["edges"]]
         raw_data["confidence_styles"] = CONFIDENCE_STYLES
 
@@ -55,9 +59,37 @@ class HTMLRenderer:
         return output
 
     @staticmethod
-    def _vis_node(node: Dict[str, Any]) -> Dict[str, Any]:
+    def _short_label_map(nodes: List[Dict[str, Any]]) -> Dict[str, str]:
+        eligible: Dict[str, str] = {}
+        for node in nodes:
+            if node.get("display_label"):
+                continue
+            if node.get("category") not in FILE_LIKE_CATEGORIES:
+                continue
+            span = node.get("span") or {}
+            path = span.get("file_path") or node.get("label", "")
+            if "/" not in path:
+                continue
+            eligible[node["id"]] = path
+        if not eligible:
+            return {}
+        labels = short_labels(eligible.values())
+        return {node_id: labels[path] for node_id, path in eligible.items()}
+
+    @staticmethod
+    def _vis_node(node: Dict[str, Any], short_label_by_id: Dict[str, str]) -> Dict[str, Any]:
         vis = dict(node)
-        vis["label"] = node.get("display_label") or node.get("label", "")
+        display_label = node.get("display_label")
+        if display_label:
+            vis["label"] = display_label
+            return vis
+        vis["label"] = short_label_by_id.get(node["id"]) or node.get("label", "")
+        span = node.get("span") or {}
+        file_path = span.get("file_path")
+        if file_path:
+            title_parts = [node["title"]] if node.get("title") else []
+            title_parts.append(html.escape(file_path))
+            vis["title"] = "<br>".join(title_parts)
         return vis
 
     @staticmethod

@@ -24,14 +24,29 @@ Related Files: report/m1/generate.py, agent_view/models.py
 Related Symbols: ReadableNode, QueryNode
 ---
 File: graph.html, graph.js
-Summary: 전체 readable·query node와 일반·framework connection을 탐색하는 Canvas 시각화
-Related Files: report/m1/generate.py, agent_view/models.py
+Summary: 전체 readable·query node와 일반·framework connection을 vendored Cytoscape.js+fcose로 탐색하는 디렉터리 compound 시각화
+Related Files: report/m1/generate.py, report/m1/vendor/, agent_view/models.py
 Related Symbols: ReadableNode, QueryNode, Connection
 ---
 File: graph_model.js
-Summary: 관계 구성·배치와 Canvas 상호작용을 계산하는 순수 모델
-Related Files: graph.js, tests/test_report_m1.py
-Related Symbols: build, selectVisible, fit, pan, zoomAt, find, center, inspectAt
+Summary: Cytoscape element(디렉터리 compound 포함)와 짧은 라벨을 구성하고 "먼저 볼 곳" 후보를 계산하는 순수 모델
+Related Files: graph.js, label_model.js, focus.js, tests/test_report_m1.py
+Related Symbols: build, focus
+---
+File: label_model.js
+Summary: report/shared/labels.py의 short_labels와 동일한 규칙을 브라우저·Node에서 계산하는 UMD 모델
+Related Files: report/shared/labels.py, graph_model.js
+Related Symbols: shortLabels
+---
+File: focus.html, focus.js
+Summary: token_estimate, 생략된 query 결과 수, connection 수 상위 항목을 요약 앞에 보여주는 "먼저 볼 곳" 섹션
+Related Files: graph_model.js, report/m1/generate.py
+Related Symbols: focus
+---
+File: vendor_register.js
+Summary: 인라인된 cytoscape-fcose를 cytoscape에 등록하는 연결 스크립트
+Related Files: report/m1/vendor/
+Related Symbols: none
 ---
 File: evidence.html, evidence.js
 Summary: node·query·connection 근거와 지연 occurrence 조회 및 분석 경계 검색 화면

@@ -22,10 +22,19 @@ from report.shared.document import (
 )
 
 SUPPORTED_SCHEMA_VERSION = "3"
+VENDOR_FILES = (
+    "cytoscape-3.30.2.min.js",
+    "layout-base-2.0.1.min.js",
+    "cose-base-2.2.0.min.js",
+    "cytoscape-fcose-2.2.0.min.js",
+)
 TEMPLATE_FILES = (
-    "header.html", "summary.html", "distributions.html", "graph.html",
-    "evidence.html", "glossary.html", "summary_model.js", "graph_model.js",
-    "evidence_model.js", "header.js", "summary.js", "distributions.js", "graph.js", "evidence.js",
+    "header.html", "focus.html", "summary.html", "distributions.html", "graph.html",
+    "evidence.html", "glossary.html",
+    "label_model.js",
+) + VENDOR_FILES + (
+    "vendor_register.js", "graph_model.js", "summary_model.js", "evidence_model.js",
+    "header.js", "focus.js", "summary.js", "distributions.js", "graph.js", "evidence.js",
 )
 PAYLOAD_ID = "agent-view-v3-payload"
 READY_EVENT = "agent-view-ready"
@@ -33,6 +42,9 @@ READY_LABEL = '"schema v" + graph.schema_version + " 로드 완료"'
 
 def _template_dir() -> Path:
     return Path(__file__).resolve().parent / "templates"
+
+def _vendor_dir() -> Path:
+    return Path(__file__).resolve().parent / "vendor"
 
 def _validate_node_cost(value: Any, path: str) -> None:
     cost = _object(value, path)
@@ -268,8 +280,11 @@ def generate_report(
     write_text: Optional[Callable[[Path, str], None]] = None,
     compress: Optional[Callable[[bytes], bytes]] = None,
     template_dir: Optional[Union[str, Path]] = None,
+    vendor_dir: Optional[Union[str, Path]] = None,
     stderr: Any = None,
 ) -> Path:
+    vendor_path = Path(vendor_dir) if vendor_dir is not None else _vendor_dir()
+    extra_files = {name: vendor_path / name for name in VENDOR_FILES}
     return generate(
         json_path,
         output_path,
@@ -285,6 +300,7 @@ def generate_report(
         write_text=write_text,
         compress=compress,
         stderr=stderr,
+        extra_files=extra_files,
     )
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

@@ -2,117 +2,151 @@ import argparse
 import html
 import json
 import math
+import re
 import sys
 from pathlib import Path
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from report.shared.document import ReportInputError, ReportOutputError
+from report.shared.labels import short_labels
 
 SUPPORTED_SCHEMA = "bottlenecks.v2"
 
-INLINE_CSS = """
-:root {
-  color-scheme: light dark;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  line-height: 1.5;
-}
-body {
-  max-width: 96rem;
-  margin: 0 auto;
-  padding: 2rem;
-  background: Canvas;
-  color: CanvasText;
-}
-h1 { margin-top: 0; }
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 1rem;
-  margin: 1.5rem 0;
-}
-.panel {
-  padding: 1rem;
-  border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas);
-  border-radius: 0.5rem;
-  background: color-mix(in srgb, CanvasText 4%, Canvas);
-}
-.panel h2 { margin: 0 0 0.75rem; font-size: 1rem; }
-.bar-row { display: grid; grid-template-columns: minmax(7rem, 1fr) 3fr auto; gap: 0.5rem; align-items: center; margin: 0.35rem 0; }
-.bar-track { height: 0.7rem; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, CanvasText 12%, Canvas); }
-.bar { height: 100%; min-width: 2px; border-radius: inherit; background: #4f46e5; }
-.metric-chart { min-width: 16rem; }
-.metric-chart .bar { background: #0891b2; }
-.bar-label, .bar-value { overflow-wrap: anywhere; }
-.bar-value { font-variant-numeric: tabular-nums; }
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: 0.75rem 1rem;
-  margin: 1.5rem 0 1rem;
-}
-.filter-bar label { font-weight: 600; }
-.filter-bar input {
-  display: block;
-  box-sizing: border-box;
-  width: min(32rem, 80vw);
-  margin-top: 0.25rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid GrayText;
-  border-radius: 0.35rem;
-  background: Field;
-  color: FieldText;
-  font: inherit;
-}
-.table-wrap { overflow-x: auto; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-th, td {
-  padding: 0.65rem;
-  border: 1px solid color-mix(in srgb, CanvasText 25%, Canvas);
-  text-align: left;
-  vertical-align: top;
-}
-th { background: color-mix(in srgb, CanvasText 8%, Canvas); }
-tbody tr:nth-child(even) { background: color-mix(in srgb, CanvasText 4%, Canvas); }
-pre {
-  max-width: 42rem;
-  margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-details {
-  margin: 0.6rem 0;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid color-mix(in srgb, CanvasText 20%, Canvas);
-  border-radius: 0.35rem;
-}
-summary { cursor: pointer; font-weight: 600; }
-[hidden] { display: none !important; }
-""".strip()
+_ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?$")
 
-INLINE_JS = """
-(() => {
-  const input = document.getElementById('candidate-filter');
-  const count = document.getElementById('candidate-count');
-  const rows = Array.from(document.querySelectorAll('[data-candidate-row]'));
-  const applyFilter = () => {
-    const query = input.value.trim().toLocaleLowerCase();
-    let visible = 0;
-    rows.forEach((row) => {
-      const matches = row.textContent.toLocaleLowerCase().includes(query);
-      row.hidden = !matches;
-      if (matches) visible += 1;
-    });
-    count.textContent = `${visible} of ${rows.length} candidates`;
-  };
-  input.addEventListener('input', applyFilter);
-  applyFilter();
-})();
-""".strip()
+KIND_LABELS = {
+    "output_truncation": "출력 잘림",
+    "multiple_results": "다중 결과",
+    "evidence_spread": "근거 분산",
+    "read_limit": "읽기 한계",
+    "connection_constraint": "연결 제약",
+    "unresolved_boundary": "미해결 경계",
+}
+
+KIND_DESCRIPTIONS = {
+    "output_truncation": "query 결과가 노출 한도를 넘어 생략된 사례입니다.",
+    "multiple_results": "하나의 target에 결과가 여러 개 도달하는 사례입니다.",
+    "evidence_spread": "근거가 여러 파일에 흩어져 있는 사례입니다.",
+    "read_limit": "읽기 단위가 read_line_limit을 넘는 사례입니다.",
+    "connection_constraint": "현재 생성되지 않음",
+    "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
+}
+
+METRIC_DEFINITIONS = [
+    ("token_cost", "코드 조각을 읽는 데 드는 텍스트 양의 근사값입니다."),
+    ("effective_token_cost", "token_cost에 배율을 곱한 값입니다. vendored 파일이나 /vendor/, /node_modules/ 경로는 0배, generated·migration 관련 파일이나 /migrations/, /alembic/versions/ 경로는 0.1배, 그 외는 1배입니다."),
+    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다."),
+    ("weighted_centrality_cost", "pagerank × effective_token_cost로 계산됩니다."),
+    ("fan_in", "들어오는 connection 수입니다."),
+    ("fan_out", "나가는 connection 수입니다."),
+    ("hop_2_token_cost", "해당 node에서 2단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
+    ("hop_3_token_cost", "해당 node에서 3단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
+    ("betweenness_centrality", "다른 node 사이의 최단 경로에 얼마나 자주 놓이는지를 나타냅니다."),
+    ("degree_centrality", "해당 node에 연결된 edge 수를 전체 node 수 기준 최대 연결 수로 나눈 값입니다."),
+]
+
+_KIND_SCORE_FIELDS = {
+    "output_truncation": ("omitted_count", 0),
+    "multiple_results": ("total_count", 0),
+    "evidence_spread": ("file_count", 0),
+    "unresolved_boundary": ("unresolved_count", 1),
+}
+
+
+def _score_candidate(candidate: Mapping[str, Any]) -> float:
+    kind = candidate.get("kind")
+    metrics = candidate.get("metrics") or {}
+    if kind == "read_limit":
+        return float(metrics.get("line_count", 0)) - float(metrics.get("read_line_limit", 0))
+    field, default = _KIND_SCORE_FIELDS.get(kind, (None, 0))
+    if field is None:
+        return 0.0
+    return float(metrics.get(field, default))
+
+
+def _parse_id_target(target: str) -> Optional[tuple[str, Optional[str]]]:
+    match = _ID_TARGET_RE.match(target)
+    if match is None:
+        return None
+    _lang, module, qual = match.groups()
+    return module.replace(".", "/"), qual
+
+
+def _build_target_labels(candidates: Sequence[Mapping[str, Any]]) -> dict[str, str]:
+    id_targets: dict[str, tuple[str, Optional[str]]] = {}
+    other_targets: list[str] = []
+    for candidate in candidates:
+        target = candidate["target"]
+        parsed = _parse_id_target(target)
+        if parsed is not None:
+            id_targets[target] = parsed
+        else:
+            other_targets.append(target)
+    module_labels = short_labels([module for module, _qual in id_targets.values()])
+    other_labels = short_labels(other_targets)
+    labels: dict[str, str] = {}
+    for target, (module, qual) in id_targets.items():
+        short = module_labels.get(module, module)
+        labels[target] = f"{short}:{qual}" if qual else short
+    for target in other_targets:
+        labels[target] = other_labels.get(target, target)
+    return labels
+
+
+def _prioritize(data: Mapping[str, Any]) -> list:
+    candidates = data["candidates"]
+    labels = _build_target_labels(candidates)
+    entries = [
+        {
+            "candidate": candidate,
+            "score": _score_candidate(candidate),
+            "label": labels.get(candidate["target"], candidate["target"]),
+        }
+        for candidate in candidates
+    ]
+    entries.sort(key=lambda entry: (-entry["score"], entry["candidate"]["id"]))
+    return entries
+
+
+def prioritize_candidates(data: Mapping[str, Any]) -> list:
+    validated = _validate(data)
+    return _prioritize(validated)
+
+
+def _focus_candidates(prioritized: list) -> list:
+    groups: dict = {}
+    for entry in prioritized:
+        key = (entry["candidate"]["kind"], entry["candidate"]["target"])
+        groups.setdefault(key, []).append(entry)
+    deduped = []
+    for entries in groups.values():
+        best = min(entries, key=lambda entry: (-entry["score"], entry["candidate"]["id"]))
+        deduped.append({**best, "duplicate_count": len(entries)})
+    by_kind: dict = {}
+    for entry in deduped:
+        by_kind.setdefault(entry["candidate"]["kind"], []).append(entry)
+    selected = []
+    for entries in by_kind.values():
+        entries.sort(key=lambda entry: (-entry["score"], entry["candidate"]["id"]))
+        selected.extend(entries[:2])
+    selected.sort(key=lambda entry: (-entry["score"], entry["candidate"]["id"]))
+    return selected
+
+
+def focus_candidates(data: Mapping[str, Any]) -> list:
+    validated = _validate(data)
+    return _focus_candidates(_prioritize(validated))
+
+def _templates_dir() -> Path:
+    return Path(__file__).resolve().parent / "templates"
+
+
+def _inline_css() -> str:
+    return (_templates_dir() / "styles.css").read_text(encoding="utf-8").strip()
+
+
+def _inline_js() -> str:
+    return (_templates_dir() / "script.js").read_text(encoding="utf-8").strip()
 
 
 def _error(path: str, message: str) -> None:
@@ -349,58 +383,197 @@ def _candidate_metrics(candidate: Mapping[str, Any]) -> str:
     return f"{chart}{_details('Raw metrics', candidate['metrics'])}"
 
 
-def _kind_summary(candidates: Sequence[Mapping[str, Any]]) -> str:
-    counts: dict[str, float] = {}
+def _kind_counts(candidates: Sequence[Mapping[str, Any]]) -> dict:
+    counts: dict[str, int] = {kind: 0 for kind in KIND_LABELS}
     for candidate in candidates:
         kind = candidate["kind"]
         counts[kind] = counts.get(kind, 0) + 1
-    values = [(kind, count) for kind, count in sorted(counts.items())]
-    return _bar_rows(values) if values else "<span>No candidates.</span>"
+    return counts
+
+
+def _evidence_lines(evidence: Any) -> list:
+    lines: list = []
+
+    def add(path: Any, line: Any) -> None:
+        if not isinstance(path, str) or not path:
+            return
+        lines.append(f"{path}:{line}" if line is not None else path)
+
+    def visit(value: Any) -> None:
+        if isinstance(value, str):
+            add(value, None)
+        elif isinstance(value, dict):
+            if "path" in value or "file_path" in value:
+                add(value.get("path", value.get("file_path")), value.get("line"))
+            for nested in value.values():
+                if isinstance(nested, (list, dict)):
+                    visit(nested)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    visit(evidence)
+    return lines
+
+
+def _focus_reason(candidate: Mapping[str, Any], score: float, label: str) -> str:
+    kind = candidate["kind"]
+    metrics = candidate.get("metrics") or {}
+    if kind == "output_truncation":
+        return f"{label}: 결과 {metrics.get('total_count', '?')}건 중 {metrics.get('omitted_count', score)}건이 생략되었습니다."
+    if kind == "multiple_results":
+        return f"{label}: 결과가 {metrics.get('total_count', score)}건 도달합니다."
+    if kind == "read_limit":
+        return f"{label}: 읽기 단위가 {metrics.get('line_count', '?')}줄로 한계 {metrics.get('read_line_limit', '?')}줄을 넘습니다."
+    if kind == "evidence_spread":
+        return f"{label}: 근거가 {metrics.get('file_count', score)}개 파일에 분산되어 있습니다."
+    if kind == "unresolved_boundary":
+        return f"{label}: 미해결 참조가 {metrics.get('unresolved_count', score)}건 남아 있습니다."
+    return f"{label}: {KIND_DESCRIPTIONS.get(kind, '')}"
+
+
+def _ranking_entries(value: Any) -> list:
+    entries: list = []
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, dict):
+                node_id = item.get("id") or item.get("target") or item.get("node_id") or ""
+                metric_value = item.get("value")
+                if metric_value is None:
+                    metric_value = item.get("score", 0)
+                entries.append((str(node_id), metric_value))
+            elif isinstance(item, (list, tuple)) and len(item) == 2:
+                entries.append((str(item[0]), item[1]))
+    return entries
 
 
 def render_report(payload: Any) -> str:
     data = _validate(payload)
+    candidates = data["candidates"]
+    priorities = _prioritize(data)
+    target_labels = _build_target_labels(candidates)
+
     rows = []
-    for candidate in data["candidates"]:
+    for candidate in candidates:
+        search_text = " ".join(
+            [
+                candidate["target"],
+                target_labels.get(candidate["target"], candidate["target"]),
+                KIND_LABELS.get(candidate["kind"], candidate["kind"]),
+                candidate["status"],
+                *_evidence_lines(candidate["evidence"]),
+            ]
+        )
         rows.append(
-            "<tr data-candidate-row>"
-            f"<td>{html.escape(candidate['target'])}</td>"
-            f"<td>{html.escape(candidate['kind'])}</td>"
+            f"<tr data-candidate-row data-kind=\"{html.escape(candidate['kind'])}\" "
+            f"data-search=\"{html.escape(search_text)}\">"
+            f"<td title=\"{html.escape(candidate['target'])}\">{html.escape(target_labels.get(candidate['target'], candidate['target']))}</td>"
+            f"<td>{html.escape(KIND_LABELS.get(candidate['kind'], candidate['kind']))}</td>"
             f"<td>{_candidate_metrics(candidate)}</td>"
-            f"<td><pre>{_visible(candidate['evidence'])}</pre></td>"
-            f"<td><pre>{_visible(candidate.get('obstacle'))}</pre></td>"
+            f"<td>{''.join(f'<div>{html.escape(line)}</div>' for line in _evidence_lines(candidate['evidence'])) or '<span class=\"muted\">근거 없음</span>'}</td>"
+            f"<td>{_details('원본 JSON', candidate)}</td>"
             f"<td>{html.escape(candidate['status'])}</td>"
-            f"<td>{html.escape(candidate.get('validation_status', ''))}</td>"
             "</tr>"
         )
+
     embedded = _json(data).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
-    details = "".join(
+
+    focus_items = _focus_candidates(priorities)
+    if focus_items:
+        focus_html = "<ol class='focus-list'>" + "".join(
+            f"<li title=\"{html.escape(item['candidate']['target'])}\"><strong>{html.escape(item['label'])}</strong> ({html.escape(KIND_LABELS.get(item['candidate']['kind'], item['candidate']['kind']))}, "
+            f"score {item['score']:g}) — {html.escape(_focus_reason(item['candidate'], item['score'], item['label']))}"
+            + (f" <span class='muted'>같은 대상 {item['duplicate_count']}건</span>" if item["duplicate_count"] > 1 else "")
+            + "</li>"
+            for item in focus_items
+        ) + "</ol>"
+    else:
+        focus_html = "<p>발견된 후보 없음</p>"
+
+    kind_counts = _kind_counts(candidates)
+    kinds_html = "<div class='kind-grid'>" + "".join(
+        f"<div class='panel'><h3>{html.escape(KIND_LABELS[kind])}</h3><p>{html.escape(KIND_DESCRIPTIONS[kind])}</p><p><strong>{count}</strong>건</p></div>"
+        for kind, count in sorted(kind_counts.items())
+    ) + "</div>"
+
+    kind_options = "".join(f"<option value='{html.escape(kind)}'>{html.escape(label)}</option>" for kind, label in sorted(KIND_LABELS.items()))
+
+    rankings = (data.get("dependency_network") or {}).get("rankings") or {}
+    if rankings:
+        rankings_html = "".join(
+            f"<div class='panel'><h3>{html.escape(str(metric))}</h3>{_bar_rows([(node_id, float(value)) for node_id, value in _ranking_entries(entries) if isinstance(value, (int, float)) and not isinstance(value, bool)][:10])}</div>"
+            for metric, entries in sorted(rankings.items())
+        )
+    else:
+        rankings_html = "<p>순위 데이터가 없습니다.</p>"
+
+    profile_exposure = (data.get("exploration_network") or {}).get("profile_exposure") or {}
+    limits_html = ""
+    if "search_output_limit" in profile_exposure or "read_line_limit" in profile_exposure:
+        limits_html = (
+            "<div class='summary-grid'>"
+            + (
+                f"<div class='panel'><h2>search_output_limit</h2><strong>{html.escape(str(profile_exposure['search_output_limit']))}</strong>"
+                "<p>검색 결과 한 번에 노출되는 최대 줄 수입니다.</p></div>"
+                if "search_output_limit" in profile_exposure else ""
+            )
+            + (
+                f"<div class='panel'><h2>read_line_limit</h2><strong>{html.escape(str(profile_exposure['read_line_limit']))}</strong>"
+                "<p>읽기 단위 하나가 넘지 않아야 하는 최대 줄 수입니다.</p></div>"
+                if "read_line_limit" in profile_exposure else ""
+            )
+            + "</div>"
+        )
+
+    appendix_details = "".join(
         _details(title, data[field])
         for title, field in (
-            ("Profile and settings", "profile"),
-            ("Versions", "versions"),
             ("Coverage", "coverage"),
-            ("Dependency network", "dependency_network"),
-            ("Exploration network", "exploration_network"),
             ("Limitations", "limitations"),
             ("Probes", "probes"),
         )
     )
+
+    glossary_html = (
+        "<dl class='glossary-grid'>"
+        + "".join(f"<div><dt>{html.escape(KIND_LABELS[kind])}</dt><dd>{html.escape(KIND_DESCRIPTIONS[kind])}</dd></div>" for kind in sorted(KIND_LABELS))
+        + "<div><dt>score</dt><dd>후보를 정렬하는 데 쓰이는 측정값입니다. kind별로 다른 필드에서 계산됩니다.</dd></div>"
+        + "<div><dt>probe</dt><dd>후보를 찾기 위해 실행한 개별 탐색입니다.</dd></div>"
+        + "<div><dt>duplicate_count</dt><dd>같은 (kind, target) 조합에서 중복으로 발견되어 하나로 묶인 후보 건수입니다.</dd></div>"
+        + "".join(f"<div><dt>{html.escape(term)}</dt><dd>{html.escape(desc)}</dd></div>" for term, desc in METRIC_DEFINITIONS if term in rankings)
+        + "</dl>"
+    )
+
     return (
-        "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
-        f"<title>Repository bottlenecks</title><style>{INLINE_CSS}</style></head><body>"
-        f"<h1>Repository bottlenecks</h1>{_details('Snapshot', data['snapshot'])}{details}"
-        "<section class='summary-grid' aria-label='Candidate summary'>"
-        f"<div class='panel'><h2>Candidates ({len(rows)})</h2>{_kind_summary(data['candidates'])}</div>"
-        f"<div class='panel'><h2>Probes</h2><strong>{len(data['probes'])}</strong></div>"
+        "<!doctype html><html lang='ko'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
+        f"<title>저장소 병목 후보</title><style>{_inline_css()}</style></head><body>"
+        "<h1>저장소 병목 후보</h1>"
+        "<section id='overview'>"
+        f"{_details('Snapshot', data['snapshot'])}"
+        "<div class='summary-grid'>"
+        f"<div class='panel'><h2>candidate 수</h2><strong>{len(candidates)}</strong></div>"
+        f"<div class='panel'><h2>probe 수</h2><strong>{len(data['probes'])}</strong></div>"
+        "</div>"
+        f"{limits_html}"
+        f"{_details('profile', data['profile'])}{_details('versions', data['versions'])}"
         "</section>"
-        "<div class='filter-bar'><label for='candidate-filter'>Filter candidates"
-        "<input id='candidate-filter' type='search' placeholder='Target, kind, evidence, or status'></label>"
-        f"<output id='candidate-count' for='candidate-filter'>{len(rows)} of {len(rows)} candidates</output></div>"
+        f"<section id='focus'><h2>먼저 볼 곳</h2>{focus_html}</section>"
+        f"<section id='kinds'><h2>후보 종류</h2>{kinds_html}</section>"
+        "<section id='candidates'><h2>후보 목록</h2>"
+        "<div class='filter-bar'>"
+        "<label for='candidate-filter'>후보 검색"
+        "<input id='candidate-filter' type='search' placeholder='target, evidence, status'></label>"
+        f"<label for='candidate-kind-filter'>종류<select id='candidate-kind-filter'><option value='all'>전체</option>{kind_options}</select></label>"
+        f"<output id='candidate-count' for='candidate-filter'>{len(rows)} / {len(rows)} candidates</output>"
+        "</div>"
         "<div class='table-wrap'>"
-        "<table><thead><tr><th>Target</th><th>Kind</th><th>Metrics</th><th>Evidence</th><th>Obstacle</th><th>Status</th><th>Validation</th></tr></thead>"
+        "<table><thead><tr><th>target</th><th>종류</th><th>지표</th><th>근거</th><th>원본</th><th>상태</th></tr></thead>"
         f"<tbody>{''.join(rows)}</tbody></table></div>"
-        f"<script id='bottlenecks-data' type='application/json'>{embedded}</script><script>{INLINE_JS}</script></body></html>"
+        "</section>"
+        f"<section id='rankings'><h2>지표별 순위</h2>{rankings_html}</section>"
+        f"<section id='appendix'><h2>부록</h2>{appendix_details}</section>"
+        f"<section id='glossary'><h2>용어 안내</h2>{glossary_html}</section>"
+        f"<script id='bottlenecks-data' type='application/json'>{embedded}</script><script>{_inline_js()}</script></body></html>"
     )
 
 
