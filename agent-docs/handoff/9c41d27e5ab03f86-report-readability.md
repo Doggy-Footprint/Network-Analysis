@@ -20,12 +20,19 @@
 | verifier 2회차 | retry: SPEC-4, RV-ARTIFACT-1 | verified: FR-15 세부 조항(이웃 20개 cap, edge·parent만 추가, 기존 노드 위치 유지)에 검증 항목 없음; RV 절차가 요구한 콘솔 로그 파일 없음 |
 
 ## Next Step
+(2026-09-27 갱신) 1~3은 run a73c1e5f0b284d96(complete, agent-docs/spec-logs/a73c1e5f0b284d96-report-readability-followup.md v3)에서 완료. 남은 일:
+- ADV-1: VO-18 category 조건 fixture(category∈{file,module,package}이고 label≠file_path인 노드가 파일 노드로 라벨링되는지). 사용자 결정으로 해당 run에서 제외.
+- 권고(RV-2): M1 fit 배율에서 always-label 라벨 겹침, 숨은 노드 검색 시 새 이웃이 기존 노드 위에 배치되어 라벨 혼잡.
+- 커밋 여부와 vendoring ADR 초안 제안(4번 유지).
+
+이전 Next Step:
 1. 새 workflow run에서 SPEC-4: FR-15 세부 조항용 검증 추가(예: graph.js의 추가 로직을 순수 함수로 분리해 node로 테스트: 이웃 20개 cap, 추가 요소 집합, 기존 노드 position 불변).
 2. RV-ARTIFACT-1: Chrome 콘솔 로그를 local-reports/review/console-*.log로 저장하는 절차로 VO-11/VO-14 재수행(또는 서술형 콘솔 기록 허용을 사용자가 결정).
 3. 권고: M1 always-label 노드 글자가 fit 배율에서 작음, 숨은 노드 검색 후 줌이 fit 수준 유지, Bottlenecks 이유 문장에 짧은 라벨 반복, ADV-1(VO-18 category 조건 fixture).
 4. 커밋 여부와 vendoring ADR 초안 제안.
 
 ## Open Questions
+- (해결) RV 콘솔 기록: raw 로그 파일로 결정(사용자, 2026-09-27).
 - RV 콘솔 기록을 raw 로그 파일로 요구할지, 서술형 기록으로 충분한지.
 
 ## Spec

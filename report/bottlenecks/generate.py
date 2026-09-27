@@ -416,20 +416,20 @@ def _evidence_lines(evidence: Any) -> list:
     return lines
 
 
-def _focus_reason(candidate: Mapping[str, Any], score: float, label: str) -> str:
+def _focus_reason(candidate: Mapping[str, Any], score: float) -> str:
     kind = candidate["kind"]
     metrics = candidate.get("metrics") or {}
     if kind == "output_truncation":
-        return f"{label}: 결과 {metrics.get('total_count', '?')}건 중 {metrics.get('omitted_count', score)}건이 생략되었습니다."
+        return f"결과 {metrics.get('total_count', '?')}건 중 {metrics.get('omitted_count', score)}건이 생략되었습니다."
     if kind == "multiple_results":
-        return f"{label}: 결과가 {metrics.get('total_count', score)}건 도달합니다."
+        return f"결과가 {metrics.get('total_count', score)}건 도달합니다."
     if kind == "read_limit":
-        return f"{label}: 읽기 단위가 {metrics.get('line_count', '?')}줄로 한계 {metrics.get('read_line_limit', '?')}줄을 넘습니다."
+        return f"읽기 단위가 {metrics.get('line_count', '?')}줄로 한계 {metrics.get('read_line_limit', '?')}줄을 넘습니다."
     if kind == "evidence_spread":
-        return f"{label}: 근거가 {metrics.get('file_count', score)}개 파일에 분산되어 있습니다."
+        return f"근거가 {metrics.get('file_count', score)}개 파일에 분산되어 있습니다."
     if kind == "unresolved_boundary":
-        return f"{label}: 미해결 참조가 {metrics.get('unresolved_count', score)}건 남아 있습니다."
-    return f"{label}: {KIND_DESCRIPTIONS.get(kind, '')}"
+        return f"미해결 참조가 {metrics.get('unresolved_count', score)}건 남아 있습니다."
+    return KIND_DESCRIPTIONS.get(kind, "")
 
 
 def _ranking_entries(value: Any) -> list:
@@ -482,7 +482,7 @@ def render_report(payload: Any) -> str:
     if focus_items:
         focus_html = "<ol class='focus-list'>" + "".join(
             f"<li title=\"{html.escape(item['candidate']['target'])}\"><strong>{html.escape(item['label'])}</strong> ({html.escape(KIND_LABELS.get(item['candidate']['kind'], item['candidate']['kind']))}, "
-            f"score {item['score']:g}) — {html.escape(_focus_reason(item['candidate'], item['score'], item['label']))}"
+            f"score {item['score']:g}) — {html.escape(_focus_reason(item['candidate'], item['score']))}"
             + (f" <span class='muted'>같은 대상 {item['duplicate_count']}건</span>" if item["duplicate_count"] > 1 else "")
             + "</li>"
             for item in focus_items

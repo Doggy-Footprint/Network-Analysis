@@ -198,5 +198,117 @@
     return tokenTop.concat(omittedTop).concat(connectionTop);
   };
 
-  return { build: build, focus: focus };
+  const NEIGHBOR_LIMIT = 20;
+  const NEIGHBOR_RADIUS = 120;
+
+  const ancestorChain = function (elementByNodeId, nodeId) {
+    const chain = [];
+    let parentId = (elementByNodeId[nodeId] || {}).parent;
+    while (parentId) {
+      chain.unshift(parentId);
+      parentId = (elementByNodeId[parentId] || {}).parent;
+    }
+    return chain;
+  };
+
+  const expand = function (built, present, targetId) {
+    const nodeElementById = {};
+    const edgesByNodeId = {};
+    built.elements.forEach(function (element) {
+      if (element.group === "nodes") {
+        nodeElementById[element.data.id] = element.data;
+      } else {
+        (edgesByNodeId[element.data.source] = edgesByNodeId[element.data.source] || []).push(element);
+        (edgesByNodeId[element.data.target] = edgesByNodeId[element.data.target] || []).push(element);
+      }
+    });
+
+    const targetElement = nodeElementById[targetId];
+    if (!targetElement || targetElement.is_directory) return null;
+    if (present[targetId]) return { nodes: [], parents: [], edges: [], positions: {} };
+
+    const connectionCount = {};
+    built.elements.forEach(function (element) {
+      if (element.group !== "edges") return;
+      connectionCount[element.data.source] = (connectionCount[element.data.source] || 0) + 1;
+      connectionCount[element.data.target] = (connectionCount[element.data.target] || 0) + 1;
+    });
+
+    const neighborIds = {};
+    (edgesByNodeId[targetId] || []).forEach(function (edge) {
+      const other = edge.data.source === targetId ? edge.data.target : edge.data.source;
+      const otherElement = nodeElementById[other];
+      if (other !== targetId && otherElement && !otherElement.is_directory) neighborIds[other] = true;
+    });
+    const rankedNeighbors = Object.keys(neighborIds).sort(function (a, b) {
+      return ((connectionCount[b] || 0) - (connectionCount[a] || 0)) || compare(a, b);
+    });
+    const selectedNeighbors = rankedNeighbors.slice(0, NEIGHBOR_LIMIT);
+
+    const focusSet = [targetId].concat(selectedNeighbors);
+
+    const presentIds = {};
+    Object.keys(present).forEach(function (id) { presentIds[id] = true; });
+
+    const newNodeIds = focusSet.filter(function (id) { return !presentIds[id]; });
+
+    const parents = [];
+    const seenParent = {};
+    newNodeIds.forEach(function (nodeId) {
+      ancestorChain(nodeElementById, nodeId).forEach(function (ancestorId) {
+        if (!presentIds[ancestorId] && !seenParent[ancestorId]) {
+          seenParent[ancestorId] = true;
+          parents.push(ancestorId);
+        }
+      });
+    });
+
+    const allPresentAfterIds = {};
+    Object.keys(presentIds).forEach(function (id) { allPresentAfterIds[id] = true; });
+    focusSet.forEach(function (id) { allPresentAfterIds[id] = true; });
+    parents.forEach(function (id) { allPresentAfterIds[id] = true; });
+
+    const edges = [];
+    const seenEdge = {};
+    focusSet.forEach(function (nodeId) {
+      (edgesByNodeId[nodeId] || []).forEach(function (edge) {
+        const eid = edge.data.id;
+        if (seenEdge[eid]) return;
+        const otherEnd = edge.data.source === nodeId ? edge.data.target : edge.data.source;
+        if (!allPresentAfterIds[otherEnd]) return;
+        if (presentIds[nodeId] && presentIds[otherEnd]) return;
+        seenEdge[eid] = true;
+        edges.push(eid);
+      });
+    });
+
+    const positions = {};
+    const anchor = (function () {
+      const existingNeighborId = rankedNeighbors.find(function (id) { return presentIds[id]; });
+      if (existingNeighborId) return present[existingNeighborId];
+      const ancestors = ancestorChain(nodeElementById, targetId);
+      for (let i = ancestors.length - 1; i >= 0; i -= 1) {
+        if (presentIds[ancestors[i]]) return present[ancestors[i]];
+      }
+      return { x: 0, y: 0 };
+    })();
+
+    if (newNodeIds.indexOf(targetId) !== -1) positions[targetId] = { x: anchor.x, y: anchor.y };
+
+    const newOtherNeighbors = newNodeIds.filter(function (id) { return id !== targetId; });
+    newOtherNeighbors.forEach(function (nodeId, index) {
+      const angle = (2 * Math.PI * index) / newOtherNeighbors.length;
+      positions[nodeId] = {
+        x: anchor.x + NEIGHBOR_RADIUS * Math.cos(angle),
+        y: anchor.y + NEIGHBOR_RADIUS * Math.sin(angle)
+      };
+    });
+
+    return { nodes: newNodeIds, parents: parents, edges: edges, positions: positions };
+  };
+
+  const labelFontSize = function (zoom) { return Math.max(9, 11 / zoom); };
+  const focusZoom = function (fitZoom) { return Math.max(fitZoom, 1); };
+
+  return { build: build, focus: focus, expand: expand, labelFontSize: labelFontSize, focusZoom: focusZoom };
 }));

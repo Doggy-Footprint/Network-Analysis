@@ -45,27 +45,12 @@
     const byId = {};
     built.nodes.forEach(function (node) { byId[node.id] = node; });
 
-    const compare = function (left, right) { return left < right ? -1 : left > right ? 1 : 0; };
-
     const elementByNodeId = {};
-    const edgesByNodeId = {};
+    const edgesByEdgeId = {};
     built.elements.forEach(function (element) {
-      if (element.group === "nodes") {
-        elementByNodeId[element.data.id] = element;
-      } else {
-        (edgesByNodeId[element.data.source] = edgesByNodeId[element.data.source] || []).push(element);
-        (edgesByNodeId[element.data.target] = edgesByNodeId[element.data.target] || []).push(element);
-      }
+      if (element.group === "nodes") elementByNodeId[element.data.id] = element;
+      else edgesByEdgeId[element.data.id] = element;
     });
-
-    const connectionCount = {};
-    data.connections.forEach(function (connection) {
-      connectionCount[connection.from_id] = (connectionCount[connection.from_id] || 0) + 1;
-      connectionCount[connection.to_id] = (connectionCount[connection.to_id] || 0) + 1;
-    });
-
-    const NEIGHBOR_LIMIT = 20;
-    const NEIGHBOR_RADIUS = 90;
 
     const DIRECTORY_LABEL_MIN_PX = 12;
     const ZOOM_LABEL_THRESHOLD = 1;
@@ -93,114 +78,52 @@
       cy.style().selector("node.directory").style("font-size", DIRECTORY_LABEL_MIN_PX / cy.zoom()).update();
     };
 
+    const updateLabelFontSize = function () {
+      const size = window.ReportGraphModel.labelFontSize(cy.zoom());
+      cy.style().selector("node.readable, node.query").style("font-size", size).update();
+    };
+
     const updateZoomLabels = function () {
       const showZoomed = cy.zoom() >= ZOOM_LABEL_THRESHOLD;
       cy.nodes("node.readable, node.query").toggleClass("label-zoomed", showZoomed);
     };
 
-    cy.on("zoom", function () { updateDirectoryLabelSize(); updateZoomLabels(); });
+    cy.on("zoom", function () { updateDirectoryLabelSize(); updateLabelFontSize(); updateZoomLabels(); });
     cy.on("mouseover", "node.readable, node.query", function (event) { event.target.addClass("label-hover"); });
     cy.on("mouseout", "node.readable, node.query", function (event) { event.target.removeClass("label-hover"); });
 
     applyAlwaysLabelClass(cy.nodes());
     updateDirectoryLabelSize();
+    updateLabelFontSize();
     updateZoomLabels();
 
     cy.on("layoutstop", function () {
       cy.resize();
       cy.fit(cy.elements(":visible"), 40);
       updateDirectoryLabelSize();
+      updateLabelFontSize();
       updateZoomLabels();
     });
 
     cy.layout({ name: "fcose", quality: "default", animate: false, nodeDimensionsIncludeLabels: true }).run();
 
-    const directoryAncestorPosition = function (nodeId) {
-      let element = elementByNodeId[nodeId];
-      let parentId = element ? element.data.parent : null;
-      while (parentId) {
-        const parentNode = cy.getElementById(parentId);
-        if (parentNode.length) return parentNode.position();
-        const parentElement = elementByNodeId[parentId];
-        parentId = parentElement ? parentElement.data.parent : null;
-      }
-      const extent = cy.extent();
-      return { x: (extent.x1 + extent.x2) / 2, y: (extent.y1 + extent.y2) / 2 };
-    };
-
     const addMissingNode = function (id) {
       if (cy.getElementById(id).length) return true;
-      const targetElement = elementByNodeId[id];
-      if (!targetElement || targetElement.data.is_directory) return false;
 
-      const presentBeforeIds = {};
-      cy.nodes().forEach(function (node) { presentBeforeIds[node.id()] = true; });
+      const present = {};
+      cy.nodes().forEach(function (node) { present[node.id()] = node.position(); });
 
-      const neighborIds = {};
-      (edgesByNodeId[id] || []).forEach(function (edge) {
-        const other = edge.data.source === id ? edge.data.target : edge.data.source;
-        if (other !== id && elementByNodeId[other] && !elementByNodeId[other].data.is_directory) neighborIds[other] = true;
-      });
-      const rankedNeighbors = Object.keys(neighborIds).sort(function (a, b) {
-        return ((connectionCount[b] || 0) - (connectionCount[a] || 0)) || compare(a, b);
-      });
-      const neighborsToFocus = rankedNeighbors.slice(0, NEIGHBOR_LIMIT);
-      const focusSet = [id].concat(neighborsToFocus);
+      const result = window.ReportGraphModel.expand(built, present, id);
+      if (!result) return false;
 
-      const presentIds = {};
-      Object.keys(presentBeforeIds).forEach(function (nid) { presentIds[nid] = true; });
-      focusSet.forEach(function (nid) { presentIds[nid] = true; });
+      const elementsToAdd = result.parents
+        .concat(result.nodes)
+        .map(function (nodeId) { return elementByNodeId[nodeId]; })
+        .concat(result.edges.map(function (edgeId) { return edgesByEdgeId[edgeId]; }));
+      const added = cy.add(elementsToAdd);
 
-      const newNodeIds = focusSet.filter(function (nid) { return !presentBeforeIds[nid]; });
-
-      const dirIdsToAdd = [];
-      const seenDir = {};
-      newNodeIds.forEach(function (nodeId) {
-        const chain = [];
-        let element = elementByNodeId[nodeId];
-        let parentId = element ? element.data.parent : null;
-        while (parentId) {
-          if (!cy.getElementById(parentId).length && !seenDir[parentId]) {
-            chain.unshift(parentId);
-            seenDir[parentId] = true;
-          }
-          const parentElement = elementByNodeId[parentId];
-          parentId = parentElement ? parentElement.data.parent : null;
-        }
-        dirIdsToAdd.push.apply(dirIdsToAdd, chain);
-      });
-
-      const edgesToAdd = [];
-      const seenEdge = {};
-      focusSet.forEach(function (nid) {
-        (edgesByNodeId[nid] || []).forEach(function (edge) {
-          const eid = edge.data.id;
-          if (seenEdge[eid] || cy.getElementById(eid).length) return;
-          const otherEnd = edge.data.source === nid ? edge.data.target : edge.data.source;
-          if (!presentIds[otherEnd]) return;
-          seenEdge[eid] = true;
-          edgesToAdd.push(edge);
-        });
-      });
-
-      const anchor = (function () {
-        const existingNeighborId = rankedNeighbors.find(function (nid) { return presentBeforeIds[nid]; });
-        if (existingNeighborId) return cy.getElementById(existingNeighborId).position();
-        return directoryAncestorPosition(id);
-      })();
-
-      const dirElementsToAdd = dirIdsToAdd.map(function (did) { return elementByNodeId[did]; });
-      const nodeElementsToAdd = newNodeIds.map(function (nid) { return elementByNodeId[nid]; });
-      const added = cy.add(dirElementsToAdd.concat(nodeElementsToAdd).concat(edgesToAdd));
-
-      cy.getElementById(id).position({ x: anchor.x, y: anchor.y });
-      const otherNewLeaf = newNodeIds.filter(function (nid) { return nid !== id; });
-      otherNewLeaf.forEach(function (nid, index) {
-        const angle = (2 * Math.PI * index) / Math.max(1, otherNewLeaf.length);
-        cy.getElementById(nid).position({
-          x: anchor.x + NEIGHBOR_RADIUS * Math.cos(angle),
-          y: anchor.y + NEIGHBOR_RADIUS * Math.sin(angle)
-        });
+      Object.keys(result.positions).forEach(function (nodeId) {
+        cy.getElementById(nodeId).position(result.positions[nodeId]);
       });
 
       applyAlwaysLabelClass(added);
@@ -292,12 +215,20 @@
 
     cy.on("tap", function (event) { if (event.target === cy) clearHighlight(); });
 
+    const computeFitZoom = function (eles, padding) {
+      const bb = eles.boundingBox();
+      if (bb.w <= 0 || bb.h <= 0) return cy.zoom();
+      return Math.min((cy.width() - 2 * padding) / bb.w, (cy.height() - 2 * padding) / bb.h);
+    };
+
     const focusOnNode = function (id) {
       if (!cy.getElementById(id).length) addMissingNode(id);
       const node = cy.getElementById(id);
       if (!node.length) return;
       applyFilters();
-      cy.animate({ center: { eles: node }, zoom: Math.max(cy.zoom(), 1.4) }, { duration: 200 });
+      const neighborhood = node.closedNeighborhood().filter(function (ele) { return ele.visible(); });
+      const fitZoom = computeFitZoom(neighborhood, 40);
+      cy.animate({ center: { eles: node }, zoom: window.ReportGraphModel.focusZoom(fitZoom) }, { duration: 200 });
       clearHighlight();
       cy.elements().unselect();
       node.select();
