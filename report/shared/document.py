@@ -100,10 +100,12 @@ def _load_templates(
     template_dir: Path,
     names: Sequence[str],
     read_text: Callable[[Path], str],
+    extra_files: Optional[Mapping[str, Path]] = None,
 ) -> Dict[str, str]:
     base = shared_dir()
+    extra_files = extra_files or {}
     try:
-        templates = {name: read_text(template_dir / name) for name in names}
+        templates = {name: read_text(extra_files.get(name, template_dir / name)) for name in names}
         for name in ("base.html", "common.css"):
             templates[name] = read_text(base / name)
     except Exception as error:
@@ -172,6 +174,7 @@ def generate(
     write_text: Optional[Callable[[Path, str], None]] = None,
     compress: Optional[Callable[[bytes], bytes]] = None,
     stderr: Any = None,
+    extra_files: Optional[Mapping[str, Path]] = None,
 ) -> Path:
     source = Path(json_path).expanduser().resolve()
     output = (
@@ -183,7 +186,7 @@ def generate(
         raise ReportOutputError("input and output paths must be different")
     reader = read_text or _default_read_text
     payload = _read_payload(source, reader, validate)
-    templates = _load_templates(Path(template_dir), names, reader)
+    templates = _load_templates(Path(template_dir), names, reader, extra_files)
     document = _build_document(
         payload,
         templates,

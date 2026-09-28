@@ -12,3 +12,8 @@ File: common.css
 Summary: 모든 마일스톤 보고서가 함께 쓰는 표·패널·막대 차트 스타일
 Related Files: report/m1/templates
 Related Symbols: 
+---
+File: labels.py
+Summary: 경로 목록에서 최장 공통 디렉터리 prefix를 제거하고 basename 충돌만 상위 디렉터리로 구분하는 결정적 짧은 라벨 계산
+Related Files: report/m1/templates/label_model.js, renderers/html/renderer.py, report/bottlenecks/generate.py
+Related Symbols: short_labels

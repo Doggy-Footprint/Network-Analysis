@@ -1,5 +1,68 @@
 const ARCH_DATA = JSON.parse(document.getElementById("architecture-data").textContent);
 
+const FILE_LIKE_CATEGORIES = new Set(['file', 'module', 'package']);
+
+function pathSegments(path) {
+  const parts = path.split('/').filter(part => part !== '');
+  return parts.length ? parts : [path];
+}
+
+function pathSuffix(parts, depth) {
+  return parts.slice(Math.max(0, parts.length - depth)).join('/');
+}
+
+function shortLabels(paths) {
+  const uniquePaths = [];
+  const seen = new Set();
+  paths.forEach(path => { if (!seen.has(path)) { seen.add(path); uniquePaths.push(path); } });
+  if (!uniquePaths.length) return {};
+  const segmentsByPath = {};
+  uniquePaths.forEach(path => { segmentsByPath[path] = pathSegments(path); });
+  const groups = {};
+  uniquePaths.forEach(path => {
+    const parts = segmentsByPath[path];
+    const basename = parts[parts.length - 1];
+    (groups[basename] = groups[basename] || []).push(path);
+  });
+  const labels = {};
+  Object.keys(groups).forEach(basename => {
+    const groupPaths = groups[basename];
+    if (groupPaths.length === 1) {
+      labels[groupPaths[0]] = basename;
+      return;
+    }
+    const maxDepth = groupPaths.reduce((max, path) => Math.max(max, segmentsByPath[path].length), 0);
+    let depth = 2;
+    while (true) {
+      const candidates = {};
+      groupPaths.forEach(path => { candidates[path] = pathSuffix(segmentsByPath[path], depth); });
+      const counts = {};
+      Object.values(candidates).forEach(label => { counts[label] = (counts[label] || 0) + 1; });
+      const allUnique = Object.values(candidates).every(label => counts[label] === 1);
+      if (allUnique || depth >= maxDepth) {
+        Object.assign(labels, candidates);
+        break;
+      }
+      depth += 1;
+    }
+  });
+  return labels;
+}
+
+const CATEGORY_PALETTE = ['#6366F1', '#22C55E', '#F59E0B', '#EC4899', '#06B6D4', '#8B5CF6', '#EF4444', '#10B981', '#3B82F6', '#F97316'];
+function categoryColor(category) {
+  const key = String(category || '');
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
+}
+(ARCH_DATA.nodes || []).forEach(n => {
+  if (!n.color) {
+    const color = categoryColor(n.category);
+    n.color = { border: color, background: color };
+  }
+});
+
 document.addEventListener('click', event => {
   const target = event.target.closest('[data-action]');
   if (!target) return;
@@ -14,6 +77,32 @@ document.addEventListener('input', event => {
   const action = actionName && window[actionName];
   if (typeof action === 'function') action(event.target.value);
 });
+
+const CONFIDENCE_LABELS_KO = {
+  static_certain: '정적 확정',
+  framework_inferred: '프레임워크 추론',
+  static_inferred: '정적 추론',
+  dynamic_required: '동적 필요',
+};
+
+const CONFIDENCE_DESCRIPTIONS = {
+  static_certain: '정적 분석만으로 확실하게 확인된 연결입니다.',
+  framework_inferred: '프레임워크 규칙을 근거로 추론된 연결입니다.',
+  static_inferred: '정적 분석 결과로부터 추론되었지만 완전히 확정되지는 않은 연결입니다.',
+  dynamic_required: '동적 실행 정보가 있어야 확정할 수 있는 연결입니다.',
+};
+
+const METRIC_GLOSSARY = [
+  ['token_estimate', '코드 조각을 읽는 데 드는 텍스트 양의 근사값입니다.'],
+  ['effective_token_cost', 'token_cost에 배율을 곱한 값입니다. vendored 파일이나 /vendor/, /node_modules/ 경로는 0배, generated·migration 관련 파일이나 /migrations/, /alembic/versions/ 경로는 0.1배, 그 외는 1배입니다.'],
+  ['pagerank', '다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다.'],
+  ['hub / authority', 'hub는 authority score가 높은 node로 향할수록, authority는 hub score가 높은 node로부터 참조받을수록 커집니다.'],
+  ['degree', '해당 node에 연결된 edge 수를 전체 node 수 기준 최대 연결 수로 나눈 정규화된 값입니다.'],
+  ['betweenness', '다른 node 사이의 최단 경로에 얼마나 자주 놓이는지를 나타냅니다.'],
+  ['weighted_centrality_cost', 'pagerank × effective_token_cost로 계산되며, 개요 focus 정렬에 쓰입니다.'],
+  ['fan_in / fan_out', 'fan_in은 들어오는 연결 수, fan_out은 나가는 연결 수입니다.'],
+  ['hop_2 / hop_3', '해당 node에서 2단계 혹은 3단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다.'],
+];
 
 let network = null;
 let nodesDataSet = null;
@@ -43,6 +132,7 @@ function titleCase(str) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  renderOverview();
   renderCollectionNavAndViews();
   buildNodeCategoryFilters();
   buildConfidenceFilters();
@@ -360,7 +450,7 @@ function updateSpacing(val) {
 function togglePhysics() {
   physicsEnabled = !physicsEnabled;
   const lbl = document.getElementById('bottom-physics-label');
-  lbl.innerText = `Physics: ${physicsEnabled ? 'On' : 'Off'}`;
+  lbl.innerText = `물리 시뮬레이션: ${physicsEnabled ? '켜짐' : '꺼짐'}`;
   network.setOptions({ physics: { enabled: physicsEnabled } });
 }
 
@@ -884,9 +974,10 @@ function buildConfidenceFilters() {
     activeConfidence[level] = true;
     const count = (ARCH_DATA.edges || []).filter(e => (e.confidence || 'static_certain') === level).length;
     const color = confidenceStyle(level).color;
+    const description = CONFIDENCE_DESCRIPTIONS[level] || '';
     return `
-      <button data-action="toggleConfidenceFilter" data-arg="${level}" id="confidence-btn-${level}" class="filter-pill px-2 py-0.5 rounded-lg text-[10px] font-medium border transition flex items-center space-x-1" style="border-color:${color};color:${color}">
-        <span>${escapeHtml(titleCase(level))}</span>
+      <button data-action="toggleConfidenceFilter" data-arg="${level}" id="confidence-btn-${level}" class="filter-pill px-2 py-0.5 rounded-lg text-[10px] font-medium border transition flex items-center space-x-1" style="border-color:${color};color:${color}" title="${escapeHtml(level)} — ${escapeHtml(description)}">
+        <span>${escapeHtml(CONFIDENCE_LABELS_KO[level] || titleCase(level))}</span>
         <span class="opacity-75 font-mono">(${count})</span>
       </button>
     `;
@@ -903,13 +994,102 @@ function buildConfidenceLegend() {
   container.innerHTML = levels.map(level => {
     const style = confidenceStyle(level);
     const dashArray = Array.isArray(style.dashes) ? style.dashes.join(' ') : '0';
+    const description = CONFIDENCE_DESCRIPTIONS[level] || '';
     return `
-      <div class="flex items-center space-x-1.5">
+      <div class="flex items-center space-x-1.5" title="${escapeHtml(level)} — ${escapeHtml(description)}">
         <svg width="18" height="4" viewBox="0 0 18 4"><line x1="0" y1="2" x2="18" y2="2" stroke="${style.color}" stroke-width="2" stroke-dasharray="${dashArray}"/></svg>
-        <span class="text-slate-300">${escapeHtml(titleCase(level))}</span>
+        <span class="text-slate-300">${escapeHtml(CONFIDENCE_LABELS_KO[level] || titleCase(level))}</span>
       </div>
     `;
   }).join('');
+}
+
+function buildOverview(data) {
+  const nodes = data.nodes || [];
+  const compare = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const filePaths = nodes
+    .map(n => n.span && n.span.file_path)
+    .filter(path => typeof path === 'string' && path !== '');
+  const fileShortLabels = shortLabels(filePaths);
+  const overviewLabel = (n) => {
+    const filePath = n.span && n.span.file_path;
+    const isFileNode = FILE_LIKE_CATEGORIES.has(n.category) || n.label === filePath;
+    const isSymbol = typeof filePath === 'string' && filePath !== '' && !isFileNode;
+    if (isSymbol) {
+      const fileLabel = fileShortLabels[filePath] || filePath;
+      return { label: `${fileLabel}:${n.label}`, full_label: `${filePath}:${n.label}` };
+    }
+    const fileLabel = (filePath && fileShortLabels[filePath]) || n.label;
+    return { label: fileLabel, full_label: filePath || n.label };
+  };
+  const withMetric = (metric) => nodes
+    .map(n => {
+      const analysis = (n.metadata && n.metadata.analysis) || {};
+      const { label, full_label } = overviewLabel(n);
+      return {
+        id: n.id,
+        label,
+        full_label,
+        metric: metric,
+        value: analysis[metric],
+      };
+    })
+    .filter(item => typeof item.value === 'number' && Number.isFinite(item.value));
+  const sortDesc = (items) => items.slice().sort((a, b) => (b.value - a.value) || compare(a, b));
+
+  const focus = sortDesc(withMetric('weighted_centrality_cost')).slice(0, 5);
+  const rankings = {};
+  ['pagerank', 'fan_in', 'hop_2_token_cost'].forEach(metric => {
+    rankings[metric] = sortDesc(withMetric(metric)).slice(0, 10).map(item => ({ id: item.id, label: item.label, value: item.value }));
+  });
+  return { focus, rankings };
+}
+
+function renderOverview() {
+  const focusContainer = document.getElementById('overview-focus');
+  const rankingsContainer = document.getElementById('overview-rankings');
+  const glossaryContainer = document.getElementById('overview-glossary');
+  if (glossaryContainer) {
+    glossaryContainer.innerHTML = METRIC_GLOSSARY.map(([term, desc]) => `
+      <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+        <div class="text-indigo-300 font-mono text-[11px] font-semibold">${escapeHtml(term)}</div>
+        <div class="text-slate-400 text-[11px]">${escapeHtml(desc)}</div>
+      </div>
+    `).join('');
+  }
+  if (!focusContainer && !rankingsContainer) return;
+  const overview = buildOverview(ARCH_DATA);
+  if (focusContainer) {
+    if (!overview.focus.length) {
+      focusContainer.innerHTML = `<p class="text-xs text-slate-400">지표 없음: weighted_centrality_cost 값을 가진 node가 없습니다.</p>`;
+    } else {
+      focusContainer.innerHTML = `
+        <h3 class="text-sm font-bold text-white mb-2">먼저 볼 곳 (weighted_centrality_cost)</h3>
+        <div class="space-y-1.5">
+          ${overview.focus.map(item => `
+            <button data-action="focusNodeInGraph" data-arg="${item.id}" class="w-full text-left bg-slate-900/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between transition">
+              <span class="font-mono text-xs text-slate-200 truncate max-w-[60%]" title="${escapeHtml(item.full_label)}">${escapeHtml(item.label)}</span>
+              <span class="font-mono text-xs text-indigo-300">${item.value.toFixed(6)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+  }
+  if (rankingsContainer) {
+    const metricLabels = { pagerank: 'pagerank', fan_in: 'fan_in', hop_2_token_cost: 'hop_2_token_cost' };
+    rankingsContainer.innerHTML = Object.entries(overview.rankings).map(([metric, items]) => `
+      <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+        <div class="text-slate-400 font-semibold mb-1.5 text-[11px] uppercase tracking-wider">${escapeHtml(metricLabels[metric] || metric)}</div>
+        ${items.length ? items.map(item => `
+          <button data-action="focusNodeInGraph" data-arg="${item.id}" class="w-full text-left flex items-center justify-between py-1 hover:bg-slate-800 rounded-lg px-1.5 transition">
+            <span class="font-mono text-[11px] text-slate-300 truncate max-w-[65%]">${escapeHtml(item.label)}</span>
+            <span class="font-mono text-[11px] text-emerald-300">${typeof item.value === 'number' && !Number.isInteger(item.value) ? item.value.toFixed(4) : item.value}</span>
+          </button>
+        `).join('') : `<p class="text-[11px] text-slate-500">지표 없음</p>`}
+      </div>
+    `).join('');
+  }
 }
 
 function buildLegend() {

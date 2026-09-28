@@ -33,9 +33,13 @@
 
     <!-- Center Navigation Tabs -->
     <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/80 space-x-1 shadow-inner">
-      <button data-action="switchTab" data-arg="graph" id="tab-btn-graph" class="tab-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white shadow-sm transition">
+      <button data-action="switchTab" data-arg="overview" id="tab-btn-overview" class="tab-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white shadow-sm transition">
+        <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+        <span>개요</span>
+      </button>
+      <button data-action="switchTab" data-arg="graph" id="tab-btn-graph" class="tab-btn flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
         <i data-lucide="git-fork" class="w-3.5 h-3.5"></i>
-        <span>Topology Graph</span>
+        <span>전체 그래프</span>
       </button>
       <span id="collection-tabs-nav" class="contents"><!-- Populated by JS, one button per report collection --></span>
     </div>
@@ -75,8 +79,24 @@
   <!-- Main Viewport Area -->
   <main class="flex-1 relative w-full h-[calc(100%-3.5rem)] overflow-hidden">
 
+    <!-- TAB 0: Overview -->
+    <div id="view-overview" class="tab-view w-full h-full overflow-auto p-6 bg-slate-950">
+      <div class="max-w-5xl mx-auto space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-white">개요</h2>
+          <p class="text-xs text-slate-400 mt-1">weighted_centrality_cost가 가장 큰 node와 pagerank·fan_in·hop_2_token_cost 상위 node입니다. 값은 결정적으로 계산됩니다.</p>
+        </div>
+        <div id="overview-focus"></div>
+        <div id="overview-rankings" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        <div>
+          <h3 class="text-sm font-bold text-white mb-2">지표 용어 사전</h3>
+          <div id="overview-glossary" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB 1: Topology Graph View -->
-    <div id="view-graph" class="tab-view w-full h-full absolute inset-0">
+    <div id="view-graph" class="tab-view w-full h-full absolute inset-0 hidden">
 
       <!-- Fullscreen Graph Canvas -->
       <div id="network-container"></div>
@@ -91,9 +111,9 @@
           <div class="flex items-center justify-between border-b border-slate-700/60 pb-2">
             <div class="flex items-center space-x-2">
               <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
-              <span class="text-xs font-bold text-white uppercase tracking-wider">Controls & Filters</span>
+              <span class="text-xs font-bold text-white uppercase tracking-wider">제어 및 필터</span>
             </div>
-            <button data-action="toggleDock" id="dock-minimize-btn" class="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white" title="Minimize Dock">
+            <button data-action="toggleDock" id="dock-minimize-btn" class="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white" title="패널 접기">
               <i data-lucide="chevron-left" class="w-4 h-4"></i>
             </button>
           </div>
@@ -102,7 +122,7 @@
             <!-- Search Box -->
             <div class="relative">
               <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400"></i>
-              <input type="text" id="graph-search" data-input-action="handleSearch" placeholder="Search routes, methods, deps..."
+              <input type="text" id="graph-search" data-input-action="handleSearch" placeholder="경로, 메서드, 의존성 검색..."
                      class="w-full pl-8 pr-7 py-1.5 bg-slate-900/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-inner">
               <button data-action="clearSearch" id="clear-search-btn" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-white">
                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
@@ -111,16 +131,16 @@
 
             <!-- Layout Selector -->
             <div>
-              <label class="text-[11px] font-semibold text-slate-400 block mb-1.5">LAYOUT ARRANGEMENT</label>
+              <label class="text-[11px] font-semibold text-slate-400 block mb-1.5">배치 방식</label>
               <div class="grid grid-cols-3 gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-700/70">
                 <button data-action="setLayout" data-arg="force" id="layout-btn-force" class="layout-opt-btn px-2 py-1 rounded-lg text-[11px] font-medium bg-indigo-600 text-white transition">
-                  Physics
+                  물리 배치
                 </button>
                 <button data-action="setLayout" data-arg="hierarchical_lr" id="layout-btn-hierarchical_lr" class="layout-opt-btn px-2 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
-                  Left → Right
+                  왼쪽→오른쪽
                 </button>
                 <button data-action="setLayout" data-arg="hierarchical_ud" id="layout-btn-hierarchical_ud" class="layout-opt-btn px-2 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition">
-                  Top ↓ Down
+                  위→아래
                 </button>
               </div>
             </div>
@@ -128,8 +148,8 @@
             <!-- Node Type Filters -->
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="text-[11px] font-semibold text-slate-400">NODE CATEGORIES</label>
-                <button data-action="resetFilters" class="text-[10px] text-indigo-400 hover:underline">Reset All</button>
+                <label class="text-[11px] font-semibold text-slate-400">노드 종류</label>
+                <button data-action="resetFilters" class="text-[10px] text-indigo-400 hover:underline">전체 초기화</button>
               </div>
               <div id="node-category-filters" class="flex flex-wrap gap-1.5">
                 <!-- Populated by JS, one pill per node category actually present in the graph -->
@@ -138,7 +158,7 @@
 
             <!-- HTTP Methods Filter (hidden by JS when no node carries metadata.http_method) -->
             <div id="confidence-filter-block" class="hidden">
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Edge Confidence</p>
+              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">연결 확신도</p>
               <div class="flex flex-wrap gap-1" id="confidence-filter-container">
                 <!-- Populated by JS, one pill per confidence level present in the graph -->
               </div>
@@ -158,7 +178,7 @@
             <!-- Spacing Slider -->
             <div>
               <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1">
-                <span class="font-semibold">NODE SPACING</span>
+                <span class="font-semibold">노드 간격</span>
                 <span id="spacing-val" class="font-mono text-indigo-300 font-bold">240px</span>
               </div>
               <input type="range" id="spacing-slider" min="140" max="450" value="240" step="20" data-input-action="updateSpacing"
@@ -169,7 +189,7 @@
         </div>
 
         <!-- Floating Minimized Dock Open Button -->
-        <button data-action="toggleDock" id="dock-open-btn" class="glass-panel p-2.5 rounded-xl shadow-xl text-slate-300 hover:text-white hidden pointer-events-auto w-10 h-10 flex items-center justify-center border border-slate-700 hover:border-indigo-500 transition" title="Open Controls Dock">
+        <button data-action="toggleDock" id="dock-open-btn" class="glass-panel p-2.5 rounded-xl shadow-xl text-slate-300 hover:text-white hidden pointer-events-auto w-10 h-10 flex items-center justify-center border border-slate-700 hover:border-indigo-500 transition" title="패널 펼치기">
           <i data-lucide="sliders" class="w-5 h-5 text-indigo-400"></i>
         </button>
 
@@ -177,35 +197,35 @@
 
       <!-- Floating Bottom-Center Viewport Navigation Bar -->
       <div class="absolute bottom-5 left-1/2 transform -translate-x-1/2 z-20 glass-panel px-3 py-1.5 rounded-2xl shadow-2xl flex items-center space-x-2 border border-slate-700/80">
-        <button data-action="fitView" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition flex items-center space-x-1 text-xs" title="Fit & Center View">
+        <button data-action="fitView" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition flex items-center space-x-1 text-xs" title="화면에 맞춰 중앙 정렬">
           <i data-lucide="maximize-2" class="w-4 h-4"></i>
-          <span class="hidden md:inline font-medium">Fit View</span>
+          <span class="hidden md:inline font-medium">화면 맞춤</span>
         </button>
         <div class="h-4 w-px bg-slate-700"></div>
-        <button data-action="zoomIn" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="Zoom In">
+        <button data-action="zoomIn" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="확대">
           <i data-lucide="zoom-in" class="w-4 h-4"></i>
         </button>
-        <button data-action="zoomOut" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="Zoom Out">
+        <button data-action="zoomOut" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="축소">
           <i data-lucide="zoom-out" class="w-4 h-4"></i>
         </button>
         <div class="h-4 w-px bg-slate-700"></div>
-        <button data-action="togglePhysics" id="bottom-physics-btn" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition flex items-center space-x-1 text-xs" title="Toggle Physics">
+        <button data-action="togglePhysics" id="bottom-physics-btn" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition flex items-center space-x-1 text-xs" title="물리 시뮬레이션 전환">
           <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
-          <span id="bottom-physics-label" class="hidden md:inline font-medium">Physics: On</span>
+          <span id="bottom-physics-label" class="hidden md:inline font-medium">물리 시뮬레이션: 켜짐</span>
         </button>
         <div class="h-4 w-px bg-slate-700"></div>
-        <button data-action="toggleFullscreen" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="Toggle Fullscreen">
+        <button data-action="toggleFullscreen" class="p-2 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl transition" title="전체화면 전환">
           <i data-lucide="expand" class="w-4 h-4"></i>
         </button>
       </div>
 
       <!-- Floating Bottom-Right Legend Card -->
       <div class="absolute bottom-5 right-5 z-20 glass-panel p-3 rounded-2xl shadow-xl border border-slate-700/80 hidden md:flex flex-col space-y-1.5 text-[11px]">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">LEGEND</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">범례</span>
         <div id="legend-content" class="flex flex-wrap items-center gap-x-3 gap-y-1 max-w-xs">
           <!-- Populated by JS, one swatch per (category, color) pair present in the graph -->
         </div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">EDGE CONFIDENCE</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">연결 확신도</span>
         <div id="legend-confidence" class="flex flex-wrap items-center gap-x-3 gap-y-1 max-w-xs">
           <!-- Populated by JS, one line sample per confidence level present in the graph -->
         </div>
@@ -218,7 +238,7 @@
             <span id="inspector-badge" class="px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-700 text-white">TYPE</span>
             <h3 id="inspector-title" class="font-bold text-slate-100 text-sm truncate max-w-[260px]">Node Details</h3>
           </div>
-          <button data-action="closeInspector" class="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white" title="Close (Esc)">
+          <button data-action="closeInspector" class="p-1 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white" title="닫기 (Esc)">
             <i data-lucide="x" class="w-4 h-4"></i>
           </button>
         </div>
