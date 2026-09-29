@@ -3,7 +3,8 @@ import json
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Optional, Tuple
 
-from agent_view.models import AgentViewGraph, RepositorySnapshot
+from agent_view.models import AgentViewGraph
+from repository.models import RepositorySnapshot
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 
 

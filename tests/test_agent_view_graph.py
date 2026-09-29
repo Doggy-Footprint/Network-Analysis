@@ -129,7 +129,7 @@ class V3ContractTests(unittest.TestCase):
         snapshot = build_snapshot(
             self.root,
             ["a.py"],
-            profile=self.profile,
+            policy=self.profile.scan_policy(),
             reader=lambda path: files[path.name],
             ignore_source="injected",
         )
@@ -238,9 +238,9 @@ class V3ContractTests(unittest.TestCase):
 
     def test_tracked_inventory_omits_untracked_files(self):
         with mock.patch(
-            "agent_view.scan._git_tracked_files",
+            "repository.scan._git_tracked_files",
             return_value=["tracked.py"],
-        ) as tracked, mock.patch("agent_view.scan._walk_files") as fallback:
+        ) as tracked, mock.patch("repository.scan._walk_files") as fallback:
             source, paths = list_repository_files(self.root, tracked_files_only=True)
 
         self.assertEqual(source, "git-tracked")

@@ -58,6 +58,25 @@ class TestArchitectureBoundaries(unittest.TestCase):
                 source_path,
             )
 
+    def test_VO1_P1_P2_P3_shared_layers_do_not_import_agent_view(self):
+        root = Path(__file__).resolve().parents[1]
+        for package_name in ("language_analyzers", "framework_analyzers", "repository"):
+            with self.subTest(package=package_name):
+                sources = list((root / package_name).rglob("*.py"))
+                self.assertGreaterEqual(len(sources), 1)
+                for source_path in sources:
+                    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+                    imported = []
+                    for node in ast.walk(tree):
+                        if isinstance(node, ast.Import):
+                            imported.extend(alias.name for alias in node.names)
+                        elif isinstance(node, ast.ImportFrom) and node.module:
+                            imported.append(node.module)
+                    self.assertFalse(
+                        any(name == "agent_view" or name.startswith("agent_view.") for name in imported),
+                        source_path,
+                    )
+
     def test_agent_view_does_not_import_framework_analyzers(self):
         root = Path(__file__).resolve().parents[1]
         for source_path in (root / "agent_view").rglob("*.py"):

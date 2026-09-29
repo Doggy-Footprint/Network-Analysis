@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 if TYPE_CHECKING:
-    from agent_view.models import RepositorySnapshot
+    from repository.models import RepositorySnapshot
 
 from language_analyzers.python import PythonSourceAnalyzer
 

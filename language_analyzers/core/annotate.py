@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Iterable, Mapping, Optional, Sequence
 
 if TYPE_CHECKING:
-    from agent_view.models import RepositorySnapshot
+    from repository.models import RepositorySnapshot
 
 from .cost import cost_for_span
 from .graph_models import Confidence, GraphEdge, GraphNode, Resolution, SourceSpan

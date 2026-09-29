@@ -292,7 +292,7 @@ class ImmutableStaticSnapshotCliTests(unittest.TestCase):
             captured_profiles = []
 
             def build_snapshot_spy(*args, **kwargs):
-                captured_profiles.append(kwargs["profile"])
+                captured_profiles.append(kwargs["policy"])
                 return snapshot
 
             class PythonAnalyzerSpy:
@@ -311,7 +311,7 @@ class ImmutableStaticSnapshotCliTests(unittest.TestCase):
                 cli.main(file_lister=lambda *args, **kwargs: [])
 
             self.assertEqual(len(captured_profiles), 1)
-            self.assertEqual(captured_profiles[0], selected_profile)
+            self.assertEqual(captured_profiles[0], selected_profile.scan_policy())
 
     def test_C_5_dynamic_fastapi_success_does_not_construct_a_static_analyzer(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -249,7 +249,7 @@ def main(
             ignore_source, paths = "", inventory
         paths = _exclude_output_paths(project_path, paths, outputs)
         repository_snapshot = build_snapshot(
-            project_path, paths, profile=snapshot_profile, reader=file_reader,
+            project_path, paths, policy=snapshot_profile.scan_policy(), reader=file_reader,
             ignore_source=ignore_source, excluded_paths=outputs,
         )
     except (OSError, UnicodeError, ValueError, ProfileError) as exc:

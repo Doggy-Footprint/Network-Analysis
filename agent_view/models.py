@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from language_analyzers.core.graph_models import NodeCost
+from repository.models import ExcludedFile, RepositorySnapshot
 
 SCHEMA_VERSION = "3"
 
@@ -99,11 +100,6 @@ class EntryDocument:
     injected: bool
 
 @dataclass(frozen=True)
-class ExcludedFile:
-    file_path: str
-    reason: str
-
-@dataclass(frozen=True)
 class ScanReport:
     ignore_source: str
     scanned_file_count: int
@@ -126,14 +122,3 @@ class AgentViewGraph:
     hint_store: Dict[str, Dict[str, Any]]
     occurrence_store: List[OccurrenceBlock]
     scale_warning: Optional[str] = None
-
-@dataclass(frozen=True)
-class RepositorySnapshot:
-    root: str
-    ignore_source: str
-    contents: Tuple[Tuple[str, str], ...]
-    excluded_files: Tuple[ExcludedFile, ...]
-    digest: str
-
-    def content_map(self) -> Dict[str, str]:
-        return dict(self.contents)

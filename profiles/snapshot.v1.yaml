@@ -1,0 +1,11 @@
+id: snapshot
+version: 1
+max_file_bytes: 1048576
+generated_marker_lines: 8
+include_agent_docs: true
+tracked_files_only: true
+exclusions:
+  vendor_globs: ["vendor/**", "node_modules/**", "third_party/**"]
+  generated_globs: ["build/**", "dist/**", "*.min.js"]
+  generated_markers: ["generated file", "do not edit"]
+  lockfile_names: [package-lock.json, yarn.lock, pnpm-lock.yaml, poetry.lock, Pipfile.lock]

@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Union
 
 import yaml
 
+from repository.models import ScanPolicy, ScanPolicyRef
+
 from .models import ProfileRef
 
 ALLOWED_TRANSFORM_IDS = (
@@ -96,6 +98,19 @@ class Profile:
     @property
     def version(self) -> int:
         return self.ref.version
+
+    def scan_policy(self) -> ScanPolicy:
+        return ScanPolicy(
+            ref=ScanPolicyRef(self.ref.id, self.ref.version, self.ref.content_hash),
+            max_file_bytes=self.max_file_bytes,
+            generated_marker_lines=self.generated_marker_lines,
+            include_agent_docs=self.include_agent_docs,
+            tracked_files_only=self.tracked_files_only,
+            vendor_globs=list(self.vendor_globs),
+            generated_globs=list(self.generated_globs),
+            generated_markers=list(self.generated_markers),
+            lockfile_names=list(self.lockfile_names),
+        )
 
     def output(self) -> Dict[str, Any]:
         result = asdict(self)

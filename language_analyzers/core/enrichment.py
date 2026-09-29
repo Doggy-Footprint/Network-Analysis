@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from agent_view.models import RepositorySnapshot
+    from repository.models import RepositorySnapshot
 
 from .cost import cost_for_text
 from .flags import is_test_path

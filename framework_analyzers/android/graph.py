@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 if TYPE_CHECKING:
-    from agent_view.models import RepositorySnapshot
+    from repository.models import RepositorySnapshot
 
 from analysis import GraphAnalyzer
 from language_analyzers.core.annotate import annotate_nodes, mark_edges
