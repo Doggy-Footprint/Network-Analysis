@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from agent_view import RepositorySnapshot
+from repository import RepositorySnapshot
 from fixtures.registry import fixture_root
 from renderers.html import HTMLRenderer
 
@@ -150,7 +150,7 @@ export function execute() {
         source = "export function capturedOnly() { return 1; }\n"
         self._write("src/captured.ts", source)
         snapshot = RepositorySnapshot(
-            str(self.directory), "agent_view.v3", (("src/captured.ts", source),), (), "0" * 64,
+            str(self.directory), "snapshot.v1", (("src/captured.ts", source),), (), "0" * 64,
         )
         (self.directory / "src" / "captured.ts").unlink()
         module = importlib.import_module("language_analyzers.typescript")
@@ -167,7 +167,7 @@ export function execute() {
     def test_C_3_snapshot_root_must_match_an_absolute_project_path(self):
         source = "export const captured = 1;\n"
         snapshot = RepositorySnapshot(
-            str(self.directory), "agent_view.v3", (("captured.ts", source),), (), "0" * 64,
+            str(self.directory), "snapshot.v1", (("captured.ts", source),), (), "0" * 64,
         )
         module = importlib.import_module("language_analyzers.typescript")
 

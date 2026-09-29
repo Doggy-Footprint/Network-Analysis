@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_view import RepositorySnapshot
+from repository import RepositorySnapshot
 import framework_analyzers.android.graph as android_graph
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.android.models import (
@@ -22,10 +22,10 @@ class AndroidGraphContractTests(unittest.TestCase):
             root = Path(directory).resolve()
             architecture = AndroidProjectArchitecture(project_name="sample", project_path=str(root))
             mismatched = RepositorySnapshot(
-                str(root.parent), "agent_view.v3", (("Main.kt", "class Main\n"),), (), "0" * 64,
+                str(root.parent), "snapshot.v1", (("Main.kt", "class Main\n"),), (), "0" * 64,
             )
             relative = RepositorySnapshot(
-                "relative-root", "agent_view.v3", (("Main.kt", "class Main\n"),), (), "0" * 64,
+                "relative-root", "snapshot.v1", (("Main.kt", "class Main\n"),), (), "0" * 64,
             )
 
             with self.assertRaises(ValueError):

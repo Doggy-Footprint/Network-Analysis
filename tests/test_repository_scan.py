@@ -1,4 +1,3 @@
-import dataclasses
 import hashlib
 import json
 import shutil
@@ -11,13 +10,9 @@ from unittest import mock
 
 import yaml
 
-import agent_view
-import agent_view.models
-import agent_view.scan
 import repository
 import repository.models
 import repository.scan
-from agent_view import build_agent_view, default_profile_path, load_profile
 from repository import (
     ScanPolicy,
     ScanPolicyError,
@@ -61,7 +56,7 @@ def policy(**overrides):
     return ScanPolicy(**values)
 
 
-ARTIFACT = json.dumps({"schema_version": "3", "query_nodes": [], "occurrence_store": []})
+AGENT_VIEW_SHAPED = json.dumps({"schema_version": "3", "query_nodes": [], "occurrence_store": []})
 
 
 def snapshot_of(files, *, root, scan_policy=None, unreadable=(), raising=None, **kwargs):
@@ -108,22 +103,19 @@ def valid(**changes):
 
 
 class PolicyLoadingTests(TempRootCase):
-    def test_VO2_V1_default_policy_equals_agent_view_profile_policy_except_ref(self):
+    def test_VO2_V1_default_policy_matches_snapshot_v1_yaml(self):
         path = default_scan_policy_path()
         self.assertEqual(path, ROOT / "profiles" / "snapshot.v1.yaml")
         loaded = load_scan_policy(path)
-        expected = load_profile(default_profile_path()).scan_policy()
-        self.assertEqual(dataclasses.replace(loaded, ref=expected.ref), expected)
-        raw = yaml.safe_load(default_profile_path().read_text(encoding="utf-8"))
-        self.assertEqual(loaded.max_file_bytes, raw["limits"]["max_file_bytes"])
-        self.assertEqual(loaded.generated_marker_lines, raw["limits"]["generated_marker_lines"])
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        self.assertEqual(loaded.max_file_bytes, raw["max_file_bytes"])
+        self.assertEqual(loaded.generated_marker_lines, raw["generated_marker_lines"])
         self.assertEqual(loaded.include_agent_docs, raw["include_agent_docs"])
         self.assertEqual(loaded.tracked_files_only, raw["tracked_files_only"])
         for key in EXCLUSION_KEYS:
             self.assertEqual(getattr(loaded, key), raw["exclusions"][key], key)
         self.assertEqual(loaded.ref.id, "snapshot")
         self.assertEqual(loaded.ref.version, 1)
-        self.assertEqual(len(loaded.ref.content_hash), 64)
         self.assertEqual(loaded.ref.content_hash, hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_VO2_V2_optional_keys_default(self):
@@ -225,7 +217,7 @@ class SnapshotReasonTests(TempRootCase):
             "vendor/a.py": "x",
             "gen/a.py": "x",
             "unread.txt": "x",
-            "art.data": ARTIFACT,
+            "art.data": AGENT_VIEW_SHAPED,
             "big.txt": "x" * 1001,
             "bin.dat": "a\0b",
             "marked.txt": "Generated File\nx",
@@ -240,14 +232,13 @@ class SnapshotReasonTests(TempRootCase):
                 "vendor/a.py": "vendored",
                 "gen/a.py": "generated_path",
                 "unread.txt": "unreadable",
-                "art.data": "analyzer_artifact",
                 "big.txt": "too_large",
                 "bin.dat": "binary",
                 "marked.txt": "generated_marker",
                 "AGENTS.md": "agent_document_disabled",
             },
         )
-        self.assertEqual(snap.content_map(), {"ok.py": "value = 1\n"})
+        self.assertEqual(snap.content_map(), {"ok.py": "value = 1\n", "art.data": AGENT_VIEW_SHAPED})
         self.assertEqual([item.file_path for item in snap.excluded_files], sorted(reasons_of(snap)))
 
     def test_VO4_R10_agent_documents_included_when_enabled(self):
@@ -261,13 +252,11 @@ class SnapshotReasonTests(TempRootCase):
         )
 
     def test_VO4_adjacent_priority_pairs(self):
-        big_artifact_policy = policy(max_file_bytes=20)
         cases = [
             ("R1>R2", {"my.lock": "x"}, {}, {"excluded_paths": ["my.lock"]}, None, "explicit_output"),
             ("R2>R3", {"vendor/my.lock": "x"}, {}, {}, None, "lockfile"),
             ("R3>R4", {"vendor/a.py": "x"}, {}, {}, policy(generated_globs=["vendor/**"]), "vendored"),
             ("R4>R5", {"gen/a.py": "x"}, {"unreadable": ("gen/a.py",)}, {}, None, "generated_path"),
-            ("R6>R7", {"a.data": ARTIFACT}, {}, {}, big_artifact_policy, "analyzer_artifact"),
             ("R7>R8", {"a.dat": "\0" + "x" * 20}, {}, {}, policy(max_file_bytes=10), "too_large"),
             ("R8>R9", {"a.dat": "generated file\0"}, {}, {}, None, "binary"),
             ("R9>R10", {"AGENTS.md": "generated file"}, {}, {}, None, "generated_marker"),
@@ -279,21 +268,19 @@ class SnapshotReasonTests(TempRootCase):
                 self.assertEqual(snap.content_map(), {})
 
 
-class ArtifactMarkerTests(TempRootCase):
-    def test_VO4_R6_each_declared_artifact_marker(self):
+class FormerArtifactMarkerTests(TempRootCase):
+    """F16: files shaped like the retired agent_view outputs are ordinary files."""
+
+    def test_F16_each_former_artifact_marker_is_included_as_a_regular_file(self):
         markers = {
-            "json-v3-space-store": '{"schema_version": "3", "occurrence_store": []}',
-            "json-v2-compact-nodes": '{"schema_version":"2","query_nodes":[]}',
-            "html-payload": "<html><script id=\"agent-view-v3-payload\"></script></html>",
-            "html-data": '<html><script id="agent-view-data"></script></html>',
+            "json-v3-space-store.json": '{"schema_version": "3", "occurrence_store": []}',
+            "json-v2-compact-nodes.json": '{"schema_version":"2","query_nodes":[]}',
+            "html-payload.html": "<html><script id=\"agent-view-v3-payload\"></script></html>",
+            "html-data.html": '<html><script id="agent-view-data"></script></html>',
         }
         snap = snapshot_of(dict(markers), root=self.root, scan_policy=policy(max_file_bytes=100000))
-        self.assertEqual(reasons_of(snap), {name: "analyzer_artifact" for name in markers})
-        plain = snapshot_of(
-            {"p.json": '{"schema_version": "3"}', "q.json": '{"occurrence_store": []}'},
-            root=self.root,
-        )
-        self.assertEqual(set(plain.content_map()), {"p.json", "q.json"})
+        self.assertEqual(snap.excluded_files, ())
+        self.assertEqual(snap.content_map(), markers)
 
 
 class BoundaryTests(TempRootCase):
@@ -553,71 +540,7 @@ class NestedWalkExclusionTests(TempRootCase):
         self.assertEqual(self.walk(), ("static_fallback", ["sub/.hidden_file"]))
 
 
-class ProfilePolicyTests(TempRootCase):
-    def test_VO8_S1_default_profile_fields_are_carried(self):
-        profile_path = default_profile_path()
-        profile = load_profile(profile_path)
-        raw = yaml.safe_load(profile_path.read_text(encoding="utf-8"))
-        scan_policy = profile.scan_policy()
-        self.assertIsInstance(scan_policy, ScanPolicy)
-        self.assertEqual(
-            scan_policy.ref,
-            ScanPolicyRef(raw["id"], raw["version"], hashlib.sha256(profile_path.read_bytes()).hexdigest()),
-        )
-        self.assertEqual(scan_policy.max_file_bytes, raw["limits"]["max_file_bytes"])
-        self.assertEqual(scan_policy.generated_marker_lines, raw["limits"]["generated_marker_lines"])
-        self.assertEqual(scan_policy.include_agent_docs, raw["include_agent_docs"])
-        self.assertEqual(scan_policy.tracked_files_only, raw["tracked_files_only"])
-        for key in EXCLUSION_KEYS:
-            self.assertEqual(getattr(scan_policy, key), raw["exclusions"][key], key)
-
-    def test_VO8_S2_modified_profile_values_are_carried(self):
-        raw = yaml.safe_load(default_profile_path().read_text(encoding="utf-8"))
-        raw["id"] = "modified.v3"
-        raw["limits"]["max_file_bytes"] = 77
-        raw["limits"]["generated_marker_lines"] = 3
-        raw["include_agent_docs"] = False
-        raw["tracked_files_only"] = False
-        raw["exclusions"] = {
-            "vendor_globs": ["mv/**"],
-            "generated_globs": ["mg/**", "*.gen"],
-            "generated_markers": ["mm"],
-            "lockfile_names": ["m.lock"],
-        }
-        path = self.root / "modified.yaml"
-        path.write_text(yaml.safe_dump(raw), encoding="utf-8")
-        scan_policy = load_profile(path).scan_policy()
-        self.assertEqual(
-            scan_policy,
-            ScanPolicy(
-                ref=ScanPolicyRef("modified.v3", raw["version"], hashlib.sha256(path.read_bytes()).hexdigest()),
-                max_file_bytes=77,
-                generated_marker_lines=3,
-                include_agent_docs=False,
-                tracked_files_only=False,
-                vendor_globs=["mv/**"],
-                generated_globs=["mg/**", "*.gen"],
-                generated_markers=["mm"],
-                lockfile_names=["m.lock"],
-            ),
-        )
-
-
 class ReexportTests(unittest.TestCase):
-    def test_VO9_identity_of_reexported_objects(self):
-        pairs = {
-            "X1": (agent_view.models.RepositorySnapshot, repository.models.RepositorySnapshot),
-            "X2": (agent_view.models.ExcludedFile, repository.models.ExcludedFile),
-            "X3": (agent_view.scan.build_snapshot, repository.scan.build_snapshot),
-            "X4": (agent_view.scan.list_repository_files, repository.scan.list_repository_files),
-            "X5": (agent_view.scan.read_file, repository.scan.read_file),
-            "X6": (agent_view.build_snapshot, repository.scan.build_snapshot),
-            "X6-package": (agent_view.build_snapshot, repository.build_snapshot),
-        }
-        for label, (old, new) in pairs.items():
-            with self.subTest(label):
-                self.assertIs(old, new)
-
     def test_VO9_repository_exports(self):
         expected = {
             "ExcludedFile", "RepositorySnapshot", "ScanPolicy", "ScanPolicyRef", "ScanPolicyError",
@@ -626,59 +549,6 @@ class ReexportTests(unittest.TestCase):
         for name in expected:
             with self.subTest(name):
                 self.assertTrue(hasattr(repository, name))
-
-
-class ScanFilesTests(TempRootCase):
-    def test_VO9_X7_scan_files_return_format(self):
-        files = {
-            "b.py": "b\n",
-            "a.py": "a\n",
-            "AGENTS.md": "guide",
-            "big.txt": "x" * 41,
-            "vendor/v.py": "kept",
-            "dist/x.js": "kept",
-            "yarn.lock": "kept",
-            "bin.dat": "a\0b",
-            "gen.txt": "x\nGenerated File\n",
-            "late.txt": "x\n" * 8 + "generated file\n",
-        }
-        result = agent_view.scan.scan_files(
-            self.root,
-            list(files),
-            max_file_bytes=40,
-            reader=lambda path: files[path.relative_to(self.root).as_posix()],
-            include_agent_docs=False,
-        )
-        self.assertIsInstance(result, tuple)
-        self.assertEqual(len(result), 3)
-        included, excluded, contents = result
-        expected_contents = {
-            "a.py": "a\n",
-            "b.py": "b\n",
-            "vendor/v.py": "kept",
-            "dist/x.js": "kept",
-            "late.txt": files["late.txt"],
-        }
-        self.assertEqual(included, sorted(expected_contents))
-        self.assertEqual(contents, expected_contents)
-        self.assertEqual(
-            [(item.file_path, item.reason) for item in excluded],
-            [
-                ("big.txt", "too_large"),
-                ("bin.dat", "binary"),
-                ("gen.txt", "generated_marker"),
-                ("yarn.lock", "lockfile"),
-            ],
-        )
-        self.assertNotIn("AGENTS.md", included)
-        self.assertNotIn("AGENTS.md", contents)
-        self.assertNotIn("AGENTS.md", [item.file_path for item in excluded])
-
-    def test_VO9_X7_scan_files_includes_agent_docs_by_default(self):
-        included, excluded, contents = agent_view.scan.scan_files(
-            self.root, ["AGENTS.md"], max_file_bytes=10, reader=lambda path: "guide"
-        )
-        self.assertEqual((included, excluded, contents), (["AGENTS.md"], [], {"AGENTS.md": "guide"}))
 
 
 class SnapshotMetadataTests(TempRootCase):
@@ -701,56 +571,6 @@ class SnapshotMetadataTests(TempRootCase):
 
     def test_VO11_F3_missing_path_returns_none(self):
         self.assertIsNone(repository.read_file(self.root / "absent.txt"))
-
-
-class AgentViewScanPolicyTests(TempRootCase):
-    def test_VO10_SC2_build_agent_view_without_snapshot_uses_profile_policy(self):
-        profile = dataclasses.replace(
-            load_profile(default_profile_path()),
-            max_file_bytes=12,
-            include_agent_docs=False,
-            generated_marker_lines=1,
-            generated_markers=["autogen"],
-            vendor_globs=[],
-            generated_globs=[],
-            lockfile_names=[],
-        )
-        files = {
-            "vendor/a.py": "vendor kept\n",
-            "big.txt": "x" * 13,
-            "README.md": "doc",
-            "line1.txt": "autogen\n",
-            "line2.txt": "x\nautogen\n",
-        }
-        architecture = SimpleNamespace(project_path=str(self.root), project_name="f", nodes=[], edges=[])
-        graph = build_agent_view(
-            architecture,
-            profile=profile,
-            file_reader=lambda path: files[path.relative_to(self.root).as_posix()],
-            file_lister=lambda _: ("fixture", list(files)),
-        )
-        self.assertEqual(
-            {item.file_path: item.reason for item in graph.scan.excluded_files},
-            {"big.txt": "too_large", "README.md": "agent_document_disabled", "line1.txt": "generated_marker"},
-        )
-
-    def test_VO10_SC2_profile_lists_not_defaults_decide_lockfile_and_generated_glob(self):
-        default = load_profile(default_profile_path())
-        emptied = dataclasses.replace(default, lockfile_names=[], generated_globs=[])
-        files = {"yarn.lock": "kept\n", "dist/a.js": "kept\n", "a.py": "x\n"}
-        architecture = SimpleNamespace(project_path=str(self.root), project_name="f", nodes=[], edges=[])
-
-        def excluded_for(profile):
-            graph = build_agent_view(
-                architecture,
-                profile=profile,
-                file_reader=lambda path: files[path.relative_to(self.root).as_posix()],
-                file_lister=lambda _: ("fixture", list(files)),
-            )
-            return {item.file_path: item.reason for item in graph.scan.excluded_files}
-
-        self.assertEqual(excluded_for(emptied), {})
-        self.assertEqual(excluded_for(default), {"yarn.lock": "lockfile", "dist/a.js": "generated_path"})
 
 
 if __name__ == "__main__":

@@ -9,23 +9,21 @@ import webbrowser
 from pathlib import Path
 from typing import Callable, Mapping, Optional
 
-from agent_view import (build_agent_view, build_snapshot, diff_agent_view, graph_to_json,
-                        list_repository_files, load_profile, read_file)
-from agent_view.profile import ProfileError, default_profile_path
-from analysis import GraphAnalyzer
+from analysis import (EdgeWeightsError, GraphAnalysisConfig, GraphAnalyzer,
+                      default_edge_weights_path, load_edge_weights)
+from repository import (ScanPolicyError, build_snapshot, default_scan_policy_path,
+                        list_repository_files, load_scan_policy, read_file)
 from language_analyzers.core.serialization import architecture_to_dict
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
-from framework_analyzers.fastapi.dynamic_analyzer import DynamicFastAPIAnalyzer
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
 from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
-from bottlenecks import (BottleneckInputError, HarnessProfileError, analyze_bottlenecks,
-                         bottlenecks_to_json, parse_harness_profile)
+from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json
 from report.bottlenecks import render_report as render_bottlenecks_report
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android"}
@@ -70,11 +68,6 @@ def parse_args():
         help="[fastapi only] Optional entrypoint Python file (e.g. main.py or app/main.py).",
     )
     parser.add_argument(
-        "--app",
-        default=None,
-        help="[fastapi only] Optional dynamic app import string (e.g. 'app.main:app') for runtime introspection if installed.",
-    )
-    parser.add_argument(
         "--title",
         default=None,
         help="Custom title for the dashboard.",
@@ -110,60 +103,29 @@ def parse_args():
         action="store_true",
         help="Print Mermaid diagram markdown to stdout.",
     )
+    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v3 JSON.")
+    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v3 HTML.")
     parser.add_argument(
-        "--agent-view",
-        default=None,
+        "--edge-weights",
+        default=str(default_edge_weights_path()),
         metavar="PATH",
-        help="Write the deterministic agent-view graph (readable nodes, query nodes, framework links) as JSON.",
+        help="Edge weight profile applied to PageRank, HITS and weighted fan metrics.",
     )
-    parser.add_argument(
-        "--agent-view-diff",
-        nargs=2,
-        default=None,
-        metavar=("BEFORE", "AFTER"),
-        help="Print the diff between two agent-view JSON files and exit.",
-    )
-    parser.add_argument(
-        "--agent-view-profile",
-        default=None,
-        metavar="PATH",
-        help="Override the derived-query rule profile used by --agent-view.",
-    )
-    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v2 JSON.")
-    parser.add_argument("--harness-profile", metavar="PATH", help="Harness profile for --bottlenecks.")
-    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v2 HTML.")
     args = parser.parse_args()
-    if (args.language or args.framework != "fastapi") and (args.entrypoint or args.app):
-        parser.error("--entrypoint and --app are only supported with --framework fastapi")
-    if args.agent_view_profile and not (args.agent_view or args.bottlenecks):
-        parser.error("--agent-view-profile requires --agent-view or --bottlenecks")
-    if args.bottlenecks and not args.harness_profile:
-        parser.error("--bottlenecks requires --harness-profile")
-    if args.harness_profile and not args.bottlenecks:
-        parser.error("--harness-profile requires --bottlenecks")
+    if (args.language or args.framework != "fastapi") and args.entrypoint:
+        parser.error("--entrypoint is only supported with --framework fastapi")
     if args.bottlenecks_html and not args.bottlenecks:
         parser.error("--bottlenecks-html requires --bottlenecks")
-    if args.agent_view_diff and args.bottlenecks:
-        parser.error("--agent-view-diff cannot be combined with --bottlenecks")
     if args.bottlenecks:
         output = Path(args.output).resolve()
         output_paths = [output, output.with_name(f"{output.stem}_assets"), Path(args.bottlenecks).resolve()]
         if args.bottlenecks_html:
             output_paths.append(Path(args.bottlenecks_html).resolve())
-        if args.agent_view:
-            output_paths.append(Path(args.agent_view).resolve())
         if args.json:
             output_paths.append(Path(args.output).resolve().with_suffix(".json"))
         if len(output_paths) != len(set(output_paths)):
             parser.error("analysis output paths must be distinct")
     return args
-
-
-def _read_json(path: Path, reader: Callable[[Path], Optional[str]]):
-    text = reader(path)
-    if text is None:
-        raise OSError(f"unable to read {path}")
-    return json.loads(text)
 
 
 def _write_text(path: Path, text: str, writer: Callable[[Path, str], object]):
@@ -183,8 +145,6 @@ def _output_paths(project_path: Path, args) -> tuple[Path, ...]:
         paths.append(Path(args.bottlenecks).resolve())
     if args.bottlenecks_html:
         paths.append(Path(args.bottlenecks_html).resolve())
-    if args.agent_view:
-        paths.append(Path(args.agent_view).resolve())
     return tuple(paths)
 
 
@@ -214,15 +174,6 @@ def main(
 ):
     args = parse_args()
 
-    if args.agent_view_diff:
-        before_path, after_path = args.agent_view_diff
-        with open(before_path, encoding="utf-8") as handle:
-            before = json.load(handle)
-        with open(after_path, encoding="utf-8") as handle:
-            after = json.load(handle)
-        print(json.dumps(diff_agent_view(before, after), indent=2, sort_keys=True))
-        return
-
     project_path = Path(args.project_path).resolve()
 
     if not project_path.exists():
@@ -235,13 +186,14 @@ def main(
     builder = None
     repository_snapshot = None
     bottleneck_report = None
-    harness_profile = None
-    snapshot_profile = None
     outputs = _output_paths(project_path, args)
+    analysis_config = None
     try:
-        snapshot_profile = load_profile(args.agent_view_profile or default_profile_path())
+        edge_weights = load_edge_weights(args.edge_weights)
+        analysis_config = GraphAnalysisConfig(edge_weights=edge_weights)
+        scan_policy = load_scan_policy(default_scan_policy_path())
         inventory = file_lister(
-            project_path, tracked_files_only=snapshot_profile.tracked_files_only
+            project_path, tracked_files_only=scan_policy.tracked_files_only
         )
         if isinstance(inventory, tuple) and len(inventory) == 2:
             ignore_source, paths = inventory
@@ -249,34 +201,26 @@ def main(
             ignore_source, paths = "", inventory
         paths = _exclude_output_paths(project_path, paths, outputs)
         repository_snapshot = build_snapshot(
-            project_path, paths, policy=snapshot_profile.scan_policy(), reader=file_reader,
+            project_path, paths, policy=scan_policy, reader=file_reader,
             ignore_source=ignore_source, excluded_paths=outputs,
         )
-    except (OSError, UnicodeError, ValueError, ProfileError) as exc:
+    except (OSError, UnicodeError, ValueError, EdgeWeightsError, ScanPolicyError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
-    if args.bottlenecks:
-        try:
-            harness_profile = parse_harness_profile(
-                _read_json(Path(args.harness_profile).resolve(), file_reader)
-            )
-        except (OSError, UnicodeError, json.JSONDecodeError, HarnessProfileError) as exc:
-            print(f"[!] Error: {exc}", file=sys.stderr)
-            raise SystemExit(1)
     if args.language == "python":
         arch = PythonGraphAnalyzer(project_path, snapshot=repository_snapshot).analyze()
         if not args.bottlenecks:
-            arch.stats["analysis"] = GraphAnalyzer().analyze(
+            arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
                 arch.nodes, arch.edges, project_path=arch.project_path
             )
     elif args.language == "typescript":
         arch = TypeScriptAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
+        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
             arch.nodes, arch.edges, project_path=arch.project_path
         )
     elif args.language == "kotlin":
         arch = KotlinAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
+        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
             arch.nodes, arch.edges, project_path=arch.project_path
         )
     elif args.framework == "android":
@@ -292,20 +236,14 @@ def main(
             snapshot=repository_snapshot,
         )
         arch = builder.build_graph(arch)
+        # Builders run GraphAnalyzer without edge weights; recompute so --edge-weights applies.
+        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+            arch.nodes, arch.edges, project_path=arch.project_path
+        )
     else:
-        if args.app:
-            print(f"[*] Attempting dynamic introspection with app import: {args.app}...")
-            dyn_analyzer = DynamicFastAPIAnalyzer(str(project_path), args.app)
-            arch = dyn_analyzer.analyze()
-            if not arch:
-                print("[!] Dynamic introspection failed. Falling back to static AST analysis...")
-                analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
-                                           snapshot=repository_snapshot)
-                arch = analyzer.analyze()
-        else:
-            analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
-                                       snapshot=repository_snapshot)
-            arch = analyzer.analyze()
+        analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
+                                   snapshot=repository_snapshot)
+        arch = analyzer.analyze()
 
         builder = ArchitectureGraphBuilder(
             include_models=not args.no_models,
@@ -314,30 +252,15 @@ def main(
             snapshot=repository_snapshot,
         )
         arch = builder.build_graph(arch)
-
-    agent_view_graph = None
-    agent_view_profile = None
-    if args.agent_view or args.bottlenecks:
-        agent_view_profile = snapshot_profile or load_profile(
-            args.agent_view_profile or default_profile_path()
+        # Builders run GraphAnalyzer without edge weights; recompute so --edge-weights applies.
+        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+            arch.nodes, arch.edges, project_path=arch.project_path
         )
-        try:
-            agent_view_graph = build_agent_view(
-                arch,
-                profile=agent_view_profile,
-                snapshot=repository_snapshot,
-                excluded_paths=outputs,
-            )
-        except (OSError, UnicodeError, ValueError) as exc:
-            if not args.bottlenecks:
-                raise
-            print(f"[!] Error: {exc}", file=sys.stderr)
-            raise SystemExit(1)
 
     if args.bottlenecks:
         try:
             bottleneck_report = analyze_bottlenecks(
-                repository_snapshot, arch, agent_view_graph, harness_profile
+                repository_snapshot, arch, edge_weights
             )
         except BottleneckInputError as exc:
             print(f"[!] Error: {exc}", file=sys.stderr)
@@ -359,11 +282,6 @@ def main(
             file_writer,
         )
         print(f"[✓] Exported architecture JSON: {json_output_path}")
-
-    if args.agent_view:
-        agent_view_path = Path(args.agent_view).resolve()
-        _write_text(agent_view_path, graph_to_json(agent_view_graph), file_writer)
-        print(f"[✓] Exported agent-view graph: {agent_view_path}")
 
     if args.bottlenecks:
         bottleneck_path = Path(args.bottlenecks).resolve()

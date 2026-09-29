@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from unittest import mock
 from pathlib import Path
 
-from agent_view import RepositorySnapshot
+from repository import RepositorySnapshot
 from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core import enrichment as enrichment_module
 from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, NodeKind, RelationKind, SourceSpan
@@ -179,7 +179,7 @@ class TestRepositoryEnrichment(unittest.TestCase):
                 edges=[],
             )
             snapshot = RepositorySnapshot(
-                str(root), "agent_view.v3",
+                str(root), "snapshot.v1",
                 ((".env", "FEATURE_KEY=on\n"), ("main.py", "def route():\n    return 'FEATURE_KEY'\n")),
                 (), "0" * 64,
             )

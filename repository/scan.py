@@ -77,24 +77,6 @@ def _walk_files(root: Path) -> List[str]:
     return output
 
 
-def _is_agent_view_artifact(text: str) -> bool:
-    prefix = text[:65536]
-    versions = (
-        '"schema_version": "2"',
-        '"schema_version":"2"',
-        '"schema_version": "3"',
-        '"schema_version":"3"',
-    )
-    json_artifact = any(marker in text for marker in versions) and (
-        '"occurrence_store"' in text or '"query_nodes"' in text
-    )
-    return (
-        json_artifact
-        or "agent-view-v3-payload" in prefix
-        or 'id="agent-view-data"' in prefix
-    )
-
-
 def _matches_output(path: str, explicit_outputs: Set[str]) -> bool:
     return any(
         path == output or path.startswith(output.rstrip("/") + "/")
@@ -118,8 +100,6 @@ def _exclusion_reason(
         return "generated_path"
     if text is None:
         return "unreadable"
-    if _is_agent_view_artifact(text):
-        return "analyzer_artifact"
     if len(text.encode("utf-8", errors="replace")) > policy.max_file_bytes:
         return "too_large"
     if "\0" in text[:_BINARY_SNIFF_CHARS]:
