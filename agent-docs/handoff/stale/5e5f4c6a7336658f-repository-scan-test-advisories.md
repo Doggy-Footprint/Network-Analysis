@@ -36,3 +36,10 @@ agent-docs/spec-logs/3dfc6bf47f6a3947-repository-snapshot-layer.md, version 4, s
 - verifier 2: pass, finding 0. 위 Next Step 항목은 advisory.
 - 뮤테이션 M1~M6 실행, 최종 6/6 검출 (M3는 보강 전 생존).
 - correction batches 3, verifier invocations 2/2.
+
+## Resolution
+- 미실행 뮤테이션 5종(too_large `>=`, NUL 창 8191/8193, `./` 정규화 제거, explicit_output 문자열 접두사) 모두 검출 — 테스트 보강 불필요.
+- 항목 1(git-tracked 분기 subprocess 테스트): 실제 git 저장소 테스트가 이미 커버하므로 추가하지 않음(사용자 결정).
+- 항목 2(`version: true`): 정책 파일은 저장소가 직접 관리하므로 현실적 위험 없음, 다루지 않음(사용자 결정).
+- 항목 3(중첩 디렉터리 제외): spec 59af3fa02a94cdfd로 명세·테스트 추가, complete.
+- 항목 4(analyzer_artifact 경계): 범위 밖, agent-docs/issues/71544b671815742f-analyzer-artifact-marker-untested-edges.md에 무효화 조건과 함께 기록.

@@ -479,6 +479,80 @@ class InventoryTests(TempRootCase):
         self.assertEqual(paths, ["a.py", "sub/b.py"])
 
 
+class NestedWalkExclusionTests(TempRootCase):
+    def make_files(self, names):
+        for name in names:
+            path = self.root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("x", encoding="utf-8")
+
+    def walk(self):
+        return list_repository_files(self.root, tracked_files_only=False)
+
+    def assert_nested_excluded(self, directory):
+        self.make_files(
+            [
+                "pkg/keep.py",
+                f"pkg/sub/{directory}/x.py",
+                f"pkg/sub/{directory}/inner/y.py",
+                f"deep/1/2/{directory}/z.py",
+            ]
+        )
+        self.assertEqual(self.walk(), ("static_fallback", ["pkg/keep.py"]))
+
+    def test_VO1_D1_dot_prefixed_directory_nested(self):
+        self.assert_nested_excluded(".cache")
+
+    def test_VO1_D2_git_directory_nested(self):
+        self.assert_nested_excluded(".git")
+
+    def test_VO1_D3_pycache_directory_nested(self):
+        self.assert_nested_excluded("__pycache__")
+
+    def test_VO1_D4_build_directory_nested(self):
+        self.assert_nested_excluded("build")
+
+    def test_VO1_D5_dist_directory_nested(self):
+        self.assert_nested_excluded("dist")
+
+    def test_VO1_D6_env_directory_nested(self):
+        self.assert_nested_excluded("env")
+
+    def test_VO1_D7_node_modules_directory_nested(self):
+        self.assert_nested_excluded("node_modules")
+
+    def test_VO1_D8_venv_directory_nested(self):
+        self.assert_nested_excluded("venv")
+
+    def test_VO1_same_name_at_depth_1_and_depth_3_or_more(self):
+        self.make_files(
+            [
+                "keep.py",
+                "build/top.py",
+                "a/b/c/keep.py",
+                "a/b/c/build/deep.py",
+                "a/b/c/build/inner/deeper.py",
+            ]
+        )
+        self.assertEqual(self.walk(), ("static_fallback", ["a/b/c/keep.py", "keep.py"]))
+
+    def test_VO2_K1_file_named_like_excluded_directory_is_kept(self):
+        self.make_files(["sub/build"])
+        self.assertEqual(self.walk(), ("static_fallback", ["sub/build"]))
+
+    def test_VO2_K2_suffix_lookalike_directory_is_kept(self):
+        self.make_files(["sub/builds/b.py"])
+        self.assertEqual(self.walk(), ("static_fallback", ["sub/builds/b.py"]))
+
+    def test_VO2_K3_prefix_lookalike_directory_is_kept(self):
+        self.make_files(["sub/my_env/c.py"])
+        self.assertEqual(self.walk(), ("static_fallback", ["sub/my_env/c.py"]))
+
+    def test_VO2_K4_dot_prefixed_file_is_kept(self):
+        self.make_files(["sub/.hidden_file"])
+        self.assertEqual(self.walk(), ("static_fallback", ["sub/.hidden_file"]))
+
+
 class ProfilePolicyTests(TempRootCase):
     def test_VO8_S1_default_profile_fields_are_carried(self):
         profile_path = default_profile_path()
