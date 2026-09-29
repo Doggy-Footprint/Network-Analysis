@@ -1,8 +1,102 @@
 # Code Analyzer for AI Agents
 
-Deterministic dependency and static exploration network analysis for repositories.
+> 내 코드는 AI 에이전트가 탐색하기 좋은 구조일까?
 
-- [Open handoffs](agent-docs/handoff/index.md)
-- [Agent instructions](AGENTS.md) and [CLAUDE.md](CLAUDE.md)
-- [Architecture decisions](adr/index.md)
-- [Open issues](issues/index.md)
+AI 코딩 에이전트가 저장소를 탐색하며 목표 코드를 찾을 때 **토큰 비용이 커지는 구조적 병목**을 찾아내는 정적 분석 도구입니다.
+
+- 설계 배경과 실험 기록: [Is my code AI-friendly?](https://blog-steel-ten-13.vercel.app/posts/is-my-code-ai-friendly)
+
+## 왜 만들었나
+
+프로젝트가 커질수록 에이전트가 코드를 이해하는 데 드는 토큰도 늘어나고, 그 비용이 어디서 생기는지 알기 어려워집니다.
+이 프로젝트는 에이전트의 행동을 예측하지 않습니다. 대신 **어떤 에이전트든 관찰하게 되는 저장소 구조**를 결정적이고 재현 가능한 방식으로 측정합니다.
+
+- **측정하는 것**: 의존성 구조, 파일별 토큰 규모, 저장소 안의 단서로 도달할 수 있는 탐색 경로
+- **측정하지 않는 것**: 코드 품질, 작업 난이도, 특정 에이전트의 실제 행동
+
+## 접근 방식
+
+### 1. 의존성 네트워크 분석
+소스 코드로 파일·모듈 단위 의존성 그래프를 만들고, 각 노드에 토큰 수를 붙여 네트워크 지표를 계산합니다.
+
+| 병목 신호 | 의미 |
+| --- | --- |
+| 순환 의존성 | 한 파일을 이해하려면 순환 전체를 읽어야 함 |
+| 높은 PageRank | 여러 탐색 경로가 모이는 허브 파일 |
+| 대형 파일 (20k 토큰 초과) | 한 번 읽는 비용 자체가 큼 |
+| 많은 역방향 의존성 | 변경 영향이 넓어 확인할 범위가 넓음 |
+| 2 hop 토큰 합 50k 초과 | 주변 맥락까지 읽는 비용이 큼 |
+
+지원 대상: Python, Kotlin, TypeScript 언어 분석과 FastAPI, Android 프레임워크 분석
+
+### 2. 탐색 네트워크 분석
+에이전트가 검색으로 다음 대상을 찾는 과정을 모델링합니다. 식별자, 경로, 리터럴, 설정 키, 문서에서 검색 단서를 뽑고, 규칙에 따라 파생 검색어를 만들어 **가능한 탐색 경로** 그래프를 구성합니다.
+규칙과 임계값은 코드가 아니라 버전과 해시가 기록되는 YAML 프로필에 둡니다. 그래서 같은 입력과 같은 프로필이면 항상 같은 결과가 나옵니다.
+
+### 3. 병목 판정
+고정된 탐색 전략 프로필(harness profile)로 검색 probe를 재생합니다. 그 결과를 의존성 지표와 합쳐, 근거가 붙은 병목 후보를 출력합니다.
+
+### 4. 재현성
+- 모든 분석기는 분석 시점의 불변 스냅샷을 입력으로 받습니다.
+- 테스트는 fixture 저장소에 대해 손으로 도출한 기대값과 비교합니다.
+
+## 사례: Now in Android
+
+분석 결과를 보고 에이전트에게 모듈화 리팩토링을 맡겼습니다.
+
+| 항목 | 리팩토링 전 | 리팩토링 후 |
+| --- | --- | --- |
+| 순환 의존성 | 있음 | 제거 |
+| 20k 토큰 초과 파일 | 있음 | 없음 |
+| 2 hop 토큰 합 50k 초과 파일 | 8개 | 7개 |
+
+리팩토링 뒤에는 `ExplorerViewModel.kt`처럼 남은 문제 파일이 더 분명하게 드러났습니다.
+
+## 사용법
+
+```bash
+pip install -r requirements.txt
+
+# 의존성 대시보드 (HTML)
+python -m code_analyzer path/to/project -f android -o architecture.html
+
+# 탐색 네트워크 (JSON)
+python -m code_analyzer path/to/project -f android --agent-view agent_view.json
+
+# 병목 보고서 (JSON + HTML)
+python -m code_analyzer path/to/project -f android \
+  --harness-profile profiles/harness.fixed-baseline.v1.json \
+  --bottlenecks bottlenecks.json --bottlenecks-html bottlenecks.html
+```
+
+전체 옵션은 `python -m code_analyzer --help`로 확인할 수 있습니다.
+
+## 한계와 설계 방향
+
+- LLM의 행동은 deterministic하게 모방하기에는 분명한 한계가 있습니다.
+- agent runtime마다 쓰는 탐색 도구가 다릅니다.
+- 모델과 agent runtime은 (너무) 빠르게 바뀝니다.
+- 에이전트는 문서를 그대로 믿기보다 직접 검증합니다.
+
+그래서 특정 에이전트에 맞춘 정밀한 예측은 목표로 하지 않습니다. 대신 **여러 런타임과 탐색 전략에 걸쳐 공통으로 나타나고, 근거로 검증할 수 있는 병목**을 찾습니다. 의존성 구조 문제는 어떤 에이전트를 쓰든 리팩토링할 가치가 있는 저장소 자체의 속성이기 때문입니다.
+
+## Next
+
+- **런타임 중립 지표 중심 출력**: 순환, 대형 파일, PageRank, hop 토큰 합을 핵심 결과로 올리고, 특정 탐색 전략을 가정한 지표는 보조 신호로 둡니다.
+- **여러 탐색 전략 비교**: grep 중심, 파일 트리 중심 등 여러 harness 프로필로 분석하고, 모든 전략에서 공통으로 비싼 대상을 표시합니다.
+- **리팩토링 전후 비교**: 두 스냅샷의 병목 지표 차이를 결정적으로 출력합니다. 현재는 탐색 네트워크의 diff만 지원합니다.
+- **임계값의 프로필화**: 20k 토큰, 2 hop 50k 같은 판정 기준을 버전이 기록되는 프로필로 옮깁니다.
+- **변경 이력 기반 핫스팟 분석**: 고정된 커밋 범위의 git 히스토리에서 파일별 수정 빈도와 함께 수정된 파일 쌍(co-change)을 뽑아, 기존 병목 지표와 교차합니다.
+  - **자주 수정되는 병목 = 우선 리팩토링 대상**: 수정이 잦으면서 토큰 비용도 큰 파일(대형 파일, 2 hop 토큰 합 초과, 높은 PageRank)입니다. 에이전트가 같은 비싼 경로를 반복해서 읽게 되는 곳입니다.
+  - **숨은 결합**: 자주 함께 수정되지만 의존성 그래프에는 간선이 없는 파일 쌍입니다. 정적 분석으로는 보이지 않아, 에이전트가 수정 대상을 빠뜨리기 쉬운 곳입니다.
+  - 커밋 범위를 입력으로 고정하면 같은 저장소에서 항상 같은 결과가 나오므로, 결정적 분석이라는 원칙을 지킬 수 있습니다.
+- **탐색 후보 규칙 확장**: 기존 수단으로 드러나지 않는 탐색 경로를 찾는 규칙을 재현 가능한 사례 단위로 추가합니다.
+- **분석기 정합성**: TypeScript import 해석이 파일시스템 대신 스냅샷만 참조하도록 수정합니다.
+- **보고서 가독성**: 그래프 라벨이 겹치고 몰리는 문제를 개선합니다.
+
+## 개발 문서
+
+- [에이전트 작업 지침](AGENTS.md)
+- [아키텍처 결정 기록](adr/index.md)
+- [진행 중인 작업 인계](agent-docs/handoff/index.md)
+- [알려진 이슈](issues/index.md)
