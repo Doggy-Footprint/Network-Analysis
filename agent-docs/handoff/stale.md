@@ -39,3 +39,10 @@ File: ef204f17ee13850a-category-rankings-v6-evidence.md
 Summary: Close the V6 HTML metric-panel evidence gap for rankings_by_category.
 Related Files: report/bottlenecks/generate.py, tests/test_category_rankings_v3.py, bottlenecks/core.py
 Related Symbols: render_report, _ranking_panels, CATEGORY_KEYS
+
+---
+
+File: 5ee31efd06e4aecf-typescript-snapshot-imports.md
+Summary: Resolve TypeScript relative imports from captured snapshot paths when a snapshot is supplied.
+Related Files: code_analyzer/cli.py, language_analyzers/typescript/analyzer.py, tests/test_typescript_analyzer.py
+Related Symbols: TypeScriptAnalyzer._resolve_import

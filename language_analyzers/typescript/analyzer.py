@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -800,12 +801,13 @@ class TypeScriptAnalyzer:
     def _resolve_import(self, file_path: Path, specifier: str) -> Optional[str]:
         if not specifier.startswith("."):
             return None
-        base = (file_path.parent / specifier).resolve()
+        joined = file_path.parent / specifier
+        base = Path(os.path.normpath(joined)) if self.snapshot is not None else joined.resolve()
         candidates = [base] if base.suffix in SOURCE_EXTENSIONS else []
         candidates += [base.with_suffix(extension) for extension in SOURCE_EXTENSIONS]
         candidates += [base / f"index{extension}" for extension in SOURCE_EXTENSIONS]
         for candidate in candidates:
-            if not candidate.is_file():
+            if self.snapshot is None and not candidate.is_file():
                 continue
             try:
                 key = candidate.relative_to(self.project_path).as_posix()
