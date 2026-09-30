@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
-from analysis import GraphAnalyzer
+from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.annotate import annotate_nodes, mark_edges
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
@@ -90,12 +90,14 @@ class AndroidArchitectureGraphBuilder:
 
     def __init__(self, include_models: bool = True, include_dependencies: bool = True,
                  include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None,
-                 snapshot: Optional[RepositorySnapshot] = None):
+                 snapshot: Optional[RepositorySnapshot] = None,
+                 analysis_config: Optional[GraphAnalysisConfig] = None):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.parse_cache = parse_cache
         self.snapshot = snapshot
+        self.analysis_config = analysis_config
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "CALLS": "unique",
@@ -420,7 +422,7 @@ class AndroidArchitectureGraphBuilder:
             "total_room_entities": len(arch.room_entities),
             "total_retrofit_apis": len(arch.retrofit_apis),
         }
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
+        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
             arch.nodes,
             arch.edges,
             project_path=arch.project_path,

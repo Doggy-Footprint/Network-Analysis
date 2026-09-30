@@ -234,12 +234,9 @@ def main(
             include_language_graph=not args.no_language_graph,
             parse_cache=parse_cache,
             snapshot=repository_snapshot,
+            analysis_config=analysis_config,
         )
         arch = builder.build_graph(arch)
-        # Builders run GraphAnalyzer without edge weights; recompute so --edge-weights applies.
-        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-            arch.nodes, arch.edges, project_path=arch.project_path
-        )
     else:
         analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
                                    snapshot=repository_snapshot)
@@ -250,12 +247,9 @@ def main(
             include_dependencies=not args.no_deps,
             include_language_graph=not args.no_language_graph,
             snapshot=repository_snapshot,
+            analysis_config=analysis_config,
         )
         arch = builder.build_graph(arch)
-        # Builders run GraphAnalyzer without edge weights; recompute so --edge-weights applies.
-        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-            arch.nodes, arch.edges, project_path=arch.project_path
-        )
 
     if args.bottlenecks:
         try:

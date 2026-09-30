@@ -25,3 +25,10 @@ File: 36233e8bd84b6f88-exploration-candidate-rules.md
 Summary: Add a selected repository-grounded rule for generating a possible next exploration candidate.
 Related Files: agent_view/exact_query.py, agent_view/derived_query.py, agent_view/__init__.py, profiles/agent_view.v3.yaml
 Related Symbols: extract_clues, derive_terms, _build_search_specs
+
+---
+
+File: 3a1c71a7afc82a15-framework-analysis-duplication.md
+Summary: Remove the duplicated unweighted GraphAnalyzer run in fastapi/android builders that the CLI recomputes with edge weights.
+Related Files: framework_analyzers/fastapi/graph.py, framework_analyzers/android/graph.py, code_analyzer/cli.py, bottlenecks/core.py
+Related Symbols: ArchitectureGraphBuilder.build_graph, AndroidArchitectureGraphBuilder.build_graph, GraphAnalyzer, analyze_bottlenecks
