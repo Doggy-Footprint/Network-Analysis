@@ -3,11 +3,6 @@ Summary: Validate bottlenecks.v3 and edge weights on a real repository.
 Related Files: fixtures/registry.py, code_analyzer/cli.py, bottlenecks/core.py
 Related Symbols: analyze_bottlenecks, load_edge_weights
 ---
-File: 93580783d647f789-event-signal-edges.md
-Summary: Add event/signal publish-subscribe edges.
-Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
-Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
----
 File: 981eafd0004ac48b-orm-migration-edges.md
 Summary: Add ORM model to migration edges.
 Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py

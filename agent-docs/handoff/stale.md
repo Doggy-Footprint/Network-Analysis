@@ -51,3 +51,8 @@ File: db77d50f78afc60d-route-client-call-edges.md
 Summary: Add route string to client call edges.
 Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
 Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
+---
+File: 93580783d647f789-event-signal-edges.md
+Summary: Add event/signal publish-subscribe edges.
+Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
+Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
