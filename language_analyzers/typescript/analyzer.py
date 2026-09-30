@@ -24,6 +24,7 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 
 from . import ast as ts
+from .http_calls import HttpCallSite, collect_http_calls
 
 SOURCE_EXTENSIONS = tuple(ts.GRAMMAR_BY_SUFFIX)
 IGNORED_DIRECTORIES = {".git", "node_modules", "dist", "build", "coverage", ".next"}
@@ -50,6 +51,7 @@ class TypeScriptProjectArchitecture:
     edges: List[GraphEdge] = field(default_factory=list)
     stats: Dict[str, object] = field(default_factory=dict)
     report_collections: List[ReportCollection] = field(default_factory=list)
+    http_calls: List[HttpCallSite] = field(default_factory=list)
 
 
 @dataclass
@@ -147,11 +149,19 @@ class TypeScriptAnalyzer:
                 "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in edges)),
             },
             report_collections=[self._symbol_collection(nodes)],
+            http_calls=collect_http_calls(self._modules, self._resolve_import, self._function_body_ids()),
         )
         self._enrich(architecture)
         architecture.stats["nodes_by_kind"] = dict(Counter(node.kind for node in architecture.nodes))
         architecture.stats["edges_by_relation"] = dict(Counter(edge.relation for edge in architecture.edges))
         return architecture
+
+    def _function_body_ids(self) -> Dict[str, Dict[Tuple[int, int], str]]:
+        result: Dict[str, Dict[Tuple[int, int], str]] = {}
+        for symbol in self._symbols.values():
+            if symbol.kind in (NodeKind.FUNCTION, NodeKind.METHOD) and symbol.body is not None:
+                result.setdefault(symbol.file_key, {})[(symbol.body.start_byte, symbol.body.end_byte)] = symbol.id
+        return result
 
     # ---- discovery & parsing ----
 

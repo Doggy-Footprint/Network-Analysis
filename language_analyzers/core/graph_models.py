@@ -56,6 +56,7 @@ class RelationKind:
     IMPLEMENTED_BY = "IMPLEMENTED_BY"
     TESTS = "TESTS"
     CONFIGURES = "CONFIGURES"
+    CALLS_ROUTE = "CALLS_ROUTE"
 
 
 @dataclass(frozen=True)

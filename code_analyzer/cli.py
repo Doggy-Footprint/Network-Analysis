@@ -6,19 +6,24 @@ import argparse
 import json
 import sys
 import webbrowser
+from collections import Counter
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Mapping, Optional
+from typing import Any, Callable, List, Mapping, Optional
 
 from analysis import (EdgeWeightsError, GraphAnalysisConfig, GraphAnalyzer,
                       default_edge_weights_path, load_edge_weights)
 from repository import (ScanPolicyError, build_snapshot, default_scan_policy_path,
                         list_repository_files, load_scan_policy, read_file)
+from language_analyzers.core.graph_models import GraphEdge, GraphNode
+from language_analyzers.core.report_schema import ReportCollection
 from language_analyzers.core.serialization import architecture_to_dict
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
+from framework_analyzers.route_matching import match_routes
 from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
@@ -28,6 +33,25 @@ from report.bottlenecks import render_report as render_bottlenecks_report
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
+
+
+@dataclass
+class MergedArchitecture:
+    project_name: str
+    project_path: str
+    nodes: List[GraphNode] = field(default_factory=list)
+    edges: List[GraphEdge] = field(default_factory=list)
+    stats: dict = field(default_factory=dict)
+    report_collections: List[ReportCollection] = field(default_factory=list)
+
+
+class _AnalyzerSelection(argparse.Action):
+    """-f and -l share one destination so argv order across both flags is preserved."""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        selections = list(getattr(namespace, self.dest, None) or [])
+        selections.append((self.const, values))
+        setattr(namespace, self.dest, selections)
 
 
 def parse_args():
@@ -46,14 +70,22 @@ def parse_args():
         "-f",
         "--framework",
         choices=sorted(FRAMEWORK_LABELS),
-        default="fastapi",
-        help="Which framework adapter to analyze the project with.",
+        action=_AnalyzerSelection,
+        dest="analyzers",
+        const="framework",
+        default=None,
+        help="Framework adapter to analyze the project with (default: fastapi). "
+             "Repeatable and mixable with -l; analyzers run in argv order.",
     )
     parser.add_argument(
         "-l",
         "--language",
         choices=sorted(LANGUAGE_LABELS),
-        help="Analyze a language directly without framework semantics.",
+        action=_AnalyzerSelection,
+        dest="analyzers",
+        const="language",
+        default=None,
+        help="Analyze a language directly without framework semantics. Repeatable and mixable with -f.",
     )
     parser.add_argument(
         "-o",
@@ -112,8 +144,16 @@ def parse_args():
         help="Edge weight profile applied to PageRank, HITS and weighted fan metrics.",
     )
     args = parser.parse_args()
-    if (args.language or args.framework != "fastapi") and args.entrypoint:
+    if not args.analyzers:
+        args.analyzers = [("framework", "fastapi")]
+    args.framework = next((value for kind, value in args.analyzers if kind == "framework"), "fastapi")
+    args.language = next((value for kind, value in args.analyzers if kind == "language"), None)
+    if len(args.analyzers) != len(set(args.analyzers)):
+        parser.error("the same -f/-l value may not be repeated")
+    if args.entrypoint and ("framework", "fastapi") not in args.analyzers:
         parser.error("--entrypoint is only supported with --framework fastapi")
+    if args.mermaid and len(args.analyzers) > 1:
+        parser.error("--mermaid is not supported with multiple analyzers")
     if args.bottlenecks_html and not args.bottlenecks:
         parser.error("--bottlenecks-html requires --bottlenecks")
     if args.bottlenecks:
@@ -163,6 +203,96 @@ def _exclude_output_paths(
     ]
 
 
+def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single):
+    """Returns (architecture, graph builder or None, TypeScript HTTP call sites). Language
+    analyzers get their graph analysis here only in single runs; merged runs analyze once."""
+    builder = None
+    http_calls = []
+    if kind == "language" and value == "python":
+        arch = PythonGraphAnalyzer(project_path, snapshot=repository_snapshot).analyze()
+        if single and not args.bottlenecks:
+            arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+                arch.nodes, arch.edges, project_path=arch.project_path
+            )
+    elif kind == "language" and value == "typescript":
+        arch = TypeScriptAnalyzer(project_path, snapshot=repository_snapshot).analyze()
+        http_calls = arch.http_calls
+        if single:
+            arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+                arch.nodes, arch.edges, project_path=arch.project_path
+            )
+    elif kind == "language":
+        arch = KotlinAnalyzer(project_path, snapshot=repository_snapshot).analyze()
+        if single:
+            arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+                arch.nodes, arch.edges, project_path=arch.project_path
+            )
+    elif value == "android":
+        parse_cache = KotlinParseCache()
+        analyzer = AndroidAnalyzer(str(project_path), entrypoint=None, parse_cache=parse_cache,
+                                   snapshot=repository_snapshot)
+        arch = analyzer.analyze()
+        builder = AndroidArchitectureGraphBuilder(
+            include_models=not args.no_models,
+            include_dependencies=not args.no_deps,
+            include_language_graph=not args.no_language_graph,
+            parse_cache=parse_cache,
+            snapshot=repository_snapshot,
+            analysis_config=analysis_config,
+        )
+        arch = builder.build_graph(arch)
+    else:
+        analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
+                                   snapshot=repository_snapshot)
+        arch = analyzer.analyze()
+
+        builder = ArchitectureGraphBuilder(
+            include_models=not args.no_models,
+            include_dependencies=not args.no_deps,
+            include_language_graph=not args.no_language_graph,
+            snapshot=repository_snapshot,
+            analysis_config=analysis_config,
+        )
+        arch = builder.build_graph(arch)
+    return arch, builder, http_calls
+
+
+def _run_merged(args, project_path, repository_snapshot, analysis_config) -> MergedArchitecture:
+    results = [
+        _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single=False)
+        for kind, value in args.analyzers
+    ]
+    merged = MergedArchitecture(
+        project_name=results[0][0].project_name,
+        project_path=results[0][0].project_path,
+    )
+    http_calls = []
+    seen = set()
+    for arch, _builder, calls in results:
+        for node in arch.nodes:
+            if node.id in seen:
+                print(f"[!] Error: duplicate node id across analyzers: {node.id}", file=sys.stderr)
+                raise SystemExit(1)
+            seen.add(node.id)
+        merged.nodes.extend(arch.nodes)
+        merged.edges.extend(arch.edges)
+        merged.report_collections.extend(arch.report_collections)
+        http_calls.extend(calls)
+        for key, item in arch.stats.items():
+            if key != "analysis":
+                merged.stats.setdefault(key, item)
+    route_edges, route_stats = match_routes(merged.nodes, http_calls)
+    merged.edges.extend(route_edges)
+    merged.stats["nodes_by_kind"] = dict(Counter(node.kind or node.category for node in merged.nodes))
+    merged.stats["edges_by_relation"] = dict(Counter(edge.relation for edge in merged.edges))
+    merged.stats["edges_by_confidence"] = dict(Counter(str(edge.confidence) for edge in merged.edges))
+    merged.stats["route_matching"] = route_stats
+    merged.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+        merged.nodes, merged.edges, project_path=merged.project_path
+    )
+    return merged
+
+
 def main(
     *,
     file_lister: Callable = list_repository_files,
@@ -180,7 +310,11 @@ def main(
         print(f"[!] Error: Project path does not exist: {project_path}")
         sys.exit(1)
 
-    analyzer_label = LANGUAGE_LABELS.get(args.language) or FRAMEWORK_LABELS[args.framework]
+    labels = [
+        (FRAMEWORK_LABELS if kind == "framework" else LANGUAGE_LABELS)[value]
+        for kind, value in args.analyzers
+    ]
+    analyzer_label = " + ".join(labels)
     print(f"[*] Analyzing {analyzer_label} project at: {project_path}")
 
     builder = None
@@ -207,49 +341,14 @@ def main(
     except (OSError, UnicodeError, ValueError, EdgeWeightsError, ScanPolicyError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
-    if args.language == "python":
-        arch = PythonGraphAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        if not args.bottlenecks:
-            arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-                arch.nodes, arch.edges, project_path=arch.project_path
-            )
-    elif args.language == "typescript":
-        arch = TypeScriptAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-            arch.nodes, arch.edges, project_path=arch.project_path
+    if len(args.analyzers) == 1:
+        kind, value = args.analyzers[0]
+        arch, builder, _http_calls = _run_analyzer(
+            kind, value, args, project_path, repository_snapshot, analysis_config,
+            single=True,
         )
-    elif args.language == "kotlin":
-        arch = KotlinAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-            arch.nodes, arch.edges, project_path=arch.project_path
-        )
-    elif args.framework == "android":
-        parse_cache = KotlinParseCache()
-        analyzer = AndroidAnalyzer(str(project_path), entrypoint=args.entrypoint, parse_cache=parse_cache,
-                                   snapshot=repository_snapshot)
-        arch = analyzer.analyze()
-        builder = AndroidArchitectureGraphBuilder(
-            include_models=not args.no_models,
-            include_dependencies=not args.no_deps,
-            include_language_graph=not args.no_language_graph,
-            parse_cache=parse_cache,
-            snapshot=repository_snapshot,
-            analysis_config=analysis_config,
-        )
-        arch = builder.build_graph(arch)
     else:
-        analyzer = FastAPIAnalyzer(str(project_path), entrypoint=args.entrypoint,
-                                   snapshot=repository_snapshot)
-        arch = analyzer.analyze()
-
-        builder = ArchitectureGraphBuilder(
-            include_models=not args.no_models,
-            include_dependencies=not args.no_deps,
-            include_language_graph=not args.no_language_graph,
-            snapshot=repository_snapshot,
-            analysis_config=analysis_config,
-        )
-        arch = builder.build_graph(arch)
+        arch = _run_merged(args, project_path, repository_snapshot, analysis_config)
 
     if args.bottlenecks:
         try:

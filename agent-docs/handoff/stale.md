@@ -46,3 +46,8 @@ File: 5ee31efd06e4aecf-typescript-snapshot-imports.md
 Summary: Resolve TypeScript relative imports from captured snapshot paths when a snapshot is supplied.
 Related Files: code_analyzer/cli.py, language_analyzers/typescript/analyzer.py, tests/test_typescript_analyzer.py
 Related Symbols: TypeScriptAnalyzer._resolve_import
+---
+File: db77d50f78afc60d-route-client-call-edges.md
+Summary: Add route string to client call edges.
+Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
+Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
