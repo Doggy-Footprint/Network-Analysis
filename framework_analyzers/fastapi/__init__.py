@@ -3,7 +3,6 @@ FastAPI Architecture & Dependency Visualizer.
 """
 
 from .analyzer import FastAPIAnalyzer
-from .dynamic_analyzer import DynamicFastAPIAnalyzer
 from .graph import ArchitectureGraphBuilder
 from .models import (
     AppInfo,
@@ -19,7 +18,6 @@ from .models import (
 __version__ = "0.1.0"
 __all__ = [
     "FastAPIAnalyzer",
-    "DynamicFastAPIAnalyzer",
     "ArchitectureGraphBuilder",
     "ProjectArchitecture",
     "AppInfo",

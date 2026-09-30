@@ -1,0 +1,5 @@
+id: edge_weights
+version: 1
+confidence: {static_certain: 1.0, static_inferred: 0.3, framework_inferred: 0.3, dynamic_required: 0.3}
+resolution: {exact: 1.0, unique_name: 1.0, ambiguous: 0.3, unresolved: 0.3}
+large_node_line_threshold: 2000

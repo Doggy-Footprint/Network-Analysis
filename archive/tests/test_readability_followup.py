@@ -49,6 +49,25 @@ VO-4 test uses an empty `present` map (no present id could leak), so no
 change was needed there; `test_positions_keys_equal_the_nodes_set` already
 covered the general keys==nodes property for that empty-present case.
 
+VO-4 supersession note (agent-docs/specs/44ff0ed597e46cf3-report-readability-finish.md
+v2 QR-2): 3 positional-formula assertions are replaced (delegated to the
+independent FR-3 oracle `fr3_place`, imported from
+tests.test_readability_finish), per QR-2 v2's widened carve-out ("기존
+followup VO-4의 위치 단언(원형 공식, target=anchor 정확 일치 2건)은 FR-3으로
+교체만 허용") --
+`test_multiple_new_neighbors_are_placed_at_the_exact_FR4_circle_formula_coordinates`
+(the fixed-120-radius circle formula) and the two present-anchor
+exact-target==anchor-position assertions in
+`test_target_anchors_to_the_highest_ranked_present_neighbor` and
+`test_target_anchors_to_the_nearest_present_ancestor_directory_when_no_present_neighbor`.
+The latter two additionally assert the actual result does NOT match the
+oracle's result for the *other* candidate anchor (p2 instead of p1; origin
+instead of the present ancestor), preserving each test's original intent of
+distinguishing which anchor was actually used, not just that gap-search
+behavior is generically correct. Every other VO-4 assertion in this file
+(nodes/edges/parents, positions keys == nodes, present-id non-leakage, the
+empty-present-map anchor tests) is unchanged.
+
 VO-5 (FR-6, FR-7, C-6, C-7): boundary value (3-value) over C-6/C-7's declared
 input values for `labelFontSize`/`focusZoom`, computed independently from
 FR-6/FR-7's formulas.
@@ -88,6 +107,15 @@ from tests.test_readability_bottlenecks import (
 )
 from report.bottlenecks.generate import render_report
 from tests.test_report_m1 import _payload as _m1_payload
+
+# FR-3/QR-2 (agent-docs/specs/44ff0ed597e46cf3-report-readability-finish.md
+# v1): the superseded circle-formula test below delegates to this
+# independent oracle instead of re-deriving FR-3's candidate-search formula
+# inline (see tests.test_readability_finish's module docstring for the
+# oracle's own derivation from FR-3/FR-4's text). Imported inside the test
+# method itself (not at module scope) since tests.test_readability_finish
+# imports fixture builders back from this module -- a module-scope import
+# here would be circular.
 
 ROOT = Path(__file__).resolve().parents[1]
 GRAPH_MODEL = ROOT / "report/m1/templates/graph_model.js"
@@ -387,8 +415,24 @@ class TestVO4ExpandPositions(unittest.TestCase):
 
     def test_target_anchors_to_the_highest_ranked_present_neighbor(self):
         # p1 is bumped to weight 2 (target edge + 1 extra edge to a filler
-        # node) so it strictly outranks p2 (weight 1); the target's position
-        # must equal p1's given present position exactly.
+        # node) so it strictly outranks p2 (weight 1); the anchor point used
+        # for FR-3's candidate search must be p1's given present position,
+        # not p2's.
+        #
+        # SUPERSEDED per agent-docs/specs/44ff0ed597e46cf3-report-readability-finish.md
+        # v2 QR-2: the prior exact target==anchor-position assertion
+        # contradicts FR-3 (the target's own k=0/r=0 candidate coincides with
+        # the anchor point, so when the anchor is itself a present node's
+        # position, MIN_GAP rejects it and the target is displaced). Per v2's
+        # widened carve-out, this now delegates to the independent FR-3
+        # oracle (`fr3_place`, imported from tests.test_readability_finish),
+        # using p1's position as the search center and both p1/p2 as
+        # blockers -- and additionally asserts the result does NOT match
+        # what the oracle would produce if p2 (the lower-ranked neighbor)
+        # were used as the anchor instead, preserving this test's original
+        # intent of distinguishing "anchors to p1" from "anchors to p2".
+        from tests.test_readability_finish import fr3_place
+
         target = _readable_node("t4b", "t4b.py")
         p1 = _readable_node("p1-4b", "p1-4b.py")
         p2 = _readable_node("p2-4b", "p2-4b.py")
@@ -403,8 +447,22 @@ class TestVO4ExpandPositions(unittest.TestCase):
             f"(() => {{ const built = model.build({json.dumps(value)}); "
             f"return model.expand(built, {{'p1-4b': {{x: 10, y: 20}}, 'p2-4b': {{x: 30, y: 40}}}}, 't4b'); }})()"
         )
-        self.assertAlmostEqual(result["positions"]["t4b"]["x"], 10, delta=1e-6)
-        self.assertAlmostEqual(result["positions"]["t4b"]["y"], 20, delta=1e-6)
+        p1_pos, p2_pos = (10.0, 20.0), (30.0, 40.0)
+        blockers = [p1_pos, p2_pos]
+        expected_from_p1_anchor = fr3_place(p1_pos, blockers, min_k=0)
+        expected_from_p2_anchor = fr3_place(p2_pos, blockers, min_k=0)
+        self.assertNotEqual(
+            expected_from_p1_anchor, expected_from_p2_anchor,
+            "fixture must be able to distinguish which neighbor was used as the anchor",
+        )
+        actual = result["positions"]["t4b"]
+        self.assertAlmostEqual(actual["x"], expected_from_p1_anchor[0], delta=1e-9)
+        self.assertAlmostEqual(actual["y"], expected_from_p1_anchor[1], delta=1e-9)
+        self.assertFalse(
+            abs(actual["x"] - expected_from_p2_anchor[0]) < 1e-6 and abs(actual["y"] - expected_from_p2_anchor[1]) < 1e-6,
+            "target position matches the p2-anchor oracle result -- the lower-ranked neighbor p2 "
+            "must not have been used as the anchor",
+        )
         # FG-2: positions must be keyed exactly by `nodes` -- neither present
         # anchor neighbor (p1-4b, the anchor source) nor the other present
         # neighbor (p2-4b) may leak a stale/duplicate position entry.
@@ -413,6 +471,17 @@ class TestVO4ExpandPositions(unittest.TestCase):
         self.assertNotIn("p2-4b", result["positions"])
 
     def test_target_anchors_to_the_nearest_present_ancestor_directory_when_no_present_neighbor(self):
+        # SUPERSEDED per agent-docs/specs/44ff0ed597e46cf3-report-readability-finish.md
+        # v2 QR-2: same FR-3 conflict as the present-neighbor-anchor test
+        # above (the present ancestor's own position is the anchor, so the
+        # target's k=0 candidate lands exactly on it and MIN_GAP displaces
+        # the target). Delegates to the independent FR-3 oracle, and
+        # additionally asserts the result does NOT match the oracle result
+        # for the origin ((0,0)) as anchor, preserving this test's original
+        # intent of distinguishing "anchors to the present ancestor" from
+        # "falls back to the origin".
+        from tests.test_readability_finish import fr3_place
+
         target = _readable_node("t4c", "dirX4c/t4c.py")
         value = _payload_for([target], [])
         result = _run_graph_model(
@@ -423,8 +492,21 @@ class TestVO4ExpandPositions(unittest.TestCase):
             f"return {{r: r, presentAncestorId: chain[0]}}; }})()"
         )
         positions = result["r"]["positions"]
-        self.assertAlmostEqual(positions["t4c"]["x"], 50, delta=1e-6)
-        self.assertAlmostEqual(positions["t4c"]["y"], 60, delta=1e-6)
+        ancestor_pos = (50.0, 60.0)
+        expected_from_ancestor_anchor = fr3_place(ancestor_pos, [ancestor_pos], min_k=0)
+        expected_from_origin_anchor = fr3_place((0.0, 0.0), [ancestor_pos], min_k=0)
+        self.assertNotEqual(
+            expected_from_ancestor_anchor, expected_from_origin_anchor,
+            "fixture must be able to distinguish the present-ancestor anchor from an origin fallback",
+        )
+        actual = positions["t4c"]
+        self.assertAlmostEqual(actual["x"], expected_from_ancestor_anchor[0], delta=1e-9)
+        self.assertAlmostEqual(actual["y"], expected_from_ancestor_anchor[1], delta=1e-9)
+        self.assertFalse(
+            abs(actual["x"] - expected_from_origin_anchor[0]) < 1e-6 and abs(actual["y"] - expected_from_origin_anchor[1]) < 1e-6,
+            "target position matches the origin-anchor oracle result -- the present ancestor "
+            "must have been used as the anchor instead of falling back to the origin",
+        )
         # FG-2: positions must be keyed exactly by `nodes` -- the present
         # ancestor directory used as the anchor source must not leak a
         # position entry of its own.
@@ -458,12 +540,24 @@ class TestVO4ExpandPositions(unittest.TestCase):
         self.assertAlmostEqual(result["y"], 0, delta=1e-6)
 
     def test_multiple_new_neighbors_are_placed_at_the_exact_FR4_circle_formula_coordinates(self):
-        # FR-4 (v2): for k new (non-present) nodes ranked i=0..k-1, position_i
-        # = (ax + 120*cos(2*pi*i/k), ay + 120*sin(2*pi*i/k)), (ax,ay) = target
-        # position. Target anchors to {0,0} here (no present neighbor/
-        # ancestor, per the origin-anchor coverage item), so (ax,ay)=(0,0).
-        # All 4 neighbors tie at weight 1 (single edge to target each), so
-        # FR-2's id-ascending tie-break ranks them n4f0,n4f1,n4f2,n4f3 (i=0..3).
+        # SUPERSEDED per agent-docs/specs/44ff0ed597e46cf3-report-readability-finish.md
+        # v1 FR-3/QR-2: the prior fixed-120-radius/angle=2*pi*i/k circle
+        # formula this test's name refers to no longer holds -- FR-3 replaces
+        # it with a minimum-gap (MIN_GAP=60) candidate search
+        # (r_k=60k, slots_k=max(1,floor(2*pi*r_k/60)), starting at k=2 for new
+        # neighbors). The positional-formula assertion is delegated to the
+        # independent Python oracle in tests.test_readability_finish
+        # (`fr3_expected_positions`) per QR-2's explicit carve-out ("기존
+        # VO-4 위치 공식 단언은 FR-3으로 교체만 허용"); all other assertions in
+        # this test class (nodes/edges/parents, positions keys == nodes,
+        # present-id non-leakage) are unchanged.
+        #
+        # Target still anchors to {0,0} here (no present neighbor/ancestor,
+        # per the origin-anchor coverage item; with present={} the oracle's
+        # own k=0 candidate at the anchor is trivially accepted, so this part
+        # of the old expectation is unaffected by FR-3). All 4 neighbors tie
+        # at weight 1 (single edge to target each), so FR-2's id-ascending
+        # tie-break ranks them n4f0,n4f1,n4f2,n4f3 (i=0..3), same as before.
         target = _readable_node("t4f", "t4f.py")
         neighbors = [_readable_node(f"n4f{i}", f"n4f{i}.py") for i in range(4)]
         connections = [_connection(f"e-t-n{i}", "t4f", f"n4f{i}") for i in range(4)]
@@ -473,15 +567,18 @@ class TestVO4ExpandPositions(unittest.TestCase):
             f"const r = model.expand(built, {{}}, 't4f'); "
             f"return {{target: r.positions['t4f'], neighbors: [0,1,2,3].map(i => r.positions['n4f' + i])}}; }})()"
         )
+        from tests.test_readability_finish import fr3_expected_positions
+
         tx, ty = result["target"]["x"], result["target"]["y"]
-        self.assertAlmostEqual(tx, 0, delta=1e-6)
-        self.assertAlmostEqual(ty, 0, delta=1e-6)
-        k = 4
-        for i, pos in enumerate(result["neighbors"]):
-            expected_x = tx + 120 * math.cos(2 * math.pi * i / k)
-            expected_y = ty + 120 * math.sin(2 * math.pi * i / k)
-            self.assertAlmostEqual(pos["x"], expected_x, delta=1e-6, msg=f"neighbor rank {i}")
-            self.assertAlmostEqual(pos["y"], expected_y, delta=1e-6, msg=f"neighbor rank {i}")
+        ranked_ids = [f"n4f{i}" for i in range(4)]
+        expected = fr3_expected_positions((0.0, 0.0), ranked_ids, {})
+        self.assertAlmostEqual(tx, expected["__target__"][0], delta=1e-9)
+        self.assertAlmostEqual(ty, expected["__target__"][1], delta=1e-9)
+        for i, neighbor_id in enumerate(ranked_ids):
+            pos = result["neighbors"][i]
+            ex, ey = expected[neighbor_id]
+            self.assertAlmostEqual(pos["x"], ex, delta=1e-9, msg=f"neighbor rank {i}")
+            self.assertAlmostEqual(pos["y"], ey, delta=1e-9, msg=f"neighbor rank {i}")
 
 
 class TestVO5LabelFontSizeAndFocusZoom(unittest.TestCase):

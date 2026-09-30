@@ -6,8 +6,7 @@ import subprocess
 from pathlib import Path
 from typing import Callable, List, Optional, Sequence, Set, Tuple
 
-from .models import ExcludedFile, ProfileRef, RepositorySnapshot
-from .profile import Profile
+from .models import ExcludedFile, RepositorySnapshot, ScanPolicy
 
 STATIC_EXCLUDED_DIRECTORIES = {
     ".git",
@@ -78,24 +77,6 @@ def _walk_files(root: Path) -> List[str]:
     return output
 
 
-def _is_agent_view_artifact(text: str) -> bool:
-    prefix = text[:65536]
-    versions = (
-        '"schema_version": "2"',
-        '"schema_version":"2"',
-        '"schema_version": "3"',
-        '"schema_version":"3"',
-    )
-    json_artifact = any(marker in text for marker in versions) and (
-        '"occurrence_store"' in text or '"query_nodes"' in text
-    )
-    return (
-        json_artifact
-        or "agent-view-v3-payload" in prefix
-        or 'id="agent-view-data"' in prefix
-    )
-
-
 def _matches_output(path: str, explicit_outputs: Set[str]) -> bool:
     return any(
         path == output or path.startswith(output.rstrip("/") + "/")
@@ -106,29 +87,27 @@ def _matches_output(path: str, explicit_outputs: Set[str]) -> bool:
 def _exclusion_reason(
     path: str,
     text: Optional[str],
-    profile: Profile,
+    policy: ScanPolicy,
     explicit_outputs: Set[str],
 ) -> Optional[str]:
     if _matches_output(path, explicit_outputs):
         return "explicit_output"
-    if Path(path).name in profile.lockfile_names:
+    if Path(path).name in policy.lockfile_names:
         return "lockfile"
-    if any(fnmatch.fnmatch(path, pattern) for pattern in profile.vendor_globs):
+    if any(fnmatch.fnmatch(path, pattern) for pattern in policy.vendor_globs):
         return "vendored"
-    if any(fnmatch.fnmatch(path, pattern) for pattern in profile.generated_globs):
+    if any(fnmatch.fnmatch(path, pattern) for pattern in policy.generated_globs):
         return "generated_path"
     if text is None:
         return "unreadable"
-    if _is_agent_view_artifact(text):
-        return "analyzer_artifact"
-    if len(text.encode("utf-8", errors="replace")) > profile.max_file_bytes:
+    if len(text.encode("utf-8", errors="replace")) > policy.max_file_bytes:
         return "too_large"
     if "\0" in text[:_BINARY_SNIFF_CHARS]:
         return "binary"
-    head = "\n".join(text.splitlines()[:profile.generated_marker_lines])
-    if any(re.search(pattern, head, re.IGNORECASE) for pattern in profile.generated_markers):
+    head = "\n".join(text.splitlines()[:policy.generated_marker_lines])
+    if any(re.search(pattern, head, re.IGNORECASE) for pattern in policy.generated_markers):
         return "generated_marker"
-    if not profile.include_agent_docs and Path(path).name in AGENT_DOC_NAMES:
+    if not policy.include_agent_docs and Path(path).name in AGENT_DOC_NAMES:
         return "agent_document_disabled"
     return None
 
@@ -149,7 +128,7 @@ def build_snapshot(
     root: Path,
     relative_paths: Sequence[str],
     *,
-    profile: Profile,
+    policy: ScanPolicy,
     reader: Callable[[Path], Optional[str]] = read_file,
     ignore_source: str = "provided",
     excluded_paths: Sequence[str] = (),
@@ -165,7 +144,7 @@ def build_snapshot(
             text = reader(root / relative)
         except (OSError, UnicodeError):
             text = None
-        reason = _exclusion_reason(relative, text, profile, explicit_outputs)
+        reason = _exclusion_reason(relative, text, policy, explicit_outputs)
         if reason is None:
             contents.append((relative, text or ""))
         else:
@@ -183,30 +162,3 @@ def build_snapshot(
         excluded_files=tuple(excluded),
         digest=digest,
     )
-
-
-def scan_files(
-    root: Path,
-    relative_paths: Sequence[str],
-    *,
-    max_file_bytes: int,
-    reader: Callable[[Path], Optional[str]],
-    include_agent_docs: bool = True,
-):
-    profile = Profile(
-        ref=ProfileRef("compat", 3, ""),
-        min_term_length=3,
-        max_file_bytes=max_file_bytes,
-        transforms=[],
-        include_agent_docs=include_agent_docs,
-        vendor_globs=[],
-        generated_globs=[],
-    )
-    snapshot = build_snapshot(root, relative_paths, profile=profile, reader=reader)
-    contents = snapshot.content_map()
-    excluded = [
-        item
-        for item in snapshot.excluded_files
-        if item.reason != "agent_document_disabled"
-    ]
-    return list(contents), excluded, contents

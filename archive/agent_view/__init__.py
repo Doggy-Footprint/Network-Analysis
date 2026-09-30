@@ -515,7 +515,7 @@ def build_agent_view(
         snapshot = build_snapshot(
             root,
             paths,
-            profile=active,
+            policy=active.scan_policy(),
             reader=file_reader or read_file,
             ignore_source=ignore_source,
             excluded_paths=excluded_paths,

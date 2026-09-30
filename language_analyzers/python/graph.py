@@ -19,7 +19,7 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 
 from .source import PythonSourceAnalyzer, PythonSourceFile
-from agent_view.models import RepositorySnapshot
+from repository.models import RepositorySnapshot
 from .symbols import (
     ModuleEntry,
     SymbolEntry,

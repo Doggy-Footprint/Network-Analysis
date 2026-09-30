@@ -95,14 +95,14 @@
       const model = nodes.find(function (candidate) { return candidate.id === node.id; });
       const parent = ensureDirectory(node.file_path);
       const size = Math.max(10, Math.min(70, Math.sqrt(Math.max(1, node.read_cost.token_estimate)) * 2.5));
-      const nodeData = { id: node.id, label: model.label, full_label: model.full_label, size: size, default_visible: model.default_visible, always_label: model.always_label };
+      const nodeData = { id: node.id, label: model.label, full_label: model.full_label, size: size, weight: model.weight, default_visible: model.default_visible, always_label: model.always_label };
       if (parent) nodeData.parent = parent;
       elements.push({ group: "nodes", data: nodeData, classes: "readable" + (model.default_visible ? "" : " capped") });
     });
     data.query_nodes.forEach(function (query) {
       const model = nodes.find(function (candidate) { return candidate.id === query.id; });
       const size = Math.max(10, Math.min(50, Math.sqrt(Math.max(1, query.total_count + 1)) * 4));
-      elements.push({ group: "nodes", data: { id: query.id, label: model.label, full_label: model.full_label, size: size, default_visible: model.default_visible, always_label: model.always_label }, classes: "query" + (model.default_visible ? "" : " capped") });
+      elements.push({ group: "nodes", data: { id: query.id, label: model.label, full_label: model.full_label, size: size, weight: model.weight, default_visible: model.default_visible, always_label: model.always_label }, classes: "query" + (model.default_visible ? "" : " capped") });
     });
 
     data.connections.forEach(function (connection) {
@@ -199,7 +199,37 @@
   };
 
   const NEIGHBOR_LIMIT = 20;
-  const NEIGHBOR_RADIUS = 120;
+  const MIN_GAP = 60;
+  const MAX_RING = 12;
+
+  const ringCandidates = function (startRing, endRing) {
+    const candidates = [];
+    for (let k = startRing; k <= endRing; k += 1) {
+      const radius = MIN_GAP * k;
+      const slots = Math.max(1, Math.floor((2 * Math.PI * radius) / MIN_GAP));
+      for (let j = 0; j < slots; j += 1) {
+        const angle = (2 * Math.PI * j) / slots;
+        candidates.push({ dx: radius * Math.cos(angle), dy: radius * Math.sin(angle) });
+      }
+    }
+    return candidates;
+  };
+  const TARGET_CANDIDATES = ringCandidates(0, MAX_RING);
+  const NEIGHBOR_CANDIDATES = ringCandidates(2, MAX_RING);
+
+  const distance = function (ax, ay, bx, by) { return Math.sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by)); };
+  const isClearOf = function (x, y, points) {
+    return points.every(function (point) { return distance(x, y, point.x, point.y) >= MIN_GAP; });
+  };
+  const placeNear = function (centerX, centerY, candidates, blockingPoints) {
+    for (let i = 0; i < candidates.length; i += 1) {
+      const x = centerX + candidates[i].dx;
+      const y = centerY + candidates[i].dy;
+      if (isClearOf(x, y, blockingPoints)) return { x: x, y: y };
+    }
+    const fallback = candidates[candidates.length - 1];
+    return { x: centerX + fallback.dx, y: centerY + fallback.dy };
+  };
 
   const ancestorChain = function (elementByNodeId, nodeId) {
     const chain = [];
@@ -293,15 +323,20 @@
       return { x: 0, y: 0 };
     })();
 
-    if (newNodeIds.indexOf(targetId) !== -1) positions[targetId] = { x: anchor.x, y: anchor.y };
+    const placedPoints = Object.keys(present).map(function (id) { return present[id]; });
+
+    if (newNodeIds.indexOf(targetId) !== -1) {
+      const targetPosition = placeNear(anchor.x, anchor.y, TARGET_CANDIDATES, placedPoints);
+      positions[targetId] = targetPosition;
+      placedPoints.push(targetPosition);
+    }
 
     const newOtherNeighbors = newNodeIds.filter(function (id) { return id !== targetId; });
-    newOtherNeighbors.forEach(function (nodeId, index) {
-      const angle = (2 * Math.PI * index) / newOtherNeighbors.length;
-      positions[nodeId] = {
-        x: anchor.x + NEIGHBOR_RADIUS * Math.cos(angle),
-        y: anchor.y + NEIGHBOR_RADIUS * Math.sin(angle)
-      };
+    const neighborCenter = positions[targetId] || anchor;
+    newOtherNeighbors.forEach(function (nodeId) {
+      const neighborPosition = placeNear(neighborCenter.x, neighborCenter.y, NEIGHBOR_CANDIDATES, placedPoints);
+      positions[nodeId] = neighborPosition;
+      placedPoints.push(neighborPosition);
     });
 
     return { nodes: newNodeIds, parents: parents, edges: edges, positions: positions };
@@ -310,5 +345,18 @@
   const labelFontSize = function (zoom) { return Math.max(9, 11 / zoom); };
   const focusZoom = function (fitZoom) { return Math.max(fitZoom, 1); };
 
-  return { build: build, focus: focus, expand: expand, labelFontSize: labelFontSize, focusZoom: focusZoom };
+  const boxesOverlap = function (a, b) {
+    return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+  };
+  const visibleLabels = function (boxes) {
+    const ordered = boxes.slice().sort(function (a, b) { return (b.weight - a.weight) || compare(a.id, b.id); });
+    const accepted = [];
+    ordered.forEach(function (box) {
+      const overlapsAccepted = accepted.some(function (chosen) { return boxesOverlap(box, chosen); });
+      if (!overlapsAccepted) accepted.push(box);
+    });
+    return accepted.map(function (box) { return box.id; });
+  };
+
+  return { build: build, focus: focus, expand: expand, visibleLabels: visibleLabels, labelFontSize: labelFontSize, focusZoom: focusZoom };
 }));

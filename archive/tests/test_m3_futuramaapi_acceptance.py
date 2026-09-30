@@ -35,7 +35,7 @@ def _analyze_futuramaapi(
     snapshot = snapshot_builder(
         root,
         path_lister(root),
-        profile=agent_profile,
+        policy=agent_profile.scan_policy(),
         reader=snapshot_reader,
         ignore_source="futuramaapi-commit",
     )

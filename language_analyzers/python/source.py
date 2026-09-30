@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Union
 
-from agent_view.models import RepositorySnapshot
+from repository.models import RepositorySnapshot
 
 
 @dataclass

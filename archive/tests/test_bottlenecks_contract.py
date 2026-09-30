@@ -21,7 +21,7 @@ def harness(visible=2, maximum=2):
 def subject(files=None):
     files = {"a.py":"def one():\n return 1\n", "b.py":"from a import one\none()\n"} if files is None else files
     root, profile = Path("/repo"), load_profile(default_profile_path())
-    snapshot = build_snapshot(root, sorted(files), profile=profile, reader=lambda path: files[path.relative_to(root).as_posix()], ignore_source="test")
+    snapshot = build_snapshot(root, sorted(files), policy=profile.scan_policy(), reader=lambda path: files[path.relative_to(root).as_posix()], ignore_source="test")
     architecture = PythonGraphAnalyzer(root, snapshot).analyze()
     return snapshot, architecture, build_agent_view(architecture, profile=profile, snapshot=snapshot)
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 if TYPE_CHECKING:
-    from agent_view.models import RepositorySnapshot
+    from repository.models import RepositorySnapshot
 
 from .cost import cost_for_text
 from .flags import is_test_path
@@ -193,8 +193,6 @@ def _add_configuration_relations(
         if not _is_config_path(path):
             continue
         text = contents[relative]
-        if _is_agent_view_artifact(text):
-            continue
         occurrences: Dict[str, List[int]] = {}
         for key, line in config_keys(path, text):
             occurrences.setdefault(key, []).append(line)
@@ -252,14 +250,6 @@ def _index_code_literals(text: str) -> Dict[str, List[int]]:
             _line_number(line_starts, match.start())
         )
     return postings
-
-
-def _is_agent_view_artifact(text: str) -> bool:
-    version = any(marker in text for marker in (
-        '"schema_version": "2"', '"schema_version":"2"',
-        '"schema_version": "3"', '"schema_version":"3"',
-    ))
-    return version and ('"occurrence_store"' in text or '"query_nodes"' in text)
 
 
 def _is_config_path(path: Path) -> bool:

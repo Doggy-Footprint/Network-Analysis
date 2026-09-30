@@ -70,8 +70,16 @@
       ]
     });
 
-    const applyAlwaysLabelClass = function (collection) {
-      collection.filter(function (element) { return element.isNode() && element.data("always_label"); }).addClass("label-always");
+    const updateAlwaysLabels = function () {
+      const candidates = cy.nodes(":visible").filter(function (node) { return node.data("always_label"); });
+      candidates.addClass("label-always");
+      const boxes = candidates.map(function (node) {
+        const box = node.renderedBoundingBox({ includeNodes: false, includeEdges: false, includeLabels: true });
+        return { id: node.id(), weight: node.data("weight"), x1: box.x1, y1: box.y1, x2: box.x2, y2: box.y2 };
+      });
+      const chosenIds = {};
+      window.ReportGraphModel.visibleLabels(boxes).forEach(function (id) { chosenIds[id] = true; });
+      candidates.forEach(function (node) { if (!chosenIds[node.id()]) node.removeClass("label-always"); });
     };
 
     const updateDirectoryLabelSize = function () {
@@ -88,11 +96,11 @@
       cy.nodes("node.readable, node.query").toggleClass("label-zoomed", showZoomed);
     };
 
-    cy.on("zoom", function () { updateDirectoryLabelSize(); updateLabelFontSize(); updateZoomLabels(); });
+    cy.on("zoom", function () { updateDirectoryLabelSize(); updateLabelFontSize(); updateZoomLabels(); updateAlwaysLabels(); });
     cy.on("mouseover", "node.readable, node.query", function (event) { event.target.addClass("label-hover"); });
     cy.on("mouseout", "node.readable, node.query", function (event) { event.target.removeClass("label-hover"); });
 
-    applyAlwaysLabelClass(cy.nodes());
+    updateAlwaysLabels();
     updateDirectoryLabelSize();
     updateLabelFontSize();
     updateZoomLabels();
@@ -103,6 +111,7 @@
       updateDirectoryLabelSize();
       updateLabelFontSize();
       updateZoomLabels();
+      updateAlwaysLabels();
     });
 
     cy.layout({ name: "fcose", quality: "default", animate: false, nodeDimensionsIncludeLabels: true }).run();
@@ -120,14 +129,14 @@
         .concat(result.nodes)
         .map(function (nodeId) { return elementByNodeId[nodeId]; })
         .concat(result.edges.map(function (edgeId) { return edgesByEdgeId[edgeId]; }));
-      const added = cy.add(elementsToAdd);
+      cy.add(elementsToAdd);
 
       Object.keys(result.positions).forEach(function (nodeId) {
         cy.getElementById(nodeId).position(result.positions[nodeId]);
       });
 
-      applyAlwaysLabelClass(added);
       updateZoomLabels();
+      updateAlwaysLabels();
       return true;
     };
 

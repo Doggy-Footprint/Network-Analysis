@@ -10,35 +10,31 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 from report.shared.document import ReportInputError, ReportOutputError
 from report.shared.labels import short_labels
 
-SUPPORTED_SCHEMA = "bottlenecks.v2"
+SUPPORTED_SCHEMA = "bottlenecks.v3"
 
 _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?$")
 
 KIND_LABELS = {
-    "output_truncation": "출력 잘림",
-    "multiple_results": "다중 결과",
     "evidence_spread": "근거 분산",
-    "read_limit": "읽기 한계",
-    "connection_constraint": "연결 제약",
+    "large_node": "큰 노드",
     "unresolved_boundary": "미해결 경계",
 }
 
 KIND_DESCRIPTIONS = {
-    "output_truncation": "query 결과가 노출 한도를 넘어 생략된 사례입니다.",
-    "multiple_results": "하나의 target에 결과가 여러 개 도달하는 사례입니다.",
-    "evidence_spread": "근거가 여러 파일에 흩어져 있는 사례입니다.",
-    "read_limit": "읽기 단위가 read_line_limit을 넘는 사례입니다.",
-    "connection_constraint": "현재 생성되지 않음",
+    "evidence_spread": "근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
+    "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘는 사례입니다.",
     "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
 }
 
 METRIC_DEFINITIONS = [
     ("token_cost", "코드 조각을 읽는 데 드는 텍스트 양의 근사값입니다."),
     ("effective_token_cost", "token_cost에 배율을 곱한 값입니다. vendored 파일이나 /vendor/, /node_modules/ 경로는 0배, generated·migration 관련 파일이나 /migrations/, /alembic/versions/ 경로는 0.1배, 그 외는 1배입니다."),
-    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다."),
+    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다. 확정되지 않은 edge는 edge_weights 설정만큼 할인됩니다."),
     ("weighted_centrality_cost", "pagerank × effective_token_cost로 계산됩니다."),
     ("fan_in", "들어오는 connection 수입니다."),
     ("fan_out", "나가는 connection 수입니다."),
+    ("weighted_fan_in", "들어오는 병합 edge 가중치의 합입니다."),
+    ("weighted_fan_out", "나가는 병합 edge 가중치의 합입니다."),
     ("hop_2_token_cost", "해당 node에서 2단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
     ("hop_3_token_cost", "해당 node에서 3단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
     ("betweenness_centrality", "다른 node 사이의 최단 경로에 얼마나 자주 놓이는지를 나타냅니다."),
@@ -46,22 +42,17 @@ METRIC_DEFINITIONS = [
 ]
 
 _KIND_SCORE_FIELDS = {
-    "output_truncation": ("omitted_count", 0),
-    "multiple_results": ("total_count", 0),
+    "large_node": ("line_count", 0),
     "evidence_spread": ("file_count", 0),
     "unresolved_boundary": ("unresolved_count", 1),
 }
 
 
 def _score_candidate(candidate: Mapping[str, Any]) -> float:
-    kind = candidate.get("kind")
-    metrics = candidate.get("metrics") or {}
-    if kind == "read_limit":
-        return float(metrics.get("line_count", 0)) - float(metrics.get("read_line_limit", 0))
-    field, default = _KIND_SCORE_FIELDS.get(kind, (None, 0))
+    field, default = _KIND_SCORE_FIELDS.get(candidate.get("kind"), (None, 0))
     if field is None:
         return 0.0
-    return float(metrics.get(field, default))
+    return float((candidate.get("metrics") or {}).get(field, default))
 
 
 def _parse_id_target(target: str) -> Optional[tuple[str, Optional[str]]]:
@@ -177,6 +168,12 @@ def _integer(value: Any, path: str) -> int:
     return value
 
 
+def _number(value: Any, path: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        _error(path, "must be a finite number")
+    return value
+
+
 def _boolean(value: Any, path: str) -> bool:
     if not isinstance(value, bool):
         _error(path, "must be a boolean")
@@ -220,129 +217,44 @@ def _finite_values(value: Any, path: str = "$") -> None:
 def _validate(payload: Any) -> Mapping[str, Any]:
     _finite_values(payload)
     root = _object(payload, "$")
-    if root.get("schema") == SUPPORTED_SCHEMA:
-        _required(root, "$", ("schema", "snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network", "probes", "candidates", "limitations"))
-        if set(root) != {"schema", "snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network", "probes", "candidates", "limitations"}:
-            _error("$", "contains unknown fields")
-        for field in ("snapshot", "profile", "versions", "coverage", "dependency_network", "exploration_network"):
-            _object(root[field], f"$.{field}")
-        _strings(root["limitations"], "$.limitations")
-        probe_ids: set[str] = set()
-        for index, item in enumerate(_array(root["probes"], "$.probes")):
-            entry = _object(item, f"$.probes[{index}]")
-            _required(entry, f"$.probes[{index}]", ("probe", "output"))
-            probe = _object(entry["probe"], f"$.probes[{index}].probe")
-            probe_id = _string(probe.get("id"), f"$.probes[{index}].probe.id")
-            if probe_id in probe_ids:
-                _error(f"$.probes[{index}].probe.id", "must be unique")
-            probe_ids.add(probe_id)
-            output = _object(entry["output"], f"$.probes[{index}].output")
-            for key in ("total_count", "visible_count", "omitted_count"):
-                _integer(output.get(key), f"$.probes[{index}].output.{key}")
-            if output["visible_count"] > output["total_count"] or output["omitted_count"] != output["total_count"] - output["visible_count"]:
-                _error(f"$.probes[{index}].output", "has inconsistent counts")
-        candidate_ids: set[str] = set()
-        for index, item in enumerate(_array(root["candidates"], "$.candidates")):
-            entry = _object(item, f"$.candidates[{index}]")
-            _required(entry, f"$.candidates[{index}]", ("id", "kind", "target", "probe_ids", "metrics", "evidence", "coverage", "status"))
-            candidate_id = _string(entry["id"], f"$.candidates[{index}].id")
-            if candidate_id in candidate_ids:
-                _error(f"$.candidates[{index}].id", "must be unique")
-            candidate_ids.add(candidate_id)
-            if _string(entry["kind"], f"$.candidates[{index}].kind") not in {"output_truncation", "multiple_results", "evidence_spread", "read_limit", "connection_constraint", "unresolved_boundary"}:
-                _error(f"$.candidates[{index}].kind", "is unsupported")
-            if _string(entry["status"], f"$.candidates[{index}].status") != "static_candidate":
-                _error(f"$.candidates[{index}].status", "must equal 'static_candidate'")
-        return root
-    fields = ("schema", "snapshot", "profile", "versions", "coverage", "probes", "candidates", "observations", "limitations")
+    fields = ("schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations")
     _required(root, "$", fields)
     if _string(root["schema"], "$.schema") != SUPPORTED_SCHEMA:
         _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r}")
-    for field in ("snapshot", "profile", "versions", "coverage"):
+    if set(root) != set(fields):
+        _error("$", "contains unknown fields")
+    for field in ("snapshot", "edge_weights", "versions", "coverage", "dependency_network"):
         _object(root[field], f"$.{field}")
     _strings(root["limitations"], "$.limitations")
-
-    probe_ids: set[str] = set()
-    for index, item in enumerate(_array(root["probes"], "$.probes")):
-        path = f"$.probes[{index}]"
-        entry = _object(item, path)
-        _required(entry, path, ("probe", "output", "visible_arrival_ids", "hidden_arrival_ids"))
-        probe = _object(entry["probe"], f"{path}.probe")
-        output = _object(entry["output"], f"{path}.output")
-        _required(probe, f"{path}.probe", ("id", "kind", "scope", "surface", "term"))
-        _required(output, f"{path}.output", ("probe_id", "rows", "total_count", "visible_count", "omitted_count", "truncated"))
-        probe_id = _string(probe["id"], f"{path}.probe.id")
-        if probe_id in probe_ids:
-            _error(f"{path}.probe.id", "must be unique")
-        probe_ids.add(probe_id)
-        for field in ("kind", "scope", "surface", "term"):
-            _string(probe[field], f"{path}.probe.{field}")
-        if _string(output["probe_id"], f"{path}.output.probe_id") != probe_id:
-            _error(f"{path}.output.probe_id", "must match probe.id")
-        total = _integer(output["total_count"], f"{path}.output.total_count")
-        visible = _integer(output["visible_count"], f"{path}.output.visible_count")
-        omitted = _integer(output["omitted_count"], f"{path}.output.omitted_count")
-        _boolean(output["truncated"], f"{path}.output.truncated")
-        if visible > total:
-            _error(f"{path}.output.visible_count", "must not exceed total_count")
-        if omitted != total - visible:
-            _error(f"{path}.output.omitted_count", "must equal total_count minus visible_count")
-        _strings(entry["visible_arrival_ids"], f"{path}.visible_arrival_ids")
-        _strings(entry["hidden_arrival_ids"], f"{path}.hidden_arrival_ids")
-        for row_index, row_value in enumerate(_array(output["rows"], f"{path}.output.rows")):
-            row_path = f"{path}.output.rows[{row_index}]"
-            row = _object(row_value, row_path)
-            _required(row, row_path, ("path",))
-            _string(row["path"], f"{row_path}.path")
-
+    rankings = root["dependency_network"].get("rankings", {})
+    for metric, entries in _object(rankings, "$.dependency_network.rankings").items():
+        for index, item in enumerate(_array(entries, f"$.dependency_network.rankings.{metric}")):
+            ranking_path = f"$.dependency_network.rankings.{metric}[{index}]"
+            entry = _object(item, ranking_path)
+            _required(entry, ranking_path, ("node_id", "value"))
+            _number(entry["value"], f"{ranking_path}.value")
+    candidate_ids: set[str] = set()
     for index, item in enumerate(_array(root["candidates"], "$.candidates")):
         path = f"$.candidates[{index}]"
-        candidate = _object(item, path)
-        required = ("id", "target", "kind", "metrics", "evidence", "status", "probe_ids", "reasons", "coverage")
-        _required(candidate, path, required)
-        for field in ("id", "target", "kind", "status", "coverage"):
-            _string(candidate[field], f"{path}.{field}")
-        if "validation_status" in candidate:
-            if _string(candidate["validation_status"], f"{path}.validation_status") != "unverified":
-                _error(f"{path}.validation_status", "must equal 'unverified'")
-        if "affected_profile_ids" in candidate:
-            _strings(candidate["affected_profile_ids"], f"{path}.affected_profile_ids")
-        if "obstacle" in candidate:
-            obstacle = _object(candidate["obstacle"], f"{path}.obstacle")
-            _required(obstacle, f"{path}.obstacle", ("axis", "explanation"))
-            _string(obstacle["axis"], f"{path}.obstacle.axis")
-            _string(obstacle["explanation"], f"{path}.obstacle.explanation")
-        _object(candidate["metrics"], f"{path}.metrics")
-        _strings(candidate["reasons"], f"{path}.reasons")
-        evidence = candidate["evidence"]
+        entry = _object(item, path)
+        _required(entry, path, ("id", "kind", "target", "metrics", "evidence", "coverage", "status"))
+        candidate_id = _string(entry["id"], f"{path}.id")
+        if candidate_id in candidate_ids:
+            _error(f"{path}.id", "must be unique")
+        candidate_ids.add(candidate_id)
+        if _string(entry["kind"], f"{path}.kind") not in KIND_LABELS:
+            _error(f"{path}.kind", "is unsupported")
+        _string(entry["target"], f"{path}.target")
+        _string(entry["coverage"], f"{path}.coverage")
+        if _string(entry["status"], f"{path}.status") != "static_candidate":
+            _error(f"{path}.status", "must equal 'static_candidate'")
+        for key, value in _object(entry["metrics"], f"{path}.metrics").items():
+            _number(value, f"{path}.metrics.{key}")
+        evidence = entry["evidence"]
         if isinstance(evidence, list):
             _evidence_rows(evidence, f"{path}.evidence")
         else:
-            evidence_object = _object(evidence, f"{path}.evidence")
-            if "visible" in evidence_object:
-                required_evidence = ("visible", "hidden", "visible_arrival_ids", "hidden_arrival_ids")
-                _required(evidence_object, f"{path}.evidence", required_evidence)
-                _evidence_rows(evidence_object["visible"], f"{path}.evidence.visible")
-                _evidence_rows(evidence_object["hidden"], f"{path}.evidence.hidden")
-                _strings(evidence_object["visible_arrival_ids"], f"{path}.evidence.visible_arrival_ids")
-                _strings(evidence_object["hidden_arrival_ids"], f"{path}.evidence.hidden_arrival_ids")
-            elif "path" in evidence_object:
-                _string(evidence_object["path"], f"{path}.evidence.path")
-            elif "edge" in evidence_object:
-                _object(evidence_object["edge"], f"{path}.evidence.edge")
-                if evidence_object.get("span") is not None:
-                    _object(evidence_object["span"], f"{path}.evidence.span")
-            else:
-                _error(f"{path}.evidence", "has an unsupported object shape")
-        references = _array(candidate["probe_ids"], f"{path}.probe_ids")
-        for reference_index, reference_value in enumerate(references):
-            reference_path = f"{path}.probe_ids[{reference_index}]"
-            reference = _string(reference_value, reference_path)
-            if reference not in probe_ids:
-                _error(reference_path, "does not reference a probe")
-
-    for index, item in enumerate(_array(root["observations"], "$.observations")):
-        _object(item, f"$.observations[{index}]")
+            _evidence_rows([evidence], f"{path}.evidence")
     return root
 
 
@@ -419,12 +331,8 @@ def _evidence_lines(evidence: Any) -> list:
 def _focus_reason(candidate: Mapping[str, Any], score: float) -> str:
     kind = candidate["kind"]
     metrics = candidate.get("metrics") or {}
-    if kind == "output_truncation":
-        return f"결과 {metrics.get('total_count', '?')}건 중 {metrics.get('omitted_count', score)}건이 생략되었습니다."
-    if kind == "multiple_results":
-        return f"결과가 {metrics.get('total_count', score)}건 도달합니다."
-    if kind == "read_limit":
-        return f"읽기 단위가 {metrics.get('line_count', '?')}줄로 한계 {metrics.get('read_line_limit', '?')}줄을 넘습니다."
+    if kind == "large_node":
+        return f"소스 범위가 {metrics.get('line_count', '?')}줄로 임계 {metrics.get('line_threshold', '?')}줄을 넘습니다."
     if kind == "evidence_spread":
         return f"근거가 {metrics.get('file_count', score)}개 파일에 분산되어 있습니다."
     if kind == "unresolved_boundary":
@@ -507,30 +415,11 @@ def render_report(payload: Any) -> str:
     else:
         rankings_html = "<p>순위 데이터가 없습니다.</p>"
 
-    profile_exposure = (data.get("exploration_network") or {}).get("profile_exposure") or {}
-    limits_html = ""
-    if "search_output_limit" in profile_exposure or "read_line_limit" in profile_exposure:
-        limits_html = (
-            "<div class='summary-grid'>"
-            + (
-                f"<div class='panel'><h2>search_output_limit</h2><strong>{html.escape(str(profile_exposure['search_output_limit']))}</strong>"
-                "<p>검색 결과 한 번에 노출되는 최대 줄 수입니다.</p></div>"
-                if "search_output_limit" in profile_exposure else ""
-            )
-            + (
-                f"<div class='panel'><h2>read_line_limit</h2><strong>{html.escape(str(profile_exposure['read_line_limit']))}</strong>"
-                "<p>읽기 단위 하나가 넘지 않아야 하는 최대 줄 수입니다.</p></div>"
-                if "read_line_limit" in profile_exposure else ""
-            )
-            + "</div>"
-        )
-
     appendix_details = "".join(
         _details(title, data[field])
         for title, field in (
             ("Coverage", "coverage"),
             ("Limitations", "limitations"),
-            ("Probes", "probes"),
         )
     )
 
@@ -538,7 +427,6 @@ def render_report(payload: Any) -> str:
         "<dl class='glossary-grid'>"
         + "".join(f"<div><dt>{html.escape(KIND_LABELS[kind])}</dt><dd>{html.escape(KIND_DESCRIPTIONS[kind])}</dd></div>" for kind in sorted(KIND_LABELS))
         + "<div><dt>score</dt><dd>후보를 정렬하는 데 쓰이는 측정값입니다. kind별로 다른 필드에서 계산됩니다.</dd></div>"
-        + "<div><dt>probe</dt><dd>후보를 찾기 위해 실행한 개별 탐색입니다.</dd></div>"
         + "<div><dt>duplicate_count</dt><dd>같은 (kind, target) 조합에서 중복으로 발견되어 하나로 묶인 후보 건수입니다.</dd></div>"
         + "".join(f"<div><dt>{html.escape(term)}</dt><dd>{html.escape(desc)}</dd></div>" for term, desc in METRIC_DEFINITIONS if term in rankings)
         + "</dl>"
@@ -552,10 +440,8 @@ def render_report(payload: Any) -> str:
         f"{_details('Snapshot', data['snapshot'])}"
         "<div class='summary-grid'>"
         f"<div class='panel'><h2>candidate 수</h2><strong>{len(candidates)}</strong></div>"
-        f"<div class='panel'><h2>probe 수</h2><strong>{len(data['probes'])}</strong></div>"
         "</div>"
-        f"{limits_html}"
-        f"{_details('profile', data['profile'])}{_details('versions', data['versions'])}"
+        f"{_details('edge_weights', data['edge_weights'])}{_details('versions', data['versions'])}"
         "</section>"
         f"<section id='focus'><h2>먼저 볼 곳</h2>{focus_html}</section>"
         f"<section id='kinds'><h2>후보 종류</h2>{kinds_html}</section>"

@@ -4,8 +4,9 @@ import math
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
+from analysis.edge_weights import EdgeWeights
 from language_analyzers.core.cost import CHARACTERS_PER_TOKEN, DIGIT_GROUP_SIZE, estimate_tokens
 
 
@@ -23,28 +24,34 @@ class GraphAnalysisConfig:
     exact_betweenness_threshold: int = 500
     betweenness_sample_size: int = 100
     betweenness_sampler: Optional[Callable[[Sequence[str], int], Sequence[str]]] = None
+    edge_weights: Optional[EdgeWeights] = None
 
 
 def pagerank(
-    outgoing: Mapping[str, Set[str]],
+    outgoing: Union[Mapping[str, Mapping[str, float]], Mapping[str, Set[str]]],
     config: Optional[GraphAnalysisConfig] = None,
 ) -> Dict[str, float]:
     settings = config or GraphAnalysisConfig()
     count = len(outgoing)
     if not count:
         return {}
+    weighted = {
+        node_id: targets if isinstance(targets, Mapping) else {target: 1.0 for target in targets}
+        for node_id, targets in outgoing.items()
+    }
+    totals = {node_id: sum(targets.values()) for node_id, targets in weighted.items()}
     scores = {node_id: 1.0 / count for node_id in outgoing}
     base = (1.0 - settings.damping) / count
 
     for _ in range(settings.max_iterations):
-        dangling = sum(scores[node_id] for node_id, targets in outgoing.items() if not targets)
+        dangling = sum(scores[node_id] for node_id, targets in weighted.items() if not targets)
         updated = {node_id: base + settings.damping * dangling / count for node_id in outgoing}
-        for source, targets in outgoing.items():
+        for source, targets in weighted.items():
             if not targets:
                 continue
-            contribution = settings.damping * scores[source] / len(targets)
-            for target in targets:
-                updated[target] += contribution
+            share = settings.damping * scores[source]
+            for target, weight in targets.items():
+                updated[target] += share * weight / totals[source]
         if sum(abs(updated[item] - scores[item]) for item in scores) <= settings.tolerance:
             scores = updated
             break
@@ -67,6 +74,7 @@ class GraphAnalyzer:
         node_by_id = {node.id: node for node in nodes}
         outgoing = {node_id: set() for node_id in node_by_id}
         incoming = {node_id: set() for node_id in node_by_id}
+        pair_weights: Dict[Tuple[str, str], float] = {}
 
         for edge in edges:
             source = self._edge_value(edge, "from_id", "from")
@@ -75,6 +83,9 @@ class GraphAnalyzer:
                 continue
             outgoing[source].add(target)
             incoming[target].add(source)
+            weight = self._edge_weight(edge)
+            pair = (source, target)
+            pair_weights[pair] = max(pair_weights.get(pair, 0.0), weight)
 
         token_costs = {
             node_id: self._node_token_cost(node, project_path)
@@ -84,8 +95,12 @@ class GraphAnalyzer:
             node_id: token_costs[node_id] * self._cost_multiplier(node)
             for node_id, node in node_by_id.items()
         }
-        pagerank = self._pagerank(outgoing)
-        hub_scores, authority_scores = self._hits(outgoing, incoming)
+        weighted_outgoing = {
+            node_id: {target: pair_weights[(node_id, target)] for target in targets}
+            for node_id, targets in outgoing.items()
+        }
+        pagerank = self._pagerank(weighted_outgoing)
+        hub_scores, authority_scores = self._hits(outgoing, incoming, pair_weights)
         betweenness, betweenness_strategy, betweenness_sample_size = self._betweenness_for_graph(outgoing)
         undirected = {
             node_id: outgoing[node_id] | incoming[node_id]
@@ -107,6 +122,8 @@ class GraphAnalyzer:
                 "weighted_centrality_cost": pagerank[node_id] * effective_token_costs[node_id],
                 "fan_in": len(incoming[node_id]),
                 "fan_out": len(outgoing[node_id]),
+                "weighted_fan_in": sum(pair_weights[(source, node_id)] for source in incoming[node_id]),
+                "weighted_fan_out": sum(weighted_outgoing[node_id].values()),
                 "hop_2_node_count": len(hop_2_nodes),
                 "hop_2_token_cost": sum(effective_token_costs[item] for item in hop_2_nodes),
                 "hop_3_node_count": len(hop_3_nodes),
@@ -151,13 +168,14 @@ class GraphAnalyzer:
         sampled = list(dict.fromkeys(item for item in sampled if item in outgoing))
         return self._betweenness(outgoing, sampled), "deterministic_sampled", len(sampled)
 
-    def _pagerank(self, outgoing: Mapping[str, Set[str]]) -> Dict[str, float]:
+    def _pagerank(self, outgoing: Mapping[str, Mapping[str, float]]) -> Dict[str, float]:
         return pagerank(outgoing, self.config)
 
     def _hits(
         self,
         outgoing: Mapping[str, Set[str]],
         incoming: Mapping[str, Set[str]],
+        pair_weights: Mapping[Tuple[str, str], float],
     ) -> tuple[Dict[str, float], Dict[str, float]]:
         if not outgoing:
             return {}, {}
@@ -166,12 +184,12 @@ class GraphAnalyzer:
 
         for _ in range(self.config.max_iterations):
             next_authorities = {
-                node_id: sum(hubs[source] for source in incoming[node_id])
+                node_id: sum(hubs[source] * pair_weights[(source, node_id)] for source in incoming[node_id])
                 for node_id in outgoing
             }
             self._normalize(next_authorities)
             next_hubs = {
-                node_id: sum(next_authorities[target] for target in outgoing[node_id])
+                node_id: sum(next_authorities[target] * pair_weights[(node_id, target)] for target in outgoing[node_id])
                 for node_id in outgoing
             }
             self._normalize(next_hubs)
@@ -339,6 +357,11 @@ class GraphAnalyzer:
 
     def _estimate_tokens(self, text: str) -> int:
         return estimate_tokens(text, self.config.characters_per_token, self.config.digit_group_size)
+
+    def _edge_weight(self, edge: Any) -> float:
+        if self.config.edge_weights is None:
+            return 1.0
+        return self.config.edge_weights.weight_for(edge)
 
     @staticmethod
     def _edge_value(edge: Any, attribute: str, mapping_key: str) -> Any:

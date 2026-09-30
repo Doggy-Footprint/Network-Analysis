@@ -11,7 +11,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from agent_view import RepositorySnapshot
+from repository import RepositorySnapshot
 from fixtures.registry import fixture_root
 
 try:
@@ -366,7 +366,7 @@ class MainActivity : ComponentActivity() {
         )
         snapshot = RepositorySnapshot(
             str(self.project_path.resolve()),
-            "agent_view.v3",
+            "snapshot.v1",
             (("CapturedScreen.kt", source), (".env", "ANDROID_KEY=value\n")),
             (),
             "0" * 64,
