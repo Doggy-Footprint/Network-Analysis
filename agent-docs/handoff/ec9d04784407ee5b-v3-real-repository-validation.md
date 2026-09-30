@@ -39,9 +39,27 @@ Workaround: copied the three pruned subpaths into a directory without `.git` (`i
 3. Defaults (0.3, 2000 lines): kept unchanged pending more evidence.
 4. Next validation: add one FastAPI fixture and judge with a fixed checklist — production share of top-10, top-10 overlap across weightings, candidate counts per kind, usable ratio of 10 sampled candidates.
 
+## Checklist Results (2026-09-30, commit `4eae959`)
+
+Fixtures run directly via `fixture_root`; `fastapi-official-template` analyzed at `backend/`. Default weights vs. all 0.3 → 1.0. "prod" = entries in `production` category of `rankings_by_category`.
+
+| fixture | files / nodes / edges | top-10 prod share (pagerank, hub, authority, weighted_fan_in) | top-10 overlap default vs 1.0 (same order) | candidates (evidence_spread / unresolved_boundary / large_node) |
+| --- | --- | --- | --- | --- |
+| android-nowinandroid | 90 / 950 / 2867 | 10, 0 (all generated), 7, 8 | 9, 0, 7, 7 | 218 / 195 / 0 |
+| futuramaapi | 217 / 1544 / 3250 | 10, 10, 10, 10 | 10, 10, 10, 10 | 315 / 325 / 0 |
+| fastapi-realworld | 115 / 680 / 1751 | 10, 9, 10, 10 | 10, 9, 8, 8 | 189 / 144 / 0 |
+| fastapi-official-template | 55 / 370 / 896 | 8, 3 (7 test), 8, 8 | 8, 8, 9, 8 | 65 / 127 / 0 |
+
+Candidates are identical under both weightings in all four (candidate rules do not read weights).
+
+Sample: first 10 candidates by `id` per fixture, judged by the agent (usable = points to a production symbol whose references an agent must gather across several non-test files). Usable: 3, 2, 3, 1 → 9/40.
+- `unresolved_boundary`: 0 usable in the sample. Evidence names are library/stdlib calls (`map`, `assertEquals`, `json`, `HTTPException`, `Column`, `mapped_column`); Now in Android: 121/195 targets are test files.
+- `evidence_spread`: usable ones span ≥3 files (e.g. `NewsResourceEntity` 7, `create_user` 7). Noise: 2-file spans (66/218, 161/315, 98/189, 34/65), `__init__` re-exports, test-only targets.
+- `large_node`: 0 everywhere; the 2000-line threshold is not exercised by these fixtures.
+
 ## Next Step
 
-Run decision 4 on Now in Android and one FastAPI fixture; re-run `code_analyzer.cli` with `-f android --bottlenecks --bottlenecks-html` using default weights, then with all weights 1.0. Compare top-10 rankings (pagerank, hub/authority, weighted_fan_in) and candidate counts per kind. Record which differences come from non-certain edges and whether `large_node` (2000 lines) and `evidence_spread` produce useful or noisy candidates.
+Decide candidate rule changes from Checklist Results: whether `unresolved_boundary` should exclude calls resolving to external libraries, whether `evidence_spread` needs a minimum file count (≥3) or should skip re-export/test-only evidence, and whether hub noise from generated/test nodes needs more than the category split.
 
 ## Open Questions
 
