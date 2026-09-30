@@ -10,7 +10,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping, Optional, Sequence
+from typing import Callable, Mapping, Optional, Sequence, Tuple
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -29,7 +29,7 @@ class FixtureSpec:
     remote: str
     commit: str
     content_sha256: str
-    subpaths: Optional[Mapping[str, str]] = None
+    subpaths: Optional[Tuple[str, ...]] = None
 
 
 FIXTURES: Mapping[str, FixtureSpec] = {
@@ -57,11 +57,7 @@ FIXTURES: Mapping[str, FixtureSpec] = {
         remote="https://github.com/android/nowinandroid",
         commit="12f80da6518e161ed16a06a68e71fb8a873576d6",
         content_sha256="7fd26f1ea2d87856440af18bccc5dd82ed763b132259fb89987007ba7236d617",
-        subpaths={
-            "feature/topic": "feature_topic",
-            "core/data": "core_data",
-            "core/database": "core_database",
-        },
+        subpaths=("feature/topic", "core/data", "core/database"),
     ),
     "typescript-nestjs-realworld": FixtureSpec(
         name="typescript-nestjs-realworld",
@@ -101,6 +97,8 @@ def _run_git(
 
 
 def _prune_subpaths(spec: FixtureSpec, path: Path) -> None:
+    # Kept subpaths stay at their upstream location: snapshot scans admit only
+    # `git ls-files` paths, so a renamed subtree would be scanned as empty.
     subpaths = spec.subpaths
     for source_prefix in subpaths:
         if not (path / source_prefix).exists():
@@ -109,20 +107,22 @@ def _prune_subpaths(spec: FixtureSpec, path: Path) -> None:
                 f"{source_prefix!r} not found in checked-out tree at commit {spec.commit}"
             )
 
-    for source_prefix, local_name in subpaths.items():
-        source = path / source_prefix
-        dest = path / local_name
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(source), str(dest))
+    kept = {Path(source_prefix).parts for source_prefix in subpaths}
+    ancestors = {parts[:depth] for parts in kept for depth in range(1, len(parts))}
 
-    keep = {".git"} | {local_name.split("/")[0] for local_name in subpaths.values()}
-    for entry in path.iterdir():
-        if entry.name in keep:
-            continue
-        if entry.is_dir():
-            shutil.rmtree(entry)
-        else:
-            entry.unlink()
+    def prune(directory: Path, prefix: Tuple[str, ...]) -> None:
+        for entry in directory.iterdir():
+            parts = prefix + (entry.name,)
+            if parts == (".git",) or parts in kept:
+                continue
+            if parts in ancestors:
+                prune(entry, parts)
+            elif entry.is_dir():
+                shutil.rmtree(entry)
+            else:
+                entry.unlink()
+
+    prune(path, ())
 
 
 def _clone(

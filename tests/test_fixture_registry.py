@@ -338,10 +338,17 @@ def test_ec_08_clone_subprocess_nonzero_exit_raises_with_stderr_in_message(tmp_p
 UPSTREAM_SUBPATH_FILES = {
     "keep/a.txt": b"keep-a",
     "keep/sub/b.txt": b"keep-b",
+    "nested/keep/d.txt": b"keep-d",
+    "nested/drop/e.txt": b"drop-e",
+    "nested/sibling.txt": b"sibling",
     "drop/c.txt": b"drop-c",
     "top_level.txt": b"top-level",
 }
-PRUNED_SUBPATH_FILES = {"kept/a.txt": b"keep-a", "kept/sub/b.txt": b"keep-b"}
+PRUNED_SUBPATH_FILES = {
+    "keep/a.txt": b"keep-a",
+    "keep/sub/b.txt": b"keep-b",
+    "nested/keep/d.txt": b"keep-d",
+}
 PRUNED_SUBPATH_HASH = _hand_computed_hash(PRUNED_SUBPATH_FILES)
 
 SUBPATH_SPEC = FixtureSpec(
@@ -349,7 +356,7 @@ SUBPATH_SPEC = FixtureSpec(
     remote="https://example.invalid/widget-sub.git",
     commit=GOOD_COMMIT,
     content_sha256=PRUNED_SUBPATH_HASH,
-    subpaths={"keep": "kept"},
+    subpaths=("keep", "nested/keep"),
 )
 
 
@@ -371,7 +378,7 @@ def _fake_checkout_run(target: Path, files_after_checkout: Dict[str, bytes], hea
     return run
 
 
-def test_ec_16_fresh_clone_prunes_and_renames_subpaths_before_hashing(tmp_path: Path, monkeypatch) -> None:
+def test_ec_16_fresh_clone_prunes_subpaths_in_place_before_hashing(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setitem(registry.FIXTURES, "widget-sub", SUBPATH_SPEC)
     target = tmp_path / "widget-sub"
     run = _fake_checkout_run(target, UPSTREAM_SUBPATH_FILES, GOOD_COMMIT)
@@ -382,17 +389,18 @@ def test_ec_16_fresh_clone_prunes_and_renames_subpaths_before_hashing(tmp_path: 
     assert (target / ".git").is_dir()  # preserved
     assert not (target / "drop").exists()  # pruned
     assert not (target / "top_level.txt").exists()  # pruned
-    assert not (target / "keep").exists()  # renamed away, not left behind
-    assert (target / "kept" / "a.txt").read_bytes() == b"keep-a"
-    assert (target / "kept" / "sub" / "b.txt").read_bytes() == b"keep-b"
+    assert not (target / "nested" / "drop").exists()  # pruned under a kept ancestor
+    assert not (target / "nested" / "sibling.txt").exists()  # pruned under a kept ancestor
+    assert (target / "keep" / "a.txt").read_bytes() == b"keep-a"
+    assert (target / "keep" / "sub" / "b.txt").read_bytes() == b"keep-b"
+    assert (target / "nested" / "keep" / "d.txt").read_bytes() == b"keep-d"
     assert compute_content_sha256(target) == PRUNED_SUBPATH_HASH
 
 
 def test_ec_17_cache_hit_rehashes_pruned_tree_without_repruning(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setitem(registry.FIXTURES, "widget-sub", SUBPATH_SPEC)
     target = tmp_path / "widget-sub"
-    # Already pruned from a prior EC-16 run: only the renamed destination + .git remain,
-    # the original "keep"/"drop" source_prefix locations no longer exist.
+    # Already pruned from a prior EC-16 run: only kept subpaths + .git remain.
     _write_tree(target, PRUNED_SUBPATH_FILES)
     (target / ".git").mkdir(exist_ok=True)
     calls = []
@@ -405,7 +413,7 @@ def test_ec_17_cache_hit_rehashes_pruned_tree_without_repruning(tmp_path: Path, 
 
     assert root == target
     assert calls == [(("git", "rev-parse", "HEAD"), target)]  # no fetch/checkout: no re-prune attempted
-    assert (target / "kept" / "a.txt").exists()
+    assert (target / "keep" / "a.txt").exists()
 
 
 def test_ec_18_fresh_clone_missing_source_prefix_raises_acquisition_error(tmp_path: Path, monkeypatch) -> None:
