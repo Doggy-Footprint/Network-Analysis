@@ -5,6 +5,7 @@ from typing import Any, Mapping, Tuple
 
 from analysis.edge_weights import EdgeWeights
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
+from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
 
 
@@ -23,6 +24,15 @@ RANKING_KEYS = (
     "weighted_centrality_cost", "fan_in", "fan_out", "weighted_fan_in", "weighted_fan_out",
     "hop_2_token_cost", "hop_3_token_cost",
 )
+
+CATEGORY_KEYS = ("production", "test", "generated", "vendored", "unknown")
+
+
+def _category(node: Any) -> str:
+    span = getattr(node, "span", None)
+    if span is None: return "unknown"
+    flags = path_flags(span.file_path)
+    return "vendored" if VENDORED in flags else "generated" if GENERATED in flags else "test" if TEST in flags else "production"
 
 
 def _lines(text: str) -> list[str]:
@@ -89,10 +99,12 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
         analysis = GraphAnalyzer(GraphAnalysisConfig(edge_weights=weights)).analyze(nodes, edges, getattr(architecture, "project_path", None)); metrics = analysis["node_metrics"]
         rankings = {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted(metrics, key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS}
+        categories = {node.id: _category(node) for node in nodes}
+        rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in metrics if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _candidates(architecture, weights.large_node_line_threshold)
         payload = {"id": weights.id, "version": weights.version, "content_hash": weights.content_hash, "confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
-        return BottleneckReport("bottlenecks.v3", {"digest": snapshot.digest, "file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
+        return BottleneckReport("bottlenecks.v3", {"digest": snapshot.digest, "file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

@@ -41,6 +41,8 @@ METRIC_DEFINITIONS = [
     ("degree_centrality", "해당 node에 연결된 edge 수를 전체 node 수 기준 최대 연결 수로 나눈 값입니다."),
 ]
 
+CATEGORY_ORDER = ("production", "test", "generated", "vendored", "unknown")
+
 _KIND_SCORE_FIELDS = {
     "large_node": ("line_count", 0),
     "evidence_spread": ("file_count", 0),
@@ -233,6 +235,15 @@ def _validate(payload: Any) -> Mapping[str, Any]:
             entry = _object(item, ranking_path)
             _required(entry, ranking_path, ("node_id", "value"))
             _number(entry["value"], f"{ranking_path}.value")
+    if "rankings_by_category" in root["dependency_network"]:
+        by_category_path = "$.dependency_network.rankings_by_category"
+        for category, metrics in _object(root["dependency_network"]["rankings_by_category"], by_category_path).items():
+            for metric, entries in _object(metrics, f"{by_category_path}.{category}").items():
+                for index, item in enumerate(_array(entries, f"{by_category_path}.{category}.{metric}")):
+                    ranking_path = f"{by_category_path}.{category}.{metric}[{index}]"
+                    entry = _object(item, ranking_path)
+                    _required(entry, ranking_path, ("node_id", "value"))
+                    _number(entry["value"], f"{ranking_path}.value")
     candidate_ids: set[str] = set()
     for index, item in enumerate(_array(root["candidates"], "$.candidates")):
         path = f"$.candidates[{index}]"
@@ -355,6 +366,13 @@ def _ranking_entries(value: Any) -> list:
     return entries
 
 
+def _ranking_panels(rankings: Mapping[str, Any]) -> str:
+    return "".join(
+        f"<div class='panel'><h3>{html.escape(str(metric))}</h3>{_bar_rows([(node_id, float(value)) for node_id, value in _ranking_entries(entries) if isinstance(value, (int, float)) and not isinstance(value, bool)][:10])}</div>"
+        for metric, entries in sorted(rankings.items())
+    )
+
+
 def render_report(payload: Any) -> str:
     data = _validate(payload)
     candidates = data["candidates"]
@@ -408,12 +426,20 @@ def render_report(payload: Any) -> str:
 
     rankings = (data.get("dependency_network") or {}).get("rankings") or {}
     if rankings:
-        rankings_html = "".join(
-            f"<div class='panel'><h3>{html.escape(str(metric))}</h3>{_bar_rows([(node_id, float(value)) for node_id, value in _ranking_entries(entries) if isinstance(value, (int, float)) and not isinstance(value, bool)][:10])}</div>"
-            for metric, entries in sorted(rankings.items())
-        )
+        rankings_html = _ranking_panels(rankings)
     else:
         rankings_html = "<p>순위 데이터가 없습니다.</p>"
+
+    by_category = (data.get("dependency_network") or {}).get("rankings_by_category")
+    if by_category is None:
+        category_section = ""
+    else:
+        category_order = [name for name in CATEGORY_ORDER if name in by_category] + sorted(name for name in by_category if name not in CATEGORY_ORDER)
+        category_html = "".join(
+            f"<div data-category=\"{html.escape(str(name))}\"><h3>{html.escape(str(name))}</h3>" + (_ranking_panels(by_category[name]) if any(by_category[name].values()) else "<p>순위 데이터가 없습니다.</p>") + "</div>"
+            for name in category_order
+        )
+        category_section = f"<section id='rankings-by-category'><h2>분류별 순위</h2>{category_html}</section>"
 
     appendix_details = "".join(
         _details(title, data[field])
@@ -457,6 +483,7 @@ def render_report(payload: Any) -> str:
         f"<tbody>{''.join(rows)}</tbody></table></div>"
         "</section>"
         f"<section id='rankings'><h2>지표별 순위</h2>{rankings_html}</section>"
+        f"{category_section}"
         f"<section id='appendix'><h2>부록</h2>{appendix_details}</section>"
         f"<section id='glossary'><h2>용어 안내</h2>{glossary_html}</section>"
         f"<script id='bottlenecks-data' type='application/json'>{embedded}</script><script>{_inline_js()}</script></body></html>"
