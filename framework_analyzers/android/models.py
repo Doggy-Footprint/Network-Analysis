@@ -16,6 +16,7 @@ __all__ = [
     "DaggerComponentInfo",
     "RoomFieldInfo",
     "RoomEntityInfo",
+    "RoomMigrationInfo",
     "RoomQueryMethodInfo",
     "RoomDaoInfo",
     "RoomDatabaseInfo",
@@ -109,6 +110,19 @@ class RoomEntityInfo:
     line_number: int = 0
     end_line_number: int = 0
     fields: List[RoomFieldInfo] = field(default_factory=list)
+    table_name: str = ""  # normalized @Entity(tableName=...) or class name; kept out of node metadata
+
+
+@dataclass
+class RoomMigrationInfo:
+    id: str
+    name: str
+    module: str
+    file_path: str
+    line_number: int = 0
+    end_line_number: int = 0
+    is_declaration: bool = False  # class/object form, which has a Kotlin language node; false for `object : Migration` properties
+    table_refs: List[Optional[str]] = field(default_factory=list)  # None marks a non-literal execSQL argument
 
 
 @dataclass
@@ -189,6 +203,7 @@ class AndroidProjectArchitecture:
     di_bindings: List[DiBindingInfo] = field(default_factory=list)
     dagger_components: List[DaggerComponentInfo] = field(default_factory=list)
     room_entities: List[RoomEntityInfo] = field(default_factory=list)
+    room_migrations: List[RoomMigrationInfo] = field(default_factory=list)
     room_daos: List[RoomDaoInfo] = field(default_factory=list)
     room_databases: List[RoomDatabaseInfo] = field(default_factory=list)
     retrofit_apis: List[RetrofitApiInfo] = field(default_factory=list)

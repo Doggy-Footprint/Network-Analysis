@@ -7,12 +7,14 @@ declarations, and links them into an AndroidProjectArchitecture.
 """
 
 import os
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
+from framework_analyzers.migration_tables import normalize_table_name, sql_table_refs
 from language_analyzers.kotlin import ast as ka
 from .models import (
     ActivityFragmentInfo,
@@ -27,6 +29,7 @@ from .models import (
     RoomDatabaseInfo,
     RoomEntityInfo,
     RoomFieldInfo,
+    RoomMigrationInfo,
     RoomQueryMethodInfo,
     ViewModelInfo,
 )
@@ -43,6 +46,12 @@ QUERY_METHOD_ANNOTATIONS = {
 VIEWMODEL_SUPERTYPES = {"ViewModel", "AndroidViewModel"}
 ACTIVITY_SUPERTYPES = {"Activity", "AppCompatActivity", "ComponentActivity", "FragmentActivity"}
 FRAGMENT_SUPERTYPES = {"Fragment", "DialogFragment"}
+
+
+def _descendants(node):
+    for child in node.children:
+        yield child
+        yield from _descendants(child)
 
 
 class AndroidAnalyzer:
@@ -83,6 +92,7 @@ class AndroidAnalyzer:
             module = self._module_for(file_path)
             for decl in ka.top_level_declarations(root):
                 self._extract_declaration(decl, source, module, arch)
+            self._extract_migration_properties(root, source, module, arch)
 
         self._link(arch)
 
@@ -128,7 +138,9 @@ class AndroidAnalyzer:
         is_viewmodel = "HiltViewModel" in anns or bool(supertypes & VIEWMODEL_SUPERTYPES)
 
         if "Entity" in anns:
-            self._extract_room_entity(decl, source, module, name, arch)
+            self._extract_room_entity(decl, source, module, name, anns["Entity"], arch)
+        if self._is_migration(decl, source):
+            arch.room_migrations.append(self._migration_info(decl, decl, source, module, name, True))
         if "Dao" in anns:
             self._extract_room_dao(decl, source, module, name, arch)
         if "Database" in anns:
@@ -206,7 +218,8 @@ class AndroidAnalyzer:
             uses_viewmodel=uses_viewmodel,
         ))
 
-    def _extract_room_entity(self, decl, source: bytes, module: str, name: str, arch: AndroidProjectArchitecture):
+    def _extract_room_entity(self, decl, source: bytes, module: str, name: str, entity_annotation,
+                             arch: AndroidProjectArchitecture):
         fields = []
         ctor = ka.primary_constructor(decl)
         if ctor is not None:
@@ -218,6 +231,7 @@ class AndroidAnalyzer:
                     type_annotation=param["type"] or "",
                     is_primary_key="PrimaryKey" in param["annotations"],
                 ))
+        table_match = re.search(r'\btableName\s*=\s*"([^"]*)"', ka.annotation_args_text(entity_annotation, source))
         arch.room_entities.append(RoomEntityInfo(
             id=f"entity_{module}_{name}",
             name=name,
@@ -226,7 +240,100 @@ class AndroidAnalyzer:
             line_number=ka.start_line(decl),
             end_line_number=ka.end_line(decl),
             fields=fields,
+            table_name=normalize_table_name(table_match.group(1) if table_match else name) or "",
         ))
+
+    @staticmethod
+    def _is_migration(node, source: bytes) -> bool:
+        """True for a declaration or object literal with a `Migration(...)` supertype call."""
+        for child in node.children:
+            if child.type != "delegation_specifier":
+                continue
+            for invocation in child.children:
+                if invocation.type != "constructor_invocation":
+                    continue
+                for user_type in invocation.children:
+                    if user_type.type == "user_type" and ka.node_text(source, user_type).split(".")[-1].strip() == "Migration":
+                        return True
+        return False
+
+    def _extract_migration_properties(self, container, source: bytes, module: str, arch: AndroidProjectArchitecture):
+        for child in container.children:
+            if child.type == "property_declaration":
+                literal = next((c for c in child.children if c.type == "object_literal"), None)
+                if literal is None or not self._is_migration(literal, source):
+                    continue
+                variable = next((c for c in child.children if c.type == "variable_declaration"), None)
+                name = ka.declared_name(variable, source) if variable is not None else None
+                if name:
+                    arch.room_migrations.append(self._migration_info(child, literal, source, module, name, False))
+            elif child.type in ("class_declaration", "object_declaration", "companion_object"):
+                body = ka.class_body(child)
+                if body is not None:
+                    self._extract_migration_properties(body, source, module, arch)
+
+    def _migration_info(self, span_node, body_node, source: bytes, module: str, name: str,
+                        is_declaration: bool) -> RoomMigrationInfo:
+        return RoomMigrationInfo(
+            id=f"room_migration_{module}_{name}",
+            name=name,
+            module=module,
+            file_path=module,
+            line_number=ka.start_line(span_node),
+            end_line_number=ka.end_line(span_node),
+            is_declaration=is_declaration,
+            table_refs=self._exec_sql_refs(body_node, source),
+        )
+
+    @staticmethod
+    def _exec_sql_refs(node, source: bytes) -> List[Optional[str]]:
+        refs: List[Optional[str]] = []
+
+        def first_argument(call):
+            for suffix in call.children:
+                if suffix.type != "call_suffix":
+                    continue
+                for arguments in suffix.children:
+                    if arguments.type == "value_arguments":
+                        return next((a for a in arguments.children if a.type == "value_argument"), None)
+            return None
+
+        def callee(call) -> Optional[str]:
+            for child in call.children:
+                if child.type == "navigation_expression":
+                    suffixes = [g for g in child.children if g.type == "navigation_suffix"]
+                    identifiers = [g for g in suffixes[-1].children if g.type == "simple_identifier"] if suffixes else []
+                    return ka.node_text(source, identifiers[-1]) if identifiers else None
+                if child.type == "simple_identifier":
+                    return ka.node_text(source, child)
+            return None
+
+        def literal_value(argument) -> Optional[str]:
+            value = argument.children[-1] if argument.children else None
+            if value is None or value.type != "string_literal" or len(argument.children) not in (1, 3):
+                return None
+            if any(c.type in ("interpolation", "interpolated_identifier", "interpolated_expression")
+                   for c in _descendants(value)):
+                return None
+            text = ka.node_text(source, value)
+            if text.startswith('"""') and text.endswith('"""') and len(text) >= 6:
+                return text[3:-3]
+            return re.sub(r'\\(.)', lambda m: {"n": " ", "t": " "}.get(m.group(1), m.group(1)), text[1:-1])
+
+        def walk(current):
+            if current.type == "call_expression" and callee(current) == "execSQL":
+                argument = first_argument(current)
+                if argument is not None:
+                    text = literal_value(argument)
+                    if text is None:
+                        refs.append(None)
+                    else:
+                        refs.extend(sql_table_refs(text))
+            for child in current.children:
+                walk(child)
+
+        walk(node)
+        return refs
 
     def _extract_room_dao(self, decl, source: bytes, module: str, name: str, arch: AndroidProjectArchitecture):
         methods = []

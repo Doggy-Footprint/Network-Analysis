@@ -24,6 +24,8 @@ from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
 from framework_analyzers.route_matching import match_routes
+from framework_analyzers.sqlalchemy.analyzer import SQLAlchemyAnalyzer
+from framework_analyzers.sqlalchemy.graph import SQLAlchemyGraphBuilder
 from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
@@ -31,7 +33,7 @@ from renderers.html import HTMLRenderer
 from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json
 from report.bottlenecks import render_report as render_bottlenecks_report
 
-FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android"}
+FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
 
 
@@ -237,6 +239,22 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             include_dependencies=not args.no_deps,
             include_language_graph=not args.no_language_graph,
             parse_cache=parse_cache,
+            snapshot=repository_snapshot,
+            analysis_config=analysis_config,
+        )
+        arch = builder.build_graph(arch)
+    elif value == "sqlalchemy":
+        analyzer = SQLAlchemyAnalyzer(str(project_path), snapshot=repository_snapshot)
+        arch = analyzer.analyze()
+        # A selected python-core emitter (FastAPI's language graph or -l python) already owns
+        # those node ids, so the duplicate-id check in _run_merged stays in force.
+        python_core_emitted = (
+            ("framework", "fastapi") in args.analyzers or ("language", "python") in args.analyzers
+        ) and not args.no_language_graph
+        builder = SQLAlchemyGraphBuilder(
+            include_models=not args.no_models,
+            include_language_graph=not args.no_language_graph,
+            emit_language_graph=not python_core_emitted,
             snapshot=repository_snapshot,
             analysis_config=analysis_config,
         )

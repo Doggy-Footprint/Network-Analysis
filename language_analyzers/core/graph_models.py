@@ -57,6 +57,7 @@ class RelationKind:
     TESTS = "TESTS"
     CONFIGURES = "CONFIGURES"
     CALLS_ROUTE = "CALLS_ROUTE"
+    MIGRATES = "MIGRATES"
 
 
 @dataclass(frozen=True)
