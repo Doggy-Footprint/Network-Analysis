@@ -23,6 +23,8 @@ from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
 from framework_analyzers.fastapi.analyzer import FastAPIAnalyzer
 from framework_analyzers.fastapi.graph import ArchitectureGraphBuilder
+from framework_analyzers.nestjs.analyzer import NestJSAnalyzer
+from framework_analyzers.nestjs.graph import NestJSGraphBuilder
 from framework_analyzers.route_matching import match_routes
 from framework_analyzers.sqlalchemy.analyzer import SQLAlchemyAnalyzer
 from framework_analyzers.sqlalchemy.graph import SQLAlchemyGraphBuilder
@@ -33,7 +35,7 @@ from renderers.html import HTMLRenderer
 from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json
 from report.bottlenecks import render_report as render_bottlenecks_report
 
-FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy"}
+FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy", "nestjs": "NestJS"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
 
 
@@ -243,6 +245,19 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             analysis_config=analysis_config,
         )
         arch = builder.build_graph(arch)
+    elif value == "nestjs":
+        arch = NestJSAnalyzer(str(project_path), snapshot=repository_snapshot).analyze()
+        explicit_ts = ("language", "typescript") in args.analyzers
+        builder = NestJSGraphBuilder(
+            include_dependencies=not args.no_deps,
+            include_language_graph=not args.no_language_graph,
+            emit_language_graph=not explicit_ts and not args.no_language_graph,
+            snapshot=repository_snapshot,
+            analysis_config=analysis_config,
+        )
+        arch = builder.build_graph(arch)
+        if builder.emit_language_graph:
+            http_calls = arch.http_calls
     elif value == "sqlalchemy":
         analyzer = SQLAlchemyAnalyzer(str(project_path), snapshot=repository_snapshot)
         arch = analyzer.analyze()
@@ -299,6 +314,9 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config) -> Mer
         for key, item in arch.stats.items():
             if key != "analysis":
                 merged.stats.setdefault(key, item)
+    for arch, _builder, _calls in results:
+        merged.edges.extend(edge for edge in getattr(arch, "pending_implementation_edges", ())
+                            if edge.from_id in seen and edge.to_id in seen)
     route_edges, route_stats = match_routes(merged.nodes, http_calls)
     merged.edges.extend(route_edges)
     merged.stats["nodes_by_kind"] = dict(Counter(node.kind or node.category for node in merged.nodes))

@@ -1,0 +1,20 @@
+{
+  "modules": ["ApplicationModule", "ArticleModule", "UserModule", "ProfileModule", "TagModule"],
+  "controllers": ["AppController", "ArticleController", "UserController", "ProfileController", "TagController"],
+  "module_imports": [["ApplicationModule", "ArticleModule"], ["ApplicationModule", "UserModule"], ["ApplicationModule", "ProfileModule"], ["ApplicationModule", "TagModule"], ["ArticleModule", "UserModule"], ["ProfileModule", "UserModule"], ["TagModule", "UserModule"]],
+  "registrations": [["ApplicationModule", "AppController"], ["ArticleModule", "ArticleController"], ["UserModule", "UserController"], ["ProfileModule", "ProfileController"], ["TagModule", "TagController"]],
+  "providers": [["ArticleModule", "ArticleService"], ["UserModule", "UserService"], ["ProfileModule", "ProfileService"], ["TagModule", "TagService"]],
+  "exports": [["UserModule", "UserService"]],
+  "di": [["ArticleController", "ArticleService"], ["UserController", "UserService"], ["ProfileController", "ProfileService"], ["TagController", "TagService"], ["AuthMiddleware", "UserService"]],
+  "routes": [
+    ["GET", "/api"],
+    ["GET", "/api/articles"], ["GET", "/api/articles/feed"], ["GET", "/api/articles/:slug"], ["GET", "/api/articles/:slug/comments"],
+    ["POST", "/api/articles"], ["PUT", "/api/articles/:slug"], ["DELETE", "/api/articles/:slug"],
+    ["POST", "/api/articles/:slug/comments"], ["DELETE", "/api/articles/:slug/comments/:id"],
+    ["POST", "/api/articles/:slug/favorite"], ["DELETE", "/api/articles/:slug/favorite"],
+    ["GET", "/api/user"], ["PUT", "/api/user"], ["POST", "/api/users"], ["DELETE", "/api/users/:slug"], ["POST", "/api/users/login"],
+    ["GET", "/api/profiles/:username"], ["POST", "/api/profiles/:username/follow"], ["DELETE", "/api/profiles/:username/follow"],
+    ["GET", "/api/tags"]
+  ],
+  "unsupported": ["TypeOrmModule.forRoot()", "TypeOrmModule.forFeature", "@InjectRepository"]
+}

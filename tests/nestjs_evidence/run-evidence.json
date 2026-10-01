@@ -1,0 +1,75 @@
+{
+  "spec_version": 2,
+  "run_id": "7a2c91e6d80f4b35",
+  "command": ".venv/bin/python -m pytest -q",
+  "timeout_seconds": 180,
+  "suite": {
+    "passed": 883,
+    "subtests_passed": 194,
+    "seconds": 24.1
+  },
+  "baseline_suite": {
+    "passed": 846,
+    "subtests_passed": 156,
+    "seconds": 11.8
+  },
+  "evidence_revision": {
+    "tests/test_nestjs_cli.py": "1e45c8110aeef8ef6f4a5cc10657ae910777827f7eb19dd78a57e27fc6d32ef2",
+    "tests/test_nestjs_analyzer.py": "0e5a40aaa3b80ca3d15e342f0ce244e404f396dc1e710be6a97c7440892c75de",
+    "tests/nestjs_support.py": "a91cd6bee019d12b7d4c1c9c0cf6c0934182bee48649f60fd3b63d56b417a175",
+    "tests/test_nestjs_quality.py": "4e3c96e1f7568b8f8809d9f60030dd9dfefac1cc3eb9c51c631145b7bbf5fbad",
+    "tests/nestjs_evidence/coverage.md": "54bc10f2446251dedce9f791d551c981c3fec4ccf056c62813a057a144ced140",
+    "tests/nestjs_evidence/fixture-oracle.json": "ab6dc70ebae745ad3341235854aee857de98c2cf30cf99e1e17277a8cae67731",
+    "tests/nestjs_evidence/baselines.json": "93d8aacbbd4f988bf755df4d725c589ac366b442568ff5a0ff89120026a02bbe",
+    "tests/nestjs_evidence/mutation-results.json": "449c0f5b172df379aaf7e5a0314673ef2d578fa631091d975660dcb24f019630",
+    "tests/nestjs_evidence/mutations.md": "8b005ec6228223b8d45838187cc00127caa17b5b896dc3f2a1a7242fd390bf9c"
+  },
+  "correction_batches": 3,
+  "findings": {
+    "N1": "implementation prefix scope identity; corrected and passing",
+    "N2": "test assumes unsupported FastAPI ID prefix; corrected to existing provenance",
+    "N3": "implementation lexical factory/root/receiver shadows; corrected and passing",
+    "N4": "test adds nested-function class grammar not enumerated; corrected to top-level lexical import shadow",
+    "V1": "closed by verifier2",
+    "V2": "closed by verifier2",
+    "V3": "closed by verifier2",
+    "V4": "partly closed; remaining V8",
+    "V5": "partly closed; remaining V9",
+    "V6": "closed by verifier2",
+    "V7": "open O5: relative_path not observed for all unresolved bootstrap/prefix rows",
+    "V8": "open O6: explicit TS + no-language-graph does not observe all retained language outputs",
+    "V9": "open O7: ambiguous CALLS_ROUTE source not observed"
+  },
+  "impact": "V1\u2013V6 corrected in batch3. Shared edge_names now rejects dangling endpoints, invalidating prior O1/O2/O3/O10 helper-dependent evidence; current full command observes them again. O4/O6/O7/O9 assertions changed and need fresh audit. O11 hash oracle unchanged, raw comparison conditional on capture root, current run checks raw+portable; audit applicability refreshed. O5/O8/O12 core path/isolation/reproducibility observations retained: no behavior change to those expectations; full rerun confirms all. O6 captures stdout/Mermaid and config enrichment; exact supplied-profile and O9 source-authored 38 implementation mappings added afterward, with latest full suite883/19424.10s. All three intended mutation assertions and violating behavior dependencies are unchanged by those last unrelated assertions; source restores and current full command passed.",
+  "mutations": "M1/M2/M3 executed and caught by intended assertions; byte-identical restores; seed status none; details mutation-results.json/mutations.md; latest restored full command passes.",
+  "closure": "O14 success-only stale move deferred; limit spec archive and live handoff preserve unresolved findings.",
+  "verifier_invocations": 2,
+  "final_audit": {
+    "report": "tests/nestjs_evidence/verifier-2.md",
+    "result": "retry",
+    "main_disposition": "V7/V8/V9 accepted as blocking evidence gaps; no further corrections within exhausted budget",
+    "accepted": [
+      "O1",
+      "O2",
+      "O3",
+      "O4",
+      "O8",
+      "O9",
+      "O10",
+      "O11",
+      "O12",
+      "O13"
+    ],
+    "open": [
+      "O5",
+      "O6",
+      "O7"
+    ],
+    "pending": [
+      "O14"
+    ]
+  },
+  "workflow_status": "limit",
+  "user_disposition": "User explicitly retained the existing two-verifier limit after being offered a total-three recovery; no post-audit source/test corrections or third verifier.",
+  "archived_spec": "agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md"
+}

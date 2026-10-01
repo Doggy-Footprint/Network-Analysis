@@ -1,0 +1,66 @@
+{
+  "spec_version": 2,
+  "mutations": [
+    {
+      "mutation": "M1",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestReferences.test_O2_mixed_dynamic_barrel_paths_external_and_shadowed_refs_do_not_guess",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "E       AssertionError: Items in the first set but not the second:",
+        "E       ('Root', 'External')",
+        "E       ('Root', 'Alias')",
+        "E       ('Root', 'Lost')"
+      ],
+      "suite_summary": "1 failed, 882 passed, 192 subtests passed in 24.19s",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "d1ab0e4a9c50f10a658621756ca9489dda746c5950eb15350d2e5ac921f16a77"
+    },
+    {
+      "mutation": "M2",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestPinnedFixture.test_O10_source_authored_counts_edges_and_routes",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "E               AssertionError: ('GET', '/api/x/y') not found in {('GET', '/x/y')}",
+        "E       AssertionError: Items in the first set but not the second:",
+        "E       ('DELETE', '/articles/:slug')",
+        "E       ('POST', '/users/login')",
+        "E       ('GET', '/articles')",
+        "E       ('POST', '/articles/:slug/comments')"
+      ],
+      "suite_summary": "3 failed, 881 passed, 191 subtests passed in 24.06s",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "d1ab0e4a9c50f10a658621756ca9489dda746c5950eb15350d2e5ac921f16a77"
+    },
+    {
+      "mutation": "M3",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestNestJSCli.test_O6_ownership_in_both_orders_and_standalone",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "E       AssertionError: 1 != 0 : [!] Error: duplicate node id across analyzers: ts:src/main.ts",
+        "E               AssertionError: 1 != 0 : [!] Error: duplicate node id across analyzers: ts:src/main.ts",
+        "E               AssertionError: 1 != 0 : [!] Error: duplicate node id across analyzers: config:config.json:api",
+        "E               AssertionError: 1 != 0 : [!] Error: duplicate node id across analyzers: ts:src/main.ts",
+        "E       AssertionError: '[!] Error: duplicate node id across analyzers: ts:src/main.ts\\n' != ''",
+        "E       - [!] Error: duplicate node id across analyzers: ts:src/main.ts"
+      ],
+      "suite_summary": "7 failed, 879 passed, 189 subtests passed in 24.04s",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "cb08365293389981952d341f2df1d74eacc9b7213cabb7c505396a5d84516ca0"
+    }
+  ],
+  "restored_full_suite": {
+    "command": ".venv/bin/python -m pytest -q",
+    "timeout_seconds": 180,
+    "returncode": 0,
+    "summary": "883 passed, 192 subtests passed in 24.06s"
+  }
+}
