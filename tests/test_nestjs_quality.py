@@ -42,7 +42,7 @@ class TestSnapshotAndErrors(unittest.TestCase):
         self.root = Path(temp.name).resolve()
 
     def snapshot(self, files):
-        return RepositorySnapshot(str(self.root), "snapshot.v1", tuple(sorted(files.items())), (), "0" * 64)
+        return RepositorySnapshot(str(self.root), "snapshot.v1", tuple(sorted(files.items())), ())
 
     def test_O8_snapshot_survives_changed_deleted_files_without_source_access(self):
         files = {
@@ -256,8 +256,8 @@ class TestRegression(unittest.TestCase):
         root = fixture().resolve()
         sources = tuple(sorted((str(p.relative_to(root)), p.read_text(encoding="utf-8"))
                                for p in root.rglob("*.ts") if "node_modules" not in p.parts))
-        one = RepositorySnapshot(str(root), "snapshot.v1", sources, (), "0" * 64)
-        two = RepositorySnapshot(str(root), "snapshot.v1", tuple(reversed(sources)), (), "0" * 64)
+        one = RepositorySnapshot(str(root), "snapshot.v1", sources, ())
+        two = RepositorySnapshot(str(root), "snapshot.v1", tuple(reversed(sources)), ())
         left = architecture_to_dict(analyze(root, snapshot=one, language=False))
         right = architecture_to_dict(analyze(root, snapshot=two, language=False))
         self.assertEqual(left, right)

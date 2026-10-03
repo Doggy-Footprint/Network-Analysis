@@ -148,7 +148,7 @@ def test_V4_node_metrics_carry_identifier_counts_and_v3_contract_is_unchanged():
     network = payload["dependency_network"]
     metrics = network["node_metrics"]
 
-    assert payload["schema"] == "bottlenecks.v3"
+    assert payload["schema"] == "bottlenecks.v4"
     assert metrics
     for node_id, node_metric in metrics.items():
         assert V3_METRIC_KEYS <= set(node_metric), node_id

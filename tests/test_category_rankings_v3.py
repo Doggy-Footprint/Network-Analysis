@@ -227,7 +227,7 @@ def test_V4_json_is_byte_identical_for_equal_inputs_and_keeps_schema():
         architecture = replace(architecture, nodes=[make_node(*item) for item in assigned], edges=list(edges))
         outputs.append(bottlenecks_to_json(analyze_bottlenecks(snapshot, architecture, weights())))
     assert outputs[0] == outputs[1]
-    assert json.loads(outputs[0])["schema"] == "bottlenecks.v3"
+    assert json.loads(outputs[0])["schema"] == "bottlenecks.v4"
 
 
 def report_payload():

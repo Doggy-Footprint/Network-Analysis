@@ -22,10 +22,10 @@ class AndroidGraphContractTests(unittest.TestCase):
             root = Path(directory).resolve()
             architecture = AndroidProjectArchitecture(project_name="sample", project_path=str(root))
             mismatched = RepositorySnapshot(
-                str(root.parent), "snapshot.v1", (("Main.kt", "class Main\n"),), (), "0" * 64,
+                str(root.parent), "snapshot.v1", (("Main.kt", "class Main\n"),), ()
             )
             relative = RepositorySnapshot(
-                "relative-root", "snapshot.v1", (("Main.kt", "class Main\n"),), (), "0" * 64,
+                "relative-root", "snapshot.v1", (("Main.kt", "class Main\n"),), ()
             )
 
             with self.assertRaises(ValueError):

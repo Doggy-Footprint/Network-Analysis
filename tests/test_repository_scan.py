@@ -1,4 +1,3 @@
-import hashlib
 import json
 import shutil
 import subprocess
@@ -24,7 +23,7 @@ from repository import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-REF = ScanPolicyRef("test-policy", 1, "0" * 64)
+REF = ScanPolicyRef("test-policy", 1)
 
 VALID_POLICY = {
     "id": "temp-policy",
@@ -77,13 +76,6 @@ def reasons_of(snapshot):
     return {item.file_path: item.reason for item in snapshot.excluded_files}
 
 
-def expected_digest(contents):
-    body = "".join(
-        f"{path}\0{hashlib.sha256(text.encode('utf-8')).hexdigest()}\n" for path, text in sorted(contents.items())
-    )
-    return hashlib.sha256(body.encode("utf-8")).hexdigest()
-
-
 class TempRootCase(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -116,7 +108,6 @@ class PolicyLoadingTests(TempRootCase):
             self.assertEqual(getattr(loaded, key), raw["exclusions"][key], key)
         self.assertEqual(loaded.ref.id, "snapshot")
         self.assertEqual(loaded.ref.version, 1)
-        self.assertEqual(loaded.ref.content_hash, hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_VO2_V2_optional_keys_default(self):
         path = self.write_policy(valid())
@@ -124,7 +115,7 @@ class PolicyLoadingTests(TempRootCase):
         self.assertEqual(loaded.generated_marker_lines, 8)
         self.assertIs(loaded.include_agent_docs, True)
         self.assertIs(loaded.tracked_files_only, True)
-        self.assertEqual(loaded.ref, ScanPolicyRef("temp-policy", 1, hashlib.sha256(path.read_bytes()).hexdigest()))
+        self.assertEqual(loaded.ref, ScanPolicyRef("temp-policy", 1))
         self.assertEqual(loaded.max_file_bytes, 100)
         self.assertEqual(loaded.vendor_globs, ["v/**"])
         self.assertEqual(loaded.generated_globs, ["g/**"])
@@ -365,23 +356,6 @@ class NormalizationDigestTests(TempRootCase):
         snap = self.explicit(["out"], {"outside/x": "x", "out/y": "x", "out.txt": "x"})
         self.assertEqual(reasons_of(snap), {"out/y": "explicit_output"})
         self.assertEqual(set(snap.content_map()), {"outside/x", "out.txt"})
-
-    def test_VO6_D1_digest_matches_independent_computation(self):
-        files = {"b/two.py": "two é\n", "a.py": "one\n", "vendor/skip.py": "skip"}
-        snap = snapshot_of(files, root=self.root)
-        included = {"a.py": "one\n", "b/two.py": "two é\n"}
-        self.assertEqual(snap.digest, expected_digest(included))
-        self.assertEqual(snap.digest, snapshot_of(files, root=self.root).digest)
-
-    def test_VO6_D1_empty_inclusion_digest(self):
-        snap = snapshot_of({"vendor/a.py": "x"}, root=self.root)
-        self.assertEqual(snap.digest, hashlib.sha256(b"").hexdigest())
-
-    def test_VO6_D2_one_byte_change_changes_digest(self):
-        before = snapshot_of({"a.py": "abc"}, root=self.root)
-        after = snapshot_of({"a.py": "abd"}, root=self.root)
-        self.assertNotEqual(before.digest, after.digest)
-        self.assertEqual(after.digest, expected_digest({"a.py": "abd"}))
 
     def test_VO6_U1_reader_errors_mark_only_that_file_unreadable(self):
         snap = snapshot_of(

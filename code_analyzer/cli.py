@@ -139,8 +139,8 @@ def parse_args():
         action="store_true",
         help="Print Mermaid diagram markdown to stdout.",
     )
-    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v3 JSON.")
-    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v3 HTML.")
+    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v4 JSON.")
+    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v4 HTML.")
     parser.add_argument(
         "--edge-weights",
         default=str(default_edge_weights_path()),

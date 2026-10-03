@@ -368,8 +368,7 @@ class MainActivity : ComponentActivity() {
             str(self.project_path.resolve()),
             "snapshot.v1",
             (("CapturedScreen.kt", source), (".env", "ANDROID_KEY=value\n")),
-            (),
-            "0" * 64,
+            ()
         )
         (self.project_path / "CapturedScreen.kt").write_text("class Changed\n", encoding="utf-8")
 

@@ -47,14 +47,14 @@ def _valid_int(value: Any, minimum: int = 0) -> bool:
 
 
 def _snapshot(snapshot: RepositorySnapshot) -> None:
-    if not isinstance(snapshot, RepositorySnapshot) or not isinstance(snapshot.digest, str) or not snapshot.digest or not isinstance(snapshot.contents, tuple):
+    if not isinstance(snapshot, RepositorySnapshot) or not isinstance(snapshot.contents, tuple):
         raise BottleneckInputError("snapshot is invalid")
     if any(not isinstance(row, tuple) or len(row) != 2 or not isinstance(row[0], str) or not row[0] or not isinstance(row[1], str) for row in snapshot.contents) or len({row[0] for row in snapshot.contents}) != len(snapshot.contents):
         raise BottleneckInputError("snapshot contents are invalid")
 
 
 def _validate(snapshot: RepositorySnapshot, architecture: Any) -> tuple[list[Any], list[Any], set[tuple[str, str]]]:
-    if not hasattr(architecture, "nodes") or not hasattr(architecture, "edges") or (getattr(architecture, "snapshot_digest", None) is not None and architecture.snapshot_digest != snapshot.digest): raise BottleneckInputError("architecture is invalid")
+    if not hasattr(architecture, "nodes") or not hasattr(architecture, "edges"): raise BottleneckInputError("architecture is invalid")
     nodes, edges, paths = list(architecture.nodes), list(architecture.edges), set(snapshot.content_map())
     ids = [getattr(node, "id", None) for node in nodes]
     if not all(isinstance(item, str) and item for item in ids) or len(ids) != len(set(ids)): raise BottleneckInputError("architecture node ids are invalid")
@@ -108,9 +108,9 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in metrics if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _candidates(architecture, weights.large_node_line_threshold)
-        payload = {"id": weights.id, "version": weights.version, "content_hash": weights.content_hash, "confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
+        payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
-        return BottleneckReport("bottlenecks.v3", {"digest": snapshot.digest, "file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
+        return BottleneckReport("bottlenecks.v4", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

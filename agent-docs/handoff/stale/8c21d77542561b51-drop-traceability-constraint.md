@@ -47,3 +47,5 @@ No workflow spec exists for this handoff. Version, status, and run ID: not appli
 - Finding: traceability sentence removed from the project definition by the user; disposition: implementation removal deferred to this handoff.
 - Evidence and mutation outcomes: source inspection only; no implementation mutation or verification run.
 - Correction count: 0; verifier count: 0.
+- Decisions (user): remove profile `content_hash`/`id`/`version` echo, report `snapshot.digest`, the architecture–snapshot digest check, and `ScanPolicyRef.content_hash`; keep candidate `evidence`, the immutable snapshot, and `fixtures/registry.py` `content_sha256`; report schema becomes `bottlenecks.v4`.
+- Completion: removals applied; `tests/nestjs_evidence/baselines.json` bottlenecks hashes regenerated after confirming all eight cases differ from the previous commit only by the removed keys and schema name; full suite passed (914 passed).

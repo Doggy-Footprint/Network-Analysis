@@ -1,7 +1,6 @@
 """Spec 7a2c91e6d80f4b35 v2: O6–O7 end-to-end CLI scenarios."""
 import contextlib
 import copy
-import hashlib
 import io
 import json
 import subprocess
@@ -15,6 +14,7 @@ import code_analyzer.cli as cli
 from analysis.graph_metrics import GraphAnalyzer
 
 from tests.nestjs_support import write_project
+from analysis.edge_weights import load_edge_weights
 from tests.edge_weights_support import weights_data, write_weights
 
 
@@ -190,7 +190,7 @@ class TestNestJSCli(unittest.TestCase):
 
     def test_O6_analysis_config_reaches_weighted_graph(self):
         weights = write_weights(self.out, weights_data(confidence={"framework_inferred": 0.5}), "weights.yaml")
-        expected_hash = hashlib.sha256(weights.read_bytes()).hexdigest()
+        expected = load_edge_weights(weights)
         seen = []
         original = GraphAnalyzer.analyze
 
@@ -210,7 +210,7 @@ class TestNestJSCli(unittest.TestCase):
         for label, observed in (("standalone", standalone_seen), ("mixed", mixed_seen)):
             with self.subTest(label=label):
                 self.assertTrue(observed)
-                self.assertTrue(all(config is not None and config.content_hash == expected_hash
+                self.assertTrue(all(config == expected
                                     for config in observed))
         metrics = report["stats"]["analysis"]["node_metrics"].values()
         self.assertTrue(any(row["weighted_fan_in"] < row["fan_in"] for row in metrics))

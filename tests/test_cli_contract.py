@@ -145,7 +145,7 @@ class ImmutableStaticSnapshotCliTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             snapshot = RepositorySnapshot(
-                str(root), "snapshot.v1", (("main.py", "value = 1\n"),), (), "0" * 64,
+                str(root), "snapshot.v1", (("main.py", "value = 1\n"),), ()
             )
             modes = [
                 ("python", "PythonGraphAnalyzer", ["-l", "python"]),

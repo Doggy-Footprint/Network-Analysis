@@ -18,12 +18,12 @@ python -m code_analyzer <project_path> -f fastapi --bottlenecks report.json --bo
 ```
 
 - `-o PATH`: interactive architecture dashboard (HTML); `--json` also writes the graph as JSON.
-- `--bottlenecks PATH`, `--bottlenecks-html PATH`: `bottlenecks.v3` report — centrality and token-cost rankings, rankings split by source category, and candidates (`unresolved_boundary`, `evidence_spread`, `large_node`).
+- `--bottlenecks PATH`, `--bottlenecks-html PATH`: `bottlenecks.v4` report — centrality and token-cost rankings, rankings split by source category, and candidates (`unresolved_boundary`, `evidence_spread`, `large_node`).
 - `--edge-weights PATH`: edge-weight profile (default `profiles/edge_weights.v1.yaml`).
 
 ## Profiles
 
-Values that change results live in versioned files under `profiles/`, and every report records their id, version, and content hash.
+Values that change results live in files under `profiles/`.
 
 - `snapshot.v1.yaml`: which files enter the snapshot.
 - `edge_weights.v1.yaml`: weight per confidence and resolution grade (non-certain grades default to 0.3) and the `large_node` line threshold. Weights affect PageRank, HITS, and weighted fan-in/out only; betweenness, hop costs, and fan counts stay structural.

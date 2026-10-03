@@ -1,4 +1,3 @@
-import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -55,11 +54,7 @@ def load_scan_policy(path: Union[str, Path]) -> ScanPolicy:
         raise ScanPolicyError("scan policy exclusions must be a mapping")
 
     return ScanPolicy(
-        ref=ScanPolicyRef(
-            id=document["id"],
-            version=1,
-            content_hash=hashlib.sha256(raw_bytes).hexdigest(),
-        ),
+        ref=ScanPolicyRef(id=document["id"], version=1),
         max_file_bytes=_positive_int(document, "max_file_bytes"),
         generated_marker_lines=(
             _positive_int(document, "generated_marker_lines")

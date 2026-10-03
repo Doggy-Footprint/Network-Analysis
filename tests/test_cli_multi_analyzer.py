@@ -407,7 +407,7 @@ class TestVO5MergedRun(CliFixture):
     def test_bottlenecks_node_count_equals_merged_node_count(self):
         exported, _ = self.merged(bottlenecks=True)
         report = json.loads((self.out / "architecture_b.json").read_text(encoding="utf-8"))
-        self.assertEqual(report["schema"], "bottlenecks.v3")
+        self.assertEqual(report["schema"], "bottlenecks.v4")
         self.assertEqual(report["dependency_network"]["node_count"], len(exported["nodes"]))
         self.assertGreater(len(exported["nodes"]), 0)
 

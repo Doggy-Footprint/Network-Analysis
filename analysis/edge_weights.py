@@ -1,4 +1,3 @@
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Mapping, Union
@@ -19,7 +18,6 @@ _KEYS = {"id", "version", "confidence", "resolution", "large_node_line_threshold
 class EdgeWeights:
     id: str
     version: int
-    content_hash: str
     confidence: Mapping[str, float]
     resolution: Mapping[str, float]
     large_node_line_threshold: int
@@ -72,7 +70,6 @@ def load_edge_weights(path: Union[str, Path]) -> EdgeWeights:
     return EdgeWeights(
         id=document["id"],
         version=document["version"],
-        content_hash=hashlib.sha256(raw_bytes).hexdigest(),
         confidence=_weight_table(document, "confidence", Confidence),
         resolution=_weight_table(document, "resolution", Resolution),
         large_node_line_threshold=threshold,

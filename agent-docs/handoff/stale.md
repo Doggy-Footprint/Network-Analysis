@@ -71,3 +71,8 @@ File: ed8784db945e193f-identifier-ambiguity-metric.md
 Summary: Add identifier occurrence ambiguity as a node attribute.
 Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
 Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
+---
+File: 8c21d77542561b51-drop-traceability-constraint.md
+Summary: Remove snapshot digest, profile hash, and digest-consistency mechanisms that existed only for the dropped result-traceability constraint.
+Related Files: repository/scan.py, repository/policy.py, analysis/edge_weights.py, bottlenecks/core.py, language_analyzers/python/graph.py, README.md
+Related Symbols: build_snapshot, RepositorySnapshot.digest, ScanPolicy.content_hash, EdgeWeights.content_hash, analyze_bottlenecks, _validate

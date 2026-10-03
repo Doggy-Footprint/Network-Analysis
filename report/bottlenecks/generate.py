@@ -10,7 +10,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 from report.shared.document import ReportInputError, ReportOutputError
 from report.shared.labels import short_labels
 
-SUPPORTED_SCHEMA = "bottlenecks.v3"
+SUPPORTED_SCHEMA = "bottlenecks.v4"
 
 _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?$")
 

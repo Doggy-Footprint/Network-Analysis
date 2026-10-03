@@ -181,7 +181,7 @@ class TestRepositoryEnrichment(unittest.TestCase):
             snapshot = RepositorySnapshot(
                 str(root), "snapshot.v1",
                 ((".env", "FEATURE_KEY=on\n"), ("main.py", "def route():\n    return 'FEATURE_KEY'\n")),
-                (), "0" * 64,
+                ()
             )
 
             with mock.patch.object(Path, "rglob", side_effect=AssertionError("repository traversal")), \
