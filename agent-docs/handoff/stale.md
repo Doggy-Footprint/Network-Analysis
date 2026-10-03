@@ -66,3 +66,8 @@ File: fdec87dc8ce208aa-additional-framework-analyzers.md
 Summary: Add analyzers for additional frameworks.
 Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
 Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
+---
+File: ed8784db945e193f-identifier-ambiguity-metric.md
+Summary: Add identifier occurrence ambiguity as a node attribute.
+Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
+Related Symbols: GraphEdge, RelationKind, GraphAnalyzer

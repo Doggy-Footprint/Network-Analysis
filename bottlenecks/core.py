@@ -8,6 +8,8 @@ from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
 
+from .identifier_occurrence import CONTEXTS, identifier_file_counts, node_identifier
+
 
 class BottleneckInputError(ValueError): pass
 
@@ -98,6 +100,10 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if not isinstance(weights, EdgeWeights): raise BottleneckInputError("edge weights are invalid")
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
         analysis = GraphAnalyzer(GraphAnalysisConfig(edge_weights=weights)).analyze(nodes, edges, getattr(architecture, "project_path", None)); metrics = analysis["node_metrics"]
+        names = {node.id: node_identifier(getattr(node, "label", None)) for node in nodes}
+        occurrences = identifier_file_counts(snapshot.content_map() or dict(snapshot.contents), names.values())
+        for node_id, name in names.items():
+            if node_id in metrics: metrics[node_id].update(identifier_file_count=occurrences[name]["total"], identifier_file_count_by_context={context: occurrences[name][context] for context in CONTEXTS})
         rankings = {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted(metrics, key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS}
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in metrics if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}

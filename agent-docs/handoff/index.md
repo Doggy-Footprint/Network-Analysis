@@ -3,12 +3,6 @@ Summary: Validate bottlenecks.v3 and edge weights on a real repository.
 Related Files: fixtures/registry.py, code_analyzer/cli.py, bottlenecks/core.py
 Related Symbols: analyze_bottlenecks, load_edge_weights
 ---
-File: ed8784db945e193f-identifier-ambiguity-metric.md
-Summary: Add identifier occurrence ambiguity as a node attribute.
-Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
-Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
-
----
 
 File: 8c21d77542561b51-drop-traceability-constraint.md
 Summary: Remove snapshot digest, profile hash, and digest-consistency mechanisms that existed only for the dropped result-traceability constraint.
