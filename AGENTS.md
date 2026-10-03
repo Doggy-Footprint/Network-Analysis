@@ -5,7 +5,7 @@ Scope is limited to deterministic, traceable analysis of repository contents rat
 Outputs expose structural bottlenecks: which targets are costly to explore and which have high dependency-network token costs.
 Rather than providing precise analysis tailored to a specific agent runtime, this project aims to broadly explore structural bottlenecks across diverse agent runtimes and exploration strategies.
 
-<!-- harness:begin 0.13.0 -->
+<!-- harness:begin 0.14.0 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
