@@ -9,7 +9,6 @@ V2 (weight_for): decision table, each choice of confidence (4) and resolution (4
 at least once; expected values are min(confidence, resolution) hand-read from the
 tables in the test.
 """
-import hashlib
 
 import pytest
 
@@ -43,15 +42,11 @@ def test_V1_C1_default_file_loads_the_declared_values():
     assert dict(weights.confidence) == DEFAULT_WEIGHTS["confidence"]
     assert dict(weights.resolution) == DEFAULT_WEIGHTS["resolution"]
     assert weights.large_node_line_threshold == 2000
-    assert weights.content_hash == hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def test_V1_C1_content_hash_is_sha256_of_file_bytes_and_accepts_str_path(tmp_path):
+def test_V1_C1_accepts_str_path(tmp_path):
     path = write_weights(tmp_path, weights_data(), "a.yaml")
-    path.write_bytes(path.read_bytes() + b"# trailing comment changes the hash\n")
-    weights = load_edge_weights(str(path))
-    assert weights.content_hash == hashlib.sha256(path.read_bytes()).hexdigest()
-    assert len(weights.content_hash) == 64
+    assert load_edge_weights(str(path)) == load_edge_weights(path)
 
 
 @pytest.mark.parametrize("group", ["confidence", "resolution"])

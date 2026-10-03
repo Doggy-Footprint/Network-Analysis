@@ -116,4 +116,3 @@ def test_V8_advisory_rendered_document_contains_v3_values(tmp_path):
     payload = v3_payload(tmp_path)
     document = render_report(payload)
     assert "wide" in document
-    assert payload["edge_weights"]["content_hash"] in document

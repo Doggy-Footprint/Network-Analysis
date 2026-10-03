@@ -142,8 +142,7 @@ app.include_router(users_router, prefix="/api/v1")
             str(self.project_path.resolve()),
             "snapshot.v1",
             (("main.py", source), (".env", "FEATURE_KEY=enabled\n")),
-            (),
-            "0" * 64,
+            ()
         )
         (self.project_path / "main.py").write_text("raise RuntimeError('new filesystem state')\n", encoding="utf-8")
 
@@ -166,7 +165,7 @@ app.include_router(users_router, prefix="/api/v1")
     def test_C_3_fastapi_snapshot_root_must_match_an_absolute_project_path(self):
         (self.project_path / "main.py").write_text("from fastapi import FastAPI\napp = FastAPI()\n", encoding="utf-8")
         snapshot = RepositorySnapshot(
-            str(self.project_path.resolve()), "snapshot.v1", (("main.py", "from fastapi import FastAPI\n"),), (), "0" * 64,
+            str(self.project_path.resolve()), "snapshot.v1", (("main.py", "from fastapi import FastAPI\n"),), ()
         )
 
         with self.assertRaises(ValueError):
@@ -175,7 +174,7 @@ app.include_router(users_router, prefix="/api/v1")
             FastAPIAnalyzer("relative-project", snapshot=snapshot).analyze()
         framework = FastAPIAnalyzer(str(self.project_path.resolve())).analyze()
         different_root = RepositorySnapshot(
-            str(self.project_path.parent.resolve()), "snapshot.v1", (), (), "0" * 64,
+            str(self.project_path.parent.resolve()), "snapshot.v1", (), ()
         )
         with self.assertRaises(ValueError):
             ArchitectureGraphBuilder(snapshot=different_root).build_graph(framework)

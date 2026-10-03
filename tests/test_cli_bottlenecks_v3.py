@@ -5,7 +5,6 @@ sys.argv patched; observations are exit codes, stderr, output files and their by
 Scenario list: success run, three removed options, invalid weight files, two-run
 determinism, snapshot policy (snapshot.v1 exclusion rules + tracked_files_only).
 """
-import hashlib
 import json
 import subprocess
 import sys
@@ -13,7 +12,6 @@ import sys
 import pytest
 
 import code_analyzer.cli as cli
-from analysis.edge_weights import default_edge_weights_path
 from tests.edge_weights_support import uniform_weights_data, weights_data, write_weights
 
 TRACKED = {
@@ -69,8 +67,7 @@ def read_payload(out):
 def test_V7_C12_success_writes_v3_json_and_html_without_a_harness_profile(monkeypatch, project, out):
     assert run_cli(monkeypatch, *bottleneck_arguments(project, out)) in (0, None)
     payload = read_payload(out)
-    assert payload["schema"] == "bottlenecks.v3"
-    assert payload["edge_weights"]["content_hash"] == hashlib.sha256(default_edge_weights_path().read_bytes()).hexdigest()
+    assert payload["schema"] == "bottlenecks.v4"
     assert (out / "b.html").stat().st_size > 0
     assert (out / "architecture.html").is_file()
 
@@ -104,7 +101,6 @@ def test_V7_F14_edge_weights_option_replaces_the_default_file(monkeypatch, proje
     custom = write_weights(tmp_path, uniform_weights_data(large_node_line_threshold=1), "custom.yaml")
     assert run_cli(monkeypatch, *bottleneck_arguments(project, out, "--edge-weights", str(custom))) in (0, None)
     custom_payload = read_payload(out)
-    assert custom_payload["edge_weights"]["content_hash"] == hashlib.sha256(custom.read_bytes()).hexdigest()
     assert custom_payload["edge_weights"]["large_node_line_threshold"] == 1
     assert [item for item in custom_payload["candidates"] if item["kind"] == "large_node"]
 
@@ -216,7 +212,6 @@ def test_V7_F14_edge_weights_reach_every_cli_analysis_path(monkeypatch, tmp_path
     ]
     assert run_cli(monkeypatch, *arguments) in (0, None)
     payload = read_payload(out)
-    assert payload["edge_weights"]["content_hash"] == hashlib.sha256(weights.read_bytes()).hexdigest()
     metrics = payload["dependency_network"]["node_metrics"]
     assert any(row["fan_in"] > 0 for row in metrics.values()), "scratch repo produced no edge"
     assert all(row["weighted_fan_in"] <= row["fan_in"] + 1e-12 for row in metrics.values())

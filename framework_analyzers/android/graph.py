@@ -14,7 +14,8 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
-from analysis import GraphAnalyzer
+from analysis import GraphAnalysisConfig, GraphAnalyzer
+from framework_analyzers.migration_tables import match_migration_tables
 from language_analyzers.core.annotate import annotate_nodes, mark_edges
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
@@ -81,6 +82,11 @@ class AndroidArchitectureGraphBuilder:
             "highlight": {"background": "#1D4ED8", "border": "#93C5FD"},
             "hover": {"background": "#1D4ED8", "border": "#60A5FA"},
         },
+        "room_migration": {
+            "background": "#334155", "border": "#94A3B8",
+            "highlight": {"background": "#475569", "border": "#E2E8F0"},
+            "hover": {"background": "#475569", "border": "#CBD5E1"},
+        },
         "activity_fragment": {
             "background": "#374151", "border": "#9CA3AF",
             "highlight": {"background": "#4B5563", "border": "#E5E7EB"},
@@ -90,12 +96,14 @@ class AndroidArchitectureGraphBuilder:
 
     def __init__(self, include_models: bool = True, include_dependencies: bool = True,
                  include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None,
-                 snapshot: Optional[RepositorySnapshot] = None):
+                 snapshot: Optional[RepositorySnapshot] = None,
+                 analysis_config: Optional[GraphAnalysisConfig] = None):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.parse_cache = parse_cache
         self.snapshot = snapshot
+        self.analysis_config = analysis_config
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "CALLS": "unique",
@@ -389,9 +397,33 @@ class AndroidArchitectureGraphBuilder:
                         color="#9CA3AF",
                     ))
 
+        for migration in arch.room_migrations:
+            add_node(GraphNode(
+                id=migration.id, label=migration.name, display_label=f"🧱 {migration.name}",
+                group="room_migration", category="room_migration",
+                title=f"<b>Room Migration: {migration.name}</b><br>File: {migration.file_path}:{migration.line_number}",
+                shape="box", size=22, color=self.COLORS["room_migration"], flags=["migration"],
+                metadata={"name": migration.name, "module": migration.module, "file_path": migration.file_path,
+                          "line_number": migration.line_number, "end_line_number": migration.end_line_number},
+            ))
+
         annotate_nodes(nodes, arch.project_path, "android", "kotlin", snapshot=self.snapshot)
         mark_edges(edges, nodes=nodes, rule_namespace="android",
                    rule_specificity=self.FRAMEWORK_RULE_SPECIFICITY)
+        migration_stats = None
+        if arch.room_migrations:
+            # mark_edges would overwrite the resolution of ambiguous MIGRATES edges.
+            entities_by_table: Dict[str, List[str]] = {}
+            if self.include_models:
+                for entity in arch.room_entities:
+                    if entity.table_name:
+                        entities_by_table.setdefault(entity.table_name, []).append(entity.id)
+            spans = {node.id: node.span for node in nodes if node.span is not None}
+            migrate_edges, migration_stats = match_migration_tables(
+                entities_by_table,
+                [(m.id, m.table_refs, spans[m.id]) for m in arch.room_migrations],
+            )
+            edges.extend(migrate_edges)
         if self.include_language_graph:
             try:
                 language_nodes, language_edges = KotlinAnalyzer(
@@ -404,6 +436,7 @@ class AndroidArchitectureGraphBuilder:
             edges.extend(language_edges)
             if language_nodes:
                 edges.extend(self._implementation_edges(arch, nodes))
+                self._flag_migration_symbols(arch, nodes)
 
         arch.nodes = nodes
         arch.edges = edges
@@ -420,7 +453,9 @@ class AndroidArchitectureGraphBuilder:
             "total_room_entities": len(arch.room_entities),
             "total_retrofit_apis": len(arch.retrofit_apis),
         }
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
+        if migration_stats is not None:
+            arch.stats["migration_matching"] = migration_stats
+        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
             arch.nodes,
             arch.edges,
             project_path=arch.project_path,
@@ -461,6 +496,9 @@ class AndroidArchitectureGraphBuilder:
                      *arch.room_databases, *arch.di_modules, *arch.dagger_components,
                      *arch.retrofit_apis, *arch.activities_fragments]:
             add(item.id, item.file_path, item.name)
+        for migration in arch.room_migrations:
+            if migration.is_declaration:
+                add(migration.id, migration.file_path, migration.name)
         for dao in arch.room_daos:
             for method in dao.methods:
                 add(method.id, dao.file_path, f"{dao.name}.{method.name}")
@@ -482,8 +520,19 @@ class AndroidArchitectureGraphBuilder:
         return edges
 
     @staticmethod
+    def _flag_migration_symbols(arch: AndroidProjectArchitecture, nodes: List[GraphNode]) -> None:
+        symbols = {
+            (Path(str(node.metadata.get("file_path", ""))).as_posix(), str(node.metadata.get("qualname", ""))): node
+            for node in nodes if node.provenance == "kotlin-core" and node.metadata.get("qualname")
+        }
+        for migration in arch.room_migrations:
+            node = symbols.get((Path(migration.file_path).as_posix(), migration.name)) if migration.is_declaration else None
+            if node is not None and "migration" not in node.flags:
+                node.flags.append("migration")
+
+    @staticmethod
     def _build_report_collections(arch: AndroidProjectArchitecture) -> List[ReportCollection]:
-        return [
+        collections = [
             ReportCollection(
                 key="composables", label="Composables", view="grid", node_category="composable",
                 columns=[
@@ -528,6 +577,17 @@ class AndroidArchitectureGraphBuilder:
                        "endpoints": [f"{ep.http_method} {ep.path}" for ep in a.endpoints]} for a in arch.retrofit_apis],
             ),
         ]
+        if arch.room_migrations:
+            collections.append(ReportCollection(
+                key="room_migrations", label="Room Migrations", view="grid", node_category="room_migration",
+                columns=[
+                    ColumnSpec("tables", "Tables", "list"),
+                ],
+                rows=[{"id": m.id, "name": m.name,
+                       "tables": sorted({ref for ref in m.table_refs if ref is not None})}
+                      for m in arch.room_migrations],
+            ))
+        return collections
 
     def generate_mermaid(self, arch: AndroidProjectArchitecture) -> str:
         lines = ["graph TD", "  %% Android Architecture Diagram"]

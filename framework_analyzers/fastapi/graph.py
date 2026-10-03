@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
-from analysis import GraphAnalyzer
+from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.annotate import annotate_nodes, mark_edges, relative_repo_path
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.graph_models import Confidence, RelationKind, Resolution, SourceSpan
@@ -113,11 +113,13 @@ class ArchitectureGraphBuilder:
         include_dependencies: bool = True,
         include_language_graph: bool = True,
         snapshot: Optional[RepositorySnapshot] = None,
+        analysis_config: Optional[GraphAnalysisConfig] = None,
     ):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.snapshot = snapshot
+        self.analysis_config = analysis_config
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "MIDDLEWARE_OF": "unique",
@@ -472,7 +474,7 @@ class ArchitectureGraphBuilder:
             "edges_by_relation": dict(Counter(edge.relation for edge in arch.edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in arch.edges)),
         }
-        arch.stats["analysis"] = GraphAnalyzer().analyze(
+        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
             arch.nodes,
             arch.edges,
             project_path=arch.project_path,

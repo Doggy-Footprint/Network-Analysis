@@ -150,7 +150,7 @@ export function execute() {
         source = "export function capturedOnly() { return 1; }\n"
         self._write("src/captured.ts", source)
         snapshot = RepositorySnapshot(
-            str(self.directory), "snapshot.v1", (("src/captured.ts", source),), (), "0" * 64,
+            str(self.directory), "snapshot.v1", (("src/captured.ts", source),), ()
         )
         (self.directory / "src" / "captured.ts").unlink()
         module = importlib.import_module("language_analyzers.typescript")
@@ -164,10 +164,30 @@ export function execute() {
         self.assertEqual(architecture.stats["total_files"], 1)
         self.assertIn("capturedOnly", self._node_labels(architecture))
 
+    def test_C_2b_snapshot_import_resolves_to_captured_target_after_target_is_removed(self):
+        main = 'import { helper } from "./lib";\nexport function run() { return helper(); }\n'
+        lib = "export function helper() { return 1; }\n"
+        self._write("src/main.ts", main)
+        self._write("src/lib.ts", lib)
+        snapshot = RepositorySnapshot(
+            str(self.directory), "snapshot.v1", (("src/lib.ts", lib), ("src/main.ts", main)), ()
+        )
+        (self.directory / "src" / "lib.ts").unlink()
+        module = importlib.import_module("language_analyzers.typescript")
+
+        architecture = module.TypeScriptAnalyzer(str(self.directory), snapshot=snapshot).analyze()
+
+        ids = {node.id: str(node.label) for node in architecture.nodes}
+        imports = {
+            (ids.get(edge.from_id), ids.get(edge.to_id))
+            for edge in architecture.edges if str(edge.relation) == "IMPORTS"
+        }
+        self.assertIn(("src/main.ts", "src/lib.ts"), imports)
+
     def test_C_3_snapshot_root_must_match_an_absolute_project_path(self):
         source = "export const captured = 1;\n"
         snapshot = RepositorySnapshot(
-            str(self.directory), "snapshot.v1", (("captured.ts", source),), (), "0" * 64,
+            str(self.directory), "snapshot.v1", (("captured.ts", source),), ()
         )
         module = importlib.import_module("language_analyzers.typescript")
 

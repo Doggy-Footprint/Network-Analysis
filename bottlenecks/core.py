@@ -5,7 +5,10 @@ from typing import Any, Mapping, Tuple
 
 from analysis.edge_weights import EdgeWeights
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
+from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
+
+from .identifier_occurrence import CONTEXTS, identifier_file_counts, node_identifier
 
 
 class BottleneckInputError(ValueError): pass
@@ -24,6 +27,15 @@ RANKING_KEYS = (
     "hop_2_token_cost", "hop_3_token_cost",
 )
 
+CATEGORY_KEYS = ("production", "test", "generated", "vendored", "unknown")
+
+
+def _category(node: Any) -> str:
+    span = getattr(node, "span", None)
+    if span is None: return "unknown"
+    flags = path_flags(span.file_path)
+    return "vendored" if VENDORED in flags else "generated" if GENERATED in flags else "test" if TEST in flags else "production"
+
 
 def _lines(text: str) -> list[str]:
     lines = text.split("\n")
@@ -35,14 +47,14 @@ def _valid_int(value: Any, minimum: int = 0) -> bool:
 
 
 def _snapshot(snapshot: RepositorySnapshot) -> None:
-    if not isinstance(snapshot, RepositorySnapshot) or not isinstance(snapshot.digest, str) or not snapshot.digest or not isinstance(snapshot.contents, tuple):
+    if not isinstance(snapshot, RepositorySnapshot) or not isinstance(snapshot.contents, tuple):
         raise BottleneckInputError("snapshot is invalid")
     if any(not isinstance(row, tuple) or len(row) != 2 or not isinstance(row[0], str) or not row[0] or not isinstance(row[1], str) for row in snapshot.contents) or len({row[0] for row in snapshot.contents}) != len(snapshot.contents):
         raise BottleneckInputError("snapshot contents are invalid")
 
 
 def _validate(snapshot: RepositorySnapshot, architecture: Any) -> tuple[list[Any], list[Any], set[tuple[str, str]]]:
-    if not hasattr(architecture, "nodes") or not hasattr(architecture, "edges") or (getattr(architecture, "snapshot_digest", None) is not None and architecture.snapshot_digest != snapshot.digest): raise BottleneckInputError("architecture is invalid")
+    if not hasattr(architecture, "nodes") or not hasattr(architecture, "edges"): raise BottleneckInputError("architecture is invalid")
     nodes, edges, paths = list(architecture.nodes), list(architecture.edges), set(snapshot.content_map())
     ids = [getattr(node, "id", None) for node in nodes]
     if not all(isinstance(item, str) and item for item in ids) or len(ids) != len(set(ids)): raise BottleneckInputError("architecture node ids are invalid")
@@ -88,11 +100,17 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if not isinstance(weights, EdgeWeights): raise BottleneckInputError("edge weights are invalid")
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
         analysis = GraphAnalyzer(GraphAnalysisConfig(edge_weights=weights)).analyze(nodes, edges, getattr(architecture, "project_path", None)); metrics = analysis["node_metrics"]
+        names = {node.id: node_identifier(getattr(node, "label", None)) for node in nodes}
+        occurrences = identifier_file_counts(snapshot.content_map() or dict(snapshot.contents), names.values())
+        for node_id, name in names.items():
+            if node_id in metrics: metrics[node_id].update(identifier_file_count=occurrences[name]["total"], identifier_file_count_by_context={context: occurrences[name][context] for context in CONTEXTS})
         rankings = {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted(metrics, key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS}
+        categories = {node.id: _category(node) for node in nodes}
+        rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in metrics if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _candidates(architecture, weights.large_node_line_threshold)
-        payload = {"id": weights.id, "version": weights.version, "content_hash": weights.content_hash, "confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
+        payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
-        return BottleneckReport("bottlenecks.v3", {"digest": snapshot.digest, "file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
+        return BottleneckReport("bottlenecks.v4", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, {"source_file_count": len(snapshot.contents), "limitations": limitations}, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations))
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

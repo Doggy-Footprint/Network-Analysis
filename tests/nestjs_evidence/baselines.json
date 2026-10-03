@@ -1,0 +1,144 @@
+{
+  "base_commit": "88b6fe107dfdba42c8a80b22a733c32bd929b06a+identifier-ambiguity-metric",
+  "hash_seed": "0",
+  "normalization": "Replace absolute workspace root bytes with <REPO_ROOT> for portable hashes; raw hashes also captured. No other normalization.",
+  "cases": [
+    {
+      "name": "fastapi-futuramaapi",
+      "fixture": "futuramaapi",
+      "relative_project": ".fixtures/futuramaapi",
+      "flags": [
+        "-f",
+        "fastapi"
+      ],
+      "hashes": {
+        "json": "91ae4cb545f7dc5b773aff72e478b896b2c6281c24f628e4c1d27430afae9f09",
+        "bottlenecks": "8d04b32c1c1758226c14983b3eb055e0310eb8699faac128a9737adee57a9632"
+      },
+      "raw_hashes": {
+        "json": "4fcd96c281776a705b6027fedb0123697d448525350a86b29433e1618fe52686",
+        "bottlenecks": "1da62e24685450cde8f811b06c13fc7f85ccd22f859c5839d08463fc6e1994bd"
+      }
+    },
+    {
+      "name": "fastapi-realworld",
+      "fixture": "fastapi-realworld",
+      "relative_project": ".fixtures/fastapi-realworld",
+      "flags": [
+        "-f",
+        "fastapi"
+      ],
+      "hashes": {
+        "json": "8a1bd94e52d361b6afdef2dc78bd8ab886199e3a5a0397f37aaf7b0c4bfd655d",
+        "bottlenecks": "214bd20d26c8e1870f4902e62540877c709dcbce0c0dac543ccd4f44cdcd4b67"
+      },
+      "raw_hashes": {
+        "json": "7d02d5837536d294b1c52b0f8ef29396aca217bb043bfff5e7a47b00bf6e70d2",
+        "bottlenecks": "c2ae7c36313934d0493070490453a287d1a4fd05ac413e96d13f266c4ba9ad6d"
+      }
+    },
+    {
+      "name": "fastapi-template",
+      "fixture": "fastapi-official-template",
+      "relative_project": ".fixtures/fastapi-official-template/backend",
+      "flags": [
+        "-f",
+        "fastapi"
+      ],
+      "hashes": {
+        "json": "b235e7d0548f447ec4f537c11d5d24fb4162c33950aae2d20166bf42f7390a06",
+        "bottlenecks": "c45469481fad75ff87c0e24a3852efe44d9be6047093b84e682ed9e59914c974"
+      },
+      "raw_hashes": {
+        "json": "463e98cb5348bf10ad6526b31fad17c2513094850c936f4c3a1b66b584365741",
+        "bottlenecks": "c45469481fad75ff87c0e24a3852efe44d9be6047093b84e682ed9e59914c974"
+      }
+    },
+    {
+      "name": "python",
+      "fixture": "fastapi-realworld",
+      "relative_project": ".fixtures/fastapi-realworld",
+      "flags": [
+        "-l",
+        "python"
+      ],
+      "hashes": {
+        "json": "ec09470034b9fdc558c70f9dbcb66b0c05237c6bf238110039552e4500cd8386",
+        "bottlenecks": "fe7e344deecb6677ddf5f69d69ae41cbe095e02a60afad357c83fe70853555f7"
+      },
+      "raw_hashes": {
+        "json": "0f831dddcf3213e50f05e5c9fa8dc6a8fe14e8f6480f72152e78eaab2d4b70c7",
+        "bottlenecks": "fe7e344deecb6677ddf5f69d69ae41cbe095e02a60afad357c83fe70853555f7"
+      }
+    },
+    {
+      "name": "android",
+      "fixture": "android-nowinandroid",
+      "relative_project": ".fixtures/android-nowinandroid",
+      "flags": [
+        "-f",
+        "android"
+      ],
+      "hashes": {
+        "json": "44c1aa6e93f0c83aeacc0eef5394534e80c62bc0955f0e74dd4a618ce19264d5",
+        "bottlenecks": "411ea40d2d7ab4cf714a87c5298776ee0c93fb6f18fc928edd1616e655f8edec"
+      },
+      "raw_hashes": {
+        "json": "0e751c0a2bd505719e8046ae1f9bf02f796073b0ac67baa6e1528e4f0755eb77",
+        "bottlenecks": "411ea40d2d7ab4cf714a87c5298776ee0c93fb6f18fc928edd1616e655f8edec"
+      }
+    },
+    {
+      "name": "kotlin",
+      "fixture": "android-nowinandroid",
+      "relative_project": ".fixtures/android-nowinandroid",
+      "flags": [
+        "-l",
+        "kotlin"
+      ],
+      "hashes": {
+        "json": "5ec6bdb9fefe109780cfe4641a7aa2f210fdfcd2ef4047e4f8c5731d7a98f516",
+        "bottlenecks": "4372d6dff0e139466b39291b91632e0b835eb83c011354ed197bd5f41e8af139"
+      },
+      "raw_hashes": {
+        "json": "62da837f0bfb42954968072086992cc181f67b26cbf413c8dad38f2ab90a61ec",
+        "bottlenecks": "4372d6dff0e139466b39291b91632e0b835eb83c011354ed197bd5f41e8af139"
+      }
+    },
+    {
+      "name": "typescript",
+      "fixture": "typescript-nestjs-realworld",
+      "relative_project": ".fixtures/typescript-nestjs-realworld",
+      "flags": [
+        "-l",
+        "typescript"
+      ],
+      "hashes": {
+        "json": "996c5abbcac91793b252867fd71117c9b66e836a06779229505e00875c11eb68",
+        "bottlenecks": "7319a69a8663bcbb52db11009f5fcd4946a9a70d1336354de6eca4fb92e68fd1"
+      },
+      "raw_hashes": {
+        "json": "61f1c4a06e4d405e2116149a2786c53c7e07181e2f614e1a1e951f26b0677894",
+        "bottlenecks": "7319a69a8663bcbb52db11009f5fcd4946a9a70d1336354de6eca4fb92e68fd1"
+      }
+    },
+    {
+      "name": "sqlalchemy",
+      "fixture": "fastapi-realworld",
+      "relative_project": ".fixtures/fastapi-realworld",
+      "flags": [
+        "-f",
+        "sqlalchemy"
+      ],
+      "hashes": {
+        "json": "6e203b0a2349506dec097fce4444e15f44d131adf5dd25fe9fc70de3952e75e8",
+        "bottlenecks": "e250553a087d33811e044c14b4d7408e2e7858cb6850f487286e7f1950b0c9f3"
+      },
+      "raw_hashes": {
+        "json": "95cd6d3631e2277eecc2e1d624059f814e2ddd17e7a61cadd07b03b8e0d29f55",
+        "bottlenecks": "e250553a087d33811e044c14b4d7408e2e7858cb6850f487286e7f1950b0c9f3"
+      }
+    }
+  ],
+  "captured_root": "/Users/hwansu/orca/workspaces/network-analysis/polish"
+}

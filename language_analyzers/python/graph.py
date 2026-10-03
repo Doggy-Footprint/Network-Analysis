@@ -43,7 +43,6 @@ class PythonProjectArchitecture:
     edges: List[GraphEdge] = field(default_factory=list)
     stats: Dict[str, Any] = field(default_factory=dict)
     report_collections: List[ReportCollection] = field(default_factory=list)
-    snapshot_digest: Optional[str] = None
     snapshot_coverage: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -165,7 +164,6 @@ class PythonGraphAnalyzer:
             project_path=str(self.project_path),
             nodes=nodes,
             edges=edges,
-            snapshot_digest=self.snapshot.digest if self.snapshot is not None else None,
             snapshot_coverage=dict(source_analyzer.coverage) if self.snapshot is not None else {},
         )
         if self.snapshot is None:

@@ -1,9 +1,8 @@
 # Project Definition
 
-Measures repository structures that an AI coding agent can reproducibly observe while exploring code and locating targets.
-Scope is limited to deterministic, traceable analysis of repository contents rather than judgments about code quality, task difficulty, or agent behavior.
-Outputs expose structural bottlenecks: which targets are costly to explore and which have high dependency-network token costs.
-Rather than providing precise analysis tailored to a specific agent runtime, this project aims to broadly explore structural bottlenecks across diverse agent runtimes and exploration strategies.
+Builds a repository's dependency network from static analysis and surfaces its structural bottlenecks as refactoring candidates.
+The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
+The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
 
 <!-- harness:begin 0.14.0 -->
 # Documentation Guide

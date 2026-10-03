@@ -193,7 +193,7 @@ class TestKotlinParseCache(unittest.TestCase):
 
     def test_C_2_kotlin_analyzer_uses_snapshot_after_the_captured_file_is_deleted(self):
         snapshot = RepositorySnapshot(
-            str(self.project_path.resolve()), "snapshot.v1", (("Sample.kt", SAMPLE_KT),), (), "0" * 64,
+            str(self.project_path.resolve()), "snapshot.v1", (("Sample.kt", SAMPLE_KT),), ()
         )
         self.kt_file.unlink()
 

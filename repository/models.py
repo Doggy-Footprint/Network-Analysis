@@ -6,7 +6,6 @@ from typing import Dict, List, Tuple
 class ScanPolicyRef:
     id: str
     version: int
-    content_hash: str
 
 
 @dataclass(frozen=True)
@@ -34,7 +33,6 @@ class RepositorySnapshot:
     ignore_source: str
     contents: Tuple[Tuple[str, str], ...]
     excluded_files: Tuple[ExcludedFile, ...]
-    digest: str
 
     def content_map(self) -> Dict[str, str]:
         return dict(self.contents)

@@ -1,5 +1,4 @@
 import fnmatch
-import hashlib
 import os
 import re
 import subprocess
@@ -150,15 +149,9 @@ def build_snapshot(
         else:
             excluded.append(ExcludedFile(relative, reason))
 
-    digest_rows = (
-        f"{path}\0{hashlib.sha256(text.encode('utf-8')).hexdigest()}\n"
-        for path, text in contents
-    )
-    digest = hashlib.sha256("".join(digest_rows).encode("utf-8")).hexdigest()
     return RepositorySnapshot(
         root=str(root),
         ignore_source=ignore_source,
         contents=tuple(contents),
         excluded_files=tuple(excluded),
-        digest=digest,
     )
