@@ -1,13 +1,33 @@
 {
-  "spec_version": 2,
+  "spec_version": 3,
   "before": {
     "handoff_sha256": "1417e1aa6da6c5ffd20b9a2fb9b91b88679d8e4f6b5853d7606443f3c8bcb802",
     "index_block": "File: fdec87dc8ce208aa-additional-framework-analyzers.md\nSummary: Add analyzers for additional frameworks.\nRelated Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py\nRelated Symbols: GraphEdge, RelationKind, GraphAnalyzer",
-    "failed_attempts": "\n| attempt | failure evidence | cause |\n| --- | --- | --- |\n| None recorded | \u2014 | \u2014 |\n"
+    "failed_attempts": "\n| attempt | failure evidence | cause |\n| --- | --- | --- |\n| None recorded | — | — |\n"
   },
   "procedure": "After audit acceptance, remove the exact block from index.md, append it unchanged to stale.md, move handoff bytes unchanged to stale/, archive complete spec with spec_lifecycle.py, then compare hash/block/Failed Attempts and absence of active marker.",
-  "after": null,
-  "status": "deferred: verifier2 leaves V7/V8/V9 blocking; success stale move not authorized by completion condition",
+  "after": {
+    "handoff_path": "agent-docs/handoff/stale/fdec87dc8ce208aa-additional-framework-analyzers.md",
+    "handoff_sha256": "b851997d1401faf69706f5cd147e680a0cec43a7532fa746a8ba460942b747ea",
+    "index_block_removed_from_index": true,
+    "index_block_appended_verbatim_to_stale_md": true,
+    "failed_attempt_rows_preserved": [
+      "None recorded",
+      "Initial integration",
+      "Second integration",
+      "Verifier 1",
+      "Correction batch 3 reconciliation",
+      "Verifier 2"
+    ],
+    "failed_attempt_rows_appended": [
+      "Verifier 3 (consolidated, replaces deleted verifier-1/2 reports)",
+      "V10 first draft"
+    ],
+    "archived_spec": "agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md",
+    "archived_status": "complete",
+    "failed_attempt_rows_preserved_check": true
+  },
+  "status": "executed after verifier-4 pass",
   "limit_archive": "agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md",
   "limit_after": {
     "archived_spec": "agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md",
@@ -17,5 +37,6 @@
     "original_index_block_retained": true,
     "original_failed_attempt_row_retained": true,
     "source_and_test_bytes_unchanged_after_verifier2": true
-  }
+  },
+  "procedure_note": "Handoff content was updated (State/Next Step/Spec/Ledger, Failed Attempts rows appended only) before the move, so handoff bytes differ from `before.handoff_sha256`."
 }

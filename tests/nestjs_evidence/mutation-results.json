@@ -1,5 +1,5 @@
 {
-  "spec_version": 2,
+  "spec_version": 3,
   "mutations": [
     {
       "mutation": "M1",
@@ -55,12 +55,87 @@
       "suite_summary": "7 failed, 879 passed, 189 subtests passed in 24.04s",
       "restored_byte_identically": true,
       "restored_file_sha256": "cb08365293389981952d341f2df1d74eacc9b7213cabb7c505396a5d84516ca0"
+    },
+    {
+      "mutation": "M4",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestBootstrap.assert_relative_retained via test_O5_unreachable_absent_multiple_unresolved_bootstraps and test_O5_dynamic_multiple_options_and_other_function_prefix",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "SUBFAILED label=unreachable/absent/multiple/unresolved; SUBFAILED prefix dynamic/multiple/options"
+      ],
+      "suite_summary": "11 failed, 882 passed, 191 subtests passed in 26.89s",
+      "violating_behavior": "endpoint relative_path nulled when full_path is unconfirmed",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "d6bd171480d4ff2f9a166997aac44c383cf2aadfdf2052cde77d2666ba8f9ab3"
+    },
+    {
+      "mutation": "M5",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestNestJSCli.test_O6_mixed_fastapi_and_flags[explicit_language] (assert_typescript_outputs_retained)",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "SUBFAILED name=explicit_language"
+      ],
+      "suite_summary": "1 failed, 884 passed, 199 subtests passed in 25.80s",
+      "violating_behavior": "explicit TypeScript with --no-language-graph drops TypeScript HTTP calls",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "cb08365293389981952d341f2df1d74eacc9b7213cabb7c505396a5d84516ca0"
+    },
+    {
+      "mutation": "M6",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestNestJSCli.test_O7_duplicate_server_candidates_do_not_pick_arbitrarily (source label)",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "FAILED test_O7_duplicate_server_candidates_do_not_pick_arbitrarily"
+      ],
+      "suite_summary": "1 failed, 883 passed, 200 subtests passed in 25.53s",
+      "violating_behavior": "ambiguous CALLS_ROUTE emitted from postOk instead of getOk",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "a0ea6af1b31b651920caeb16926b7845a1de63161edad8739a6c51afeddc4617"
+    },
+    {
+      "mutation": "M7",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestDI.test_O3_each_unsupported_constructor_form_alone_creates_no_dependency[union]",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "SUBFAILED form=union"
+      ],
+      "suite_summary": "1 failed, 884 passed, 199 subtests passed in 25.43s",
+      "violating_behavior": "union-typed constructor parameter resolved to its first member as class injection",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "d1ab0e4a9c50f10a658621756ca9489dda746c5950eb15350d2e5ac921f16a77"
+    },
+    {
+      "mutation": "M3 rerun",
+      "command": ".venv/bin/python -m pytest -q",
+      "timeout_seconds": 180,
+      "returncode": 1,
+      "intended_assertion": "TestNestJSCli.test_O6_ownership_in_both_orders_and_standalone",
+      "detected_by_intended_assertion": true,
+      "observed_failure_excerpt": [
+        "SUBFAILED label=ts_first, nest_first; related O6/O7 scenarios"
+      ],
+      "suite_summary": "8 failed, 880 passed, 194 subtests passed in 25.31s",
+      "violating_behavior": "NestJS emits the language graph alongside explicit TypeScript",
+      "restored_byte_identically": true,
+      "restored_file_sha256": "cb08365293389981952d341f2df1d74eacc9b7213cabb7c505396a5d84516ca0"
     }
   ],
   "restored_full_suite": {
     "command": ".venv/bin/python -m pytest -q",
     "timeout_seconds": 180,
     "returncode": 0,
-    "summary": "883 passed, 192 subtests passed in 24.06s"
+    "summary": "884 passed, 200 subtests passed in 24.86s"
   }
 }

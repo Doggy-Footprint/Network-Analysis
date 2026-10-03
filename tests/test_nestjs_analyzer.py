@@ -136,6 +136,29 @@ class TestDI(NestProject):
         self.assertEqual({target for source, target in pairs if source == "C"}, {"Shared"})
         self.assertIn("unsupported_expression", self.codes(arch))
 
+    def test_O3_each_unsupported_constructor_form_alone_creates_no_dependency(self):
+        forms = {
+            "alias": ("type Alias = Local;\n@Controller() class C { constructor(a: Alias) {} }", "Alias"),
+            "generic": ("@Controller() class C { constructor(a: Promise<Local>) {} }", "Promise<Local>"),
+            "union": ("@Controller() class C { constructor(a: Local | Other) {} }", "Local | Other"),
+            "explicit_injection": ("@Controller() class C { constructor(@Inject('x') a: Local) {} }", "@Inject('x')"),
+            "interface": ("interface Contract {}\n@Controller() class C { constructor(a: Contract) {} }", "Contract"),
+            "external": ("import { External } from 'pkg';\n@Controller() class C { constructor(a: External) {} }", "External"),
+        }
+        for label, (declaration, token) in forms.items():
+            with self.subTest(form=label):
+                root = self.root / label
+                root.mkdir()
+                write_project(root, {
+                    "src/local.ts": COMMON + "@Injectable() export class Shared {}",
+                    "src/other.ts": COMMON + "@Injectable() export class Shared {}",
+                    "src/main.ts": COMMON + "import { Shared as Local } from './local';\nimport { Shared as Other } from './other';\n" + declaration,
+                })
+                arch = analyze(root)
+                self.assertEqual(edge_names(arch, "DEPENDS_ON"), set())
+                self.assertEqual(len(diagnostics(arch)), 1)
+                self.assertIn(token, diagnostics(arch)[0]["expression"])
+
 
 class TestPaths(NestProject):
     def test_O4_http_grammar_literals_and_unsupported_expressions(self):
@@ -181,6 +204,13 @@ class TestBootstrap(NestProject):
         app = COMMON + ("@Module({controllers:[C]}) class Root {}\n" if controller else "@Module({}) class Root {}\n") + "@Controller('x') class C { @Get('y') handler() {} }\n" + bootstrap
         return self.graph({"main.ts": app})
 
+    def assert_relative_retained(self, arch):
+        endpoints = framework_nodes(arch, "endpoint")
+        self.assertEqual(len(endpoints), 1)
+        self.assertEqual(endpoints[0].metadata["relative_path"], "/x/y")
+        self.assertEqual(endpoints[0].metadata["path"], "/y")
+        self.assertIsNone(endpoints[0].metadata["full_path"])
+
     def test_O5_single_literal_prefix_and_missing_prefix(self):
         for prefix, expected in [("app.setGlobalPrefix('api');", "/api/x/y"), ("", "/x/y")]:
             with self.subTest(prefix=prefix):
@@ -198,6 +228,7 @@ class TestBootstrap(NestProject):
             with self.subTest(label=label):
                 arch = self.project(bootstrap, controller=registered)
                 self.assertIn(("GET", None), endpoint_data(arch))
+                self.assert_relative_retained(arch)
 
     def test_O5_dynamic_multiple_options_and_other_function_prefix(self):
         cases = ["app.setGlobalPrefix(prefix);", "app.setGlobalPrefix('a');app.setGlobalPrefix('b');", "app.setGlobalPrefix('a', {});"]
@@ -205,6 +236,7 @@ class TestBootstrap(NestProject):
             with self.subTest(prefix=prefix):
                 arch = self.project(CORE + "async function start(){const app=await NestFactory.create(Root);" + prefix + "}")
                 self.assertIn(("GET", None), endpoint_data(arch))
+                self.assert_relative_retained(arch)
 
     def test_O5_other_function_prefix_does_not_attach(self):
         arch = self.project(CORE + "async function start(){const app=await NestFactory.create(Root); function other(){app.setGlobalPrefix('a');}}")

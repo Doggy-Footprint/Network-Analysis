@@ -12,13 +12,11 @@ Extend framework-specific connectivity beyond FastAPI and Android.
 
 ## State
 
-- Branch: `polish`; HEAD and workflow base: `c0191a4ecf598a59de8bf49d760f270b1fe0dedc`. Historical handoff base: `2a340fb`. No implementation commit created.
-- Implementation changes: `framework_analyzers/nestjs/{__init__,models,analyzer,graph}.py`, `code_analyzer/cli.py`.
-- Verification changes: `tests/nestjs_support.py`, `tests/test_nestjs_analyzer.py`, `tests/test_nestjs_cli.py`, `tests/test_nestjs_quality.py`, `tests/nestjs_evidence/`.
-- Workflow records: this handoff and `agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md`. The original index entry remains live; success-only stale movement has not occurred.
-- NestJS source extraction, graph/report integration and CLI selection are implemented. The last exact full command `.venv/bin/python -m pytest -q` passed **883 tests and 194 subtests in 24.10 seconds** under a 180-second timeout.
-- Three required mutations were detected by their intended assertions and restored byte-identically. Seed status is `none`.
-- Final independent audit is `retry`: three required observations remain unverified. This is a verification evidence gap, not an established implementation defect. The approved verifier budget is exhausted; workflow status is `limit`.
+- Branch: `polish`; HEAD `a0aea16f9e932e2d8935836616a5e035ae662b6e` (implementation commit); workflow base `c0191a4ecf598a59de8bf49d760f270b1fe0dedc`. Uncommitted at closure: batch 4 test/evidence changes and the restored spec/handoff records.
+- Implementation (committed in `a0aea16`): `framework_analyzers/nestjs/{__init__,models,analyzer,graph}.py`, `code_analyzer/cli.py`. No implementation change after that commit.
+- Batch 4 test changes: `tests/test_nestjs_analyzer.py` (`TestBootstrap.assert_relative_retained`, `TestDI.test_O3_each_unsupported_constructor_form_alone_creates_no_dependency`), `tests/test_nestjs_cli.py` (`assert_typescript_outputs_retained`, ambiguous-edge source assertion). Evidence: `tests/nestjs_evidence/{audit 3,audit 4,coverage.md,mutations.md,mutation-results.json,run-evidence.json,closure-evidence.json}`.
+- Final full command `.venv/bin/python -m pytest -q`: **884 passed, 200 subtests** (180-second timeout). Mutations M1–M7 and an M3 rerun were detected by their intended assertions and restored byte-identically; seed status `none`.
+- Final independent audit: audit 4 (report not retained) result `pass`; workflow status `complete`.
 
 ## Failed Attempts
 
@@ -30,27 +28,20 @@ Extend framework-specific connectivity beyond FastAPI and Android.
 | Verifier 1 | `tests/nestjs_evidence/verifier-1.md`: V1–V6, O2/O3/O4/O6/O7/O9 evidence gaps | verified: assertions omitted multiplicity, file-qualified targets, metadata, output ownership and report observations |
 | Correction batch 3 reconciliation | 4 failures in strengthened evidence; then source-authored implementation-target oracle missed ValidationPipe | verified: combined graph metrics differ, changed fixture anchor invalidated replacement, no-bootstrap diagnostic was missing, and the fixture oracle omitted an Injectable pipe declaration |
 | Verifier 2 | `tests/nestjs_evidence/verifier-2.md`: V7/O5, V8/O6, V9/O7 remain blocking despite green full suite | verified: declared rows do not observe retained relative paths, full explicit-TypeScript output under no-language-graph, or ambiguous route-call source |
+| Verifier 3 (consolidated, replaces deleted verifier-1/2 reports) | audit 3 (report not retained): V7, V8, V9 confirmed; V10 new (alias/generic/union/explicit-injection forms not isolated in O3) | verified: assertions compared sets or omitted source/relative-path observations |
+| V10 first draft | alias-form subtest expected `unsupported_expression`; got `unresolved_reference` | verified: the spec only requires "diagnose and skip"; assertion relaxed to one diagnostic naming the form's type token |
 
 ## Next Step
 
-The user explicitly chose “기존 2회 제한 유지” after the limit handoff. Stop this run without further source/test corrections or verifier dispatches. Any future recovery requires a new explicit user decision changing that policy; a replacement run must not reset the invocation count.
-
-After an explicitly authorized policy change, strengthen only the declared missing observations:
-
-1. V7: for each absent/multiple/unresolved bootstrap and dynamic/multiple/options prefix row, assert the endpoint retains `/x/y` as `relative_path` while `full_path` remains null.
-2. V8: compare the explicit TypeScript + `--no-language-graph` scenario against TypeScript-only source nodes, language edges, enrichment and HTTP calls, while keeping NestJS `IMPLEMENTED_BY` absent.
-3. V9: assert the ambiguous GET candidate edge originates from `getOk`, with the existing exact target/candidate policy.
-
-Run the exact full command with a 180-second timeout, record change impact, and obtain independent acceptance under the authorized recovery policy. Only then complete O14: archive the completed spec and move the original index block and handoff to stale while preserving every Failed Attempts row.
+Complete. The user lifted the two-verifier stop (consolidated verifier plus up to two further audits; cumulative count 4/5 used) and verifier-4 passed. Closure O14: spec archived with status `complete`, this handoff's index block moved verbatim to `stale.md`, this file moved to `stale/`. Remaining advisories (non-blocking): V11 (V10 assertion exact diagnostic count/text), A1–A3 in audit 3 (report not retained).
 
 ## Open Questions
 
-- The framework and analysis-config questions are resolved by the supplied NestJS plan and its builder contract.
-- No current policy question is pending: the user chose to retain the two-verifier limit. V7–V9 remain unresolved. No third verifier has been invoked and no post-audit source/test corrections were made.
+- None. Commit of the batch 4 test/evidence changes is left to the user.
 
 ## Spec
 
-Archived spec: `agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md`, version 2, status `limit`, run ID `7a2c91e6d80f4b35`. User-approved functional scope and quality thresholds are unchanged.
+Archived spec: `agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md`, version 3, status `complete`, run ID `7a2c91e6d80f4b35`. Scope and quality thresholds unchanged; v3 records the verifier budget exception (assumption A3).
 
 ## Execution Ledger
 
@@ -64,3 +55,5 @@ Archived spec: `agent-docs/spec-logs/7a2c91e6d80f4b35-nestjs-analyzer.md`, versi
 - Limit closure: keep this handoff and its index entry live, archive the limit spec, remove the active workflow marker, and preserve the original Failed Attempts row. The success-only stale-move procedure remains in `tests/nestjs_evidence/closure-evidence.json` with no success after-state claimed.
 
 - User disposition after limit archive: “continue” prompted an explicit policy clarification; the user selected “기존 2회 제한 유지”. The archived spec remains immutable, and the run remains `limit`.
+
+- Resumed (v3): consolidated verifier-3 (invocation 3) retry V7–V10; correction batch 4 (tests/evidence only); mutations M4 (V7), M5 (V8), M6 (V9), M7 (V10) and M3 rerun detected; verifier-4 (invocation 4) pass. Correction batches: 4. Verifier invocations: 4 of ceiling 5. Closure O14 executed; `closure-evidence.json` records the after-state.

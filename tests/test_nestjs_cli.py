@@ -109,6 +109,33 @@ class TestNestJSCli(unittest.TestCase):
                     else:
                         self.assertEqual(calls, expected_calls)
 
+    def assert_typescript_outputs_retained(self, report):
+        write_project(self.root, {"config.json": '{"api":true}',
+                                  "src/main.ts": NEST + "\nexport function configProbe(){return 'api';}\n"})
+        subprocess.run(["git", "add", "config.json", "src/main.ts"], cwd=self.root, check=True)
+        _, _, ts_only, _ = self.cli("-l", "typescript", name="ts_only_for_explicit")
+        _, _, owned, _ = self.cli("-f", "nestjs", "-l", "typescript", name="owned_for_explicit")
+        _, err, report_again, _ = self.cli("-f", "nestjs", "-l", "typescript", "--no-language-graph", name="explicit_again")
+
+        def without_analysis(nodes):
+            selected = copy.deepcopy([n for n in nodes if not n["id"].startswith("nestjs:")])
+            for node in selected:
+                node.get("metadata", {}).pop("analysis", None)
+            return selected
+
+        def internal_edges(edges):
+            return [e for e in edges if not e["from_id"].startswith("nestjs:") and not e["to_id"].startswith("nestjs:")
+                    and e["relation"] != "CALLS_ROUTE"]
+
+        self.assertEqual(err, "")
+        self.assertEqual(without_analysis(report_again["nodes"]), without_analysis(ts_only["nodes"]))
+        self.assertEqual(internal_edges(report_again["edges"]), ts_only["edges"])
+        self.assertEqual([e for e in report_again["edges"] if e["relation"] == "CALLS_ROUTE"],
+                         [e for e in owned["edges"] if e["relation"] == "CALLS_ROUTE"])
+        self.assertTrue(any(e["relation"] == "CONFIGURES" for e in report_again["edges"]))
+        for key, collection in ts_only["collections"].items():
+            self.assertEqual(report_again["collections"][key], collection)
+
     def test_O6_mixed_fastapi_and_flags(self):
         for name, flags in [
             ("mixed", ("-f", "fastapi", "-l", "typescript", "-f", "nestjs")),
@@ -139,6 +166,7 @@ class TestNestJSCli(unittest.TestCase):
                 if name == "explicit_language":
                     self.assertTrue(any(i.startswith("ts:") for i in ids))
                     self.assertFalse(any(e["relation"] == "IMPLEMENTED_BY" for e in report["edges"]))
+                    self.assert_typescript_outputs_retained(report)
                 if name == "mixed":
                     self.assertTrue(any(n["provenance"] == "fastapi" for n in report["nodes"]))
 
@@ -231,6 +259,8 @@ class TestNestJSCli(unittest.TestCase):
         self.assertEqual(len(get_candidates), 2)
         self.assertEqual(len(ambiguous), 1)
         edge = ambiguous[0]
+        by_id = {n["id"]: n for n in report["nodes"]}
+        self.assertEqual(by_id[edge["from_id"]]["label"], "getOk")
         self.assertEqual(edge["to_id"], get_candidates[0])
         self.assertEqual(edge["candidates"], get_candidates[1:])
         self.assertEqual(edge["confidence"], "framework_inferred")

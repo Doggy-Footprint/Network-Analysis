@@ -1,10 +1,10 @@
 ---
-version: 2
+version: 3
 run_id: 7a2c91e6d80f4b35
-status: limit
+status: complete
 base_commit: c0191a4ecf598a59de8bf49d760f270b1fe0dedc
 max_verifier_invocations: 2
-handoff: agent-docs/handoff/fdec87dc8ce208aa-additional-framework-analyzers.md
+handoff: agent-docs/handoff/stale/fdec87dc8ce208aa-additional-framework-analyzers.md
 ---
 
 # User Intent
@@ -103,6 +103,7 @@ Each list is finite; target is 100% of named items independently, never their im
 | --- | --- | --- | --- |
 | A1 | Direct-import resolution, provider candidate declarations, single-app static module reachability, diagnostic partial success | supplied plan fixes these defaults | user's explicit implement-plan request approves entire supplied specification, including required workflow/quality/verification policy |
 | A2 | This document transcribes approved plan; no additional behavior or quality target introduced | source is user-provided complete plan | explicit implement-plan instruction; no duplicate approval requested |
+| A3 | Verifier budget exception: one consolidated audit replacing the deleted verifier-1/verifier-2 reports, then at most two further audits; invocation count stays cumulative (2 used + up to 3 = 5 max). Frontmatter `max_verifier_invocations` stays 2 because `spec_lifecycle.py validate` rejects other values | user deleted verifier-1.md and verifier-2.md; the harness validator is unchanged | user message “verifier 1회 (1,2 합쳐서 수행) ... 수정 및 검증 2 R를 허락할게”, approved via plan |
 
 # Traceability
 | requirement id | Case ids | obligation ids | evidence procedure |
@@ -127,27 +128,28 @@ Each list is finite; target is 100% of named items independently, never their im
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 3 |
-| verifier invocations | 2 |
-| open finding ids | V7,V8,V9 |
+| correction batches used | 4 |
+| verifier invocations | 4 |
+| verifier invocation ceiling (A3) | 5 |
+| open finding ids | none blocking (advisories V11, A1–A3) |
 
 Audit state (acceptance scoped to spec version and evidence revision):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| O1 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | declaration evidence and revised helper accepted | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O2 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | V1 closed; exact relation multiplicity/integrity; M1 intended assertion detects guessed imports | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O3 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | V2 closed; exact distinct file-qualified DI targets | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O4 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | V3 closed; supported path fields and unsupported null metadata | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O5 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | open | V7: unresolved bootstrap/prefix rows do not observe retained relative_path; core prefix/reachability observations retained | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O6 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | open | V4 narrowed to V8: explicit TypeScript + no-language-graph does not observe full language edges/enrichment/HTTP preservation; M3 accepted | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O7 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | open | V5 narrowed to V9: duplicate-candidate row omits call source assertion; one-candidate source/method observations accepted | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O8 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | snapshot isolation, source discovery, errors and execution traps retained | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O9 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | V6 closed; exact source-authored implementation targets and output contracts | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O10 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | source-authored fixture counts/relations/21 routes; M2 intended assertion detects prefix loss | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O11 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | eight existing standalone byte baselines; raw and portable comparisons ran | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O12 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | determinism, integrity, isolation and reverse imports retained | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O13 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | accepted | M1/M2/M3 executed and detected by intended assertions; byte-identical restores; latest restored suite passed | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
-| O14 | 2 | verifier-2.md; current run-evidence.json SHA256; suite883/194 | pending | success archive/stale movement deferred because V7–V9 remain blocking; limit archive keeps live handoff | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O1 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | declaration evidence and revised helper accepted | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O2 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | V1 closed; exact relation multiplicity/integrity; M1 intended assertion detects guessed imports | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O3 | 3 | audit 4; run-evidence.json batch 4; suite 884/200 | accepted | V10: unsupported constructor forms (alias/generic/union/explicit injection) now isolated per form; M7 detects; verifier-4 pass | batch 4 assertions; nestjs_support.py and implementation unchanged |
+| O4 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | V3 closed; supported path fields and unsupported null metadata | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O5 | 3 | audit 4; run-evidence.json batch 4; suite 884/200 | accepted | V7: relative_path/path/null full_path asserted in all unresolved bootstrap and prefix rows; M4 detects; verifier-4 pass | batch 4 assertions; nestjs_support.py and implementation unchanged |
+| O6 | 3 | audit 4; run-evidence.json batch 4; suite 884/200 | accepted | V8: explicit TS + no-language-graph compared with TypeScript-only nodes/edges/collections/CALLS_ROUTE; M5 detects; M3 rerun detects; verifier-4 pass | batch 4 assertions; nestjs_support.py and implementation unchanged |
+| O7 | 3 | audit 4; run-evidence.json batch 4; suite 884/200 | accepted | V9: ambiguous edge source asserted as getOk; M6 detects; verifier-4 pass | batch 4 assertions; nestjs_support.py and implementation unchanged |
+| O8 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | snapshot isolation, source discovery, errors and execution traps retained | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O9 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | V6 closed; exact source-authored implementation targets and output contracts | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O10 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | source-authored fixture counts/relations/21 routes; M2 intended assertion detects prefix loss | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O11 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | eight existing standalone byte baselines; raw and portable comparisons ran | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O12 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | determinism, integrity, isolation and reverse imports retained | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O13 | 3 | audit 3 (re-accepted); run-evidence.json; suite 884/200 | accepted | M1/M2/M3 executed and detected by intended assertions; byte-identical restores; latest restored suite passed | final audit unchanged test/evidence revision; V7–V9 accepted as evidence gaps |
+| O14 | 3 | audit 4; closure-evidence.json | accepted | spec archived complete; handoff index block moved verbatim to stale.md; handoff moved to stale/ with Failed Attempts preserved | closure after verifier-4 pass |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
@@ -161,6 +163,10 @@ Execution ledger (append attempts; preserve failed approaches):
 | 7 | final confirming M1/M2/M3 executions | selected distinct defect classes from approved plan | full command for each; intended assertion rejected each; byte-identical restore after each | M1 1failure24.19s; M2 3failures24.06s; M3 7failures24.04s; restored full suite883/19224.06s |
 | 8 | exact supplied-profile/implementation assertions; source oracle omitted ValidationPipe | verified Injectable declaration includes unregistered pipe provider; pipe application remains excluded | source-authored oracle corrected; exact current full command | 883 passed,194 subtests in24.10s; dispatch fresh verifier2, counters preserved; no seed outstanding |
 | 9 | verifier2 final audit retry: V7/O5, V8/O6, V9/O7 | verified test observation gaps in explicitly declared rows; no new implementation failure established | main accepts all three findings; no test/source/expectation changes after audit | verifier budget2/2 exhausted; status limit; O14 success closure deferred; handoff updated and spec archived |
+| 10 | user authorized consolidated verifier (replacing deleted verifier-1/2 reports) plus two further audits (A3) | policy change, no behavior change | spec v3; moved spec back from spec-logs to specs, workflow resumed | verifier invocation 3/5 dispatched |
+| 11 | verifier-3 retry: V7, V8 (narrowed), V9 confirmed; V10 new (O3 set comparison hides alias/generic/union/injection defects); V1–V6 closure confirmed | test observation gaps in declared rows; no implementation defect | correction batch 4 (tests/evidence only): V7 assert_relative_retained, V8 TypeScript parity under --no-language-graph, V9 source label getOk, V10 per-form isolation; first V10 draft asserted unsupported_expression for the alias form and failed because the alias form reports unresolved_reference, so the assertion was relaxed to exactly one diagnostic naming the form's type token (spec does not fix the code) | 884 passed, 200 subtests in 25s |
+| 12 | confirming mutations M4–M7 plus M3 rerun | defect classes proposed by verifier-3 | each executed once with seed backup/restore; intended assertions detected; byte-identical restores | M4 11 failed; M5 1; M6 1; M7 1; M3 8; restored 884/200 passed; O14 closure waits for audit 4/5 |
+| 13 | verifier-4 pass: V7–V10 closed, O3/O5/O6/O7 accepted; V11 advisory (V10 assertion mildly over-constrains diagnostic count/text) | none blocking | no test or source change after the final audit; V11 left as advisory because changing tests would require a further audit | verifier invocations 4/5; status complete; O14 closure executed |
 
 # Version Log
 ## v1
@@ -168,3 +174,10 @@ Execution ledger (append attempts; preserve failed approaches):
 
 ## v2
 - Clarified public stats/diagnostic field names using common span serialization and the existing route matcher candidate policy for independent tests. No change to source behavior, quality targets, verification coverage or user-approved scope.
+
+## v3
+- User lifted the two-verifier stop for this run (A3): consolidated audit plus up to two further audits, cumulative count preserved. Functional scope, quality thresholds and obligations unchanged. Resumed from the `limit` archive by moving the spec back to `agent-docs/specs/`.
+- Audit state O3/O5/O6/O7 were invalidated after correction batch 4 (V7–V10) and re-accepted by verifier-4; other obligations kept at v3 because no shared helper or implementation changed.
+
+## v3 closure
+- verifier-4 passed with no blocking finding; spec set to `complete` and archived. Frontmatter handoff path updated to the stale location after the handoff moved to `stale/`.

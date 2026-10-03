@@ -61,3 +61,8 @@ File: 981eafd0004ac48b-orm-migration-edges.md
 Summary: Add ORM model to migration edges.
 Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
 Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
+---
+File: fdec87dc8ce208aa-additional-framework-analyzers.md
+Summary: Add analyzers for additional frameworks.
+Related Files: framework_analyzers/, language_analyzers/core/graph_models.py, analysis/graph_metrics.py
+Related Symbols: GraphEdge, RelationKind, GraphAnalyzer
