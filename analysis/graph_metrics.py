@@ -1,6 +1,7 @@
 import ast
 import json
 import math
+import sys
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +26,11 @@ class GraphAnalysisConfig:
     betweenness_sample_size: int = 100
     betweenness_sampler: Optional[Callable[[Sequence[str], int], Sequence[str]]] = None
     edge_weights: Optional[EdgeWeights] = None
+    neighborhood_memory_budget_bytes: int = 256 * 1024 * 1024
+
+    def __post_init__(self) -> None:
+        if self.neighborhood_memory_budget_bytes < 0:
+            raise ValueError("neighborhood_memory_budget_bytes must be nonnegative")
 
 
 def pagerank(
@@ -106,11 +112,16 @@ class GraphAnalyzer:
             node_id: outgoing[node_id] | incoming[node_id]
             for node_id in node_by_id
         }
+        tick_costs = {
+            node_id: token_costs[node_id] * round(10 * self._cost_multiplier(node))
+            for node_id, node in node_by_id.items()
+        }
+        neighborhood_metrics, neighborhood_strategy = self._neighborhood_metrics(undirected, tick_costs)
         denominator = max(1, 2 * (len(node_by_id) - 1))
 
         metrics: Dict[str, Dict[str, Any]] = {}
         for node_id, node in node_by_id.items():
-            hop_2_nodes, hop_3_nodes = self._neighborhoods(node_id, undirected)
+            hop_2_count, hop_2_cost, hop_3_count, hop_3_cost = neighborhood_metrics[node_id]
             node_metrics = {
                 "token_cost": token_costs[node_id],
                 "effective_token_cost": effective_token_costs[node_id],
@@ -124,10 +135,10 @@ class GraphAnalyzer:
                 "fan_out": len(outgoing[node_id]),
                 "weighted_fan_in": sum(pair_weights[(source, node_id)] for source in incoming[node_id]),
                 "weighted_fan_out": sum(weighted_outgoing[node_id].values()),
-                "hop_2_node_count": len(hop_2_nodes),
-                "hop_2_token_cost": sum(effective_token_costs[item] for item in hop_2_nodes),
-                "hop_3_node_count": len(hop_3_nodes),
-                "hop_3_token_cost": sum(effective_token_costs[item] for item in hop_3_nodes),
+                "hop_2_node_count": hop_2_count,
+                "hop_2_token_cost": hop_2_cost,
+                "hop_3_node_count": hop_3_count,
+                "hop_3_token_cost": hop_3_cost,
             }
             metrics[node_id] = node_metrics
             metadata = getattr(node, "metadata", None)
@@ -152,7 +163,7 @@ class GraphAnalyzer:
             },
             "betweenness_strategy": betweenness_strategy,
             "betweenness_sample_size": betweenness_sample_size,
-            "neighborhood_strategy": "single_bfs_to_3_hops",
+            "neighborhood_strategy": neighborhood_strategy,
         }
 
     def _betweenness_for_graph(self, outgoing: Mapping[str, Set[str]]):
@@ -276,6 +287,118 @@ class GraphAnalyzer:
         if not hop_2:
             hop_2 = visited - {start}
         return hop_2, visited - {start}
+
+    def _neighborhood_metrics(
+        self,
+        adjacency: Mapping[str, Set[str]],
+        tick_costs: Mapping[str, int],
+    ) -> tuple[Dict[str, Tuple[int, float, int, float]], str]:
+        metrics: Dict[str, Tuple[int, float, int, float]] = {}
+        remaining = set(adjacency)
+        used_bfs = False
+        used_bitsets = False
+        while remaining:
+            start = remaining.pop()
+            component = [start]
+            queue = deque([start])
+            while queue:
+                for neighbor in adjacency[queue.popleft()]:
+                    if neighbor in remaining:
+                        remaining.remove(neighbor)
+                        component.append(neighbor)
+                        queue.append(neighbor)
+
+            count = len(component)
+            degree_work = sum(len(adjacency[node_id]) ** 2 for node_id in component)
+            budget = self.config.neighborhood_memory_budget_bytes
+            use_bitsets = False
+            if budget and count >= 64 and degree_work >= 64 * count:
+                cost_bit_count = max(tick_costs[node_id] for node_id in component).bit_length()
+                use_bitsets = self._estimate_neighborhood_bitset_bytes(count, cost_bit_count) <= budget
+            if use_bitsets:
+                metrics.update(self._bitset_component_metrics(component, adjacency, tick_costs, cost_bit_count))
+                used_bitsets = True
+            else:
+                used_bfs = True
+            del component, queue
+
+        if used_bfs:
+            for node_id in adjacency:
+                if node_id in metrics:
+                    continue
+                hop_2, hop_3 = self._neighborhoods(node_id, adjacency)
+                hop_2_ticks = sum(tick_costs[target] for target in hop_2)
+                hop_3_ticks = hop_2_ticks + sum(tick_costs[target] for target in hop_3 - hop_2)
+                metrics[node_id] = (len(hop_2), hop_2_ticks / 10, len(hop_3), hop_3_ticks / 10)
+            del hop_2, hop_3
+
+        if used_bitsets:
+            strategy = "exact_hybrid" if used_bfs else "exact_bitset"
+        else:
+            strategy = "single_bfs_to_3_hops"
+        return metrics, strategy
+
+    @staticmethod
+    def _estimate_neighborhood_bitset_bytes(node_count: int, cost_bit_count: int) -> int:
+        digit_bits = sys.int_info.bits_per_digit
+        digit_bytes = sys.int_info.sizeof_digit
+
+        def integer_bytes(bits: int) -> int:
+            digits = max(1, (bits + digit_bits - 1) // digit_bits)
+            return sys.getsizeof(0) + (digits - 1) * digit_bytes
+
+        reference_bytes = sys.getsizeof([None]) - sys.getsizeof([])
+        mask_bytes = integer_bytes(node_count)
+        sum_bytes = integer_bytes(cost_bit_count + node_count.bit_length())
+        # Reserve simultaneous OR/AND/shift temporaries and the wider integer cost sums.
+        masks = (2 * node_count + cost_bit_count + 8) * mask_bytes + 8 * sum_bytes
+        lists = 4 * sys.getsizeof([]) + (4 * node_count + cost_bit_count) * reference_bytes
+        index = sys.getsizeof({}) + node_count * (
+            sys.getsizeof({0: 0}) - sys.getsizeof({}) + integer_bytes(node_count.bit_length())
+        )
+        return masks + lists + index
+
+    @staticmethod
+    def _bitset_component_metrics(
+        component: Sequence[str],
+        adjacency: Mapping[str, Set[str]],
+        tick_costs: Mapping[str, int],
+        cost_bit_count: int,
+    ) -> Dict[str, Tuple[int, float, int, float]]:
+        indices = {node_id: index for index, node_id in enumerate(component)}
+        closed_1 = [0] * len(component)
+        closed_2 = [0] * len(component)
+        cost_planes = [0] * cost_bit_count
+        for index, node_id in enumerate(component):
+            bit = 1 << index
+            mask = bit
+            for neighbor in adjacency[node_id]:
+                mask |= 1 << indices[neighbor]
+            closed_1[index] = mask
+            ticks = tick_costs[node_id]
+            while ticks:
+                lowest = ticks & -ticks
+                cost_planes[lowest.bit_length() - 1] |= bit
+                ticks ^= lowest
+
+        for index, node_id in enumerate(component):
+            mask = closed_1[index]
+            for neighbor in adjacency[node_id]:
+                mask |= closed_1[indices[neighbor]]
+            closed_2[index] = mask
+
+        metrics: Dict[str, Tuple[int, float, int, float]] = {}
+        for index, node_id in enumerate(component):
+            mask = closed_2[index]
+            for neighbor in adjacency[node_id]:
+                mask |= closed_2[indices[neighbor]]
+            own_bit = 1 << index
+            hop_2 = closed_2[index] ^ own_bit
+            hop_3 = mask ^ own_bit
+            hop_2_ticks = sum((hop_2 & plane).bit_count() << place for place, plane in enumerate(cost_planes))
+            hop_3_ticks = sum((hop_3 & plane).bit_count() << place for place, plane in enumerate(cost_planes))
+            metrics[node_id] = (hop_2.bit_count(), hop_2_ticks / 10, hop_3.bit_count(), hop_3_ticks / 10)
+        return metrics
 
     @staticmethod
     def _cost_multiplier(node: Any) -> float:
