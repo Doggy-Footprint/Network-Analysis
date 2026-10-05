@@ -451,10 +451,9 @@ class MainActivity : ComponentActivity() {
         self.assertTrue(rendered_file.exists())
         content = rendered_file.read_text(encoding="utf-8")
         self.assertIn("TopicViewModel", content)
-        self.assertIn("vis-network", content)
-        asset_dir = self.project_path / "output_assets"
-        self.assertTrue((asset_dir / "styles.css").exists())
-        self.assertTrue((asset_dir / "app.js").exists())
+        self.assertIn('id="report-summary"', content)
+        self.assertFalse((self.project_path / "output_assets").exists())
+        self.assertIn("<style", content)
 
     def test_graph_builder_exclude_flags(self):
         self._create_sample_android_app()

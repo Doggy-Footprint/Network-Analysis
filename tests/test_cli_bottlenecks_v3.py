@@ -56,7 +56,7 @@ def run_cli(monkeypatch, *arguments):
 def bottleneck_arguments(project, out, *extra):
     return [
         str(project), "-l", "python", "-o", str(out / "architecture.html"),
-        "--bottlenecks", str(out / "b.json"), "--bottlenecks-html", str(out / "b.html"), *extra,
+        "--bottlenecks", str(out / "b.json"), *extra,
     ]
 
 
@@ -68,7 +68,7 @@ def test_V7_C12_success_writes_v3_json_and_html_without_a_harness_profile(monkey
     assert run_cli(monkeypatch, *bottleneck_arguments(project, out)) in (0, None)
     payload = read_payload(out)
     assert payload["schema"] == "bottlenecks.v4"
-    assert (out / "b.html").stat().st_size > 0
+    assert not (out / "b.html").exists()
     assert (out / "architecture.html").is_file()
 
 

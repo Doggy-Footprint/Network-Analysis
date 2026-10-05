@@ -1,0 +1,332 @@
+{
+  "spec_version": 3,
+  "revision": 2,
+  "test_command": ".venv/bin/python -m pytest -q",
+  "test_result": "941 passed,200 subtests passed104.02s",
+  "test_log": "local-reports/test-suite-final.log",
+  "coverage": "tests/unified_evidence/coverage.json",
+  "performance": "local-reports/performance-accepted.json",
+  "review": "local-reports/unified-review.json",
+  "screenshots": [
+    "local-reports/unified-desktop.png",
+    "local-reports/unified-mobile.png",
+    "local-reports/unified-chrome.png",
+    "local-reports/unified-graph.png",
+    "local-reports/unified-mobile-graph.png"
+  ],
+  "review_checks": {
+    "archive_and_analyzer_diffs": "git diff --name-only -- archive language_analyzers framework_analyzers analysis bottlenecks repository -> empty",
+    "visualization_import_scan": "rg renderers|cytoscape|vis-network|tailwind in analyzer/analysis/bottlenecks/repository -> no matches",
+    "git_diff_check": "pass",
+    "legacy_UI_removal": {
+      "paths": [
+        "renderers/html/",
+        "report/unified.py",
+        "report/bottlenecks/",
+        "code_analyzer/cli.py"
+      ],
+      "procedure": "Inspect diff and active template/scripts; rg legacy vis-network/vis.Network/tailwind/lucide/inspector-drawer/overview-focus/tab-btn/_inline_css/_inline_js returns0 matches; static ls contains app.js/styles.css only; bottleneck old templates directory has0 files. Both render adapters call report.unified.render_unified_report. New report has no legacy score UI.",
+      "result": "pass"
+    },
+    "README_migration": {
+      "path": "README.md",
+      "procedure": "Read quick-start/combined CLI examples, output table, reading guide and options; commands use -o for one offline HTML, no asset output row; removed --bottlenecks-html mentioned only as removed; JSON flags retained.",
+      "result": "pass"
+    },
+    "chrome_open": {
+      "command": "open -a 'Google Chrome' local-reports/unified-report.html",
+      "result": "exit0; native Google Chrome preview opened per user instruction"
+    }
+  },
+  "source_and_test_sha256": {
+    "README.md": "65917e731dc22217798e56b9853cfc1930e14506f00b8feb6af964b74c45a634",
+    "code_analyzer/cli.py": "eb907f78f338109b196100d1c25422ab253f8cb1dc91d8fa0b28d1fba10348a3",
+    "renderers/html/__init__.py": "e4a160756c14cc6b95f1fe2950555983e41d12b2edb61ecefeeb2ff66110fc0d",
+    "renderers/html/renderer.py": "488c8062978e8f6a0a292c45624b3dc8dca70055fad9070c7d4246d148b6c42b",
+    "renderers/html/static/app.js": "447abeb61fb36144f3cc38b6cf3523c8bc6a10624b09e06711d6db5102eeba76",
+    "renderers/html/static/styles.css": "180cd2945d5d09d15db1a5d9eb248efe34cd472a32b88a75cd1e628bea5e11e2",
+    "renderers/html/templates/dashboard.html": "7661454b81759df54a4a42f431035d4533a01247782c049a79a7004c8efc3cde",
+    "renderers/html/vendor/cytoscape-3.30.2.min.js": "37daa5b40c01b98d2dd27cece04fd885900733dfcd1eed625a351b0e0b903acc",
+    "report/bottlenecks/__init__.py": "2e2e6a920e31d3b9d33f0e21f5b2be6e0d9d3d4f929abb23029f4869bbfa640a",
+    "report/bottlenecks/generate.py": "cc4aca0867b01c7b3a6d7dab8e88c81ce0c5a244558cbc52f355f8124a51d8f1",
+    "report/unified.py": "9c8b82d8b00e02c5ce0293a881502bf6a95d8d80b558b01608e07b4fa7efb6ae",
+    "requirements-dev.txt": "1a8c4fdd826d0ab00a3a25c3e1eb59e5afbbdfd4f6048ed67d719a3a65336e52",
+    "tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tests/conftest.py": "32dea3e2a22f993aa1259165e5bf89584c665d5cad02d656a52dccf2e52e0587",
+    "tests/edge_weights_support.py": "9170e3261737fb39ace50347449cebc6be116e52b58a154f74e1276b5c83b3a8",
+    "tests/nestjs_support.py": "a91cd6bee019d12b7d4c1c9c0cf6c0934182bee48649f60fd3b63d56b417a175",
+    "tests/test_active_structure.py": "cec0a175077b0a8839cc98d1d6094c74d1b2e76354c87e638568dc51cc337563",
+    "tests/test_analyzer.py": "4c925e209ad3a589e2e0822f1fcef2a71bef5fdca2f1e484cd1eb7a315738ba8",
+    "tests/test_android_analyzer.py": "c22085ebec474da19e67b56786880a11f7d46dd43493537114012740493f3b60",
+    "tests/test_android_graph_contract.py": "167bffb1f7eaa41f64fdc431d4d9d0b85dc4f4ee9b449935cf3220870ae00f36",
+    "tests/test_architecture_boundaries.py": "bad92465244a03f3d7f91426c4d1c27f0948626cbf930329cb754a3fc5d2eba6",
+    "tests/test_bottlenecks_v3.py": "30e73de6bf3d4b6352315ebb5b5e9d7eab594ca7e14d1263b6edf0fa7f58fb3b",
+    "tests/test_category_rankings_v3.py": "f4dcf433192e9c62876b50f029a24b6256560ea9a764129ee2f167ae9c9d48c4",
+    "tests/test_cli_bottlenecks_v3.py": "2cdfd37defed3b3f98cd19d5aae312c7ac8f90e22fbc626ebff72501e0a2eaac",
+    "tests/test_cli_contract.py": "6519f3a1cfa11dfa53be007fa7491dc621c9b7ca1caaf6caf2e89fcd36f5db45",
+    "tests/test_cli_multi_analyzer.py": "0b24abd15ae63e6e7bff5aa645d1e80021302feb3464cec4c648296c85c44fa0",
+    "tests/test_cli_sqlalchemy.py": "9ccc5a52216de7b01ed5da2e6b064117937545eddc84ee3b655c22221caef747",
+    "tests/test_core_schema.py": "0d04eabdd2e2b5099a1655d6de92246e67f605d191b28c2bd3f2f187115f29c4",
+    "tests/test_edge_weights.py": "84efa53d964e1c87317b6ce7702e2e23e06964ce9de2588b9e585a30c45cc702",
+    "tests/test_exact_neighborhoods.py": "491ced605f8ca6c87138aae8ba7d2209131a903e60b87629bac38977266f632a",
+    "tests/test_fixture_registry.py": "6e7c6f2aff15c2c5021f787ea621adef81b44ba253f59322fcada55d2cd7e5e3",
+    "tests/test_graph_metrics.py": "c017c20942513bbb6d7c02266dd6118ca5b470e1f3302598161310201bc44259",
+    "tests/test_identifier_occurrence.py": "74cb3586611ade3d0aa95b09dcbabc28c0d8a6d9386b5d089185450d4b174a3f",
+    "tests/test_kotlin_parse_cache.py": "8c3206777da6126812e0a599bee1d8c14536d5e55a31f508c2fb77e09d768065",
+    "tests/test_migration_tables.py": "b47a2bd25d97ecebf4cfadf167cdb03a7de39311cf2fbc79df6946c839603462",
+    "tests/test_nestjs_analyzer.py": "dec2c0e7e9a1da96813878ef85043236de5bd1753a4d3dfa3f8052b7d370d459",
+    "tests/test_nestjs_cli.py": "88a8c7b2aca92ba0e8d8cf05a9e56d0028a8975d42eda90eab16345087e8169c",
+    "tests/test_nestjs_quality.py": "c5a94a411e7a9dce066ad8421cd7be44be28a3a562da9e9df08c99af9b414c9b",
+    "tests/test_python_graph.py": "43b1b9294b6ba516687f7eb56ba8d4d1d7f18ef1d11783b6e2e1353272a88efe",
+    "tests/test_readability_labels.py": "d34dea6a093609755bbb797d0a257bc57ff1c3354f666e7a8dd5d257d472c1c7",
+    "tests/test_report_bottlenecks_v3.py": "606a15b00079409d3b03990e2e4d6056b5360093056012fd8c14e0c3e69b530b",
+    "tests/test_repository_scan.py": "4bdf4e09d86c35267823297b74d013ac3c6a8343ed5eef74c21cfe2dbf7f8405",
+    "tests/test_room_migration_edges.py": "639e1d4081073e886bb2deaa52486c39cbb046c14c57473c69f890a20cadcbc1",
+    "tests/test_route_client_call_edges.py": "1ac050c99afde708bcf667360a92ed587b5e085508e3a5056876127acd10bf69",
+    "tests/test_serialization_and_rendering.py": "8f4fb7e6109b61061650aaf85aa9db3978732160a5aaa0aac8a847aec5096c2c",
+    "tests/test_sqlalchemy_migration_edges.py": "b9a83c93fea52a26d9588203acf197c3bcf51637adae874c4c53b5c7e58816b5",
+    "tests/test_symbol_graph_and_enrichment.py": "20658e8c8593ed2f33a9cefea03dc6fd7f2a2be3eafa6d66f2f875c689f148f0",
+    "tests/test_tokenizer.py": "c91b623fe3f68871de0c007e34b39e68d89909822a8ebe5a7673afc49196567b",
+    "tests/test_typescript_analyzer.py": "8b173e5e0b03743129c06db2f58855d6f18996e562acd96d83775f22e43cdc96",
+    "tests/test_typescript_graph.py": "0b84bd5924b131caad1ecb3a1f175390da70e0e99d8e2a64dc6bc5d666bd7280",
+    "tests/test_typescript_http_calls.py": "af9588f30c5caeec7fb5e5335484789058f302a9a40c4085acaea929b41f7249",
+    "tests/test_unified_browser.py": "577ca80c981790ae4aacc2144fb16cf677d3ef11d0560ba8e38e6cdff337f3a2",
+    "tests/test_unified_cli.py": "33e4fa70a5113fe6ec2b932391653682064d8bd2da8ec6d733ddc8231d975229",
+    "tests/test_unified_contract.py": "afab17af862ca02ec74e26fa3b51950adab7bfc2a9ad717c5eeb7bf9f1214bcb",
+    "tests/test_unified_performance.py": "d4d5c2ceb8a07d2cf61a39a577dba06f83e6b3590e16764ae23ca189389515b0",
+    "tests/test_weighted_graph_metrics.py": "c64bfd0d6b77e6c26aa4317fe4d89467016fc4be76f6cdb00fdb65b7c534c4d5",
+    "tests/test_worktree_symlink.py": "32a85bd39c75c41901ec2ae6bc457e83606e6cb2aad2bfae08ce92680f54f943",
+    "tests/unified_support.py": "f168fd1e747f8ae10aad514693d8e6f783af49b772adb6c46926f6c129747bbe",
+    "tests/test_unified_review_gaps.py": "b6f24f2cb7c04ddcb4447c502d03cb4bddd2beaf1155d782f925e7cad4b3c8fb"
+  },
+  "obligations": {
+    "V1": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V2": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V3": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V4": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V5": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V6": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V7": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    },
+    "V8": {
+      "state": "accepted",
+      "prior_evidence": "tests/unified_evidence/verifier.json",
+      "new_evidence": [
+        "tests/unified_evidence/coverage.json",
+        "tests/test_unified_review_gaps.py",
+        "local-reports/test-suite-final.log"
+      ],
+      "evidence_revision": 2,
+      "final_audit": "tests/unified_evidence/verifier-2.json"
+    }
+  },
+  "mutation_selection": [
+    {
+      "id": "M1",
+      "class": "production category leak",
+      "parent": "V1",
+      "why": "default production is central reading contract; false inclusion changes representatives and review list"
+    },
+    {
+      "id": "M2",
+      "class": "31st neighbor leak",
+      "parent": "V2",
+      "why": "bounded graph essential readability for high fan-in; boundary must reject off-by-one"
+    },
+    {
+      "id": "M3",
+      "class": "source text interpreted as HTML",
+      "parent": "V6",
+      "why": "unsafe DOM text interpretation directly executes source-derived label/doc/evidence fields; distinct security class with intact JSON setup"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "M1",
+      "class": "production category leak",
+      "executed": true,
+      "detected": true,
+      "result": "6 failed,935 passed,200 subtests73.86s",
+      "intended_observation": "Default representative IDs became generated/test/unknown instead of independent a,b,c; test-only production list no longer empty; supplemental category reps gained t0. Intended exact category assertions failed.",
+      "detecting_tests": [
+        "test_V1_six_representatives_category_values_and_sort",
+        "test_V1_V6_missing_zero_no_production",
+        "test_VR1_summary_counts_units_category_representatives_precedence"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M1.log"
+    },
+    {
+      "id": "M2",
+      "class": "31st neighbor leak",
+      "executed": true,
+      "detected": true,
+      "result": "4 failed,937 passed,200 subtests89.85s",
+      "intended_observation": "Boundary fixture rendered extra n30 beyond center+first30; grouping/60-arrow and configured-resolution exact topology assertions also fail.",
+      "detecting_tests": [
+        "test_V2_neighbor_boundaries_and_omitted_evidence[omitted]",
+        "test_V2_weight_fanin_id_grouping_layout_relationship_paging",
+        "test_V2_sixty_arrows_incoming_layout_and_configured_weights",
+        "test_VR2_configured_resolution_minimum_and_raw_relation_identity"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M2.log"
+    },
+    {
+      "id": "M3",
+      "class": "source text interpreted as HTML",
+      "executed": true,
+      "detected": true,
+      "result": "3 failed,938 passed,200 subtests107.80s",
+      "intended_observation": "Hostile-source execution-marker assertion finds window.attack=1 (required None); hostile candidate literal assertion and independently visible typed-field literal equality also fail. Report setup and node selection succeeded.",
+      "detecting_tests": [
+        "test_V6_hostile_source_text_and_graph_failure",
+        "test_V6_hostile_candidate_evidence_is_inert",
+        "test_VR6_every_hostile_source_field_distinct_and_visible"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M3.log"
+    }
+  ],
+  "verifier_1": "tests/unified_evidence/verifier.json",
+  "finding_dispositions": {
+    "VR1": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    },
+    "VR2": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    },
+    "VR3": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    },
+    "VR4": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    },
+    "VR5": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    },
+    "VR6": {
+      "class": "obligation evidence gap",
+      "state": "closed",
+      "action": "Supplemental independent rendered observations and restored full941-test suite pass; no production changes; final audit pending",
+      "final_disposition": "verifier2 accepts strengthened rendered evidence, original expectations preserved"
+    }
+  },
+  "change_impact": {
+    "VR1_VR6": "Supplemental tests only, approved expectations and production source unchanged. New visible-disclosure/Tab/typeahead helpers are additive; existing fixture/render/context/rows/topology/open_disclosures functions unchanged. V1-V6 pending renewed evidence.",
+    "V7_V8": "Prior accepted items retained; no production/performance test or helper body used by performance changed. New full restored suite will renew timing/regression artifacts; existing source/README/archive review valid."
+  },
+  "test_attempts": [
+    {
+      "run": 5,
+      "log": "local-reports/test-suite-5.log",
+      "result": "938 passed,3 failed,200 subtests78.82s",
+      "diagnosis": "Test baseline at zoom ceiling; native select popup keyboard automation limitation reproduced in minimal unrelated HTML. Trusted CDP Unicode keyDown typeahead selects normally."
+    },
+    {
+      "run": "final",
+      "log": "local-reports/test-suite-final.log",
+      "result": "941 passed,200 subtests passed104.02s",
+      "restored": true
+    }
+  ],
+  "restore_check": "All three seed.py restore operations succeeded; app.js SHA256 identical to pre-mutation revision1",
+  "verifier_2": "tests/unified_evidence/verifier-2.json",
+  "status": "complete",
+  "archived_spec": "agent-docs/spec-logs/7d8bca106e2f493a-unified-bottleneck-report.md",
+  "correction_batches": 7,
+  "verifier_invocations": 2,
+  "blocked_ids": [],
+  "handoff": null,
+  "advisories": [
+    {
+      "id": "VA1",
+      "state": "optional_unexecuted",
+      "disposition": "Three required distinct strongest mutation classes executed/detected; additional resolution/appendix mutation remains optional. Independent declared resolution and appendix assertions accepted."
+    }
+  ]
+}

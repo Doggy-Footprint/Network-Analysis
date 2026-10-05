@@ -140,15 +140,10 @@ class TestArchitectureBoundaries(unittest.TestCase):
             HTMLRenderer(title="Generic report").render(arch, str(report))
 
             document = report.read_text(encoding="utf-8")
-            for asset in ("styles.css", "tailwind-config.js", "app.js"):
-                self.assertTrue((report.parent / "report_assets" / asset).is_file())
-                self.assertIn(f'report_assets/{asset}', document)
-            self.assertNotIn("<style", document)
-            self.assertNotIn("function initNetwork", document)
-            self.assertIn(
-                "function initNetwork",
-                (report.parent / "report_assets" / "app.js").read_text(encoding="utf-8"),
-            )
+            self.assertFalse((report.parent / "report_assets").exists())
+            self.assertIn("<style", document)
+            self.assertIn('id="report-summary"', document)
+
 
 
 if __name__ == "__main__":

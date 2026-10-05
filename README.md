@@ -2,7 +2,7 @@
 
 저장소의 의존성 네트워크를 정적 분석하고, 구조적 병목을 리팩토링 검토 후보로 보여주는 도구입니다.
 
-언어 수준의 import·호출·상속 관계에 의존성 주입, 라우팅, ORM과 마이그레이션처럼 프레임워크 의미로 드러나는 연결을 더합니다. 네트워크에서의 위치와 소스 코드의 토큰 규모를 함께 측정해 HTML 대시보드와 JSON 보고서로 출력합니다.
+언어 수준의 import·호출·상속 관계에 의존성 주입, 라우팅, ORM과 마이그레이션처럼 프레임워크 의미로 드러나는 연결을 더합니다. 네트워크에서의 위치와 소스 코드의 토큰 규모를 함께 측정해 HTML 보고서와 JSON 보고서로 출력합니다.
 
 확실하지 않은 관계도 가능한 한 보존합니다. 각 연결의 신뢰도(`confidence`)와 해석 상태(`resolution`)를 기록하고, 설정한 가중치로 지표에 반영합니다. 결과는 사람이나 에이전트가 검토할 구조적 근거이며, 코드 품질·변경 위험·작업 난이도의 판정이나 AI 에이전트 행동의 예측은 아닙니다.
 
@@ -17,21 +17,17 @@ python -m pip install -r requirements.txt
 
 python -m code_analyzer /path/to/project -l python \
   -o local-reports/architecture.html --json \
-  --bottlenecks local-reports/bottlenecks.json \
-  --bottlenecks-html local-reports/bottlenecks.html
+  --bottlenecks local-reports/bottlenecks.json
 ```
 
-생성한 `local-reports/architecture.html`과 `local-reports/bottlenecks.html`을 브라우저에서 엽니다. `--open`을 추가하면 아키텍처 대시보드를 자동으로 엽니다.
+생성한 `local-reports/architecture.html`을 브라우저에서 엽니다. `--open`을 추가하면 보고서를 자동으로 엽니다. HTML 하나에 CSS·JavaScript·Cytoscape.js가 포함되며 오프라인에서 파일을 직접 열 수 있습니다.
 
 | 출력 | 내용 |
 | --- | --- |
-| `architecture.html` | 의존성 그래프, 노드별 지표, 분석기별 구성 요소를 탐색하는 대시보드 |
-| `architecture_assets/` | 대시보드의 CSS·JavaScript. HTML과 함께 보관해야 함 |
+| `architecture.html` | 지표별 대표 대상, 검토 목록, 근거 상세와 작은 주변 그래프를 제공하는 통합 보고서 |
 | `architecture.json` | `--json`으로 내보내는 그래프, 소스 위치, 연결 근거와 분석 메타데이터 |
 | `bottlenecks.json` | `bottlenecks.v4` 형식의 지표별 순위, 분류별 순위, 병목 후보 |
-| `bottlenecks.html` | 병목 JSON을 읽기 쉽게 보여주는 보고서 |
 
-아키텍처 대시보드는 Tailwind CSS, vis-network, Lucide를 CDN에서 불러오므로 열람 시 네트워크 연결이 필요합니다.
 
 ## 지원 분석기
 
@@ -66,8 +62,7 @@ python -m code_analyzer /path/to/nestjs-project -f nestjs \
 python -m code_analyzer /path/to/monorepo \
   -f fastapi -f sqlalchemy -l typescript \
   -o local-reports/combined.html --json \
-  --bottlenecks local-reports/combined-bottlenecks.json \
-  --bottlenecks-html local-reports/combined-bottlenecks.html
+  --bottlenecks local-reports/combined-bottlenecks.json
 ```
 
 `-f`와 `-l`은 서로 섞거나 다른 선택값으로 반복할 수 있으며, 지정한 순서대로 같은 스냅샷을 분석합니다. 여러 분석기를 선택하면 그래프를 합친 뒤 전체 네트워크의 지표를 계산합니다.
@@ -82,7 +77,11 @@ python -m code_analyzer /path/to/monorepo \
 
 ### 네트워크 지표
 
-병목 보고서는 지표별 상위 10개 노드와 `production`, `test`, `generated`, `vendored`, `unknown` 분류별 상위 10개를 제공합니다. 분류별 순위는 전체 그래프에서 계산한 지표를 분류별로 나눈 결과입니다.
+통합 보고서는 PageRank·Betweenness·2-hop 토큰·중심성×규모·Fan-in·Fan-out의 대표 대상 상위 10개씩을 보여줍니다. 각 카드에는 4개 항목 높이의 목록이 표시되며 나머지는 카드 안에서 스크롤해 볼 수 있습니다. 기본 분류는 운영 코드이며 전체·테스트·생성·외부·미분류로 전환할 수 있습니다. 검색·분류·후보 종류 조건에 맞는 노드 중 현재 정렬 지표의 상위 100개를 기본으로 표시합니다. 표시 범위를 전체 대상으로 전환할 수 있으며, 목록은 50개씩 페이지로 탐색합니다. 이 제한은 화면 표시 범위에 적용되고 전체 네트워크 지표 계산과 JSON 데이터는 유지됩니다. 분류를 바꿔도 전체 네트워크에서 계산한 값은 변하지 않습니다.
+
+대상을 선택하면 측정값, 후보 생성 이유와 전체 근거, 심볼 정보 및 직접 연결을 확인합니다. 그래프는 선택 대상과 직접 이웃 최대 30개만 표시하며, 생략한 연결도 전체 연결 목록에서 확인할 수 있습니다. 초기 화면에는 그래프를 만들지 않습니다. 분석 설정과 프레임워크 구성 요소는 부록을 펼쳐 확인합니다.
+
+병목 JSON은 기존의 지표별·분류별 상위 10개 순위와 전체 노드 지표를 유지합니다. 기존 병목 JSON만 HTML로 변환하는 API도 같은 화면을 사용하지만, 소스 위치·전체 분류·연결 탐색은 제공할 수 없습니다.
 
 | 지표 | 읽는 방법 |
 | --- | --- |
@@ -107,7 +106,7 @@ Betweenness는 기본적으로 500개 이하의 노드에서 정확하게 계산
 
 | 후보 종류 | 생성 조건 |
 | --- | --- |
-| `unresolved_boundary` | 미해결 참조, 동적 해석이 필요한 연결 또는 관련 노드 플래그가 있음 |
+| `unresolved_boundary` | 정적 분석 미확정 참조: 정적 분석으로 참조·호출 대상을 확정하지 못했거나 동적 해석이 필요한 연결·관련 노드 |
 | `evidence_spread` | 같은 대상으로 들어오는 연결 근거가 여러 파일에 흩어져 있거나, 한 파일에서 근거의 줄 범위가 임계값을 초과함 |
 | `large_node` | 노드의 소스 범위가 줄 수 임계값을 초과함. 기본값은 2,000줄 |
 
@@ -145,19 +144,18 @@ CLI는 [profiles/snapshot.v1.yaml](profiles/snapshot.v1.yaml)에 따라 파일 �
 | --- | --- |
 | `project_path` | 분석할 디렉터리. 생략하면 현재 디렉터리 |
 | `-f`, `-l` | 분석기 선택. 둘 다 생략하면 FastAPI |
-| `-o PATH` | 대시보드 HTML 경로. 기본값 `architecture.html` |
-| `--json` | 대시보드 경로의 확장자를 `.json`으로 바꿔 그래프를 추가 출력 |
+| `-o PATH` | 통합 보고서 HTML 경로. 기본값 `architecture.html` |
+| `--json` | 보고서 경로의 확장자를 `.json`으로 바꿔 그래프를 추가 출력 |
 | `--bottlenecks PATH` | 병목 JSON 출력 |
-| `--bottlenecks-html PATH` | 병목 HTML 출력. `--bottlenecks`가 함께 필요 |
 | `-e PATH` | FastAPI 진입점 지정. FastAPI 분석기를 선택한 경우만 사용 가능 |
 | `--no-language-graph` | 프레임워크 분석에서 기본 언어 그래프 제외 |
 | `--no-models` | 해당 프레임워크의 스키마·모델·Room 엔티티 노드 제외 |
 | `--no-deps` | 해당 프레임워크의 의존성 주입 구성 요소 제외 |
 | `--edge-weights PATH` | 연결 가중치 설정 선택 |
-| `--title TEXT`, `--open` | 대시보드 제목 지정, 브라우저에서 자동 열기 |
+| `--title TEXT`, `--open` | 보고서 제목 지정, 브라우저에서 자동 열기 |
 | `--mermaid` | 단일 프레임워크 분석의 Mermaid 다이어그램을 표준 출력으로 표시 |
 
-CLI는 병목 보고서를 요청해도 아키텍처 대시보드를 함께 생성합니다. 각 출력 경로는 서로 달라야 합니다. 전체 도움말은 `python -m code_analyzer --help`로 확인합니다.
+CLI는 모든 실행에서 병목 후보를 계산하고 `-o`에 통합 HTML을 생성합니다. `--bottlenecks-html` 옵션은 제거되었습니다. `--bottlenecks`는 JSON 추가 내보내기만 제어합니다. 각 출력 경로는 서로 달라야 합니다. 전체 도움말은 `python -m code_analyzer --help`로 확인합니다.
 
 ## 한계
 

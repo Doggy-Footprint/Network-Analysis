@@ -16,7 +16,6 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 from language_analyzers.core.serialization import SCHEMA_VERSION, architecture_to_dict
 from renderers.html import HTMLRenderer
-from renderers.html.renderer import CONFIDENCE_STYLES
 
 
 def sample_architecture():
@@ -126,86 +125,19 @@ class TestSerialization(unittest.TestCase):
 
 
 class TestRendering(unittest.TestCase):
-    def _payload(self, architecture):
+    def test_inline_report_preserves_neutral_payload(self):
         with tempfile.TemporaryDirectory() as directory:
-            report = Path(directory) / "report.html"
-            HTMLRenderer(title="Sample").render(architecture, str(report))
-            document = report.read_text(encoding="utf-8")
-        match = re.search(
-            r'<script id="architecture-data" type="application/json">(.*?)</script>',
-            document,
-            re.DOTALL,
-        )
-        self.assertIsNotNone(match)
-        return json.loads(match.group(1).replace("\\u003c", "<")), document
-
-    def test_dashboard_payload_carries_the_typed_node_fields(self):
-        payload, _ = self._payload(sample_architecture())
-        node = payload["nodes"][0]
-
-        self.assertEqual(node["span"]["start_line"], 3)
-        self.assertEqual(node["cost"]["token_estimate"], 42)
-        self.assertEqual(node["flags"], ["dynamic_attr"])
-        self.assertEqual(node["symbol_path"], "mod.run")
-
-    def test_dashboard_edges_keep_both_the_vis_keys_and_the_typed_fields(self):
-        payload, _ = self._payload(sample_architecture())
-        edge = payload["edges"][0]
-
-        self.assertEqual(edge["from"], "py:mod#run")
-        self.assertEqual(edge["to"], "py:mod#helper")
-        self.assertEqual(edge["confidence"], "static_inferred")
-        self.assertEqual(edge["evidence"]["start_line"], 5)
-
-    def test_confidence_drives_the_line_style(self):
-        architecture = sample_architecture()
-        architecture.edges = [
-            GraphEdge("py:mod#run", "py:mod#helper", "CALLS", confidence=level)
-            for level in ("static_certain", "static_inferred", "dynamic_required")
-        ]
-
-        payload, _ = self._payload(architecture)
-        by_confidence = {edge["confidence"]: edge for edge in payload["edges"]}
-
-        self.assertFalse(by_confidence["static_certain"]["dashes"])
-        self.assertEqual(by_confidence["static_inferred"]["dashes"], CONFIDENCE_STYLES["static_inferred"]["dashes"])
-        self.assertEqual(by_confidence["dynamic_required"]["dashes"], CONFIDENCE_STYLES["dynamic_required"]["dashes"])
-        self.assertNotEqual(
-            by_confidence["static_certain"]["color"]["color"],
-            by_confidence["dynamic_required"]["color"]["color"],
-        )
-
-    def test_edge_tooltip_explains_confidence_and_evidence(self):
-        payload, _ = self._payload(sample_architecture())
-
-        title = payload["edges"][0]["title"]
-        self.assertIn("confidence: static_inferred", title)
-        self.assertIn("resolution: ambiguous", title)
-        self.assertIn("evidence: mod.py:5", title)
-        self.assertIn("other candidates: 1", title)
-        self.assertIn("occurrences: 3", title)
-
-    def test_an_explicit_edge_colour_is_not_overridden_by_confidence(self):
-        architecture = sample_architecture()
-        architecture.edges = [
-            GraphEdge("py:mod#run", "py:mod#helper", "ROUTES", color="#10B981",
-                      confidence=Confidence.FRAMEWORK_INFERRED)
-        ]
-
-        payload, _ = self._payload(architecture)
-
-        self.assertEqual(payload["edges"][0]["color"]["color"], "#10B981")
-
-    def test_the_style_table_is_shipped_to_the_dashboard(self):
-        payload, _ = self._payload(sample_architecture())
-
-        self.assertEqual(payload["confidence_styles"], CONFIDENCE_STYLES)
-
-    def test_assets_stay_in_sibling_files(self):
-        _, document = self._payload(sample_architecture())
-
-        self.assertNotIn("<style", document)
-        self.assertIn("report_assets/app.js", document)
+            output = Path(directory) / "report.html"
+            HTMLRenderer(title="Sample").render(sample_architecture(), str(output))
+            document = output.read_text(encoding="utf-8")
+            match = re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>', document, re.DOTALL)
+            self.assertIsNotNone(match)
+            payload = json.loads(match.group(1))
+            self.assertEqual(payload["architecture"], architecture_to_dict(sample_architecture()))
+            self.assertIsNone(payload["bottlenecks"])
+            self.assertFalse((output.parent / "report_assets").exists())
+            self.assertIn("<style", document)
+            self.assertIn('id="report-summary"', document)
 
 
 if __name__ == "__main__":

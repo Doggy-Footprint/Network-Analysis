@@ -33,7 +33,6 @@ from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
 from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json
-from report.bottlenecks import render_report as render_bottlenecks_report
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy", "nestjs": "NestJS"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
@@ -61,7 +60,7 @@ class _AnalyzerSelection(argparse.Action):
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="code-analyzer",
-        description="Statically analyze a project and generate an interactive HTML architecture & dependency dashboard.",
+        description="Statically analyze a project and generate an interactive HTML dependency bottleneck report.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -106,7 +105,7 @@ def parse_args():
     parser.add_argument(
         "--title",
         default=None,
-        help="Custom title for the dashboard.",
+        help="Custom title for the report.",
     )
     parser.add_argument(
         "--no-models",
@@ -140,7 +139,6 @@ def parse_args():
         help="Print Mermaid diagram markdown to stdout.",
     )
     parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v4 JSON.")
-    parser.add_argument("--bottlenecks-html", metavar="PATH", help="Write bottlenecks.v4 HTML.")
     parser.add_argument(
         "--edge-weights",
         default=str(default_edge_weights_path()),
@@ -158,17 +156,14 @@ def parse_args():
         parser.error("--entrypoint is only supported with --framework fastapi")
     if args.mermaid and len(args.analyzers) > 1:
         parser.error("--mermaid is not supported with multiple analyzers")
-    if args.bottlenecks_html and not args.bottlenecks:
-        parser.error("--bottlenecks-html requires --bottlenecks")
+    output = Path(args.output).resolve()
+    output_paths = [output, output.with_name(f"{output.stem}_assets")]
     if args.bottlenecks:
-        output = Path(args.output).resolve()
-        output_paths = [output, output.with_name(f"{output.stem}_assets"), Path(args.bottlenecks).resolve()]
-        if args.bottlenecks_html:
-            output_paths.append(Path(args.bottlenecks_html).resolve())
-        if args.json:
-            output_paths.append(Path(args.output).resolve().with_suffix(".json"))
-        if len(output_paths) != len(set(output_paths)):
-            parser.error("analysis output paths must be distinct")
+        output_paths.append(Path(args.bottlenecks).resolve())
+    if args.json:
+        output_paths.append(output.with_suffix(".json"))
+    if len(output_paths) != len(set(output_paths)):
+        parser.error("analysis output paths must be distinct")
     return args
 
 
@@ -187,8 +182,6 @@ def _output_paths(project_path: Path, args) -> tuple[Path, ...]:
         paths.append(output.with_suffix(".json"))
     if args.bottlenecks:
         paths.append(Path(args.bottlenecks).resolve())
-    if args.bottlenecks_html:
-        paths.append(Path(args.bottlenecks_html).resolve())
     return tuple(paths)
 
 
@@ -386,22 +379,19 @@ def main(
     else:
         arch = _run_merged(args, project_path, repository_snapshot, analysis_config)
 
-    if args.bottlenecks:
-        try:
-            bottleneck_report = analyze_bottlenecks(
-                repository_snapshot, arch, edge_weights
-            )
-        except BottleneckInputError as exc:
-            print(f"[!] Error: {exc}", file=sys.stderr)
-            raise SystemExit(1)
+    try:
+        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights)
+    except BottleneckInputError as exc:
+        print(f"[!] Error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
 
     try:
         renderer = renderer_factory(title=args.title, framework_label=analyzer_label)
-        output_html_path = Path(renderer.render(arch, str(outputs[0]))).resolve()
+        output_html_path = Path(renderer.render(arch, str(outputs[0]), bottleneck_report=json.loads(bottlenecks_to_json(bottleneck_report)))).resolve()
     except (OSError, UnicodeError, ValueError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
-    print(f"[✓] Generated interactive HTML dashboard: {output_html_path}")
+    print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")
 
     if args.json:
         json_output_path = output_html_path.with_suffix(".json")
@@ -416,10 +406,6 @@ def main(
         bottleneck_path = Path(args.bottlenecks).resolve()
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
-        if args.bottlenecks_html:
-            html_path = Path(args.bottlenecks_html).resolve()
-            _write_text(html_path, render_bottlenecks_report(json.loads(bottlenecks_to_json(bottleneck_report))), file_writer)
-            print(f"[✓] Exported bottleneck HTML: {html_path}")
 
     if args.mermaid:
         if builder is None:
@@ -440,7 +426,7 @@ def main(
         print(f"  • Methods:      {stats['methods_breakdown']}")
     top_cost = stats.get("analysis", {}).get("top_weighted_cost", [])
     if top_cost:
-        print(f"  • Highest agent context cost: {top_cost[0]['label']} ({top_cost[0]['value']:.4f})")
+        print(f"  • Highest PageRank × effective token cost: {top_cost[0]['label']} ({top_cost[0]['value']:.4f})")
 
     if args.open:
         print(f"[*] Opening {output_html_path} in default browser...")

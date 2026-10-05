@@ -297,64 +297,12 @@ def v6_graph(with_vendored=True):
     return prods + others, edges
 
 
-def category_divs(document):
-    assert document.count(HEADING) >= 1
-    section = document[document.rindex(HEADING):]
-    end = section.find("</section>")
-    if end != -1:
-        section = section[:end]
-    marks = list(re.finditer(r'<div data-category="([^"]*)"\s*>', section))
-    divs = {}
-    for index, mark in enumerate(marks):
-        stop = marks[index + 1].start() if index + 1 < len(marks) else len(section)
-        assert mark.group(1) not in divs, "duplicate data-category div"
-        divs[mark.group(1)] = section[mark.end():stop]
-    return divs, len(marks)
-
-
-def _render_v6(with_vendored):
-    assigned, edges = v6_graph(with_vendored)
-    payload = payload_for(assigned, edges)
-    return payload, *category_divs(render_report(payload))
-
-
-def test_V6_one_div_per_category_with_metrics_and_only_own_ids():
-    payload, divs, count = _render_v6(True)
-    categories = by_category(payload)
-    assert count == 5 and set(divs) == set(CATEGORIES)
-    partial_seen = False
-    for name in CATEGORIES:
-        own = ids_in(categories[name])
-        assert own, name
-        assert NO_DATA not in divs[name], name
-        for metric in RANKINGS:
-            assert metric in divs[name], (name, metric)
-        for node_id in own:
-            assert node_id in divs[name], (name, node_id)
-        for other in CATEGORIES:
-            if other != name:
-                for node_id in ids_in(categories[other]):
-                    assert node_id not in divs[name], (name, node_id)
-        listed_per_metric = [{e["node_id"] for e in categories[name][m]} for m in RANKINGS]
-        partial_seen = partial_seen or any(ids not in ({*own}, set()) for ids in listed_per_metric)
-    assert partial_seen, "graph must rank some id in only some metrics"
-    production_ids = {e["node_id"] for entries in categories["production"].values() for e in entries}
-    assert any(
-        any(node_id not in {e["node_id"] for e in categories["production"][m]} for m in RANKINGS)
-        for node_id in production_ids
-    ), "production must contain an id ranked in only some metrics"
-
-
-def test_V6_empty_category_div_has_no_data_message_and_no_metric_panels():
-    payload, divs, count = _render_v6(False)
-    categories = by_category(payload)
-    assert count == 5 and set(divs) == set(CATEGORIES)
-    assert ids_in(categories["vendored"]) == set()
-    assert NO_DATA in divs["vendored"]
-    for metric in RANKINGS:
-        assert metric not in divs["vendored"], metric
-    assert "vnd_a" not in "".join(divs.values())
-    for name in CATEGORIES:
-        if name != "vendored":
-            assert NO_DATA not in divs[name], name
-            assert all(metric in divs[name] for metric in RANKINGS), name
+def test_V6_json_only_categories_preserved_in_inline_payload():
+    payload = report_payload()
+    document = render_report(payload)
+    match = re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>', document, re.DOTALL)
+    assert match
+    inline = json.loads(match.group(1))
+    assert inline["architecture"] is None
+    assert inline["bottlenecks"] == payload
+    assert 'id="category-filter"' in document

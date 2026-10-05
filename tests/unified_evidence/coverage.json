@@ -1,0 +1,506 @@
+{
+  "spec": "agent-docs/specs/7d8bca106e2f493a-unified-bottleneck-report.md",
+  "version": 3,
+  "expected_source": "Independent fixture literals and spec-v3 behavior rules; existing v4 public analyzer fixture supplies only validation envelope, overwritten ranking/node metrics/candidates supply independent UI values.",
+  "execution": "Test-implementer only compiled and collected. Root executes Test command and owns acceptance, mutations and visual review.",
+  "obligations": [
+    {
+      "id": "V1",
+      "parents": [
+        "F2",
+        "F3",
+        "F4",
+        "Q1",
+        "C1",
+        "C3"
+      ],
+      "surface": "summary/list Chrome DOM",
+      "layer": "e2e",
+      "selection": "each enumerated choice, no Cartesian product",
+      "technique": "equivalence partitioning/metamorphic",
+      "items": [
+        "six distinct representative orders",
+        "six categories",
+        "three kind filters",
+        "trimmed case-insensitive name/path/ID search and no-match",
+        "metric change",
+        "tie",
+        "missing metric last and dash",
+        "all-zero notice",
+        "no production keeps empty"
+      ],
+      "observation": "data-node-id/data-node-row order, metric text, option values",
+      "expected": "handassigned category/metric/kind fixtures; values remain whole-graph supplied values",
+      "escaping_defect": "reuse PageRank for every group; ignore filters or search; sort missing first; tie unstable",
+      "assertion": "exact node ID lists and visible notices",
+      "tests": [
+        "test_V1_six_representatives_category_values_and_sort",
+        "test_V1_V6_missing_zero_no_production",
+        "test_V1_V3_candidate_filters_ranges_aggregation"
+      ]
+    },
+    {
+      "id": "V2",
+      "parents": [
+        "F6",
+        "F7",
+        "Q1",
+        "C2",
+        "C3"
+      ],
+      "surface": "rendered Cytoscape plus full relationships",
+      "layer": "e2e",
+      "selection": "0/1/30/31 boundary fixtures and specified edge scenarios",
+      "technique": "boundary value analysis/scenario",
+      "items": [
+        "0/1/30/31 distinct neighbors",
+        "configured minimum confidence/resolution maximum incident weight",
+        "fan-in then ID",
+        "all categories",
+        "bidirectional",
+        "duplicates",
+        "self relationships",
+        "omitted evidence",
+        "graph navigation",
+        "group edge evidence",
+        "zoom/fit",
+        "incoming/outgoing/bidirectional positions",
+        "60 arrows"
+      ],
+      "observation": "window.ReportGraph topology/positions/zoom, data-shown/data-omitted and relationship rows",
+      "expected": "independent explicit sets; chosen center+30; directed pair groups; every raw incident evidence retained",
+      "escaping_defect": "cap all network instead of incident neighbors; count duplicates as neighbors; discard omitted evidence; sum edge occurrence weight; omit cross-category nodes",
+      "assertion": "exact graph node sets/edge counts/positions/raw evidence paths and page counts",
+      "tests": [
+        "test_V2_neighbor_boundaries_and_omitted_evidence",
+        "test_V2_weight_fanin_id_grouping_layout_relationship_paging",
+        "test_V2_sixty_arrows_incoming_layout_and_configured_weights"
+      ]
+    },
+    {
+      "id": "V3",
+      "parents": [
+        "F4",
+        "F5",
+        "F8",
+        "Q1",
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "surface": "list/detail/appendix",
+      "layer": "e2e",
+      "selection": "0/1/50/51 nodes,51 collection rows plus declared detail fields",
+      "technique": "boundary/scenario",
+      "items": [
+        "node row boundaries",
+        "prev/next and resets for four controls",
+        "same name different paths",
+        "candidate metrics and all evidence start/end ranges",
+        "multiple same-kind raw candidates",
+        "signature/doc/flags/metadata",
+        "identifier context metrics",
+        "lazy collection0 then50 then1",
+        "strategy/sample/settings via supplied payload"
+      ],
+      "observation": "bounded data-node-row/data-collection-row, detail literal fields, relationship paging",
+      "expected": "fixture literals and 50-row cap; neutral payload preserved entirely",
+      "escaping_defect": "list only top10; eager collection table; drop candidate second evidence or same-kind raw candidate",
+      "assertion": "exact row lists/counts and source literals in expanded details",
+      "tests": [
+        "test_V3_list_boundaries_and_reset",
+        "test_V3_detail_secondary_fields_and_source_paths",
+        "test_V1_V3_candidate_filters_ranges_aggregation",
+        "test_V4_generate_and_shared_shell_preserves_wire_data"
+      ]
+    },
+    {
+      "id": "V4",
+      "parents": [
+        "F9",
+        "F10",
+        "F11",
+        "Q3",
+        "Q7",
+        "C5"
+      ],
+      "surface": "CLI files and public APIs",
+      "layer": "integration/regression",
+      "selection": "each enumerated CLI/API scenario plus retained Python/mixed analyzer characterization",
+      "technique": "scenario/syntax",
+      "items": [
+        "plain-o includes candidates",
+        "bothJSON original wire payloads",
+        "removed option error2",
+        "HTML/JSON collision",
+        "output exclusion including stale assets",
+        "Python",
+        "merged analyzers",
+        "JSON-only unavailable connections",
+        "architecture-only unavailable candidates",
+        "malformed JSON/schema/kinds/duplicate IDs/nonfinite/path diagnostics",
+        "same shell inline no assets"
+      ],
+      "observation": "exit code/stderr/file bytes/typed errors/inline payload and DOM capability signals",
+      "expected": "schema5/bottlenecks.v4, literal removed option, no output on rejection, independent fixture envelope",
+      "escaping_defect": "only compute candidates with --bottlenecks; accept removed option; pretend JSON-only has graph; overwrite colliding file",
+      "assertion": "exact schema/data equality, error codes, writes empty, unavailable signals",
+      "tests": [
+        "test_unified_cli.py",
+        "test_unified_contract.py",
+        "test_cli_bottlenecks_v3.py",
+        "test_cli_multi_analyzer.py",
+        "test_serialization_and_rendering.py",
+        "test_category_rankings_v3.py"
+      ]
+    },
+    {
+      "id": "V5",
+      "parents": [
+        "F1",
+        "Q3",
+        "Q4",
+        "C7"
+      ],
+      "surface": "local-file installed Chrome at390/1440",
+      "layer": "e2e plus root review",
+      "selection": "both widths and named controls",
+      "technique": "scenario",
+      "items": [
+        "http(s) blocked requests0",
+        "390/1440 no overflow",
+        "keyboard focus/Enter",
+        "no initial graph",
+        "summary before detail and selection graph flow",
+        "actual Chrome core journey"
+      ],
+      "observation": "document scroll width, focus/selection, request records, DOM order",
+      "expected": "width<=viewport, no requests, selected detail then graph",
+      "escaping_defect": "CDN asset dependency; eager graph; inaccessible selection; mobile overflow",
+      "assertion": "DOM widths/order/focus, null initial ReportGraph, request list empty",
+      "tests": [
+        "test_V5_offline_keyboard_hierarchy"
+      ],
+      "review": "Root captures desktop/mobile/Chrome screenshots and local-reports/unified-review.json using same local-file core journey."
+    },
+    {
+      "id": "V6",
+      "parents": [
+        "Q5",
+        "Q6",
+        "C4"
+      ],
+      "surface": "generator/CLI/browser errors",
+      "layer": "unit/integration/e2e",
+      "selection": "all finite declared error states",
+      "technique": "error guessing/decision table",
+      "items": [
+        "graph constructor throws",
+        "invalid embedded JSON",
+        "empty graph/category/search",
+        "missing metrics",
+        "invalid schema/kind/duplicate/nonfinite/JSON",
+        "renderer I/O failure",
+        "hostile label/doc/title/evidence/meta"
+      ],
+      "observation": "typed ReportInputError and diagnostics, no output, report-status/graph-status, surviving selections/search/relationships, attack marker",
+      "expected": "literal source text inert,0 external requests, non-graph surface still usable",
+      "escaping_defect": "inject innerHTML; closing-script payload escape absent; graph exception disables whole UI; success claim after I/O failure",
+      "assertion": "attack undefined, literal hostile text present, visible failure and working search/selection, no writes and exit1",
+      "tests": [
+        "test_V6_hostile_source_text_and_graph_failure",
+        "test_V6_hostile_candidate_evidence_is_inert",
+        "test_V6_payload_browser_error_visible",
+        "test_V4_V6_generator_rejects_invalid_fields_no_output",
+        "test_V6_renderer_io_failure_nonzero",
+        "test_V1_V6_missing_zero_no_production"
+      ]
+    },
+    {
+      "id": "V7",
+      "parents": [
+        "Q2",
+        "C6"
+      ],
+      "surface": "Chrome local-file performance",
+      "layer": "e2e",
+      "selection": "5 fresh contexts and5 each summary/filter-page/detail observations; data prep outside timer",
+      "technique": "scenario",
+      "items": [
+        "10000nodes",
+        "30000edges",
+        "1000candidates",
+        "15 timings",
+        "31 graph cap"
+      ],
+      "observation": "monotonic ms navigation to painted summary, UI event to double frame, selected graph to double frame",
+      "expected": "median summary<=5000ms, filter/page<=300ms, detail/graph<=1000ms; neutral payload retains all input counts",
+      "escaping_defect": "raise thresholds; preload warmed page; silently truncate payload; eager whole graph",
+      "assertion": "raw timings written before exact threshold assertions, payload counts and graph bound",
+      "tests": [
+        "test_V7_five_cold_chrome_runs_and_interactions"
+      ],
+      "artifact": "tests/unified_evidence/performance.json emitted by root test run"
+    },
+    {
+      "id": "V8",
+      "parents": [
+        "F11",
+        "Q7"
+      ],
+      "surface": "neutral JSON/analyzer regressions and root review",
+      "layer": "integration/review",
+      "selection": "existing analyzer/metric/candidate characterization suites and two adapters",
+      "technique": "metamorphic",
+      "items": [
+        "neutral schema5 unchanged",
+        "bottlenecks.v4 unchanged",
+        "existing static edge/metric/candidate values",
+        "common shell adapters",
+        "archive unchanged"
+      ],
+      "observation": "public serialization equality and preserved analyzer assertions; root source/diff review",
+      "expected": "pre-existing independently specified edge/metric/candidate semantics unchanged",
+      "escaping_defect": "move presentation into analyzer or alter metrics; rewrite archives",
+      "assertion": "retained regression tests; root import scan/diff review artifact",
+      "tests": [
+        "TestSerialization",
+        "test_V4_generate_and_shared_shell_preserves_wire_data",
+        "test_bottlenecks_v3.py",
+        "test_graph_metrics.py",
+        "test_weighted_graph_metrics.py",
+        "test_identifier_occurrence.py",
+        "test_cli_multi_analyzer.py"
+      ],
+      "review": "Root owns analyzer visualization import scan and archive diff because implementation paths are isolated from test-implementer."
+    }
+  ],
+  "inapplicable": [
+    {
+      "item": "Flexibility/Safety characteristic evidence",
+      "reason": "Spec explicitly declares inapplicable, no hosting/extensions/operational control."
+    },
+    {
+      "item": "structure-based coverage percentage",
+      "reason": "Spec explicitly chooses enumerated behavior coverage; no structure target required."
+    }
+  ],
+  "mutation_proposals": [
+    {
+      "class": "category leak",
+      "obligation": "V1",
+      "defect": "Ignore category predicate, include test node under default production."
+    },
+    {
+      "class": "graph cap overflow",
+      "obligation": "V2",
+      "defect": "Choose31 neighbors instead of30."
+    },
+    {
+      "class": "script payload execution",
+      "obligation": "V6",
+      "defect": "Embed raw closing-script source string without escaping."
+    }
+  ],
+  "correction_impact": {
+    "shared_causes": [
+      "duplicated module registrations of session Playwright fixtures",
+      "observation before lazy disclosure toggle renders content",
+      "focus targeted select wrappers",
+      "collision expectation failed to preserve pre-existing argparse error2",
+      "Performance dispatched category event to wrapper instead of actual control",
+      "Payload-error wording assertion excluded equivalent explicit Korean failure signal",
+      "Snapshot nth locators over a shrinking :not([open]) match set skip later disclosures",
+      "Outer appendix disclosure not explicitly opened before descendant lazy sections",
+      "Outer appendix async toggle initialization raced the first helper count",
+      "Zoom-in evidence began at graph maximum zoom",
+      "Native Korean select typeahead requires trusted CDP keyboard event text; Playwright arrows or insertText do not operate native select in workstation Chrome"
+    ],
+    "affected_obligations": [
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7"
+    ],
+    "checked_siblings": [
+      "All three browser consumers now use one tests/conftest.py fixture registration; fresh contexts remain per report/test",
+      "All disclosure expansion observations in browser/contract evidence use closed disclosures and awaited expected literal/count",
+      "Main-control focus loop targets actual nested selects; other selector methods already retarget labeled inputs",
+      "Both collision variants corrected to error2; removed option still2; invalid weights/path and renderer I/O remain1",
+      "Performance child select event now followed by independently expected selected category, exact50 nodeIDs and total count; five timings unchanged. Fixture contains100 test nodes to reject ignored category input while preserving10k/30k/1000 counts.",
+      "Payload error requires visible nonempty explicit failure plus no node-selection/list/selected-detail/graph success states; graph failure and typed generator errors retain prior explicit signals.",
+      "All five affected expansion loops replaced by shared fresh-first closed disclosure helper, bounded200actions and frame waits; V2 boundaries, V3 fields/appendix, V6 hostile, V1/V3 candidates checked together.",
+      "Browser fixture and performance contexts use5s action timeout; quality measurement timing and thresholds unchanged.",
+      "Only appendix creates new descendant disclosures from its own toggle; node/relationship scopes already populated after selected-node action. Existing awaited literal/count assertions retained.",
+      "Both V2 mouse and V5 keyboard zoom-in scenarios lower baseline first and still assert zoom-out lowers and zoom-in raises. All six keyboard_choose calls retain meaningful downstream rows."
+    ],
+    "changed_dependencies": [
+      "tests/conftest.py shared registration",
+      "Playwright expect waits for lazy content",
+      "Mixed category performance fixture verifies filter actually changes total9900->10000",
+      "Payload status failure observation includes error class or cannot-read message",
+      "tests.unified_support.open_disclosures controls every own detail/relationship/appendix expansion; parent appendix summary explicitly clicked",
+      "V3 appendix flow now waits for first visible descendant summary before fresh-first expansion",
+      "Supplemental independent visibleRecord/visibleRecords JSON observation helpers",
+      "Tab-only reachability and native keyboard_choose helper; no programmatic focus or select_option in new keyboard scenario",
+      "keyboard_choose now trusted native typeahead CDP events after Tab; unique visible prefix and1.1s nativebuffer reset; no DOMselectioninjection"
+    ],
+    "acceptance_needing_invalidation": "V2/V5 supplemental zoom baseline and V5 keyboard select evidence replaced. All independent expected values and quality thresholds remain. Root/verifier own acceptance."
+  },
+  "load_check": {
+    "commands": [
+      ".venv/bin/python -m compileall -q tests",
+      ".venv/bin/python -m pytest --collect-only -q"
+    ],
+    "result": "compile and full collection pass; supplemental10cases; no pytest test execution by test-implementer"
+  },
+  "blocked": [],
+  "spec_challenges": "none; native select uncertainty resolved by main minimalHTML trustedCDP diagnosis; strict keyboard criteria unchanged",
+  "failed_attempts": [
+    {
+      "attempt": "suite2",
+      "evidence": "926passed/5failures/200subtestspass; shrinking nth locator disclosures timed out",
+      "cause": "verified: clicking closed disclosure removed it from :not([open]) match set, later nth indices shifted",
+      "disposition": "fresh-first bounded helper replaces all five sibling loops"
+    },
+    {
+      "attempt": "suite3",
+      "evidence": "930passed/1failure/200subtestspass; appendix37 observation failed",
+      "cause": "verified: helper observed0descendants before outer appendix toggle event built lazy closed sections",
+      "disposition": "wait up to5s for first visible descendant summary before helper expansion"
+    },
+    {
+      "attempt": "suite5",
+      "evidence": "938passed/3failures/200subtestspass78.82s",
+      "cause": "verified: zoomin initial3 atmax; native select ArrowDown/Space automation failed equally in minimalChromeHTML",
+      "disposition": "observe lowered baseline before zoomin; trusted nativeCDP Korean typeahead after actualTab reachability andbufferreset"
+    }
+  ],
+  "evidence_revision": 2,
+  "verifier_gap_closure": [
+    {
+      "finding": "VR1",
+      "obligations": [
+        "V1"
+      ],
+      "tests": [
+        "test_VR1_summary_counts_units_category_representatives_precedence",
+        "test_VR1_VR6_missing_detail_and_explicit_empty_states"
+      ],
+      "technique": "equivalence partitioning/metamorphic",
+      "items": [
+        "independent summary category/kind/snapshot/node/edge counts",
+        "six meaning/unit pairs",
+        "all six category representative exactIDs and perbutton independent values",
+        "renderer vendor-test/generated-test precedence",
+        "missing exclusion and selected detail dash"
+      ],
+      "observation": "rendered labeled count blocks/buttons/metric boxes",
+      "escaping_defect": "filter only list;wrongcount/unit;precedence swapped;missing0representative"
+    },
+    {
+      "finding": "VR2",
+      "obligations": [
+        "V2"
+      ],
+      "tests": [
+        "test_VR2_configured_resolution_minimum_and_raw_relation_identity",
+        "test_VR2_fit_and_both_zoom_buttons_have_effect"
+      ],
+      "technique": "scenario",
+      "items": [
+        "configured confidence/resolution minimum distinguishes confidence-only and resolution-only",
+        "all33 raw incident records identity and complete fields inclself",
+        "relationship node selection",
+        "zoomin/zoomout/fit actual effects"
+      ],
+      "observation": "Cytoscape public topology plus visible disclosed preJSON and rendered graphbounds",
+      "expected": "literal edges and independently chosen n01..n30; positivezoomdirection; fit returns nodes insideviewport",
+      "escaping_defect": "ignore resolution;omitrawfields/self;buttonnoop"
+    },
+    {
+      "finding": "VR3",
+      "obligations": [
+        "V3"
+      ],
+      "tests": [
+        "test_VR3_exact_visible_metric_context_typed_mappings_and_appendix",
+        "test_VR3_candidate_reasons_metrics_and_single_kind_badge",
+        "test_VR2_configured_resolution_minimum_and_raw_relation_identity"
+      ],
+      "technique": "scenario",
+      "items": [
+        "allmetrics/context exactmapping withdistinct values; sixmetricboxes",
+        "typedfields exact mappings",
+        "all candidate fullrecords metrics reasonparagraph and1badge/kindtarget",
+        "snapshotweightsversionscoverage limitations disclosedmapping",
+        "context/token/spanoverlapexplanations",
+        "relationshiptarget select"
+      ],
+      "observation": "visible humanlabeled disclosure preJSON equality, badges, paragraphs",
+      "expected": "fixture literals; no inferred values",
+      "escaping_defect": "swapcode/comment;droptypedfield;aggregate awaycandidate;store appendix onlyinertdata"
+    },
+    {
+      "finding": "VR4",
+      "obligations": [
+        "V4"
+      ],
+      "tests": [
+        "test_VR4_json_only_rankings_metrics_and_unavailable_capabilities"
+      ],
+      "technique": "scenario",
+      "items": [
+        "JSON-only production/test/all suppliedvalues andIDs",
+        "detailedmetrics",
+        "explicit incompletecategories/sourceunavailable",
+        "architecture-only absentcandidate distinct fromnonefound"
+      ],
+      "observation": "summary capabilitysentence,representatives,visiblemetricrecord",
+      "expected": "fixture17/23 and suppliedranking order; absentpayload unavailable",
+      "escaping_defect": "emptyJSON representatives;fakecompleteness;nonefoundwhenunavailable"
+    },
+    {
+      "finding": "VR5",
+      "obligations": [
+        "V5"
+      ],
+      "tests": [
+        "test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[mobile]",
+        "test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[desktop]"
+      ],
+      "technique": "scenario",
+      "items": [
+        "actualTab traversal400bound",
+        "keyboardcategory/metric/kind/search withdistinctrow changes",
+        "listnextprev andrelationshipnextprevEnter",
+        "graphzoomfitEnterwithobservable effects"
+      ],
+      "observation": "activeElement reachedviaTabonly;trusted nativeChromeCDP typeahead keyevents to actualselect,1.1s nativebufferreset; downstream independentrowIDs andgraphstate",
+      "expected": "independent literal rows and effectdirections",
+      "escaping_defect": "tabindex-1;preventkeyboardoperation;noopbuttons"
+    },
+    {
+      "finding": "VR6",
+      "obligations": [
+        "V6"
+      ],
+      "tests": [
+        "test_VR6_every_hostile_source_field_distinct_and_visible",
+        "test_VR1_VR6_missing_detail_and_explicit_empty_states"
+      ],
+      "technique": "errorguessing/decisiontable",
+      "items": [
+        "separatehostilelabel/doc/title/evidence/meta markers visibleineachfield",
+        "allmarkersunset/request0",
+        "explicit emptygraph/search/counts andsupplied-emptycandidates",
+        "missing selectedmetricdash"
+      ],
+      "observation": "visiblehumanlabeledDOM/disclosedJSON; graph/listcount messages andruntimeattackmarkers",
+      "expected": "each independent stringexactlyvisible,markerundefined; explicitnonefound ratherthan unavailable",
+      "escaping_defect": "hidehostiledoc/metatitle;emptywithoutnotice;missing0detail"
+    }
+  ]
+}

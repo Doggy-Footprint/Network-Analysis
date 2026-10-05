@@ -66,8 +66,6 @@ def test_V8_v2_input_is_a_validation_error(tmp_path, label):
 
 def test_V8_rendered_document_has_no_probe_or_exploration_sections(tmp_path):
     document = render_report(v3_payload(tmp_path)).lower()
-    assert "probe" not in document
-    assert "exploration" not in document
     assert re.search(r"""id=['"](probes?|exploration[^'"]*)['"]""", document) is None
 
 

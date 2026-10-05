@@ -1,0 +1,28 @@
+{
+  "spec_version": 3,
+  "scope": "Rendered DOM inspection only; no pytest/source read",
+  "observations": {
+    "summary_count_labels": "observed paired label/count nodes and snapshot/file/node/edge scope text",
+    "metric_disclosure": "visible JSON object with all independent metric keys",
+    "typed_disclosure": "visible JSON object with neutral typed node fields",
+    "appendix_reading_explanations": "context overlap, token estimate and source-span overlap text visible"
+  },
+  "failed_attempts": [
+    {
+      "procedure": "Tab to actualselect then nativeArrowUp/ArrowDown/Enter, with and withoutSpace;installedChrome154",
+      "expected": "selectvalue test",
+      "observed": "production",
+      "context": "headless; headed attempted samebehavior",
+      "cause": "unresolved automation/native-select or keyboardUI; not inferred from implementation"
+    }
+  ],
+  "diagnostic_update": {
+    "source": "Main standalone minimal HTML native-select observations; no Implementation read",
+    "observations": [
+      "ArrowDown+Enter staysA in minimal Chrome select, same as report; automation/nativepopup defect rather than report-specific behavior",
+      "Latin keyboard.press(b) selectsB; Korean Playwrightpress unsupported and type insertion doesnotselect",
+      "Trusted ChromeCDP Input.dispatchKeyEvent keyDown(key/text=\ud14c) thenkeyUp selects\ud14c\uc2a4\ud2b8"
+    ],
+    "correction": "Tab-only reachability followed by trusted native typeahead using shortest unique visible-label prefix,1.1s buffer reset; no focus/value/selectedIndex injection. Strict selected-value and downstream-row expectations retained."
+  }
+}

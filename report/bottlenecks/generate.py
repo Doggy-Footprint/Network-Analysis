@@ -17,7 +17,7 @@ _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?
 KIND_LABELS = {
     "evidence_spread": "근거 분산",
     "large_node": "큰 노드",
-    "unresolved_boundary": "미해결 경계",
+    "unresolved_boundary": "정적 분석 미확정 참조",
 }
 
 KIND_DESCRIPTIONS = {
@@ -129,18 +129,6 @@ def _focus_candidates(prioritized: list) -> list:
 def focus_candidates(data: Mapping[str, Any]) -> list:
     validated = _validate(data)
     return _focus_candidates(_prioritize(validated))
-
-def _templates_dir() -> Path:
-    return Path(__file__).resolve().parent / "templates"
-
-
-def _inline_css() -> str:
-    return (_templates_dir() / "styles.css").read_text(encoding="utf-8").strip()
-
-
-def _inline_js() -> str:
-    return (_templates_dir() / "script.js").read_text(encoding="utf-8").strip()
-
 
 def _error(path: str, message: str) -> None:
     raise ReportInputError(f"{path}: {message}")
@@ -269,225 +257,10 @@ def _validate(payload: Any) -> Mapping[str, Any]:
     return root
 
 
-def _json(value: Any, *, indent: Optional[int] = None) -> str:
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, indent=indent)
-
-
-def _visible(value: Any) -> str:
-    return html.escape(_json(value, indent=2))
-
-
-def _details(title: str, value: Any) -> str:
-    return f"<details><summary>{html.escape(title)}</summary><pre>{_visible(value)}</pre></details>"
-
-
-def _numeric_metrics(metrics: Mapping[str, Any]) -> list[tuple[str, float]]:
-    return [
-        (key, float(value))
-        for key, value in sorted(metrics.items())
-        if isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
-    ]
-
-
-def _bar_rows(values: Sequence[tuple[str, float]]) -> str:
-    maximum = max((value for _, value in values), default=0)
-    return "".join(
-        "<div class='bar-row'>"
-        f"<span class='bar-label'>{html.escape(label)}</span>"
-        f"<div class='bar-track'><div class='bar' style='width: {value / maximum * 100 if maximum else 0:.2f}%'></div></div>"
-        f"<output class='bar-value'>{value:g}</output></div>"
-        for label, value in values
-    )
-
-
-def _candidate_metrics(candidate: Mapping[str, Any]) -> str:
-    metrics = _numeric_metrics(candidate["metrics"])
-    chart = f"<div class='metric-chart'>{_bar_rows(metrics)}</div>" if metrics else "<span>None</span>"
-    return f"{chart}{_details('Raw metrics', candidate['metrics'])}"
-
-
-def _kind_counts(candidates: Sequence[Mapping[str, Any]]) -> dict:
-    counts: dict[str, int] = {kind: 0 for kind in KIND_LABELS}
-    for candidate in candidates:
-        kind = candidate["kind"]
-        counts[kind] = counts.get(kind, 0) + 1
-    return counts
-
-
-def _evidence_lines(evidence: Any) -> list:
-    lines: list = []
-
-    def add(path: Any, line: Any) -> None:
-        if not isinstance(path, str) or not path:
-            return
-        lines.append(f"{path}:{line}" if line is not None else path)
-
-    def visit(value: Any) -> None:
-        if isinstance(value, str):
-            add(value, None)
-        elif isinstance(value, dict):
-            if "path" in value or "file_path" in value:
-                add(value.get("path", value.get("file_path")), value.get("line"))
-            for nested in value.values():
-                if isinstance(nested, (list, dict)):
-                    visit(nested)
-        elif isinstance(value, list):
-            for item in value:
-                visit(item)
-
-    visit(evidence)
-    return lines
-
-
-def _focus_reason(candidate: Mapping[str, Any], score: float) -> str:
-    kind = candidate["kind"]
-    metrics = candidate.get("metrics") or {}
-    if kind == "large_node":
-        return f"소스 범위가 {metrics.get('line_count', '?')}줄로 임계 {metrics.get('line_threshold', '?')}줄을 넘습니다."
-    if kind == "evidence_spread":
-        return f"근거가 {metrics.get('file_count', score)}개 파일에 분산되어 있습니다."
-    if kind == "unresolved_boundary":
-        return f"미해결 참조가 {metrics.get('unresolved_count', score)}건 남아 있습니다."
-    return KIND_DESCRIPTIONS.get(kind, "")
-
-
-def _ranking_entries(value: Any) -> list:
-    entries: list = []
-    if isinstance(value, list):
-        for item in value:
-            if isinstance(item, dict):
-                node_id = item.get("id") or item.get("target") or item.get("node_id") or ""
-                metric_value = item.get("value")
-                if metric_value is None:
-                    metric_value = item.get("score", 0)
-                entries.append((str(node_id), metric_value))
-            elif isinstance(item, (list, tuple)) and len(item) == 2:
-                entries.append((str(item[0]), item[1]))
-    return entries
-
-
-def _ranking_panels(rankings: Mapping[str, Any]) -> str:
-    return "".join(
-        f"<div class='panel'><h3>{html.escape(str(metric))}</h3>{_bar_rows([(node_id, float(value)) for node_id, value in _ranking_entries(entries) if isinstance(value, (int, float)) and not isinstance(value, bool)][:10])}</div>"
-        for metric, entries in sorted(rankings.items())
-    )
-
-
 def render_report(payload: Any) -> str:
-    data = _validate(payload)
-    candidates = data["candidates"]
-    priorities = _prioritize(data)
-    target_labels = _build_target_labels(candidates)
+    from report.unified import render_unified_report
 
-    rows = []
-    for candidate in candidates:
-        search_text = " ".join(
-            [
-                candidate["target"],
-                target_labels.get(candidate["target"], candidate["target"]),
-                KIND_LABELS.get(candidate["kind"], candidate["kind"]),
-                candidate["status"],
-                *_evidence_lines(candidate["evidence"]),
-            ]
-        )
-        rows.append(
-            f"<tr data-candidate-row data-kind=\"{html.escape(candidate['kind'])}\" "
-            f"data-search=\"{html.escape(search_text)}\">"
-            f"<td title=\"{html.escape(candidate['target'])}\">{html.escape(target_labels.get(candidate['target'], candidate['target']))}</td>"
-            f"<td>{html.escape(KIND_LABELS.get(candidate['kind'], candidate['kind']))}</td>"
-            f"<td>{_candidate_metrics(candidate)}</td>"
-            f"<td>{''.join(f'<div>{html.escape(line)}</div>' for line in _evidence_lines(candidate['evidence'])) or '<span class=\"muted\">근거 없음</span>'}</td>"
-            f"<td>{_details('원본 JSON', candidate)}</td>"
-            f"<td>{html.escape(candidate['status'])}</td>"
-            "</tr>"
-        )
-
-    embedded = _json(data).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
-
-    focus_items = _focus_candidates(priorities)
-    if focus_items:
-        focus_html = "<ol class='focus-list'>" + "".join(
-            f"<li title=\"{html.escape(item['candidate']['target'])}\"><strong>{html.escape(item['label'])}</strong> ({html.escape(KIND_LABELS.get(item['candidate']['kind'], item['candidate']['kind']))}, "
-            f"score {item['score']:g}) — {html.escape(_focus_reason(item['candidate'], item['score']))}"
-            + (f" <span class='muted'>같은 대상 {item['duplicate_count']}건</span>" if item["duplicate_count"] > 1 else "")
-            + "</li>"
-            for item in focus_items
-        ) + "</ol>"
-    else:
-        focus_html = "<p>발견된 후보 없음</p>"
-
-    kind_counts = _kind_counts(candidates)
-    kinds_html = "<div class='kind-grid'>" + "".join(
-        f"<div class='panel'><h3>{html.escape(KIND_LABELS[kind])}</h3><p>{html.escape(KIND_DESCRIPTIONS[kind])}</p><p><strong>{count}</strong>건</p></div>"
-        for kind, count in sorted(kind_counts.items())
-    ) + "</div>"
-
-    kind_options = "".join(f"<option value='{html.escape(kind)}'>{html.escape(label)}</option>" for kind, label in sorted(KIND_LABELS.items()))
-
-    rankings = (data.get("dependency_network") or {}).get("rankings") or {}
-    if rankings:
-        rankings_html = _ranking_panels(rankings)
-    else:
-        rankings_html = "<p>순위 데이터가 없습니다.</p>"
-
-    by_category = (data.get("dependency_network") or {}).get("rankings_by_category")
-    if by_category is None:
-        category_section = ""
-    else:
-        category_order = [name for name in CATEGORY_ORDER if name in by_category] + sorted(name for name in by_category if name not in CATEGORY_ORDER)
-        category_html = "".join(
-            f"<div data-category=\"{html.escape(str(name))}\"><h3>{html.escape(str(name))}</h3>" + (_ranking_panels(by_category[name]) if any(by_category[name].values()) else "<p>순위 데이터가 없습니다.</p>") + "</div>"
-            for name in category_order
-        )
-        category_section = f"<section id='rankings-by-category'><h2>분류별 순위</h2>{category_html}</section>"
-
-    appendix_details = "".join(
-        _details(title, data[field])
-        for title, field in (
-            ("Coverage", "coverage"),
-            ("Limitations", "limitations"),
-        )
-    )
-
-    glossary_html = (
-        "<dl class='glossary-grid'>"
-        + "".join(f"<div><dt>{html.escape(KIND_LABELS[kind])}</dt><dd>{html.escape(KIND_DESCRIPTIONS[kind])}</dd></div>" for kind in sorted(KIND_LABELS))
-        + "<div><dt>score</dt><dd>후보를 정렬하는 데 쓰이는 측정값입니다. kind별로 다른 필드에서 계산됩니다.</dd></div>"
-        + "<div><dt>duplicate_count</dt><dd>같은 (kind, target) 조합에서 중복으로 발견되어 하나로 묶인 후보 건수입니다.</dd></div>"
-        + "".join(f"<div><dt>{html.escape(term)}</dt><dd>{html.escape(desc)}</dd></div>" for term, desc in METRIC_DEFINITIONS if term in rankings)
-        + "</dl>"
-    )
-
-    return (
-        "<!doctype html><html lang='ko'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>"
-        f"<title>저장소 병목 후보</title><style>{_inline_css()}</style></head><body>"
-        "<h1>저장소 병목 후보</h1>"
-        "<section id='overview'>"
-        f"{_details('Snapshot', data['snapshot'])}"
-        "<div class='summary-grid'>"
-        f"<div class='panel'><h2>candidate 수</h2><strong>{len(candidates)}</strong></div>"
-        "</div>"
-        f"{_details('edge_weights', data['edge_weights'])}{_details('versions', data['versions'])}"
-        "</section>"
-        f"<section id='focus'><h2>먼저 볼 곳</h2>{focus_html}</section>"
-        f"<section id='kinds'><h2>후보 종류</h2>{kinds_html}</section>"
-        "<section id='candidates'><h2>후보 목록</h2>"
-        "<div class='filter-bar'>"
-        "<label for='candidate-filter'>후보 검색"
-        "<input id='candidate-filter' type='search' placeholder='target, evidence, status'></label>"
-        f"<label for='candidate-kind-filter'>종류<select id='candidate-kind-filter'><option value='all'>전체</option>{kind_options}</select></label>"
-        f"<output id='candidate-count' for='candidate-filter'>{len(rows)} / {len(rows)} candidates</output>"
-        "</div>"
-        "<div class='table-wrap'>"
-        "<table><thead><tr><th>target</th><th>종류</th><th>지표</th><th>근거</th><th>원본</th><th>상태</th></tr></thead>"
-        f"<tbody>{''.join(rows)}</tbody></table></div>"
-        "</section>"
-        f"<section id='rankings'><h2>지표별 순위</h2>{rankings_html}</section>"
-        f"{category_section}"
-        f"<section id='appendix'><h2>부록</h2>{appendix_details}</section>"
-        f"<section id='glossary'><h2>용어 안내</h2>{glossary_html}</section>"
-        f"<script id='bottlenecks-data' type='application/json'>{embedded}</script><script>{_inline_js()}</script></body></html>"
-    )
+    return render_unified_report(None, _validate(payload))
 
 
 def _read_text(path: Path) -> str:

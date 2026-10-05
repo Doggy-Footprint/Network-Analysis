@@ -440,7 +440,7 @@ class TestVO5MergedRun(CliFixture):
         self.assertTrue(first_duplicate.startswith("kotlin:"))
         code, _, stderr, labels = self.run_main(
             str(self.root), "-f", "android", "-l", "kotlin", "-o", str(self.out / "architecture.html"),
-            "--json", "--bottlenecks", str(self.out / "b.json"), "--bottlenecks-html", str(self.out / "b.html"),
+            "--json", "--bottlenecks", str(self.out / "b.json"),
         )
         self.assertEqual(code, 1)
         self.assertEqual(

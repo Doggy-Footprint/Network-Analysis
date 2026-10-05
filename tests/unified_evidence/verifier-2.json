@@ -1,0 +1,460 @@
+{
+  "spec": "agent-docs/specs/7d8bca106e2f493a-unified-bottleneck-report.md",
+  "spec_version": 3,
+  "evidence_revision": 2,
+  "verifier_invocation": 2,
+  "result": "pass",
+  "isolation": "Read skill/spec, immutable prior audit, coverage/evidence artifacts, Tests and test helpers, performance/review artifacts and final passing log only. Never read Implementation, generated HTML/JS source, implementation/injected diffs or raw mutation logs. No tests run or changed. Only verifier-2.json written.",
+  "history": "Prior V7/V8 and accepted subitems of V1-V6 retained after dependency check.47 current test-source hashes matched revision2. All six pending gaps audited against new assertions including shared-helper siblings. Prior dispositions preserved in immutable verifier.json. No acceptance reopened without cause.",
+  "audit_map": {
+    "V1": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "Six independently specified representative orders and top3/ties (browser:10-22).",
+        "All six category list choices, all three kind filters, trimmed case-insensitive path/name/ID and no-match (browser:24-44;contract:15-32).",
+        "Metric selector choices and token metric switch; missing-last/list dash, all-zero notice, no-production stays empty with category instruction (browser:41-44,142-152)."
+      ],
+      "new_accepted_items": [
+        "Summary metadata/count correctness and meaning/unit",
+        "category representative membership/whole-graph values across categories",
+        "renderer precedence",
+        "missing representative exclusion/detail"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR1_summary_counts_units_category_representatives_precedence",
+        "tests/test_unified_review_gaps.py::test_VR1_VR6_missing_detail_and_explicit_empty_states",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V1",
+        "tests/unified_evidence/coverage.json:obligations.V1"
+      ],
+      "rationale": "Summary has independent labeled category/kind counts, project/snapshot/node/edge counts and all six meaning/unit pairs; all six category representative ID lists and per-button raw values are independently specified, including generated/test and vendor/test precedence. Missing representative exclusion and selected detail dash are observed.",
+      "closed_findings": [
+        "VR1"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V2": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "0/1/30/31 exact distinct node/arrow/count bounds, initial null graph, selected cross-category neighbor, omitted last-path retention (browser:65-89).",
+        "Maximum incident confidence weight, fan-in/id tie policy, duplicate grouping, center-only topology/noncenter exclusion and graph reselection (browser:92-112).",
+        "Incoming/outgoing/bidirectional relative preset positions and 60-arrow boundary (browser:103-106,189-205).",
+        "Relationship 50+5 pagination, group-edge final evidence path and candidate literals; zoom-out reduces zoom (browser:80-88,107-112)."
+      ],
+      "new_accepted_items": [
+        "configured resolution minimum",
+        "complete individual relationship field/range/self evidence",
+        "observable fit/zoom-in effect"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR2_configured_resolution_minimum_and_raw_relation_identity",
+        "tests/test_unified_review_gaps.py::test_VR2_fit_and_both_zoom_buttons_have_effect",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V2",
+        "tests/unified_evidence/coverage.json:obligations.V2"
+      ],
+      "rationale": "Exact public topology selects n01..n30 under configured resolution/confidence values; combined with retained confidence-order fixture this distinguishes ignoring either component. Every supplied incident edge, including self and omitted neighbors, equals a visible disclosed raw record with relation/confidence/resolution/evidence/candidates. Relationship target selection changes selected detail. Zoom directions and Fit pan/bounds are observed.",
+      "closed_findings": [
+        "VR2"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V3": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "0/1/50/51 list bounds, prev/next and four-control reset (browser:47-62).",
+        "Same-name disambiguating path; signature/doc/flags/custom metadata and some unique cost/context literal presence (browser:115-125).",
+        "Each candidate kind selects target, preserves two same-kind raw paths and spread second range (contract:15-32).",
+        "Lazy collection rows0,50,1,50 and final collection identity; sampled strategy/sample37 (browser:126-139).",
+        "Neutral payload remains complete (contract:65-76)."
+      ],
+      "new_accepted_items": [
+        "all supplied displayed metric/context mappings and typed fields",
+        "candidate reasons/metrics/badge aggregation",
+        "appendix settings/snapshot/coverage/limitations/explanations",
+        "relationship-list target selection displays detail"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR3_exact_visible_metric_context_typed_mappings_and_appendix",
+        "tests/test_unified_review_gaps.py::test_VR3_candidate_reasons_metrics_and_single_kind_badge",
+        "tests/test_unified_review_gaps.py::test_VR2_configured_resolution_minimum_and_raw_relation_identity",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V3",
+        "tests/unified_evidence/coverage.json:obligations.V3"
+      ],
+      "rationale": "Visible human-labeled disclosure equality checks every supplied metric and distinct context mapping, typed fields, all raw candidate records/metrics/evidence, snapshot/weights/versions/coverage/limitations. Six main metric boxes have exact values; candidate reason text and one badge per kind/target are observed. Context/token/span overlap explanations are inspected. Retained collection paging/strategy evidence and relationship selection complete the declared items.",
+      "closed_findings": [
+        "VR3"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V4": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "Plain-o computes candidates; both JSON payloads equal inline originals and schemas remain5/v4; removed option error2; collision error2/no files; stale assets/output exclusion (tests/test_unified_cli.py).",
+        "Python and merged analyzer semantics, weights/errors and snapshot regression from retained test_cli_bottlenecks_v3/test_cli_multi_analyzer/test_cli_contract; final full suite passes.",
+        "Generator public signature success, adapters expose common summary/detail/style/MIT/offline shell and original payloads (contract:65-76;TestRendering).",
+        "Invalid schema/kind/duplicate/nonfinite/JSON raise ReportInputError/no output plus field diagnostics; existing ranking path diagnostics preserved.",
+        "JSON-only absence of architecture/graph and selected candidate evidence observed; architecture-only absent bottleneck payload observed (contract:35-47)."
+      ],
+      "new_accepted_items": [
+        "JSON-only ranking/category/detail and availability semantics"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR4_json_only_rankings_metrics_and_unavailable_capabilities",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V4",
+        "tests/unified_evidence/coverage.json:obligations.V4"
+      ],
+      "rationale": "JSON-only production/test/all representatives use independently supplied 17/23 values for all six groups; selected full metric record equals supplied metrics. Explicit partial-category/source-unavailability text and null graph are observed. Architecture-only candidate unavailable signal explicitly rejects none-discovered.",
+      "closed_findings": [
+        "VR4"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V5": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "Installed Google Chrome channel; file-direct http(s) blocked, no requests/errors, width<=390/1440 and summary precedes detail; initial graph null and selection flow observed (browser:155-167;helpers).",
+        "Root repeatable pinned-fixture Chrome review plus desktop/mobile/graph screenshots shows light Korean narrative hierarchy, names/path/value and bounded graph; overflow false.",
+        "Programmatic focus works and representative Enter selects detail."
+      ],
+      "new_accepted_items": [
+        "keyboard reachability and observable main-control operation"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[mobile]",
+        "tests/test_unified_review_gaps.py::test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[desktop]",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V5",
+        "tests/unified_evidence/coverage.json:obligations.V5"
+      ],
+      "rationale": "Both viewport scenarios reach actual controls by repeated Tab only, operate native selects using trusted keyboard typeahead (no DOM value injection or programmatic focus), and independently observe changed category/metric/kind/search rows. Enter operates list/relationship pages and node selection, plus graph zoom/Fit with observable effects. Prior width/hierarchy/offline/native Chrome review evidence remains valid.",
+      "closed_findings": [
+        "VR5"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V6": {
+      "state": "accepted",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "coverage": "100% approved enumerated items; no Cartesian expansion",
+      "retained_accepted_items": [
+        "Graph constructor throws explicit visible signal, relationships survive, reselection/search usable, unhandled errors0 (browser:179-186).",
+        "Invalid embedded JSON visible explicit failure and no representative/list/detail/graph success states (contract:79-91).",
+        "Malformed/schema/kind/duplicate/nonfinite generator errors preserve no-write state/diagnostics (contract:50-62;retained validation tests).",
+        "Renderer I/O failure stderr marker/exit1/no HTML (test_unified_cli).",
+        "Hostile marker never executes, no external requests; at least one source hostile literal and separately candidate hostile evidence visible (browser:170-178;contract:94-99).",
+        "Empty node/category/search and missing-list/all-zero cases observed."
+      ],
+      "new_accepted_items": [
+        "each hostile source field visible independently",
+        "explicit no candidates message when empty supplied candidates",
+        "missing selected metric detail dash",
+        "empty graph/search visible empty-result/count text"
+      ],
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR6_every_hostile_source_field_distinct_and_visible",
+        "tests/test_unified_review_gaps.py::test_VR1_VR6_missing_detail_and_explicit_empty_states",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log",
+        "tests/unified_evidence/verifier.json:audit_map.V6",
+        "tests/unified_evidence/coverage.json:obligations.V6"
+      ],
+      "rationale": "Distinct hostile label/doc/title/relationship-evidence/metadata literals are visible in their own labeled disclosure or title, each execution marker remains absent, requests/errors remain empty. Candidate hostile evidence remains accepted separately. Missing selected metric dash, supplied-empty candidates none-discovered, empty list/search explicit messages/counts and isolated relationship/graph messages are observed. Retained graph/payload/generator/I/O failure signal and post-failure assertions remain valid.",
+      "closed_findings": [
+        "VR6"
+      ],
+      "dependency_check": "Approved expectations unchanged; production unchanged per main metadata/restore attestation. Existing test-source hashes match revision2; additive disclosure/Tab/typeahead helpers audited and all their supplemental siblings checked; existing helper consumers remain accepted with renewed full-suite execution."
+    },
+    "V7": {
+      "state": "retained acceptance",
+      "evidence": [
+        "tests/test_unified_performance.py:10-61",
+        "local-reports/performance-accepted.json",
+        "local-reports/test-suite.log",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Retained independent10k/30k/1k fixture, five fresh installed-Chrome contexts and15 raw timings; prep excluded; exact filtered/paged rows and retained payload counts observed. Renewed medians257.2905419510789ms summary<=5000,32.5ms filter/page<=300,25ms detail/graph<=1000; bounded31-node graph. Context, inputs, unit, threshold direction and provenance explicit.",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "dependency_check": "No changed production or relevant existing test/helper bodies per impact assessment; recorded current test hashes match. Full restored suite renews regression/performance evidence. New helpers are additive and do not change accepted dependencies."
+    },
+    "V8": {
+      "state": "retained acceptance",
+      "evidence": [
+        "tests/test_serialization_and_rendering.py:TestSerialization",
+        "tests/test_unified_contract.py:65-76",
+        "retained metric/identifier/static-edge/candidate/mixed-analyzer characterization tests",
+        "agent-docs/specs/7d8bca106e2f493a-evidence.json:review_checks",
+        "local-reports/test-suite.log",
+        "agent-docs/specs/7d8bca106e2f493a-evidence.json:review_checks.legacy_UI_removal and README_migration",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Retained neutral schema/public payload equality, static-edge/metric/candidate/mixed-analyzer regression and two common adapters. Main repeatable import/diff/active legacy UI/README review artifacts remain valid; final941tests/200subtests pass renews evidence. Implementation not read by verifier.",
+      "spec_version": 3,
+      "evidence_revision": 2,
+      "dependency_check": "No changed production or relevant existing test/helper bodies per impact assessment; recorded current test hashes match. Full restored suite renews regression/performance evidence. New helpers are additive and do not change accepted dependencies."
+    }
+  },
+  "findings": [
+    {
+      "id": "VR1",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V1"
+      ],
+      "parents": [
+        "F2",
+        "F3",
+        "Q1",
+        "C1",
+        "C3"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR1_summary_counts_units_category_representatives_precedence",
+        "tests/test_unified_review_gaps.py::test_VR1_VR6_missing_detail_and_explicit_empty_states",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Summary has independent labeled category/kind counts, project/snapshot/node/edge counts and all six meaning/unit pairs; all six category representative ID lists and per-button raw values are independently specified, including generated/test and vendor/test precedence. Missing representative exclusion and selected detail dash are observed.",
+      "prior_gap": "Summary project/scope/category/candidate counts and meaning/unit are present visually but no independent expected-count comparison is recorded. Category iteration asserts list membership, not representatives under each category. Renderer precedence paths are not exercised at browser surface (existing precedence test observes analyzer rankings). Missing metric test observes only list dash/order, not exclusion from representatives/detail.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    },
+    {
+      "id": "VR2",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V2"
+      ],
+      "parents": [
+        "F6",
+        "F7",
+        "Q1",
+        "C2",
+        "C3"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR2_configured_resolution_minimum_and_raw_relation_identity",
+        "tests/test_unified_review_gaps.py::test_VR2_fit_and_both_zoom_buttons_have_effect",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Exact public topology selects n01..n30 under configured resolution/confidence values; combined with retained confidence-order fixture this distinguishes ignoring either component. Every supplied incident edge, including self and omitted neighbors, equals a visible disclosed raw record with relation/confidence/resolution/evidence/candidates. Relationship target selection changes selected detail. Zoom directions and Fit pan/bounds are observed.",
+      "prior_gap": "All browser edge fixtures use resolution exact; configured test changes confidence only, so minimum confidence/resolution rule is not distinguished from confidence-only ranking. Raw relationship assertions check row totals, one end-path and candidate literal, not per-edge relation/confidence/resolution/start/end evidence or self-row identity. Fit is invoked without observing its effect; zoom-in likewise has no pre-action zoom comparison.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    },
+    {
+      "id": "VR3",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V3"
+      ],
+      "parents": [
+        "F5",
+        "F8",
+        "Q1",
+        "C1",
+        "C3"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR3_exact_visible_metric_context_typed_mappings_and_appendix",
+        "tests/test_unified_review_gaps.py::test_VR3_candidate_reasons_metrics_and_single_kind_badge",
+        "tests/test_unified_review_gaps.py::test_VR2_configured_resolution_minimum_and_raw_relation_identity",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Visible human-labeled disclosure equality checks every supplied metric and distinct context mapping, typed fields, all raw candidate records/metrics/evidence, snapshot/weights/versions/coverage/limitations. Six main metric boxes have exact values; candidate reason text and one badge per kind/target are observed. Context/token/span overlap explanations are inspected. Retained collection paging/strategy evidence and relationship selection complete the declared items.",
+      "prior_gap": "Detail checks broad substring presence using colliding numbers, not all metric/identifier-context mappings. Candidate checks do not observe reason and aggregation badge behavior, and only large-node line_count is observed among metrics. Appendix checks collection paging plus strategy/sample only; snapshot, weights, thresholds, version, coverage, limitations and context/token overlap explanations have no recorded rendered observation. Neutral payload equality proves storage, not inspectable UI. No relationship-list node-selection action is observed; representative selection and graph reselection are observed separately.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    },
+    {
+      "id": "VR4",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V4"
+      ],
+      "parents": [
+        "F10",
+        "Q3",
+        "C5"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR4_json_only_rankings_metrics_and_unavailable_capabilities",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "JSON-only production/test/all representatives use independently supplied 17/23 values for all six groups; selected full metric record equals supplied metrics. Explicit partial-category/source-unavailability text and null graph are observed. Architecture-only candidate unavailable signal explicitly rejects none-discovered.",
+      "prior_gap": "JSON-only capability case observes selected candidate, absent graph and a generic classification/scope word. It does not observe supplied ranking/category ranking values, detailed metrics, explicit partial-category completeness and source-unavailability signals. Architecture-only unavailable-candidate regex permits a false 'no candidates discovered' message.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    },
+    {
+      "id": "VR5",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V5"
+      ],
+      "parents": [
+        "Q4",
+        "C7"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[mobile]",
+        "tests/test_unified_review_gaps.py::test_VR5_actual_tab_keyboard_filters_pages_relationships_graph[desktop]",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Both viewport scenarios reach actual controls by repeated Tab only, operate native selects using trusted keyboard typeahead (no DOM value injection or programmatic focus), and independently observe changed category/metric/kind/search rows. Enter operates list/relationship pages and node selection, plus graph zoom/Fit with observable effects. Prior width/hierarchy/offline/native Chrome review evidence remains valid.",
+      "prior_gap": "Programmatic focus is not keyboard reachability. Four main filters are focused but not operated by keyboard; pagination/relationship controls have no keyboard scenario, and graph Enter invocation has no effect assertion. Root review does not record a keyboard journey.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    },
+    {
+      "id": "VR6",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "V6"
+      ],
+      "parents": [
+        "Q5",
+        "Q6",
+        "C4"
+      ],
+      "prior_state": "open in immutable invocation1",
+      "state": "closed",
+      "evidence": [
+        "tests/test_unified_review_gaps.py::test_VR6_every_hostile_source_field_distinct_and_visible",
+        "tests/test_unified_review_gaps.py::test_VR1_VR6_missing_detail_and_explicit_empty_states",
+        "tests/unified_support.py::visible_record/visible_records/tab_to/keyboard_choose",
+        "local-reports/test-suite-final.log"
+      ],
+      "rationale": "Distinct hostile label/doc/title/relationship-evidence/metadata literals are visible in their own labeled disclosure or title, each execution marker remains absent, requests/errors remain empty. Candidate hostile evidence remains accepted separately. Missing selected metric dash, supplied-empty candidates none-discovered, empty list/search explicit messages/counts and isolated relationship/graph messages are observed. Retained graph/payload/generator/I/O failure signal and post-failure assertions remain valid.",
+      "prior_gap": "One shared HOSTILE value and one whole-detail contains assertion do not independently establish hostile label/doc/title/relationship-evidence/metadata visibility; candidate evidence is independently observed. Empty graph/category/search row counts exist, but explicit empty-result/count text for empty graph/search and explicit no-candidate discovered message for supplied empty candidates is not observed, and missing metric detail dash is not observed.",
+      "disposition_history": "Invocation1 gap retained in verifier.json; main resolved_pending_fresh_audit; invocation2 accepted supplemental independent observations."
+    }
+  ],
+  "open_blocking_findings": [],
+  "pending_items": [],
+  "additional_requirement_check": {
+    "F11": "Accepted: revision1 evidence.json.review_checks.legacy_UI_removal records exact active paths/rg0/static directory review/two common adapters/no legacy score UI; README_migration records command/output/options/reading-guide review and pass. Source review is main-owned; verifier did not read Implementation.",
+    "signatures": "Existing callable signature compatibility observed via normal keyword/title render/generate invocations and preserved adapter tests; no signature challenge.",
+    "inapplicability": [
+      "Spec-approved Flexibility and Safety characteristics",
+      "Spec-approved no structure-based coverage percentage"
+    ],
+    "selection_policy": "Finite enumerated items, no Cartesian product or added layers required. No new mandatory combinations inferred."
+  },
+  "mutation_evidence": [
+    {
+      "id": "M1",
+      "class": "production category leak",
+      "executed": true,
+      "detected": true,
+      "result": "6 failed,935 passed,200 subtests73.86s",
+      "intended_observation": "Default representative IDs became generated/test/unknown instead of independent a,b,c; test-only production list no longer empty; supplemental category reps gained t0. Intended exact category assertions failed.",
+      "detecting_tests": [
+        "test_V1_six_representatives_category_values_and_sort",
+        "test_V1_V6_missing_zero_no_production",
+        "test_VR1_summary_counts_units_category_representatives_precedence"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M1.log",
+      "verifier_assessment": "Executed/detected intended assertion according to sanitized main outcome; not executed by verifier. Restored successfully. Raw log not read."
+    },
+    {
+      "id": "M2",
+      "class": "31st neighbor leak",
+      "executed": true,
+      "detected": true,
+      "result": "4 failed,937 passed,200 subtests89.85s",
+      "intended_observation": "Boundary fixture rendered extra n30 beyond center+first30; grouping/60-arrow and configured-resolution exact topology assertions also fail.",
+      "detecting_tests": [
+        "test_V2_neighbor_boundaries_and_omitted_evidence[omitted]",
+        "test_V2_weight_fanin_id_grouping_layout_relationship_paging",
+        "test_V2_sixty_arrows_incoming_layout_and_configured_weights",
+        "test_VR2_configured_resolution_minimum_and_raw_relation_identity"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M2.log",
+      "verifier_assessment": "Executed/detected intended assertion according to sanitized main outcome; not executed by verifier. Restored successfully. Raw log not read."
+    },
+    {
+      "id": "M3",
+      "class": "source text interpreted as HTML",
+      "executed": true,
+      "detected": true,
+      "result": "3 failed,938 passed,200 subtests107.80s",
+      "intended_observation": "Hostile-source execution-marker assertion finds window.attack=1 (required None); hostile candidate literal assertion and independently visible typed-field literal equality also fail. Report setup and node selection succeeded.",
+      "detecting_tests": [
+        "test_V6_hostile_source_text_and_graph_failure",
+        "test_V6_hostile_candidate_evidence_is_inert",
+        "test_VR6_every_hostile_source_field_distinct_and_visible"
+      ],
+      "restored": true,
+      "raw_log_main_only": "local-reports/mutation-M3.log",
+      "verifier_assessment": "Executed/detected intended assertion according to sanitized main outcome; not executed by verifier. Restored successfully. Raw log not read."
+    }
+  ],
+  "strongest_distinct_defect_classes": [
+    {
+      "id": "M1",
+      "class": "production category leak",
+      "why": "default production is central reading contract; false inclusion changes representatives and review list",
+      "detecting_assertions": "Default representative IDs became generated/test/unknown instead of independent a,b,c; test-only production list no longer empty; supplemental category reps gained t0. Intended exact category assertions failed."
+    },
+    {
+      "id": "M2",
+      "class": "31st neighbor leak",
+      "why": "bounded graph essential readability for high fan-in; boundary must reject off-by-one",
+      "detecting_assertions": "Boundary fixture rendered extra n30 beyond center+first30; grouping/60-arrow and configured-resolution exact topology assertions also fail."
+    },
+    {
+      "id": "M3",
+      "class": "source text interpreted as HTML",
+      "why": "unsafe DOM text interpretation directly executes source-derived label/doc/evidence fields; distinct security class with intact JSON setup",
+      "detecting_assertions": "Hostile-source execution-marker assertion finds window.attack=1 (required None); hostile candidate literal assertion and independently visible typed-field literal equality also fail. Report setup and node selection succeeded."
+    }
+  ],
+  "advisories": [
+    {
+      "id": "VA1",
+      "classification": "Advisory",
+      "parents": [
+        "V2",
+        "V3"
+      ],
+      "benefit": "Once the declared evidence gaps close, resolution-only ranking or appendix-section omission would be strong distinct supplemental defect classes beyond pending selected M1–M3. They are proposed, not executed."
+    }
+  ],
+  "closure_note": "All obligations accepted at approved finite targets and VR1-VR6 closed. Selected M1/M2/M3 sanitized outcomes establish execution and intended detections with restored final pass. Advisory VA1 remains proposed and unexecuted; no new mandatory combinations. Main must record final dispositions and complete workflow archival/closure conditions."
+}

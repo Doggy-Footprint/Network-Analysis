@@ -216,12 +216,9 @@ app.include_router(users_router, prefix="/api/v1")
         self.assertIn("Sample API", content)
         self.assertIn("/api/v1/users/me", content)
         self.assertIn("UserResponse", content)
-        self.assertIn("vis-network", content)
-        asset_dir = self.project_path / "output_assets"
-        self.assertTrue((asset_dir / "styles.css").exists())
-        self.assertTrue((asset_dir / "tailwind-config.js").exists())
-        self.assertTrue((asset_dir / "app.js").exists())
-        self.assertNotIn("<style>", content)
+        self.assertIn('id="report-summary"', content)
+        self.assertFalse((self.project_path / "output_assets").exists())
+        self.assertIn("<style", content)
 
     def test_built_framework_edges_carry_their_declared_rule(self):
         self._create_sample_fastapi_app()
