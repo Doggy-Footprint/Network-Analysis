@@ -12,12 +12,13 @@ from language_analyzers.typescript import TypeScriptAnalyzer
 
 class NestJSGraphBuilder:
     def __init__(self, include_dependencies=True, include_language_graph=True, emit_language_graph=True,
-                 snapshot=None, analysis_config=None):
+                 snapshot=None, analysis_config=None, *, compute_metrics: bool = True):
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.emit_language_graph = emit_language_graph
         self.snapshot = snapshot
         self.analysis_config = analysis_config
+        self.compute_metrics = compute_metrics
 
     def build_graph(self, arch):
         if self.snapshot is not None:
@@ -84,7 +85,8 @@ class NestJSGraphBuilder:
             "edges_by_relation": dict(Counter(edge.relation for edge in edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in edges)),
         }
-        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(nodes, edges, project_path=arch.project_path)
+        if self.compute_metrics:
+            arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(nodes, edges, project_path=arch.project_path)
         return arch
 
     @staticmethod

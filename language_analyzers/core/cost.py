@@ -46,10 +46,11 @@ def cost_for_span(
 
 
 def text_for_span(source: str, span: SourceSpan) -> str:
-    lines = source.splitlines()
     start = max(0, span.start_line - 1)
     end = max(start, span.end_line)
-    return "\n".join(lines[start:end])
+    if hasattr(source, "span_text"):
+        return source.span_text(start, end)
+    return "\n".join(source.splitlines()[start:end])
 
 
 def cost_for_node_lines(

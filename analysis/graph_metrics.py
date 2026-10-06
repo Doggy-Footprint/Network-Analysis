@@ -415,7 +415,7 @@ class GraphAnalyzer:
     def _node_token_cost(self, node: Any, project_path: Optional[str]) -> int:
         cost = getattr(node, "cost", None)
         token_estimate = getattr(cost, "token_estimate", None)
-        if isinstance(token_estimate, int) and token_estimate > 0:
+        if isinstance(token_estimate, int) and (token_estimate > 0 or token_estimate == 0 and (getattr(node, "metadata", {}) or {}).get("boundary")):
             return token_estimate
         metadata = getattr(node, "metadata", {}) or {}
         file_value = metadata.get("file_path")
@@ -499,7 +499,7 @@ class GraphAnalyzer:
         metric_name: str,
         limit: int = 10,
     ) -> list[Dict[str, Any]]:
-        ranked = sorted(metrics, key=lambda node_id: metrics[node_id][metric_name], reverse=True)
+        ranked = sorted((item for item in metrics if not (getattr(nodes[item], "metadata", {}) or {}).get("boundary")), key=lambda node_id: metrics[node_id][metric_name], reverse=True)
         return [
             {
                 "id": node_id,

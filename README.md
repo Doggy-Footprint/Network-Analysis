@@ -20,13 +20,22 @@ python -m code_analyzer /path/to/project -l python \
   --bottlenecks local-reports/bottlenecks.json
 ```
 
+기본 `--granularity file`은 추출된 심볼·프레임워크 관계를 파일 단위로 묶은 뒤 지표와 후보를 계산합니다. 같은 HTML에서 클래스·함수와 원래 연결 근거를 탐색합니다. 전역 심볼 분석은 명시적으로 선택합니다.
+
+```bash
+python -m code_analyzer /path/to/project -l python --granularity symbol \
+  -o local-reports/symbols.html --json
+```
+
+파일 architecture JSON은 schema 6과 원본 심볼·연결을 담은 `details`를 제공하고, symbol 모드는 기존 schema 5를 유지합니다.
+
 생성한 `local-reports/architecture.html`을 브라우저에서 엽니다. `--open`을 추가하면 보고서를 자동으로 엽니다. HTML 하나에 CSS·JavaScript·Cytoscape.js가 포함되며 오프라인에서 파일을 직접 열 수 있습니다.
 
 | 출력 | 내용 |
 | --- | --- |
 | `architecture.html` | 지표별 대표 대상, 검토 목록, 근거 상세와 작은 주변 그래프를 제공하는 통합 보고서 |
 | `architecture.json` | `--json`으로 내보내는 그래프, 소스 위치, 연결 근거와 분석 메타데이터 |
-| `bottlenecks.json` | `bottlenecks.v4` 형식의 지표별 순위, 분류별 순위, 병목 후보 |
+| `bottlenecks.json` | 기본 `bottlenecks.v5` 파일 지표·순위·후보; symbol 모드는 기존 `bottlenecks.v4` |
 
 
 ## 지원 분석기
@@ -65,7 +74,7 @@ python -m code_analyzer /path/to/monorepo \
   --bottlenecks local-reports/combined-bottlenecks.json
 ```
 
-`-f`와 `-l`은 서로 섞거나 다른 선택값으로 반복할 수 있으며, 지정한 순서대로 같은 스냅샷을 분석합니다. 여러 분석기를 선택하면 그래프를 합친 뒤 전체 네트워크의 지표를 계산합니다.
+`-f`와 `-l`은 서로 섞거나 다른 선택값으로 반복할 수 있으며, 지정한 순서대로 같은 스냅샷을 분석합니다. 여러 분석기를 선택하면 그래프를 합친 뒤 전체 네트워크의 지표를 계산합니다. file 모드는 최종 파일 그래프에서 한 번 계산해 모든 출력이 재사용하고, symbol 모드는 기존 분석기·통합·병목의 계산 순서와 출력값을 유지합니다.
 
 - HTTP 연결: TypeScript·JavaScript의 `fetch`·Axios 호출과 Android의 Retrofit 엔드포인트를 FastAPI·NestJS 서버 라우트에 연결합니다(`CALLS_ROUTE`). 다중 분석기 실행에서 HTTP 메서드와 정규화한 경로로 매칭합니다.
 - 마이그레이션 연결: SQLAlchemy 모델과 Alembic, Room 엔티티와 Room 마이그레이션을 테이블 이름으로 연결합니다(`MIGRATES`).
@@ -94,15 +103,15 @@ python -m code_analyzer /path/to/monorepo \
 | `hop_2_token_cost`, `hop_3_token_cost` | 연결 방향을 무시하고 2·3단계 이내로 도달하는 주변 노드의 `effective_token_cost` 합. 시작 노드는 제외 |
 | `identifier_file_count` | 노드 이름의 마지막 식별자가 등장하는 스냅샷 내 파일 수. 코드·주석·docstring·문서·설정별 수도 제공 |
 
-`identifier_file_count`는 노드별 지표에 포함되며 상위 10개 순위 항목에는 포함되지 않습니다. 단어 단위의 텍스트 출현 수이므로 동일 이름의 다른 심볼도 셉니다. 컨텍스트별 파일 수는 서로 겹칠 수 있습니다.
+`identifier_file_count`는 symbol 모드에서만 노드별 지표에 포함되며 상위 10개 순위 항목에는 포함되지 않습니다. 단어 단위의 텍스트 출현 수이므로 동일 이름의 다른 심볼도 셉니다. 컨텍스트별 파일 수는 서로 겹칠 수 있습니다.
 
-토큰 수는 모델별 토크나이저 대신 문자 수와 숫자 묶음으로 추정합니다. `effective_token_cost`는 이 추정치에 일반 코드 1, 생성 코드·마이그레이션 0.1, 외부 제공 코드 0의 배율을 적용한 값입니다. 여러 노드의 소스 범위가 겹칠 수 있으므로 합계를 저장소의 고유 텍스트 양이나 실제 LLM 사용량으로 해석하면 안 됩니다.
+토큰 수는 모델별 토크나이저 대신 문자 수와 숫자 묶음으로 추정합니다. `effective_token_cost`는 이 추정치에 일반 코드 1, 생성 코드·마이그레이션 0.1, 외부 제공 코드 0의 배율을 적용한 값입니다. 파일 모드는 각 파일의 스냅샷 전체 텍스트를 한 번 계산하며, 소스 없는 경계는 비용 0으로 네트워크에 참여하고 파일 순위·목록·후보에서는 제외합니다. symbol 모드는 여러 노드의 소스 범위가 겹칠 수 있으므로 합계를 저장소의 고유 텍스트 양이나 실제 LLM 사용량으로 해석하면 안 됩니다.
 
 Betweenness는 기본적으로 500개 이하의 노드에서 정확하게 계산하고, 더 큰 그래프에서는 최대 100개의 결정적으로 선택한 시작 노드로 근사합니다. 보고서에 계산 전략과 표본 크기가 기록됩니다.
 
 ### 병목 후보
 
-후보의 상태는 `static_candidate`입니다. 중심성 순위와 별도로 다음 근거를 제공합니다.
+파일 모드 후보는 같은 파일·종류마다 하나로 묶고 모든 세부 근거를 보존합니다. `large_node`는 파일 전체 줄 수를 사용합니다. 심볼 모드는 기존 심볼 범위와 후보 단위를 유지합니다. 후보의 상태는 `static_candidate`입니다. 중심성 순위와 별도로 다음 근거를 제공합니다.
 
 | 후보 종류 | 생성 조건 |
 | --- | --- |
@@ -144,6 +153,7 @@ CLI는 [profiles/snapshot.v1.yaml](profiles/snapshot.v1.yaml)에 따라 파일 �
 | --- | --- |
 | `project_path` | 분석할 디렉터리. 생략하면 현재 디렉터리 |
 | `-f`, `-l` | 분석기 선택. 둘 다 생략하면 FastAPI |
+| `--granularity file\|symbol` | 지표·후보 단위. 기본 file, 전역 심볼 분석은 symbol |
 | `-o PATH` | 통합 보고서 HTML 경로. 기본값 `architecture.html` |
 | `--json` | 보고서 경로의 확장자를 `.json`으로 바꿔 그래프를 추가 출력 |
 | `--bottlenecks PATH` | 병목 JSON 출력 |
@@ -158,6 +168,8 @@ CLI는 [profiles/snapshot.v1.yaml](profiles/snapshot.v1.yaml)에 따라 파일 �
 CLI는 모든 실행에서 병목 후보를 계산하고 `-o`에 통합 HTML을 생성합니다. `--bottlenecks-html` 옵션은 제거되었습니다. `--bottlenecks`는 JSON 추가 내보내기만 제어합니다. 각 출력 경로는 서로 달라야 합니다. 전체 도움말은 `python -m code_analyzer --help`로 확인합니다.
 
 ## 한계
+
+파일 간 경로는 파일 안의 어느 심볼에서든 생긴 관계를 연결한 것이므로 함수 호출의 연쇄를 보장하지 않습니다. 원래 대상 심볼과 소스 근거를 확인해야 합니다.
 
 - 정적으로 해석하는 패턴과 선택한 분석기가 분석 범위를 결정합니다. 동적 import, 실행 중 등록되는 의존성·라우트, 계산된 URL·테이블 이름 등은 연결을 확정하지 못할 수 있습니다.
 - 라우트 매칭은 호스트를 제거한 메서드·경로 기준이고, 테이블 매칭은 스키마 접두사를 제거한 이름 기준입니다. 서로 다른 서비스나 데이터베이스의 동명 대상을 구분하지 못할 수 있습니다.

@@ -1,0 +1,28 @@
+{
+  "spec_version": 2,
+  "original_commit": "7eb255b0d552771c01e11fc2b4475663815c9567",
+  "input": "tests.test_file_analysis_cli.FILES; same declared V01 direct-builder fixture",
+  "input_sha256": "467ab5757141843e0f822b25078e251a7057251019f5011c1e738b080995ebd3",
+  "results": {
+    "fastapi": {
+      "default_builder_equal": true,
+      "after_default_bottlenecks_equal": true,
+      "default_bottleneck_report_equal": true
+    },
+    "android": {
+      "default_builder_equal": true,
+      "after_default_bottlenecks_equal": true,
+      "default_bottleneck_report_equal": true
+    },
+    "sqlalchemy": {
+      "default_builder_equal": true,
+      "after_default_bottlenecks_equal": true,
+      "default_bottleneck_report_equal": true
+    },
+    "nestjs": {
+      "default_builder_equal": true,
+      "after_default_bottlenecks_equal": true,
+      "default_bottleneck_report_equal": true
+    }
+  }
+}

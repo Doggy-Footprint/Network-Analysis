@@ -1,0 +1,67 @@
+{
+  "median_seconds": 74.75603970797965,
+  "passed": true,
+  "raw_seconds": [
+    74.75603970797965,
+    75.32197700097458,
+    74.65137166605564
+  ],
+  "runs": [
+    {
+      "end": 399488.119661875,
+      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run1.html",
+      "mode": "file-run1",
+      "observer_overhead_seconds": 0.47553587605943903,
+      "pid": 27215,
+      "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+      "spec_version": 2,
+      "stages": {
+        "conversion": 1.367624833015725,
+        "extraction": 71.64068654202856,
+        "integration": 0.0,
+        "metrics_candidates": 0.29505120794055983,
+        "output": 1.3901415829895996,
+        "snapshot": 0.06253554200520739
+      },
+      "total_seconds": 74.75603970797965
+    },
+    {
+      "end": 399564.23246775,
+      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run2.html",
+      "mode": "file-run2",
+      "observer_overhead_seconds": 0.4730829990003258,
+      "pid": 29004,
+      "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+      "spec_version": 2,
+      "stages": {
+        "conversion": 1.376893290958833,
+        "extraction": 72.28862675197888,
+        "integration": 0.0,
+        "metrics_candidates": 0.2946638750145212,
+        "output": 1.2990584580111317,
+        "snapshot": 0.06273462501121685
+      },
+      "total_seconds": 75.32197700097458
+    },
+    {
+      "end": 399639.665230916,
+      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html",
+      "mode": "file-run3",
+      "observer_overhead_seconds": 0.472446791944094,
+      "pid": 30734,
+      "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+      "spec_version": 2,
+      "stages": {
+        "conversion": 1.3792609999654815,
+        "extraction": 71.59549270907883,
+        "integration": 0.0,
+        "metrics_candidates": 0.2944555410067551,
+        "output": 1.3200624160235748,
+        "snapshot": 0.06209999998100102
+      },
+      "total_seconds": 74.65137166605564
+    }
+  ],
+  "spec_version": 2,
+  "threshold_seconds": 180
+}

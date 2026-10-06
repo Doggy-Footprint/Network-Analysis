@@ -1,0 +1,125 @@
+........................................................................ [  6%]
+..................................................................... [ 13%]
+............................................................................. [ 20%]
+........................................................................ [ 27%]
+..................................F..................................... [ 34%]
+........................................................................ [ 41%]
+........................................................................ [ 48%]
+........................................................... [ 54%]
+......................................... [ 58%]
+......................................................................................... [ 66%]
+.............................................................. [ 72%]
+........................................................................ [ 79%]
+........................................................................................................................... [ 91%]
+........................................................................ [ 98%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+________ test_V13_real_snapshot_symbol_equivalence_and_three_processes _________
+
+file_benchmark_evidence = PosixPath('/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence')
+
+    def test_V13_real_snapshot_symbol_equivalence_and_three_processes(file_benchmark_evidence):
+        directory=file_benchmark_evidence
+        manifest=json.loads((directory/'baseline-manifest.json').read_text())
+        baseline=json.loads((directory/'baseline-relations.json').read_text())
+        optimized=json.loads((directory/'optimized-symbol-relations.json').read_text())
+        assert baseline==optimized
+        assert json.loads((directory/'baseline-small-relations.json').read_text())==json.loads((directory/'optimized-small-relations.json').read_text())
+        result=json.loads((directory/'benchmark.json').read_text())
+>       assert len(result['raw_seconds'])==3
+E       assert 5 == 3
+E        +  where 5 = len([40.5, 39, 54.60000002384186, 39.90000003576279, 40.10000002384186])
+
+tests/test_file_analysis_benchmark.py:32: AssertionError
+---------------------------- Captured stdout setup -----------------------------
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/optimized-symbol.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: GalleryPreferencesRepository (30.5074)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run1.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run2.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='fastapi-template') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '153e659a081ca98713458d7cebc0526a2d85b28e1b4f7d8297bb3bd9fb33b01c' != '31aa6995ed9924c040beec70b8e552f923a3d9b33fabab1da34c1e1248d95958'
+E                   - 153e659a081ca98713458d7cebc0526a2d85b28e1b4f7d8297bb3bd9fb33b01c
+E                   + 31aa6995ed9924c040beec70b8e552f923a3d9b33fabab1da34c1e1248d95958
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='android') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: 'ad1c2cfbb9d988f4f2111a239a5c77280d52ce858e8f22dca99ed811f08f019a' != '7516419a3aa3c70c89476371e121f90c57dbb489b1f68d4c48e7842434728a2f'
+E                   - ad1c2cfbb9d988f4f2111a239a5c77280d52ce858e8f22dca99ed811f08f019a
+E                   + 7516419a3aa3c70c89476371e121f90c57dbb489b1f68d4c48e7842434728a2f
+
+tests/test_nestjs_quality.py:244: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_file_analysis_benchmark.py::test_V13_real_snapshot_symbol_equivalence_and_three_processes
+SUBFAILED(case='fastapi-template') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='android') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+3 failed, 1040 passed, 198 subtests passed in 644.74s (0:10:44)

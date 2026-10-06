@@ -61,7 +61,7 @@ class TestNestJSCli(unittest.TestCase):
             arguments.append("--json")
         stderr = io.StringIO()
         stdout = io.StringIO()
-        with patch.object(sys, "argv", ["code-analyzer", *arguments]), contextlib.redirect_stderr(stderr), contextlib.redirect_stdout(stdout):
+        with patch.object(sys, "argv", ["code-analyzer", *arguments, "--granularity", "symbol"]), contextlib.redirect_stderr(stderr), contextlib.redirect_stdout(stdout):
             try:
                 cli.main(renderer_factory=factory)
                 code = 0

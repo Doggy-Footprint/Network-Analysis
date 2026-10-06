@@ -60,7 +60,7 @@ class PythonSourceAnalyzer:
     def _analyze_snapshot(self) -> List[PythonSourceFile]:
         self.coverage = {"python_file_count": 0, "parsed_python_file_count": 0, "invalid_python_files": []}
         files = []
-        for relative, source_code in self.snapshot.contents:
+        for relative, source_code in self.snapshot.source_map.items():
             if not relative.endswith(".py"):
                 continue
             self.coverage["python_file_count"] += 1

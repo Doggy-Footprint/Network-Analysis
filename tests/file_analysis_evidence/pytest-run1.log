@@ -1,0 +1,774 @@
+........................................................................ [  6%]
+..................................................................... [ 13%]
+............................................................................. [ 20%]
+........................................................................ [ 27%]
+..................................E.............F......F............FF.. [ 34%]
+.....................................F.................................. [ 41%]
+........................................................................ [ 48%]
+........................................................... [ 54%]
+......................................... [ 58%]
+......................................................................................... [ 66%]
+.............................................................. [ 72%]
+........................................................................ [ 79%]
+........................................................................................................................... [ 91%]
+........................................................................ [ 98%]
+.................                                                        [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_V13_real_snapshot_symbol_equivalence_and_three_processes _
+
+    @pytest.fixture(scope='session')
+    def file_benchmark_evidence():
+        command=[sys.executable,str(ROOT/'scripts/benchmark_file_analysis.py'),'--verify','--project','/Users/hwansu/toy-projects/Tag-Manager','--evidence-dir',str(EVIDENCE)]
+>       subprocess.run(command,cwd=ROOT,check=True,timeout=6000)
+
+tests/test_file_analysis_benchmark.py:20: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = 6000, check = True
+popenargs = (['/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/bin/python', '/Users/hwansu/orca/workspaces/net...enchmark_file_analysis.py', '--verify', '--project', '/Users/hwansu/toy-projects/Tag-Manager', '--evidence-dir', ...],)
+kwargs = {'cwd': PosixPath('/Users/hwansu/orca/workspaces/network-analysis/report-faceoff')}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/bin/python', '/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/scripts/benchmark_file_analysis.py', '--verify', '--project', '/Users/hwansu/toy-projects/Tag-Manager', '--evidence-dir', '/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence']' returned non-zero exit status 1.
+
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:571: CalledProcessError
+---------------------------- Captured stdout setup -----------------------------
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/optimized-symbol.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: GalleryPreferencesRepository (30.5074)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run1.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run2.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (231.4089)
+---------------------------- Captured stderr setup -----------------------------
+Traceback (most recent call last):
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/scripts/benchmark_file_analysis.py", line 222, in <module>
+    main()
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/scripts/benchmark_file_analysis.py", line 212, in main
+    measure_all(browser, directory / 'file-run1.html', directory)
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_browser_support.py", line 183, in measure_all
+    synthetic = measure_html(chromium, synthetic_path, 'synthetic', evidence_dir)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_browser_support.py", line 118, in measure_html
+    readings['detail_graph_ms'].append(page.evaluate('''async () => {
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 9413, in evaluate
+    self._sync(
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/_impl/_page.py", line 474, in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py", line 346, in evaluate
+    await self._channel.send(
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 76, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 632, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+playwright._impl._errors.Error: Page.evaluate: Error: Graph layout never completed
+    at eval (eval at evaluate (:311:30), <anonymous>:16:61)
+    at async <anonymous>:337:30
+=================================== FAILURES ===================================
+__________ test_V10_file_symbol_external_back_fold_roles_and_filters ___________
+
+open_report = <function open_report.<locals>.open_page at 0x109c6cb80>
+
+    def test_V10_file_symbol_external_back_fold_roles_and_filters(open_report):
+        arch = mixed_fixture()
+        page = open_report(arch, file_bottlenecks(arch))
+        assert page.evaluate('window.ReportGraph') is None
+        for metric in CORE:
+            ids = page.locator(f'[data-metric-group="{metric}"] [data-node-id]').evaluate_all('(els)=>els.map(e=>e.dataset.nodeId)')
+            assert ids and all(ident.startswith('file:') for ident in ids)
+        assert all(ident.startswith('file:') for ident in rows(page))
+        select(page,'file:src/a.py')
+        detail = page.locator('#node-detail')
+        assert detail.get_attribute('data-detail-kind') == 'file'
+        listing = page.locator('#file-symbols')
+        expect(listing.locator('[data-symbol-id="Outer"] button[data-node-id="Outer"]').first).to_be_visible()
+        expect(listing.locator('[data-symbol-id="top"] button[data-node-id="top"]').first).to_be_visible()
+        expect(listing.locator('[data-symbol-id="Outer"] .symbol-children [data-symbol-id="Inner"]')).to_have_count(1)
+        expect(listing.locator('[data-symbol-id="top"] .symbol-children [data-symbol-id="nested"]')).to_have_count(1)
+        folded = listing.locator('[data-symbol-id="Outer"] details').filter(has=page.get_by_text('메서드 · 필드 2개',exact=True)).first
+        assert folded.count() == 1 and not folded.evaluate('(e)=>e.open')
+        expect(folded.locator('[data-symbol-id="method"]')).not_to_be_visible()
+        expect(folded.locator('[data-symbol-id="field"]')).not_to_be_visible()
+        folded.locator('summary').click()
+>       expect(folded.locator('[data-symbol-id="method"]')).to_be_visible()
+E       AssertionError: Locator expected to be visible
+E       Actual value: None
+E       Error: element(s) not found 
+E       Call log:
+E         - Expect "to_be_visible" locator("#file-symbols").locator("[data-symbol-id=\"Outer\"] details").filter(has=get_by_text("메서드 · 필드 2개", exact=True)).first.locator("[data-symbol-id=\"method\"]") with timeout 5000ms
+E         - waiting for locator("#file-symbols").locator("[data-symbol-id=\"Outer\"] details").filter(has=get_by_text("메서드 · 필드 2개", exact=True)).first.locator("[data-symbol-id=\"method\"]")
+E       
+E       Aria snapshot:
+E       - banner:
+E         - link "DEPENDENCY / REPORT":
+E           - /url: "#report-summary"
+E         - text: 정적 분석 · 구조적 근거
+E       - main:
+E         - text: 의존성 병목 보고서
+E         - heading "ORACLE PROJECT" [level=1]
+E         - paragraph: 연결이 모이는 곳부터 살펴보세요.
+E         - paragraph: 지표는 네트워크의 위치를, 후보는 검토할 구조적 근거를 보여줍니다.
+E         - text: /oracle · 정적 분석 · —개 스냅샷 파일 · 3개 노드 · 1개 연결
+E         - strong: "2"
+E         - text: 운영 코드
+E         - strong: "1"
+E         - text: 테스트
+E         - strong: "0"
+E         - text: 생성 코드
+E         - strong: "0"
+E         - text: 외부 코드
+E         - strong: "0"
+E         - text: 미분류
+E         - strong: "1"
+E         - text: 정적 분석 미확정 참조 후보
+E         - strong: "1"
+E         - text: 근거 분산 후보
+E         - strong: "1"
+E         - text: 큰 노드 후보
+E         - paragraph: 각 후보 종류의 측정값은 서로 다른 의미입니다. 후보 표시는 우선순위나 품질 판정이 아닙니다.
+E         - status
+E         - paragraph: 파일 간 경로는 함수 호출 연쇄를 보장하지 않습니다.
+E         - text: 01 / 지표별 대표 대상
+E         - heading "어디부터 읽을까요?" [level=2]
+E         - text: 코드 분류
+E         - combobox "코드 분류":
+E           - option "운영 코드" [selected]
+E           - option "전체"
+E           - option "테스트"
+E           - option "생성 코드"
+E           - option "외부 코드"
+E           - option "미분류"
+E         - paragraph: 전체 네트워크에서 계산한 값을 분류별로 보여줍니다. 지표끼리 합산하지 않습니다.
+E         - article:
+E           - heading "참조가 모이는 곳" [level=3]
+E           - paragraph: 다른 대상에서 참조받는 상대적 중심성 · 상대값
+E           - region "참조가 모이는 곳 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - article:
+E           - heading "경로를 잇는 곳" [level=3]
+E           - paragraph: 대상 사이의 최단 경로를 중개하는 정도 · 상대값
+E           - region "경로를 잇는 곳 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - article:
+E           - heading "주변 코드가 넓은 곳" [level=3]
+E           - paragraph: 연결 두 단계 이내 주변 코드의 할인된 토큰 합 · 추정 토큰
+E           - region "주변 코드가 넓은 곳 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - article:
+E           - heading "중심에 있는 큰 코드" [level=3]
+E           - paragraph: PageRank × 할인된 코드 토큰 수 · 가중 토큰
+E           - region "중심에 있는 큰 코드 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - article:
+E           - heading "들어오는 연결이 많은 곳" [level=3]
+E           - paragraph: 이 대상을 참조하는 직접 연결 대상 수 · 대상
+E           - region "들어오는 연결이 많은 곳 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - article:
+E           - heading "나가는 연결이 많은 곳" [level=3]
+E           - paragraph: 이 대상이 참조하는 직접 연결 대상 수 · 대상
+E           - region "나가는 연결이 많은 곳 상위 10개":
+E             - button "a.py src/a.py 100"
+E             - button "b.py src/b.py 2"
+E         - text: 02 / 검토 목록
+E         - heading "대상을 찾아 근거 확인하기" [level=2]
+E         - text: 이름·경로 검색
+E         - searchbox "이름·경로 검색"
+E         - text: 정렬 지표
+E         - combobox "정렬 지표":
+E           - option "참조가 모이는 곳 · pagerank" [selected]
+E           - option "경로를 잇는 곳 · betweenness_centrality"
+E           - option "주변 코드가 넓은 곳 · hop_2_token_cost"
+E           - option "중심에 있는 큰 코드 · weighted_centrality_cost"
+E           - option "들어오는 연결이 많은 곳 · fan_in"
+E           - option "나가는 연결이 많은 곳 · fan_out"
+E           - option "Hub · hub_score"
+E           - option "Authority · authority_score"
+E           - option "Degree · degree_centrality"
+E           - option "가중 Fan-in · weighted_fan_in"
+E           - option "가중 Fan-out · weighted_fan_out"
+E           - option "3-hop 주변 규모 · hop_3_token_cost"
+E           - option "코드 규모 · token_cost"
+E           - option "할인된 코드 규모 · effective_token_cost"
+E         - text: 후보 종류
+E         - combobox "후보 종류":
+E           - option "전체 대상" [selected]
+E           - option "정적 분석 미확정 참조"
+E           - option "근거 분산"
+E           - option "큰 노드"
+E         - text: 표시 범위
+E         - combobox "표시 범위":
+E           - option "상위 100개" [selected]
+E           - option "전체 대상"
+E         - status: 2개 표시 / 조건 일치 2개 · 전체 3개 대상
+E         - text: 한 페이지에 50개
+E         - table:
+E           - rowgroup:
+E             - row "대상 / 소스 위치 검토 근거 참조가 모이는 곳":
+E               - columnheader "대상 / 소스 위치"
+E               - columnheader "검토 근거"
+E               - columnheader "참조가 모이는 곳"
+E           - rowgroup:
+E             - row "a.py src/a.py 큰 노드 100":
+E               - cell "a.py src/a.py":
+E                 - button "a.py src/a.py"
+E               - cell "큰 노드"
+E               - cell "100"
+E             - row "b.py src/b.py 근거 분산 2":
+E               - cell "b.py src/b.py":
+E                 - button "b.py src/b.py"
+E               - cell "근거 분산"
+E               - cell "2"
+E         - navigation "검토 목록 페이지":
+E           - button "이전" [disabled]
+E           - text: 1 / 1 페이지
+E           - button "다음" [disabled]
+E         - text: 03 / 대상 상세
+E         - heading "src/a.py" [level=2]
+E         - paragraph: src/a.py:1–20
+E         - text: 참조가 모이는 곳
+E         - strong: "100"
+E         - text: 경로를 잇는 곳
+E         - strong: "100"
+E         - text: 주변 코드가 넓은 곳
+E         - strong: "100"
+E         - text: 중심에 있는 큰 코드
+E         - strong: "100"
+E         - text: 들어오는 연결이 많은 곳
+E         - strong: "100"
+E         - text: 나가는 연결이 많은 곳
+E         - strong: "100"
+E         - text: Hub
+E         - strong: "100"
+E         - text: Authority
+E         - strong: "100"
+E         - text: Degree
+E         - strong: "100"
+E         - text: 가중 Fan-in
+E         - strong: "100"
+E         - text: 가중 Fan-out
+E         - strong: "100"
+E         - text: 3-hop 주변 규모
+E         - strong: "100"
+E         - text: 코드 규모
+E         - strong: "42"
+E         - text: 할인된 코드 규모
+E         - strong: "21"
+E         - heading "검토 근거" [level=3]
+E         - article:
+E           - heading "큰 노드" [level=3]
+E           - paragraph: 파일 전체 줄 수가 설정한 임계값을 넘습니다.
+E           - paragraph: 소스 범위 2,001줄 · 임계값 2,000줄
+E           - text: candidate-0.py:13–29
+E           - group: 후보의 전체 기록
+E         - group: 파일 전체 지표
+E         - heading "클래스 · 인터페이스 · 함수" [level=3]
+E         - button "Outer src/a.py"
+E         - text: class service
+E         - group:
+E           - text: 메서드 · 필드 2개
+E           - button "method src/a.py"
+E           - text: method
+E           - group: 선언의 전체 기록
+E           - button "field src/a.py"
+E           - text: field
+E           - group: 선언의 전체 기록
+E         - button "Inner src/a.py"
+E         - text: class
+E         - button "top src/a.py"
+E         - text: function
+E         - button "nested src/a.py"
+E         - text: function
+E         - group: 파일 본문 · 접힌 선언과 참조
+E         - group: 심볼 · 시그니처 · 문서 · 플래그 · 메타데이터
+E         - heading "직접 연결" [level=3]
+E         - button "화면 맞춤"
+E         - button "확대"
+E         - button "축소"
+E         - status: 직접 이웃 1개 표시 · 0개 생략 · 분류 필터와 관계없이 연결 표시
+E         - heading "전체 연결과 근거" [level=3]
+E         - button "top src/a.py"
+E         - text: →
+E         - button "b.py src/b.py"
+E         - text: CALLS · static_certain · exact · 중복 횟수 999 evidence-5.py:5–7
+E         - group: 연결의 전체 근거와 다른 대상 후보
+E         - button "Outer src/a.py"
+E         - text: →
+E         - button "b.py src/b.py"
+E         - text: CALLS · static_certain · exact · 중복 횟수 999 evidence-5.py:5–7
+E         - group: 연결의 전체 근거와 다른 대상 후보
+E         - button "top src/a.py"
+E         - text: →
+E         - button "Outer src/a.py"
+E         - text: CALLS · static_certain · exact · 중복 횟수 999 evidence-5.py:5–7
+E         - group: 연결의 전체 근거와 다른 대상 후보
+E         - navigation:
+E           - button "이전" [disabled]
+E           - text: 3개 연결 · 1 / 1 페이지
+E           - button "다음" [disabled]
+E         - group: 분석 범위와 설정 · 구성 요소 · 읽는 방법
+E         - text: 구조적 사실을 검토하는 보고서입니다. 코드 품질·변경 위험·작업 난이도의 판정이 아닙니다.
+
+tests/test_file_analysis_browser.py:134: AssertionError
+____________________ test_V14_synthetic_five_fresh_contexts ____________________
+
+chromium = <Browser type=<BrowserType name=chromium executable_path=/Users/hwansu/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing> version=154.0.8037.97>
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V14_synthetic_five_fresh_0')
+
+    def test_V14_synthetic_five_fresh_contexts(chromium,tmp_path):
+        nodes=[node(f'n{i:05}','test' if i%100==99 else 'production',value=10000-i) for i in range(10000)]
+        edges=[edge(f'n{i:05}',f'n{(i+delta)%10000:05}',line=delta) for i in range(10000) for delta in (1,2,3)]
+        payload=bottleneck_fixture(tmp_path,nodes,edges,candidate_count=1000)
+        path=tmp_path/'synthetic.html'; path.write_text(document(architecture(nodes,edges),payload),encoding='utf-8')
+>       measure_html(chromium,path,'synthetic')
+
+tests/test_file_analysis_browser.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/file_analysis_browser_support.py:118: in measure_html
+    readings['detail_graph_ms'].append(page.evaluate('''async () => {
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:9413: in evaluate
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:474: in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:346: in evaluate
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x10a64f230>
+cb = <function Channel.send.<locals>.<lambda> at 0x109cec360>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.evaluate: Error: Graph layout never completed
+E               at eval (eval at evaluate (:311:30), <anonymous>:16:61)
+E               at async <anonymous>:337:30
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+___________ test_V01_exclusions_applied_before_details[--no-models] ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10bb26450>
+file_project = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be1/project')
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be1')
+option = '--no-models'
+
+    @pytest.mark.parametrize('option',['--no-language-graph','--no-models','--no-deps'])
+    def test_V01_exclusions_applied_before_details(monkeypatch,file_project,tmp_path,option):
+        import code_analyzer.cli as cli
+        language_calls=[]
+        original=cli.PythonGraphAnalyzer.analyze
+        def language(self,*args,**kwargs):
+            language_calls.append(1); return original(self,*args,**kwargs)
+        monkeypatch.setattr(cli.PythonGraphAnalyzer,'analyze',language)
+        output=tmp_path/'excluded.html'
+        assert run(monkeypatch,file_project,'-f','fastapi',option,'-o',output)==0
+        details=inline(output)['architecture']['details']
+        rows=details['nodes']
+        ids={n['id'] for n in rows}
+        if option=='--no-language-graph':
+            assert language_calls==[]
+            assert all(n.get('provenance')!='python-core' for n in rows)
+        elif option=='--no-models':
+>           assert language_calls==[1]
+E           assert [] == [1]
+E             
+E             Right contains one more item: 1
+E             Use -v to get more diff
+
+tests/test_file_analysis_cli.py:117: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[*] Analyzing FastAPI project at: /private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be1/project
+[✓] Generated unified dependency bottleneck report: /private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be1/excluded.html
+
+📊 Summary Statistics:
+  • Applications: 1
+  • Endpoints     2
+  • Routers       1
+  • Dependencies  1
+  • Schemas       1
+  • Methods:      {'GET': 1, 'POST': 1}
+  • Highest PageRank × effective token cost: main.py (36.6667)
+____________ test_V01_exclusions_applied_before_details[--no-deps] _____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10d04e5a0>
+file_project = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be2/project')
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be2')
+option = '--no-deps'
+
+    @pytest.mark.parametrize('option',['--no-language-graph','--no-models','--no-deps'])
+    def test_V01_exclusions_applied_before_details(monkeypatch,file_project,tmp_path,option):
+        import code_analyzer.cli as cli
+        language_calls=[]
+        original=cli.PythonGraphAnalyzer.analyze
+        def language(self,*args,**kwargs):
+            language_calls.append(1); return original(self,*args,**kwargs)
+        monkeypatch.setattr(cli.PythonGraphAnalyzer,'analyze',language)
+        output=tmp_path/'excluded.html'
+        assert run(monkeypatch,file_project,'-f','fastapi',option,'-o',output)==0
+        details=inline(output)['architecture']['details']
+        rows=details['nodes']
+        ids={n['id'] for n in rows}
+        if option=='--no-language-graph':
+            assert language_calls==[]
+            assert all(n.get('provenance')!='python-core' for n in rows)
+        elif option=='--no-models':
+            assert language_calls==[1]
+            assert 'schema_main_UserOut' not in ids
+            assert 'py:main#UserOut' in ids
+            assert all(not (n.get('provenance')=='fastapi' and n['kind']=='schema') for n in rows)
+        else:
+>           assert language_calls==[1]
+E           assert [] == [1]
+E             
+E             Right contains one more item: 1
+E             Use -v to get more diff
+
+tests/test_file_analysis_cli.py:122: AssertionError
+----------------------------- Captured stdout call -----------------------------
+[*] Analyzing FastAPI project at: /private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be2/project
+[✓] Generated unified dependency bottleneck report: /private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V01_exclusions_applied_be2/excluded.html
+
+📊 Summary Statistics:
+  • Applications: 1
+  • Endpoints     2
+  • Routers       1
+  • Dependencies  1
+  • Schemas       1
+  • Methods:      {'GET': 1, 'POST': 1}
+  • Highest PageRank × effective token cost: main.py (36.6667)
+______________ test_V05_independent_chain_metrics_and_whole_text _______________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-51/test_V05_independent_chain_met0')
+
+    def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
+        snap, result = chain()
+        report = payload(snap, result, tmp_path)
+        metrics = report['dependency_network']['node_metrics']
+        base = 1 / (4 + 3 * .85 + .85 ** 2)
+        expected_rank = {'a': base, 'b': base * 1.85, 'c': base * (1 + .85 + .85 ** 2), 'd': base}
+        tokens = {'a': 1, 'b': 2, 'c': 3, 'd': 1}
+        for letter in 'abcd':
+            row = metrics[f'file:{letter}.py']
+>           assert row['pagerank'] == pytest.approx(expected_rank[letter], abs=1e-9, rel=1e-8)
+E           assert 0.15570260801757776 == 0.13750429700928155 ± 1.4e-09
+E             
+E             comparison failed
+E             Obtained: 0.15570260801757776
+E             Expected: 0.13750429700928155 ± 1.4e-09
+
+tests/test_file_analysis_core.py:126: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='fastapi-futuramaapi') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '3f80008bc75329ed461968697f3d499255b4c02d223ced7b892ec7ec03b9887d' != '3a97a3321938085046bd9c046cdbea4a067fc907a8f5b0dbe3a5ced89bab03b9'
+E                   - 3f80008bc75329ed461968697f3d499255b4c02d223ced7b892ec7ec03b9887d
+E                   + 3a97a3321938085046bd9c046cdbea4a067fc907a8f5b0dbe3a5ced89bab03b9
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='fastapi-realworld') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '2c83ab02c5c68f83f78bfb15a5ec90dbf0e1714c3057efdc575c877df1fe3235' != 'cbfd2f3083af4240d7c7a0d603d1065d95051257f58dbd88a5261b49e28654bf'
+E                   - 2c83ab02c5c68f83f78bfb15a5ec90dbf0e1714c3057efdc575c877df1fe3235
+E                   + cbfd2f3083af4240d7c7a0d603d1065d95051257f58dbd88a5261b49e28654bf
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='fastapi-template') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: 'd24eaf4374b683416edfa55544626bf85f4190deb30074c7e40a21a454c0315a' != '31aa6995ed9924c040beec70b8e552f923a3d9b33fabab1da34c1e1248d95958'
+E                   - d24eaf4374b683416edfa55544626bf85f4190deb30074c7e40a21a454c0315a
+E                   + 31aa6995ed9924c040beec70b8e552f923a3d9b33fabab1da34c1e1248d95958
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='python') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '87119d3188e4762ca8b7b116cdbb3f231867d20edb63a8bbd9e4b5f5ae3cfe54' != '93ffc805363d839c952f62a3f385f430bed24340529f2f5a36ca533b9a0085e9'
+E                   - 87119d3188e4762ca8b7b116cdbb3f231867d20edb63a8bbd9e4b5f5ae3cfe54
+E                   + 93ffc805363d839c952f62a3f385f430bed24340529f2f5a36ca533b9a0085e9
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='android') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: 'f813f348bb5dbde521bfb1f2e591522e01871bdc21dbb5c71d1675c5d2b461f1' != '7516419a3aa3c70c89476371e121f90c57dbb489b1f68d4c48e7842434728a2f'
+E                   - f813f348bb5dbde521bfb1f2e591522e01871bdc21dbb5c71d1675c5d2b461f1
+E                   + 7516419a3aa3c70c89476371e121f90c57dbb489b1f68d4c48e7842434728a2f
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='kotlin') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: 'fe6240a719f06dcd292bba1d8c0f475e17d7a3634fb3f046a1a381a6bac1c78c' != '2494bf48dcd8ca69ba6c1f7b6b4c7435364b9b3e0afa2190c58ff4179250a7e8'
+E                   - fe6240a719f06dcd292bba1d8c0f475e17d7a3634fb3f046a1a381a6bac1c78c
+E                   + 2494bf48dcd8ca69ba6c1f7b6b4c7435364b9b3e0afa2190c58ff4179250a7e8
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='typescript') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '52efc055cf5d82b28099cb6a049d5b75c9c0a11e6282772cee5120d025b0f9c9' != '1edd71c31e03b24d5225dcd7974391570c97430c7f9705d583c4b8fc2ac7270b'
+E                   - 52efc055cf5d82b28099cb6a049d5b75c9c0a11e6282772cee5120d025b0f9c9
+E                   + 1edd71c31e03b24d5225dcd7974391570c97430c7f9705d583c4b8fc2ac7270b
+
+tests/test_nestjs_quality.py:244: AssertionError
+_ TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical (case='sqlalchemy') _
+
+self = <tests.test_nestjs_quality.TestRegression testMethod=test_O11_characterization_existing_standalone_outputs_are_byte_identical>
+
+    def test_O11_characterization_existing_standalone_outputs_are_byte_identical(self):
+        """Characterization of pre-existing standalone adapters at base commit."""
+        baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
+        self.assertEqual(baseline["hash_seed"], "0")
+        self.assertEqual(len(baseline["cases"]), 8)
+        for case in baseline["cases"]:
+            with self.subTest(case=case["name"]):
+                project = REPO / case["relative_project"]
+                outputs = cli_bytes(project, *case["flags"], seed="0")
+                for name, content in zip(("json", "bottlenecks"), outputs):
+                    portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+>                   self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
+E                   AssertionError: '4eb34b6f1e1e2ec3757378e6a3a42e7cc665cf494242d643651e52e857ec5575' != '84f3e74029c4b62a15e36eed30f974bf74aa637444bbb184d0baf9ff826c442c'
+E                   - 4eb34b6f1e1e2ec3757378e6a3a42e7cc665cf494242d643651e52e857ec5575
+E                   + 84f3e74029c4b62a15e36eed30f974bf74aa637444bbb184d0baf9ff826c442c
+
+tests/test_nestjs_quality.py:244: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_file_analysis_browser.py::test_V10_file_symbol_external_back_fold_roles_and_filters
+FAILED tests/test_file_analysis_browser.py::test_V14_synthetic_five_fresh_contexts
+FAILED tests/test_file_analysis_cli.py::test_V01_exclusions_applied_before_details[--no-models]
+FAILED tests/test_file_analysis_cli.py::test_V01_exclusions_applied_before_details[--no-deps]
+FAILED tests/test_file_analysis_core.py::test_V05_independent_chain_metrics_and_whole_text
+SUBFAILED(case='fastapi-futuramaapi') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='fastapi-realworld') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='fastapi-template') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='python') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='android') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='kotlin') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='typescript') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+SUBFAILED(case='sqlalchemy') tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical
+ERROR tests/test_file_analysis_benchmark.py::test_V13_real_snapshot_symbol_equivalence_and_three_processes
+13 failed, 1035 passed, 1 error, 192 subtests passed in 1058.52s (0:17:38)

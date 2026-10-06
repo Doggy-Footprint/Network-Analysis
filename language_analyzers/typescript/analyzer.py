@@ -183,7 +183,7 @@ class TypeScriptAnalyzer:
 
     def _parse(self, path: Path) -> Optional[_Module]:
         if self.snapshot is not None:
-            source_map = self.snapshot.content_map()
+            source_map = self.snapshot.source_map
             text = source_map.get(path.relative_to(self.project_path).as_posix())
             if text is None:
                 return None
@@ -210,7 +210,7 @@ class TypeScriptAnalyzer:
         if self.snapshot is None:
             enrich_repository(architecture)
             return
-        contents = self.snapshot.content_map()
+        contents = self.snapshot.source_map
         enrich_repository(architecture, file_inventory=tuple(contents),
                           file_reader=lambda path: contents[path.relative_to(self.project_path).as_posix()])
 

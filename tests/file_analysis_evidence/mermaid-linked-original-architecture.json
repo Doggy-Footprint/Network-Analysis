@@ -1,0 +1,3875 @@
+{
+  "collections": {
+    "dependencies": {
+      "columns": [
+        {
+          "key": "kind",
+          "kind": "text",
+          "label": "Kind"
+        },
+        {
+          "key": "module",
+          "kind": "mono",
+          "label": "Module"
+        },
+        {
+          "key": "sub_dependencies",
+          "kind": "list",
+          "label": "Sub-Dependencies"
+        }
+      ],
+      "icon": "box",
+      "label": "Dependencies",
+      "node_category": "dependency",
+      "rows": [
+        {
+          "id": "dep_main_get_db",
+          "kind": "function",
+          "module": "main:13",
+          "name": "get_db",
+          "sub_dependencies": []
+        }
+      ],
+      "view": "grid"
+    },
+    "endpoints": {
+      "columns": [
+        {
+          "key": "http_method",
+          "kind": "mono",
+          "label": "Method"
+        },
+        {
+          "key": "path",
+          "kind": "mono",
+          "label": "Path"
+        },
+        {
+          "key": "function_name",
+          "kind": "mono",
+          "label": "Handler"
+        },
+        {
+          "key": "tags",
+          "kind": "list",
+          "label": "Tags"
+        },
+        {
+          "key": "dependencies",
+          "kind": "list",
+          "label": "Dependencies"
+        },
+        {
+          "key": "response_model",
+          "kind": "mono",
+          "label": "Response Model"
+        }
+      ],
+      "icon": "box",
+      "label": "Endpoints",
+      "node_category": "endpoint",
+      "rows": [
+        {
+          "dependencies": [
+            "get_db"
+          ],
+          "function_name": "get_user()",
+          "http_method": "GET",
+          "id": "ep_main_get_user_GET",
+          "path": "/api/users/{user_id}",
+          "response_model": "UserOut",
+          "tags": []
+        },
+        {
+          "dependencies": [
+            "get_db"
+          ],
+          "function_name": "create_user()",
+          "http_method": "POST",
+          "id": "ep_main_create_user_POST",
+          "path": "/api/users",
+          "response_model": null,
+          "tags": []
+        }
+      ],
+      "view": "table"
+    },
+    "routers": {
+      "columns": [
+        {
+          "key": "prefix",
+          "kind": "mono",
+          "label": "Prefix"
+        },
+        {
+          "key": "tags",
+          "kind": "list",
+          "label": "Tags"
+        },
+        {
+          "key": "dependencies",
+          "kind": "list",
+          "label": "Dependencies"
+        }
+      ],
+      "icon": "box",
+      "label": "Routers",
+      "node_category": "router",
+      "rows": [
+        {
+          "dependencies": [],
+          "id": "router_main_router",
+          "name": "router",
+          "prefix": "/",
+          "tags": []
+        }
+      ],
+      "view": "grid"
+    },
+    "schemas": {
+      "columns": [
+        {
+          "key": "base",
+          "kind": "text",
+          "label": "Base"
+        },
+        {
+          "key": "fields",
+          "kind": "list",
+          "label": "Fields"
+        }
+      ],
+      "icon": "box",
+      "label": "Schemas",
+      "node_category": "schema",
+      "rows": [
+        {
+          "base": "BaseModel",
+          "fields": [
+            "id: int"
+          ],
+          "id": "schema_main_UserOut",
+          "name": "UserOut"
+        }
+      ],
+      "view": "grid"
+    }
+  },
+  "edges": [
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#818CF8",
+      "confidence": "framework_inferred",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 6,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 6
+      },
+      "from_id": "app_main_app",
+      "label": "include /api",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.includes",
+          "specificity": "unique"
+        }
+      },
+      "relation": "INCLUDES",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "router_main_router",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#A855F7",
+      "confidence": "framework_inferred",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 18,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "from_id": "router_main_router",
+      "label": "",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.routes",
+          "specificity": "unique"
+        }
+      },
+      "relation": "ROUTES",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "ep_main_get_user_GET",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#A855F7",
+      "confidence": "framework_inferred",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 23,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 23
+      },
+      "from_id": "router_main_router",
+      "label": "",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.routes",
+          "specificity": "unique"
+        }
+      },
+      "relation": "ROUTES",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "ep_main_create_user_POST",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#38BDF8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 18,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "from_id": "ep_main_get_user_GET",
+      "label": "depends",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.depends_on",
+          "specificity": "unique"
+        }
+      },
+      "relation": "DEPENDS_ON",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "dep_main_get_db",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#38BDF8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 23,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 23
+      },
+      "from_id": "ep_main_create_user_POST",
+      "label": "depends",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.depends_on",
+          "specificity": "unique"
+        }
+      },
+      "relation": "DEPENDS_ON",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "dep_main_get_db",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#E879F9",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 18,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "from_id": "ep_main_get_user_GET",
+      "label": "returns",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.response_model",
+          "specificity": "unique"
+        }
+      },
+      "relation": "RESPONSE_MODEL",
+      "resolution": "unique_name",
+      "title": null,
+      "to_id": "schema_main_UserOut",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:alembic.versions",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:alembic.versions.first",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:alembic.versions.first",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:alembic.versions.first#revision",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:alembic.versions.first",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:alembic.versions.first#down_revision",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:alembic.versions.first",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:alembic.versions.first#upgrade",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:alembic.versions.first",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:alembic.versions.first#downgrade",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#router",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#app",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#UserOut",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#get_db",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#get_user",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#create_user",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "IMPORTS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:main",
+      "label": "",
+      "metadata": {},
+      "relation": "IMPORTS_SYMBOL",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#User",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:models",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Base",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:models",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#User",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 1,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "from_id": "py:models",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Post",
+      "weight": 2.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 9,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 9
+      },
+      "from_id": "py:main#UserOut",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#UserOut.id",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 7,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 7
+      },
+      "from_id": "py:models#User",
+      "label": "",
+      "metadata": {},
+      "relation": "INHERITS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Base",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 7,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 7
+      },
+      "from_id": "py:models#User",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#User.__tablename__",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 7,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 7
+      },
+      "from_id": "py:models#User",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#User.id",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 12,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 12
+      },
+      "from_id": "py:models#Post",
+      "label": "",
+      "metadata": {},
+      "relation": "INHERITS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Base",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 12,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 12
+      },
+      "from_id": "py:models#Post",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Post.__tablename__",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": null,
+      "confidence": "static_certain",
+      "dashes": false,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 12,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 12
+      },
+      "from_id": "py:models#Post",
+      "label": "",
+      "metadata": {},
+      "relation": "CONTAINS",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:models#Post.id",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#94A3B8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 18,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "from_id": "ep_main_get_user_GET",
+      "label": "implemented by",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.implemented_by",
+          "specificity": "unique"
+        }
+      },
+      "relation": "IMPLEMENTED_BY",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#get_user",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#94A3B8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 23,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 23
+      },
+      "from_id": "ep_main_create_user_POST",
+      "label": "implemented by",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.implemented_by",
+          "specificity": "unique"
+        }
+      },
+      "relation": "IMPLEMENTED_BY",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#create_user",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#94A3B8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 13,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 13
+      },
+      "from_id": "dep_main_get_db",
+      "label": "implemented by",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.implemented_by",
+          "specificity": "unique"
+        }
+      },
+      "relation": "IMPLEMENTED_BY",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#get_db",
+      "weight": 1.0
+    },
+    {
+      "arrows": "to",
+      "candidates": [],
+      "color": "#94A3B8",
+      "confidence": "framework_inferred",
+      "dashes": true,
+      "evidence": {
+        "end_col": 0,
+        "end_line": 9,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 9
+      },
+      "from_id": "schema_main_UserOut",
+      "label": "implemented by",
+      "metadata": {
+        "framework_rule": {
+          "id": "fastapi.implemented_by",
+          "specificity": "unique"
+        }
+      },
+      "relation": "IMPLEMENTED_BY",
+      "resolution": "exact",
+      "title": null,
+      "to_id": "py:main#UserOut",
+      "weight": 1.0
+    }
+  ],
+  "nodes": [
+    {
+      "category": "app",
+      "color": {
+        "background": "#4338CA",
+        "border": "#6366F1",
+        "highlight": {
+          "background": "#4F46E5",
+          "border": "#A5B4FC"
+        },
+        "hover": {
+          "background": "#4F46E5",
+          "border": "#818CF8"
+        }
+      },
+      "cost": {
+        "char_count": 15,
+        "line_count": 1,
+        "token_estimate": 4
+      },
+      "display_label": "🚀 FastAPI App\napp: app",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "app",
+      "id": "app_main_app",
+      "kind": "app",
+      "label": "app",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 0,
+          "fan_out": 1,
+          "hop_2_node_count": 3,
+          "hop_2_token_cost": 37.0,
+          "hop_3_node_count": 7,
+          "hop_3_token_cost": 86.0,
+          "hub_score": 4.119930815301172e-93,
+          "identifier_file_count": 2,
+          "identifier_file_count_by_context": {
+            "code": 2,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02210959769745163,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.08843839078980652,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 0.3
+        },
+        "end_line_number": 6,
+        "file_path": "main.py",
+        "line_number": 6,
+        "middlewares": [],
+        "module": "main",
+        "title": "FastAPI App",
+        "title_expr": null,
+        "title_source": "default",
+        "type": "app",
+        "version": "0.1.0"
+      },
+      "provenance": "fastapi",
+      "shape": "box",
+      "signature": null,
+      "size": 38,
+      "span": {
+        "end_col": 0,
+        "end_line": 6,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 6
+      },
+      "symbol_path": "main.app",
+      "title": "<b>FastAPI Application: FastAPI App</b><br>Version: 0.1.0<br>Module: main<br>File: /private<PROJECT_ROOT>/main.py:6"
+    },
+    {
+      "category": "router",
+      "color": {
+        "background": "#7E22CE",
+        "border": "#A855F7",
+        "highlight": {
+          "background": "#9333EA",
+          "border": "#E9D5FF"
+        },
+        "hover": {
+          "background": "#9333EA",
+          "border": "#C084FC"
+        }
+      },
+      "cost": {
+        "char_count": 20,
+        "line_count": 1,
+        "token_estimate": 5
+      },
+      "display_label": "📁 router\nprefix: /",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "router",
+      "id": "router_main_router",
+      "kind": "router",
+      "label": "router",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 3.945434725061903e-92,
+          "betweenness_centrality": 0.01282051282051282,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 5.0,
+          "fan_in": 1,
+          "fan_out": 2,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 85.0,
+          "hop_3_node_count": 10,
+          "hop_3_token_cost": 218.0,
+          "hub_score": 5.798287151432056e-79,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.040902755741228494,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.20451377870614246,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.6
+        },
+        "dependencies": [],
+        "end_line_number": 5,
+        "file_path": "main.py",
+        "line_number": 5,
+        "module": "main",
+        "prefix": "",
+        "tags": [],
+        "type": "router",
+        "var_name": "router"
+      },
+      "provenance": "fastapi",
+      "shape": "box",
+      "signature": null,
+      "size": 32,
+      "span": {
+        "end_col": 0,
+        "end_line": 5,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 5
+      },
+      "symbol_path": "main.router",
+      "title": "<b>Router: router</b><br>Prefix: /<br>Tags: <br>Module: main<br>File: /private<PROJECT_ROOT>/main.py:5"
+    },
+    {
+      "category": "endpoint",
+      "color": {
+        "background": "#065F46",
+        "border": "#10B981",
+        "highlight": {
+          "background": "#047857",
+          "border": "#6EE7B7"
+        },
+        "hover": {
+          "background": "#047857",
+          "border": "#34D399"
+        }
+      },
+      "cost": {
+        "char_count": 74,
+        "line_count": 2,
+        "token_estimate": 19
+      },
+      "display_label": "GET /api/users/{user_id}\nget_user()",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "endpoint_get",
+      "id": "ep_main_get_user_GET",
+      "kind": "endpoint",
+      "label": "get_user",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 2.7763528683755313e-78,
+          "betweenness_centrality": 0.014245014245014245,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 19.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 9,
+          "hop_2_token_cost": 191.0,
+          "hop_3_node_count": 15,
+          "hop_3_token_cost": 311.0,
+          "hub_score": 0.037012096071330776,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.03949326888549058,
+          "token_cost": 19,
+          "weighted_centrality_cost": 0.750372108824321,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.8999999999999999
+        },
+        "dependencies": [
+          "get_db"
+        ],
+        "docstring": null,
+        "end_line_number": 19,
+        "file_path": "main.py",
+        "full_path": "/api/users/{user_id}",
+        "function_name": "get_user",
+        "http_method": "GET",
+        "line_number": 18,
+        "module": "main",
+        "parameters": [
+          {
+            "default_value": null,
+            "dependency_call": null,
+            "kind": "query",
+            "name": "user_id",
+            "type_annotation": "int"
+          },
+          {
+            "default_value": "Depends(get_db)",
+            "dependency_call": "get_db",
+            "kind": "dependency",
+            "name": "db",
+            "type_annotation": null
+          }
+        ],
+        "path": "/users/{user_id}",
+        "request_schemas": [],
+        "response_model": "UserOut",
+        "response_schemas": [
+          "UserOut"
+        ],
+        "status_code": null,
+        "summary": null,
+        "tags": [],
+        "type": "endpoint"
+      },
+      "provenance": "fastapi",
+      "shape": "box",
+      "signature": null,
+      "size": 26,
+      "span": {
+        "end_col": 0,
+        "end_line": 19,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "symbol_path": "main.get_user",
+      "title": "<b>[GET] /api/users/{user_id}</b><br>Handler: <code>get_user()</code><br>Module: main<br>Tags: <br>Status: 200<br>Response: UserOut"
+    },
+    {
+      "category": "endpoint",
+      "color": {
+        "background": "#1E40AF",
+        "border": "#3B82F6",
+        "highlight": {
+          "background": "#1D4ED8",
+          "border": "#93C5FD"
+        },
+        "hover": {
+          "background": "#1D4ED8",
+          "border": "#60A5FA"
+        }
+      },
+      "cost": {
+        "char_count": 50,
+        "line_count": 2,
+        "token_estimate": 13
+      },
+      "display_label": "POST /api/users\ncreate_user()",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "endpoint_post",
+      "id": "ep_main_create_user_POST",
+      "kind": "endpoint",
+      "label": "create_user",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 2.7763528683755313e-78,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 13.0,
+          "fan_in": 1,
+          "fan_out": 2,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 171.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 314.0,
+          "hub_score": 0.03660406296330869,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.03949326888549058,
+          "token_cost": 13,
+          "weighted_centrality_cost": 0.5134124955113776,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.6
+        },
+        "dependencies": [
+          "get_db"
+        ],
+        "docstring": null,
+        "end_line_number": 24,
+        "file_path": "main.py",
+        "full_path": "/api/users",
+        "function_name": "create_user",
+        "http_method": "POST",
+        "line_number": 23,
+        "module": "main",
+        "parameters": [
+          {
+            "default_value": "Depends(get_db)",
+            "dependency_call": "get_db",
+            "kind": "dependency",
+            "name": "db",
+            "type_annotation": null
+          }
+        ],
+        "path": "/users",
+        "request_schemas": [],
+        "response_model": null,
+        "response_schemas": [],
+        "status_code": null,
+        "summary": null,
+        "tags": [],
+        "type": "endpoint"
+      },
+      "provenance": "fastapi",
+      "shape": "box",
+      "signature": null,
+      "size": 26,
+      "span": {
+        "end_col": 0,
+        "end_line": 24,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 23
+      },
+      "symbol_path": "main.create_user",
+      "title": "<b>[POST] /api/users</b><br>Handler: <code>create_user()</code><br>Module: main<br>Tags: <br>Status: 200<br>Response: default"
+    },
+    {
+      "category": "dependency",
+      "color": {
+        "background": "#0369A1",
+        "border": "#38BDF8",
+        "highlight": {
+          "background": "#0284C7",
+          "border": "#BAE6FD"
+        },
+        "hover": {
+          "background": "#0284C7",
+          "border": "#7DD3FC"
+        }
+      },
+      "cost": {
+        "char_count": 27,
+        "line_count": 2,
+        "token_estimate": 7
+      },
+      "display_label": "⚙️ get_db",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "dependency",
+      "id": "dep_main_get_db",
+      "kind": "dependency",
+      "label": "get_db",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.00768720060638337,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 7.0,
+          "fan_in": 2,
+          "fan_out": 1,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 202.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 320.0,
+          "hub_score": 0.03579249503390359,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.050083996491648505,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.3505879754415395,
+          "weighted_fan_in": 0.6,
+          "weighted_fan_out": 0.3
+        },
+        "consumers": [],
+        "docstring": null,
+        "end_line_number": 14,
+        "file_path": "main.py",
+        "kind": "function",
+        "line_number": 13,
+        "module": "main",
+        "name": "get_db",
+        "sub_dependencies": [],
+        "type": "dependency"
+      },
+      "provenance": "fastapi",
+      "shape": "ellipse",
+      "signature": null,
+      "size": 22,
+      "span": {
+        "end_col": 0,
+        "end_line": 14,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 13
+      },
+      "symbol_path": "main.get_db",
+      "title": "<b>Dependency: get_db</b><br>Kind: function<br>Module: main<br>File: /private<PROJECT_ROOT>/main.py:13"
+    },
+    {
+      "category": "schema",
+      "color": {
+        "background": "#86198F",
+        "border": "#E879F9",
+        "highlight": {
+          "background": "#A21CAF",
+          "border": "#F5D0FE"
+        },
+        "hover": {
+          "background": "#A21CAF",
+          "border": "#F0ABFC"
+        }
+      },
+      "cost": {
+        "char_count": 37,
+        "line_count": 2,
+        "token_estimate": 10
+      },
+      "display_label": "📦 UserOut\n(1 fields)",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "schema",
+      "id": "schema_main_UserOut",
+      "kind": "schema",
+      "label": "UserOut",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.003864904269579859,
+          "betweenness_centrality": 0.008547008547008548,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 10.0,
+          "fan_in": 1,
+          "fan_out": 1,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 179.0,
+          "hop_3_node_count": 15,
+          "hop_3_token_cost": 320.0,
+          "hub_score": 0.03579249503390359,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.03329935721513038,
+          "token_cost": 10,
+          "weighted_centrality_cost": 0.3329935721513038,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.3
+        },
+        "base_classes": [
+          "BaseModel"
+        ],
+        "docstring": null,
+        "end_line_number": 10,
+        "fields": [
+          {
+            "default_value": null,
+            "description": null,
+            "is_required": true,
+            "name": "id",
+            "type_annotation": "int"
+          }
+        ],
+        "file_path": "main.py",
+        "line_number": 9,
+        "module": "main",
+        "name": "UserOut",
+        "type": "schema"
+      },
+      "provenance": "fastapi",
+      "shape": "box",
+      "signature": null,
+      "size": 20,
+      "span": {
+        "end_col": 0,
+        "end_line": 10,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 9
+      },
+      "symbol_path": "main.UserOut",
+      "title": "<b>Schema Model: UserOut</b><br>Fields: 1<br>Module: main"
+    },
+    {
+      "category": "package",
+      "color": null,
+      "cost": {
+        "char_count": 16,
+        "line_count": 1,
+        "token_estimate": 4
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "package",
+      "id": "py:alembic.versions",
+      "kind": "package",
+      "label": "alembic.versions",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 0,
+          "fan_out": 1,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 12.7,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 12.7,
+          "hub_score": 5.827630122650037e-44,
+          "identifier_file_count": 0,
+          "identifier_file_count_by_context": {
+            "code": 0,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02210959769745163,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.08843839078980652,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 1.0
+        }
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": null,
+      "symbol_path": "alembic.versions",
+      "title": ""
+    },
+    {
+      "category": "module",
+      "color": null,
+      "cost": {
+        "char_count": 274,
+        "line_count": 14,
+        "token_estimate": 70
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": null,
+      "flags": [
+        "generated"
+      ],
+      "group": "module",
+      "id": "py:alembic.versions.first",
+      "kind": "module",
+      "label": "alembic/versions/first.py",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 1.674241773574984e-43,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.09259259259259259,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 4,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 9.7,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 9.7,
+          "hub_score": 1.1542810660758484e-15,
+          "identifier_file_count": 0,
+          "identifier_file_count_by_context": {
+            "code": 0,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.040902755741228494,
+          "token_cost": 70,
+          "weighted_centrality_cost": 0.2863192901885995,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 4.0
+        },
+        "end_line_number": 15,
+        "file_path": "alembic/versions/first.py",
+        "is_package_init": false,
+        "line_number": 1,
+        "module": "alembic.versions.first"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 15,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "symbol_path": "alembic.versions.first",
+      "title": ""
+    },
+    {
+      "category": "module",
+      "color": null,
+      "cost": {
+        "char_count": 463,
+        "line_count": 27,
+        "token_estimate": 116
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "module",
+      "id": "py:main",
+      "kind": "module",
+      "label": "main.py",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.14814814814814814,
+          "effective_token_cost": 116.0,
+          "fan_in": 0,
+          "fan_out": 8,
+          "hop_2_node_count": 17,
+          "hop_2_token_cost": 252.0,
+          "hop_3_node_count": 20,
+          "hop_3_token_cost": 275.0,
+          "hub_score": 0.9740057157956753,
+          "identifier_file_count": 0,
+          "identifier_file_count_by_context": {
+            "code": 0,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02210959769745163,
+          "token_cost": 116,
+          "weighted_centrality_cost": 2.564713332904389,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 8.0
+        },
+        "end_line_number": 28,
+        "file_path": "main.py",
+        "is_package_init": false,
+        "line_number": 1,
+        "module": "main",
+        "unresolved_calls": {
+          "include_router": 1
+        },
+        "unresolved_references": [
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 27,
+              "file_path": "main.py",
+              "start_line": 27
+            },
+            "name": "include_router",
+            "resolution": "unresolved"
+          }
+        ]
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 28,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "symbol_path": "main",
+      "title": ""
+    },
+    {
+      "category": "module",
+      "color": null,
+      "cost": {
+        "char_count": 291,
+        "line_count": 14,
+        "token_estimate": 73
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": null,
+      "flags": [],
+      "group": "module",
+      "id": "py:models",
+      "kind": "module",
+      "label": "models.py",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.004985754985754986,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 73.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 14,
+          "hop_2_token_cost": 261.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 313.0,
+          "hub_score": 0.20361356349483448,
+          "identifier_file_count": 0,
+          "identifier_file_count_by_context": {
+            "code": 0,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02445874245292374,
+          "token_cost": 73,
+          "weighted_centrality_cost": 1.785488199063433,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 3.0
+        },
+        "end_line_number": 15,
+        "file_path": "models.py",
+        "is_package_init": false,
+        "line_number": 1,
+        "module": "models"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 15,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 1
+      },
+      "symbol_path": "models",
+      "title": ""
+    },
+    {
+      "category": "constant",
+      "color": null,
+      "cost": {
+        "char_count": 15,
+        "line_count": 1,
+        "token_estimate": 5
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [
+        "generated"
+      ],
+      "group": "constant",
+      "id": "py:alembic.versions.first#revision",
+      "kind": "constant",
+      "label": "revision",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 0.5,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 16.2,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 16.2,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.030801433291471107,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.015400716645735554,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 4,
+        "file_path": "alembic/versions/first.py",
+        "line_number": 4,
+        "module": "alembic.versions.first",
+        "name": "revision"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 4,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 4
+      },
+      "symbol_path": "alembic.versions.first.revision",
+      "title": ""
+    },
+    {
+      "category": "constant",
+      "color": null,
+      "cost": {
+        "char_count": 20,
+        "line_count": 1,
+        "token_estimate": 5
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [
+        "generated"
+      ],
+      "group": "constant",
+      "id": "py:alembic.versions.first#down_revision",
+      "kind": "constant",
+      "label": "down_revision",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 0.5,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 16.2,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 16.2,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.030801433291471107,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.015400716645735554,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 5,
+        "file_path": "alembic/versions/first.py",
+        "line_number": 5,
+        "module": "alembic.versions.first",
+        "name": "down_revision"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 5,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 5
+      },
+      "symbol_path": "alembic.versions.first.down_revision",
+      "title": ""
+    },
+    {
+      "category": "function",
+      "color": null,
+      "cost": {
+        "char_count": 141,
+        "line_count": 3,
+        "token_estimate": 36
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [
+        "generated"
+      ],
+      "group": "function",
+      "id": "py:alembic.versions.first#upgrade",
+      "kind": "function",
+      "label": "upgrade",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 3.6,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 13.1,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 13.1,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.030801433291471107,
+          "token_cost": 36,
+          "weighted_centrality_cost": 0.11088515984929599,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 10,
+        "file_path": "alembic/versions/first.py",
+        "line_number": 8,
+        "module": "alembic.versions.first",
+        "name": "upgrade",
+        "unresolved_calls": {
+          "Column": 1,
+          "Integer": 1,
+          "create_foreign_key": 1,
+          "create_table": 1
+        },
+        "unresolved_references": [
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 9,
+              "file_path": "alembic/versions/first.py",
+              "start_line": 9
+            },
+            "name": "create_table",
+            "resolution": "unresolved"
+          },
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 9,
+              "file_path": "alembic/versions/first.py",
+              "start_line": 9
+            },
+            "name": "Column",
+            "resolution": "unresolved"
+          },
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 9,
+              "file_path": "alembic/versions/first.py",
+              "start_line": 9
+            },
+            "name": "Integer",
+            "resolution": "unresolved"
+          },
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 10,
+              "file_path": "alembic/versions/first.py",
+              "start_line": 10
+            },
+            "name": "create_foreign_key",
+            "resolution": "unresolved"
+          }
+        ]
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "def upgrade()",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 10,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 8
+      },
+      "symbol_path": "alembic.versions.first.upgrade",
+      "title": ""
+    },
+    {
+      "category": "function",
+      "color": null,
+      "cost": {
+        "char_count": 43,
+        "line_count": 2,
+        "token_estimate": 11
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [
+        "generated"
+      ],
+      "group": "function",
+      "id": "py:alembic.versions.first#downgrade",
+      "kind": "function",
+      "label": "downgrade",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 1.1,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 15.6,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 15.6,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.030801433291471107,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.03388157662061822,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 14,
+        "file_path": "alembic/versions/first.py",
+        "line_number": 13,
+        "module": "alembic.versions.first",
+        "name": "downgrade",
+        "unresolved_calls": {
+          "drop_table": 1
+        },
+        "unresolved_references": [
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 14,
+              "file_path": "alembic/versions/first.py",
+              "start_line": 14
+            },
+            "name": "drop_table",
+            "resolution": "unresolved"
+          }
+        ]
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "def downgrade()",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 14,
+        "file_path": "alembic/versions/first.py",
+        "start_col": 0,
+        "start_line": 13
+      },
+      "symbol_path": "alembic.versions.first.downgrade",
+      "title": ""
+    },
+    {
+      "category": "constant",
+      "color": null,
+      "cost": {
+        "char_count": 20,
+        "line_count": 1,
+        "token_estimate": 5
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "constant",
+      "id": "py:main#router",
+      "kind": "constant",
+      "label": "router",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 5.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 264.0,
+          "hop_3_node_count": 17,
+          "hop_3_token_cost": 363.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02445874245292374,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.12229371226461869,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 5,
+        "file_path": "main.py",
+        "line_number": 5,
+        "module": "main",
+        "name": "router"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 5,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 5
+      },
+      "symbol_path": "main.router",
+      "title": ""
+    },
+    {
+      "category": "constant",
+      "color": null,
+      "cost": {
+        "char_count": 15,
+        "line_count": 1,
+        "token_estimate": 4
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "constant",
+      "id": "py:main#app",
+      "kind": "constant",
+      "label": "app",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 265.0,
+          "hop_3_node_count": 17,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 2,
+          "identifier_file_count_by_context": {
+            "code": 2,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02445874245292374,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.09783496981169496,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 6,
+        "file_path": "main.py",
+        "line_number": 6,
+        "module": "main",
+        "name": "app"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 6,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 6
+      },
+      "symbol_path": "main.app",
+      "title": ""
+    },
+    {
+      "category": "class",
+      "color": null,
+      "cost": {
+        "char_count": 37,
+        "line_count": 2,
+        "token_estimate": 10
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "class",
+      "id": "py:main#UserOut",
+      "kind": "class",
+      "label": "UserOut",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.3427653500366991,
+          "betweenness_centrality": 0.007122507122507123,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 10.0,
+          "fan_in": 2,
+          "fan_out": 1,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 291.0,
+          "hop_3_node_count": 18,
+          "hop_3_token_cost": 363.0,
+          "hub_score": 5.827630122650037e-44,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.052763196087881166,
+          "token_cost": 10,
+          "weighted_centrality_cost": 0.5276319608788117,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 1.0
+        },
+        "end_line_number": 10,
+        "file_path": "main.py",
+        "line_number": 9,
+        "module": "main",
+        "name": "UserOut"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "class UserOut(BaseModel)",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 10,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 9
+      },
+      "symbol_path": "main.UserOut",
+      "title": ""
+    },
+    {
+      "category": "field",
+      "color": null,
+      "cost": {
+        "char_count": 11,
+        "line_count": 1,
+        "token_estimate": 3
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": false,
+      "flags": [
+        "ambiguous_name"
+      ],
+      "group": "field",
+      "id": "py:main#UserOut.id",
+      "kind": "field",
+      "label": "id",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 1.674241773574984e-43,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 3.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 3,
+          "hop_2_token_cost": 136.0,
+          "hop_3_node_count": 11,
+          "hop_3_token_cost": 298.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 6,
+          "identifier_file_count_by_context": {
+            "code": 6,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.06695831436277022,
+          "token_cost": 3,
+          "weighted_centrality_cost": 0.20087494308831066,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 10,
+        "file_path": "main.py",
+        "line_number": 10,
+        "module": "main",
+        "name": "id",
+        "name_collision_count": 2
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 10,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 10
+      },
+      "symbol_path": "main.UserOut.id",
+      "title": ""
+    },
+    {
+      "category": "function",
+      "color": null,
+      "cost": {
+        "char_count": 27,
+        "line_count": 2,
+        "token_estimate": 7
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "function",
+      "id": "py:main#get_db",
+      "kind": "function",
+      "label": "get_db",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.3427653500366991,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 7.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 301.0,
+          "hop_3_node_count": 18,
+          "hop_3_token_cost": 366.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.06703013947465203,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.4692109763225642,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 14,
+        "file_path": "main.py",
+        "line_number": 13,
+        "module": "main",
+        "name": "get_db"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "def get_db()",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 14,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 13
+      },
+      "symbol_path": "main.get_db",
+      "title": ""
+    },
+    {
+      "category": "function",
+      "color": null,
+      "cost": {
+        "char_count": 74,
+        "line_count": 2,
+        "token_estimate": 19
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "function",
+      "id": "py:main#get_user",
+      "kind": "function",
+      "label": "get_user",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.3428927041116382,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 19.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 12,
+          "hop_2_token_cost": 291.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 358.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.035648501970602486,
+          "token_cost": 19,
+          "weighted_centrality_cost": 0.6773215374414472,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 19,
+        "file_path": "main.py",
+        "line_number": 18,
+        "module": "main",
+        "name": "get_user"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "def get_user(user_id: int, db=Depends(get_db))",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 19,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 18
+      },
+      "symbol_path": "main.get_user",
+      "title": ""
+    },
+    {
+      "category": "function",
+      "color": null,
+      "cost": {
+        "char_count": 50,
+        "line_count": 2,
+        "token_estimate": 13
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "function",
+      "id": "py:main#create_user",
+      "kind": "function",
+      "label": "create_user",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.3428500961788618,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 13.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 281.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.041243381729441864,
+          "token_cost": 13,
+          "weighted_centrality_cost": 0.5361639624827442,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 24,
+        "file_path": "main.py",
+        "line_number": 23,
+        "module": "main",
+        "name": "create_user"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "def create_user(db=Depends(get_db))",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 24,
+        "file_path": "main.py",
+        "start_col": 0,
+        "start_line": 23
+      },
+      "symbol_path": "main.create_user",
+      "title": ""
+    },
+    {
+      "category": "constant",
+      "color": null,
+      "cost": {
+        "char_count": 25,
+        "line_count": 1,
+        "token_estimate": 7
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "constant",
+      "id": "py:models#Base",
+      "kind": "constant",
+      "label": "Base",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.10419536378413864,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 7.0,
+          "fan_in": 3,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 269.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 327.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.04616092475071541,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.3231264732550079,
+          "weighted_fan_in": 3.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 4,
+        "file_path": "models.py",
+        "line_number": 4,
+        "module": "models",
+        "name": "Base"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 4,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 4
+      },
+      "symbol_path": "models.Base",
+      "title": ""
+    },
+    {
+      "category": "class",
+      "color": null,
+      "cost": {
+        "char_count": 88,
+        "line_count": 3,
+        "token_estimate": 22
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "class",
+      "id": "py:models#User",
+      "kind": "class",
+      "label": "User",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.4099007499011502,
+          "betweenness_centrality": 0.00641025641025641,
+          "degree_centrality": 0.09259259259259259,
+          "effective_token_cost": 22.0,
+          "fan_in": 2,
+          "fan_out": 3,
+          "hop_2_node_count": 12,
+          "hop_2_token_cost": 294.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.04786660775409939,
+          "identifier_file_count": 2,
+          "identifier_file_count_by_context": {
+            "code": 2,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.031388719481361904,
+          "token_cost": 22,
+          "weighted_centrality_cost": 0.6905518285899619,
+          "weighted_fan_in": 2.0,
+          "weighted_fan_out": 3.0
+        },
+        "end_line_number": 9,
+        "file_path": "models.py",
+        "line_number": 7,
+        "module": "models",
+        "name": "User",
+        "unresolved_calls": {
+          "Column": 1
+        },
+        "unresolved_references": [
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 9,
+              "file_path": "models.py",
+              "start_line": 9
+            },
+            "name": "Column",
+            "resolution": "unresolved"
+          }
+        ]
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "class User(Base)",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 9,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 7
+      },
+      "symbol_path": "models.User",
+      "title": ""
+    },
+    {
+      "category": "field",
+      "color": null,
+      "cost": {
+        "char_count": 27,
+        "line_count": 1,
+        "token_estimate": 7
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": false,
+      "flags": [],
+      "group": "field",
+      "id": "py:models#User.__tablename__",
+      "kind": "field",
+      "label": "__tablename__",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 229.0,
+          "hop_3_node_count": 12,
+          "hop_3_token_cost": 309.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.031003068216787374,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.2170214775175116,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 8,
+        "file_path": "models.py",
+        "line_number": 8,
+        "module": "models",
+        "name": "__tablename__"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 8,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 8
+      },
+      "symbol_path": "models.User.__tablename__",
+      "title": ""
+    },
+    {
+      "category": "field",
+      "color": null,
+      "cost": {
+        "char_count": 42,
+        "line_count": 1,
+        "token_estimate": 11
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": false,
+      "flags": [
+        "ambiguous_name"
+      ],
+      "group": "field",
+      "id": "py:models#User.id",
+      "kind": "field",
+      "label": "id",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 11.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 225.0,
+          "hop_3_node_count": 12,
+          "hop_3_token_cost": 305.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 6,
+          "identifier_file_count_by_context": {
+            "code": 6,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.031003068216787374,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.3410337503846611,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 9,
+        "file_path": "models.py",
+        "line_number": 9,
+        "module": "models",
+        "name": "id",
+        "name_collision_count": 2
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 9,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 9
+      },
+      "symbol_path": "models.User.id",
+      "title": ""
+    },
+    {
+      "category": "class",
+      "color": null,
+      "cost": {
+        "char_count": 88,
+        "line_count": 3,
+        "token_estimate": 22
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": true,
+      "flags": [],
+      "group": "class",
+      "id": "py:models#Post",
+      "kind": "class",
+      "label": "Post",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.07087295005909193,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 22.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 6,
+          "hop_2_token_cost": 236.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 312.0,
+          "hub_score": 0.04786660775409939,
+          "identifier_file_count": 2,
+          "identifier_file_count_by_context": {
+            "code": 2,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.02903957472588979,
+          "token_cost": 22,
+          "weighted_centrality_cost": 0.6388706439695754,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 3.0
+        },
+        "end_line_number": 14,
+        "file_path": "models.py",
+        "line_number": 12,
+        "module": "models",
+        "name": "Post",
+        "unresolved_calls": {
+          "Column": 1
+        },
+        "unresolved_references": [
+          {
+            "confidence": "dynamic_required",
+            "evidence": {
+              "end_line": 14,
+              "file_path": "models.py",
+              "start_line": 14
+            },
+            "name": "Column",
+            "resolution": "unresolved"
+          }
+        ]
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": "class Post(Base)",
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 14,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 12
+      },
+      "symbol_path": "models.Post",
+      "title": ""
+    },
+    {
+      "category": "field",
+      "color": null,
+      "cost": {
+        "char_count": 27,
+        "line_count": 1,
+        "token_estimate": 7
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": false,
+      "flags": [],
+      "group": "field",
+      "id": "py:models#Post.__tablename__",
+      "kind": "field",
+      "label": "__tablename__",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 4,
+          "hop_2_token_cost": 113.0,
+          "hop_3_node_count": 6,
+          "hop_3_token_cost": 251.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 1,
+          "identifier_file_count_by_context": {
+            "code": 1,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.0303374772029415,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.2123623404205905,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 13,
+        "file_path": "models.py",
+        "line_number": 13,
+        "module": "models",
+        "name": "__tablename__"
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 13,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 13
+      },
+      "symbol_path": "models.Post.__tablename__",
+      "title": ""
+    },
+    {
+      "category": "field",
+      "color": null,
+      "cost": {
+        "char_count": 42,
+        "line_count": 1,
+        "token_estimate": 11
+      },
+      "display_label": "",
+      "docstring": null,
+      "exported": false,
+      "flags": [
+        "ambiguous_name"
+      ],
+      "group": "field",
+      "id": "py:models#Post.id",
+      "kind": "field",
+      "label": "id",
+      "language": "python",
+      "metadata": {
+        "analysis": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 11.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 4,
+          "hop_2_token_cost": 109.0,
+          "hop_3_node_count": 6,
+          "hop_3_token_cost": 247.0,
+          "hub_score": 0.0,
+          "identifier_file_count": 6,
+          "identifier_file_count_by_context": {
+            "code": 6,
+            "comment": 0,
+            "config": 0,
+            "doc": 0,
+            "docstring": 0
+          },
+          "pagerank": 0.0303374772029415,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.3337122492323565,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "end_line_number": 14,
+        "file_path": "models.py",
+        "line_number": 14,
+        "module": "models",
+        "name": "id",
+        "name_collision_count": 2
+      },
+      "provenance": "python-core",
+      "shape": "box",
+      "signature": null,
+      "size": 25,
+      "span": {
+        "end_col": 0,
+        "end_line": 14,
+        "file_path": "models.py",
+        "start_col": 0,
+        "start_line": 14
+      },
+      "symbol_path": "models.Post.id",
+      "title": ""
+    }
+  ],
+  "project_name": "file-mermaid-linked-ha_5u3ig",
+  "project_path": "/private<PROJECT_ROOT>",
+  "schema_version": "5",
+  "stats": {
+    "analysis": {
+      "betweenness_sample_size": 28,
+      "betweenness_strategy": "exact",
+      "cost_policy": {
+        "default": 1.0,
+        "generated": 0.1,
+        "migration": 0.1,
+        "vendored": 0.0
+      },
+      "neighborhood_strategy": "single_bfs_to_3_hops",
+      "node_metrics": {
+        "app_main_app": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 0,
+          "fan_out": 1,
+          "hop_2_node_count": 3,
+          "hop_2_token_cost": 37.0,
+          "hop_3_node_count": 7,
+          "hop_3_token_cost": 86.0,
+          "hub_score": 4.119930815301172e-93,
+          "pagerank": 0.02210959769745163,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.08843839078980652,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 0.3
+        },
+        "dep_main_get_db": {
+          "authority_score": 0.00768720060638337,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 7.0,
+          "fan_in": 2,
+          "fan_out": 1,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 202.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 320.0,
+          "hub_score": 0.03579249503390359,
+          "pagerank": 0.050083996491648505,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.3505879754415395,
+          "weighted_fan_in": 0.6,
+          "weighted_fan_out": 0.3
+        },
+        "ep_main_create_user_POST": {
+          "authority_score": 2.7763528683755313e-78,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 13.0,
+          "fan_in": 1,
+          "fan_out": 2,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 171.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 314.0,
+          "hub_score": 0.03660406296330869,
+          "pagerank": 0.03949326888549058,
+          "token_cost": 13,
+          "weighted_centrality_cost": 0.5134124955113776,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.6
+        },
+        "ep_main_get_user_GET": {
+          "authority_score": 2.7763528683755313e-78,
+          "betweenness_centrality": 0.014245014245014245,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 19.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 9,
+          "hop_2_token_cost": 191.0,
+          "hop_3_node_count": 15,
+          "hop_3_token_cost": 311.0,
+          "hub_score": 0.037012096071330776,
+          "pagerank": 0.03949326888549058,
+          "token_cost": 19,
+          "weighted_centrality_cost": 0.750372108824321,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.8999999999999999
+        },
+        "py:alembic.versions": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 0,
+          "fan_out": 1,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 12.7,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 12.7,
+          "hub_score": 5.827630122650037e-44,
+          "pagerank": 0.02210959769745163,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.08843839078980652,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 1.0
+        },
+        "py:alembic.versions.first": {
+          "authority_score": 1.674241773574984e-43,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.09259259259259259,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 4,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 9.7,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 9.7,
+          "hub_score": 1.1542810660758484e-15,
+          "pagerank": 0.040902755741228494,
+          "token_cost": 70,
+          "weighted_centrality_cost": 0.2863192901885995,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 4.0
+        },
+        "py:alembic.versions.first#down_revision": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 0.5,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 16.2,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 16.2,
+          "hub_score": 0.0,
+          "pagerank": 0.030801433291471107,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.015400716645735554,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:alembic.versions.first#downgrade": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 1.1,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 15.6,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 15.6,
+          "hub_score": 0.0,
+          "pagerank": 0.030801433291471107,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.03388157662061822,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:alembic.versions.first#revision": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 0.5,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 16.2,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 16.2,
+          "hub_score": 0.0,
+          "pagerank": 0.030801433291471107,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.015400716645735554,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:alembic.versions.first#upgrade": {
+          "authority_score": 8.290443707810562e-16,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 3.6,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 13.1,
+          "hop_3_node_count": 5,
+          "hop_3_token_cost": 13.1,
+          "hub_score": 0.0,
+          "pagerank": 0.030801433291471107,
+          "token_cost": 36,
+          "weighted_centrality_cost": 0.11088515984929599,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:main": {
+          "authority_score": 0.0,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.14814814814814814,
+          "effective_token_cost": 116.0,
+          "fan_in": 0,
+          "fan_out": 8,
+          "hop_2_node_count": 17,
+          "hop_2_token_cost": 252.0,
+          "hop_3_node_count": 20,
+          "hop_3_token_cost": 275.0,
+          "hub_score": 0.9740057157956753,
+          "pagerank": 0.02210959769745163,
+          "token_cost": 116,
+          "weighted_centrality_cost": 2.564713332904389,
+          "weighted_fan_in": 0,
+          "weighted_fan_out": 8.0
+        },
+        "py:main#UserOut": {
+          "authority_score": 0.3427653500366991,
+          "betweenness_centrality": 0.007122507122507123,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 10.0,
+          "fan_in": 2,
+          "fan_out": 1,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 291.0,
+          "hop_3_node_count": 18,
+          "hop_3_token_cost": 363.0,
+          "hub_score": 5.827630122650037e-44,
+          "pagerank": 0.052763196087881166,
+          "token_cost": 10,
+          "weighted_centrality_cost": 0.5276319608788117,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 1.0
+        },
+        "py:main#UserOut.id": {
+          "authority_score": 1.674241773574984e-43,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 3.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 3,
+          "hop_2_token_cost": 136.0,
+          "hop_3_node_count": 11,
+          "hop_3_token_cost": 298.0,
+          "hub_score": 0.0,
+          "pagerank": 0.06695831436277022,
+          "token_cost": 3,
+          "weighted_centrality_cost": 0.20087494308831066,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:main#app": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 4.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 265.0,
+          "hop_3_node_count": 17,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.0,
+          "pagerank": 0.02445874245292374,
+          "token_cost": 4,
+          "weighted_centrality_cost": 0.09783496981169496,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:main#create_user": {
+          "authority_score": 0.3428500961788618,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 13.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 281.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.0,
+          "pagerank": 0.041243381729441864,
+          "token_cost": 13,
+          "weighted_centrality_cost": 0.5361639624827442,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "py:main#get_db": {
+          "authority_score": 0.3427653500366991,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 7.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 11,
+          "hop_2_token_cost": 301.0,
+          "hop_3_node_count": 18,
+          "hop_3_token_cost": 366.0,
+          "hub_score": 0.0,
+          "pagerank": 0.06703013947465203,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.4692109763225642,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "py:main#get_user": {
+          "authority_score": 0.3428927041116382,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 19.0,
+          "fan_in": 2,
+          "fan_out": 0,
+          "hop_2_node_count": 12,
+          "hop_2_token_cost": 291.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 358.0,
+          "hub_score": 0.0,
+          "pagerank": 0.035648501970602486,
+          "token_cost": 19,
+          "weighted_centrality_cost": 0.6773215374414472,
+          "weighted_fan_in": 1.3,
+          "weighted_fan_out": 0
+        },
+        "py:main#router": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 5.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 264.0,
+          "hop_3_node_count": 17,
+          "hop_3_token_cost": 363.0,
+          "hub_score": 0.0,
+          "pagerank": 0.02445874245292374,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.12229371226461869,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:models": {
+          "authority_score": 0.33902779984205833,
+          "betweenness_centrality": 0.004985754985754986,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 73.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 14,
+          "hop_2_token_cost": 261.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 313.0,
+          "hub_score": 0.20361356349483448,
+          "pagerank": 0.02445874245292374,
+          "token_cost": 73,
+          "weighted_centrality_cost": 1.785488199063433,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 3.0
+        },
+        "py:models#Base": {
+          "authority_score": 0.10419536378413864,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 7.0,
+          "fan_in": 3,
+          "fan_out": 0,
+          "hop_2_node_count": 8,
+          "hop_2_token_cost": 269.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 327.0,
+          "hub_score": 0.0,
+          "pagerank": 0.04616092475071541,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.3231264732550079,
+          "weighted_fan_in": 3.0,
+          "weighted_fan_out": 0
+        },
+        "py:models#Post": {
+          "authority_score": 0.07087295005909193,
+          "betweenness_centrality": 0.005698005698005698,
+          "degree_centrality": 0.07407407407407407,
+          "effective_token_cost": 22.0,
+          "fan_in": 1,
+          "fan_out": 3,
+          "hop_2_node_count": 6,
+          "hop_2_token_cost": 236.0,
+          "hop_3_node_count": 14,
+          "hop_3_token_cost": 312.0,
+          "hub_score": 0.04786660775409939,
+          "pagerank": 0.02903957472588979,
+          "token_cost": 22,
+          "weighted_centrality_cost": 0.6388706439695754,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 3.0
+        },
+        "py:models#Post.__tablename__": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 4,
+          "hop_2_token_cost": 113.0,
+          "hop_3_node_count": 6,
+          "hop_3_token_cost": 251.0,
+          "hub_score": 0.0,
+          "pagerank": 0.0303374772029415,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.2123623404205905,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:models#Post.id": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 11.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 4,
+          "hop_2_token_cost": 109.0,
+          "hop_3_node_count": 6,
+          "hop_3_token_cost": 247.0,
+          "hub_score": 0.0,
+          "pagerank": 0.0303374772029415,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.3337122492323565,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:models#User": {
+          "authority_score": 0.4099007499011502,
+          "betweenness_centrality": 0.00641025641025641,
+          "degree_centrality": 0.09259259259259259,
+          "effective_token_cost": 22.0,
+          "fan_in": 2,
+          "fan_out": 3,
+          "hop_2_node_count": 12,
+          "hop_2_token_cost": 294.0,
+          "hop_3_node_count": 19,
+          "hop_3_token_cost": 364.0,
+          "hub_score": 0.04786660775409939,
+          "pagerank": 0.031388719481361904,
+          "token_cost": 22,
+          "weighted_centrality_cost": 0.6905518285899619,
+          "weighted_fan_in": 2.0,
+          "weighted_fan_out": 3.0
+        },
+        "py:models#User.__tablename__": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 7.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 229.0,
+          "hop_3_node_count": 12,
+          "hop_3_token_cost": 309.0,
+          "hub_score": 0.0,
+          "pagerank": 0.031003068216787374,
+          "token_cost": 7,
+          "weighted_centrality_cost": 0.2170214775175116,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "py:models#User.id": {
+          "authority_score": 0.016661206862523356,
+          "betweenness_centrality": 0.0,
+          "degree_centrality": 0.018518518518518517,
+          "effective_token_cost": 11.0,
+          "fan_in": 1,
+          "fan_out": 0,
+          "hop_2_node_count": 5,
+          "hop_2_token_cost": 225.0,
+          "hop_3_node_count": 12,
+          "hop_3_token_cost": 305.0,
+          "hub_score": 0.0,
+          "pagerank": 0.031003068216787374,
+          "token_cost": 11,
+          "weighted_centrality_cost": 0.3410337503846611,
+          "weighted_fan_in": 1.0,
+          "weighted_fan_out": 0
+        },
+        "router_main_router": {
+          "authority_score": 3.945434725061903e-92,
+          "betweenness_centrality": 0.01282051282051282,
+          "degree_centrality": 0.05555555555555555,
+          "effective_token_cost": 5.0,
+          "fan_in": 1,
+          "fan_out": 2,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 85.0,
+          "hop_3_node_count": 10,
+          "hop_3_token_cost": 218.0,
+          "hub_score": 5.798287151432056e-79,
+          "pagerank": 0.040902755741228494,
+          "token_cost": 5,
+          "weighted_centrality_cost": 0.20451377870614246,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.6
+        },
+        "schema_main_UserOut": {
+          "authority_score": 0.003864904269579859,
+          "betweenness_centrality": 0.008547008547008548,
+          "degree_centrality": 0.037037037037037035,
+          "effective_token_cost": 10.0,
+          "fan_in": 1,
+          "fan_out": 1,
+          "hop_2_node_count": 7,
+          "hop_2_token_cost": 179.0,
+          "hop_3_node_count": 15,
+          "hop_3_token_cost": 320.0,
+          "hub_score": 0.03579249503390359,
+          "pagerank": 0.03329935721513038,
+          "token_cost": 10,
+          "weighted_centrality_cost": 0.3329935721513038,
+          "weighted_fan_in": 0.3,
+          "weighted_fan_out": 0.3
+        }
+      },
+      "top_betweenness": [
+        {
+          "id": "ep_main_get_user_GET",
+          "label": "GET /api/users/{user_id}\nget_user()",
+          "value": 0.014245014245014245
+        },
+        {
+          "id": "router_main_router",
+          "label": "📁 router\nprefix: /",
+          "value": 0.01282051282051282
+        },
+        {
+          "id": "schema_main_UserOut",
+          "label": "📦 UserOut\n(1 fields)",
+          "value": 0.008547008547008548
+        },
+        {
+          "id": "py:main#UserOut",
+          "label": "UserOut",
+          "value": 0.007122507122507123
+        },
+        {
+          "id": "py:models#User",
+          "label": "User",
+          "value": 0.00641025641025641
+        },
+        {
+          "id": "ep_main_create_user_POST",
+          "label": "POST /api/users\ncreate_user()",
+          "value": 0.005698005698005698
+        },
+        {
+          "id": "dep_main_get_db",
+          "label": "⚙️ get_db",
+          "value": 0.005698005698005698
+        },
+        {
+          "id": "py:alembic.versions.first",
+          "label": "alembic/versions/first.py",
+          "value": 0.005698005698005698
+        },
+        {
+          "id": "py:models#Post",
+          "label": "Post",
+          "value": 0.005698005698005698
+        },
+        {
+          "id": "py:models",
+          "label": "models.py",
+          "value": 0.004985754985754986
+        }
+      ],
+      "top_hop_2_cost": [
+        {
+          "id": "py:main#get_db",
+          "label": "get_db",
+          "value": 301.0
+        },
+        {
+          "id": "py:models#User",
+          "label": "User",
+          "value": 294.0
+        },
+        {
+          "id": "py:main#UserOut",
+          "label": "UserOut",
+          "value": 291.0
+        },
+        {
+          "id": "py:main#get_user",
+          "label": "get_user",
+          "value": 291.0
+        },
+        {
+          "id": "py:main#create_user",
+          "label": "create_user",
+          "value": 281.0
+        },
+        {
+          "id": "py:models#Base",
+          "label": "Base",
+          "value": 269.0
+        },
+        {
+          "id": "py:main#app",
+          "label": "app",
+          "value": 265.0
+        },
+        {
+          "id": "py:main#router",
+          "label": "router",
+          "value": 264.0
+        },
+        {
+          "id": "py:models",
+          "label": "models.py",
+          "value": 261.0
+        },
+        {
+          "id": "py:main",
+          "label": "main.py",
+          "value": 252.0
+        }
+      ],
+      "top_hop_3_cost": [
+        {
+          "id": "py:main#get_db",
+          "label": "get_db",
+          "value": 366.0
+        },
+        {
+          "id": "py:main#app",
+          "label": "app",
+          "value": 364.0
+        },
+        {
+          "id": "py:main#create_user",
+          "label": "create_user",
+          "value": 364.0
+        },
+        {
+          "id": "py:models#User",
+          "label": "User",
+          "value": 364.0
+        },
+        {
+          "id": "py:main#router",
+          "label": "router",
+          "value": 363.0
+        },
+        {
+          "id": "py:main#UserOut",
+          "label": "UserOut",
+          "value": 363.0
+        },
+        {
+          "id": "py:main#get_user",
+          "label": "get_user",
+          "value": 358.0
+        },
+        {
+          "id": "py:models#Base",
+          "label": "Base",
+          "value": 327.0
+        },
+        {
+          "id": "dep_main_get_db",
+          "label": "⚙️ get_db",
+          "value": 320.0
+        },
+        {
+          "id": "schema_main_UserOut",
+          "label": "📦 UserOut\n(1 fields)",
+          "value": 320.0
+        }
+      ],
+      "top_hubs": [
+        {
+          "id": "py:main",
+          "label": "main.py",
+          "value": 0.9740057157956753
+        },
+        {
+          "id": "py:models",
+          "label": "models.py",
+          "value": 0.20361356349483448
+        },
+        {
+          "id": "py:models#User",
+          "label": "User",
+          "value": 0.04786660775409939
+        },
+        {
+          "id": "py:models#Post",
+          "label": "Post",
+          "value": 0.04786660775409939
+        },
+        {
+          "id": "ep_main_get_user_GET",
+          "label": "GET /api/users/{user_id}\nget_user()",
+          "value": 0.037012096071330776
+        },
+        {
+          "id": "ep_main_create_user_POST",
+          "label": "POST /api/users\ncreate_user()",
+          "value": 0.03660406296330869
+        },
+        {
+          "id": "dep_main_get_db",
+          "label": "⚙️ get_db",
+          "value": 0.03579249503390359
+        },
+        {
+          "id": "schema_main_UserOut",
+          "label": "📦 UserOut\n(1 fields)",
+          "value": 0.03579249503390359
+        },
+        {
+          "id": "py:alembic.versions.first",
+          "label": "alembic/versions/first.py",
+          "value": 1.1542810660758484e-15
+        },
+        {
+          "id": "py:alembic.versions",
+          "label": "alembic.versions",
+          "value": 5.827630122650037e-44
+        }
+      ],
+      "top_pagerank": [
+        {
+          "id": "py:main#get_db",
+          "label": "get_db",
+          "value": 0.06703013947465203
+        },
+        {
+          "id": "py:main#UserOut.id",
+          "label": "id",
+          "value": 0.06695831436277022
+        },
+        {
+          "id": "py:main#UserOut",
+          "label": "UserOut",
+          "value": 0.052763196087881166
+        },
+        {
+          "id": "dep_main_get_db",
+          "label": "⚙️ get_db",
+          "value": 0.050083996491648505
+        },
+        {
+          "id": "py:models#Base",
+          "label": "Base",
+          "value": 0.04616092475071541
+        },
+        {
+          "id": "py:main#create_user",
+          "label": "create_user",
+          "value": 0.041243381729441864
+        },
+        {
+          "id": "router_main_router",
+          "label": "📁 router\nprefix: /",
+          "value": 0.040902755741228494
+        },
+        {
+          "id": "py:alembic.versions.first",
+          "label": "alembic/versions/first.py",
+          "value": 0.040902755741228494
+        },
+        {
+          "id": "ep_main_get_user_GET",
+          "label": "GET /api/users/{user_id}\nget_user()",
+          "value": 0.03949326888549058
+        },
+        {
+          "id": "ep_main_create_user_POST",
+          "label": "POST /api/users\ncreate_user()",
+          "value": 0.03949326888549058
+        }
+      ],
+      "top_weighted_cost": [
+        {
+          "id": "py:main",
+          "label": "main.py",
+          "value": 2.564713332904389
+        },
+        {
+          "id": "py:models",
+          "label": "models.py",
+          "value": 1.785488199063433
+        },
+        {
+          "id": "ep_main_get_user_GET",
+          "label": "GET /api/users/{user_id}\nget_user()",
+          "value": 0.750372108824321
+        },
+        {
+          "id": "py:models#User",
+          "label": "User",
+          "value": 0.6905518285899619
+        },
+        {
+          "id": "py:main#get_user",
+          "label": "get_user",
+          "value": 0.6773215374414472
+        },
+        {
+          "id": "py:models#Post",
+          "label": "Post",
+          "value": 0.6388706439695754
+        },
+        {
+          "id": "py:main#create_user",
+          "label": "create_user",
+          "value": 0.5361639624827442
+        },
+        {
+          "id": "py:main#UserOut",
+          "label": "UserOut",
+          "value": 0.5276319608788117
+        },
+        {
+          "id": "ep_main_create_user_POST",
+          "label": "POST /api/users\ncreate_user()",
+          "value": 0.5134124955113776
+        },
+        {
+          "id": "py:main#get_db",
+          "label": "get_db",
+          "value": 0.4692109763225642
+        }
+      ],
+      "total_effective_token_cost": 411.7,
+      "total_token_cost": 526
+    },
+    "edges_by_confidence": {
+      "framework_inferred": 10,
+      "static_certain": 23
+    },
+    "edges_by_relation": {
+      "CONTAINS": 19,
+      "DEPENDS_ON": 2,
+      "IMPLEMENTED_BY": 4,
+      "IMPORTS": 1,
+      "IMPORTS_SYMBOL": 1,
+      "INCLUDES": 1,
+      "INHERITS": 2,
+      "RESPONSE_MODEL": 1,
+      "ROUTES": 2
+    },
+    "methods_breakdown": {
+      "GET": 1,
+      "POST": 1
+    },
+    "nodes_by_kind": {
+      "app": 1,
+      "class": 3,
+      "constant": 5,
+      "dependency": 1,
+      "endpoint": 2,
+      "field": 5,
+      "function": 5,
+      "module": 3,
+      "package": 1,
+      "router": 1,
+      "schema": 1
+    },
+    "top_reused_dependencies": [
+      [
+        "get_db",
+        2
+      ]
+    ],
+    "total_apps": 1,
+    "total_dependencies": 1,
+    "total_endpoints": 2,
+    "total_routers": 1,
+    "total_schemas": 1,
+    "unique_tags": []
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "equal": true,
+  "excluded_fields": [
+    "nodes[*].metadata.analysis"
+  ],
+  "spec_version": 1
+}

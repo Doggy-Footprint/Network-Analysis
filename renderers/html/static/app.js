@@ -46,7 +46,7 @@
     };
     let data, arch, bottlenecks, network, nodes, nodeMap, metrics, candidates, byTarget, incident, category, page = 0,
         relationshipPage = 0,
-        selected, relations = [];
+        selected, relations = [], graphRelations = [], fileMode = false, details = {}, detailMap, detailIncident, fileIncident, implementationEdges, implementationTargets;
     const categorySelect = $('category-filter').querySelector('select'),
         sortSelect = $('metric-sort').querySelector('select'),
         kindSelect = $('candidate-kind-filter').querySelector('select'),
@@ -64,6 +64,130 @@
         });
         parent.append(d);
         return d;
+    }
+
+    function isFile(node) {
+        return fileMode ? node?.id.startsWith('file:') && !node.metadata?.boundary : true;
+    }
+
+    function symbolKind(node) {
+        return node?.kind || node?.category;
+    }
+
+    function visibleSymbol(node) {
+        const kind = symbolKind(node);
+        return ['class', 'interface', 'function'].includes(kind) ||
+            (!['method', 'field', 'constant', 'type_alias', 'enum', 'configuration', 'config', 'file', 'module', 'package'].includes(kind) &&
+                ['android', 'fastapi', 'sqlalchemy', 'nestjs'].includes(node?.provenance));
+    }
+
+    function displayOwner(id) {
+        const seen = new Set();
+        let current = implementationTargets.get(id) || id;
+        const initial = detailMap.get(current);
+        if (!visibleSymbol(initial) && !['method', 'field'].includes(symbolKind(initial))) return details.node_files?.[current] || current;
+        while (current && !seen.has(current)) {
+            seen.add(current);
+            const node = detailMap.get(current);
+            if (visibleSymbol(node) && (!['method', 'field'].includes(symbolKind(initial)) || ['class', 'interface'].includes(symbolKind(node)))) return current;
+            current = details.node_owners?.[current];
+        }
+        return details.node_files?.[id] || id;
+    }
+
+    function declarationEdge(edge) {
+        if (edge.relation === 'IMPLEMENTED_BY') return true;
+        if (!['CONTAINS', 'DECLARES', 'EXPORTS'].includes(edge.relation)) return false;
+        const from = detailMap.get(edge.from_id), to = detailMap.get(edge.to_id);
+        const language = ['python-core', 'typescript-core', 'kotlin-core'];
+        const declarations = ['package', 'module', 'file', 'class', 'interface', 'enum', 'function', 'method', 'field', 'constant', 'type_alias'];
+        return language.includes(from?.provenance) && language.includes(to?.provenance) &&
+            declarations.includes(symbolKind(from)) && declarations.includes(symbolKind(to));
+    }
+
+    function symbolGraphRelations(id) {
+        const file = details.node_files?.[id];
+        return (detailIncident.get(id) || []).map(edge => {
+            const endpoint = key => {
+                const target = implementationTargets.get(key) || key;
+                const targetFile = details.node_files?.[target];
+                return targetFile && targetFile !== file ? targetFile : displayOwner(target);
+            };
+            return {...edge, from_id: endpoint(edge.from_id), to_id: endpoint(edge.to_id), original: edge};
+        });
+    }
+
+    function fileSymbols(id, host) {
+        const ids = details.file_nodes?.[id] || [];
+        const source = ids.map(key => detailMap.get(key)).filter(Boolean);
+        const roles = new Map();
+        const implemented = new Set();
+        for (const edge of implementationEdges.get(id) || []) {
+            if (!roles.has(edge.to_id)) roles.set(edge.to_id, []);
+            roles.get(edge.to_id).push(detailMap.get(edge.from_id));
+            implemented.add(edge.from_id);
+        }
+        const visible = source.filter(node => !implemented.has(node.id) && visibleSymbol(node));
+        const visibleIds = new Set(visible.map(node => node.id));
+        const children = new Map();
+        for (const node of visible) {
+            let parent = details.node_owners?.[node.id];
+            const seen = new Set([node.id]);
+            while (parent && !visibleIds.has(parent) && !seen.has(parent)) {
+                seen.add(parent);
+                parent = details.node_owners?.[parent];
+            }
+            if (!visibleIds.has(parent)) parent = null;
+            if (!children.has(parent)) children.set(parent, []);
+            children.get(parent).push(node);
+        }
+        const foldedByOwner = new Map();
+        for (const member of source) {
+            if (!['method', 'field'].includes(member.kind || member.category)) continue;
+            const owner = displayOwner(member.id);
+            if (!foldedByOwner.has(owner)) foldedByOwner.set(owner, []);
+            foldedByOwner.get(owner).push(member);
+        }
+        host.append(el('h3', '클래스 · 인터페이스 · 함수'));
+        const tree = el('div', undefined, 'symbol-list');
+        tree.id = 'file-symbols';
+        const draw = (parent, into, seen) => {
+            for (const node of children.get(parent) || []) {
+                if (seen.has(node.id)) continue;
+                const row = el('div', undefined, 'symbol-entry');
+                row.dataset.symbolId = node.id;
+                row.append(button(node), el('span', node.kind || node.category || '프레임워크', 'badge'));
+                for (const role of roles.get(node.id) || []) if (role) row.append(el('span', role.category || role.kind || role.label, 'badge framework-role'));
+                const folded = foldedByOwner.get(node.id) || [];
+                if (folded.length) {
+                    const members = el('details');
+                    members.append(el('summary', `메서드 · 필드 ${folded.length}개`));
+                    let built = false;
+                    members.addEventListener('toggle', () => {
+                        if (!members.open || built) return;
+                        built = true;
+                        for (const member of folded) {
+                            const item = el('div', undefined, 'folded-symbol');
+                            item.dataset.foldedSymbolId = member.id;
+                            item.append(button(member), el('span', member.kind || member.category, 'badge'));
+                            for (const role of roles.get(member.id) || []) if (role) item.append(el('span', role.category || role.kind || role.label, 'badge framework-role'));
+                            rawDetails('선언의 전체 기록', member, item);
+                            members.append(item);
+                        }
+                    });
+                    row.append(members);
+                }
+                const nested = el('div', undefined, 'symbol-children');
+                draw(node.id, nested, new Set([...seen, node.id]));
+                if (nested.childNodes.length) row.append(nested);
+                into.append(row);
+            }
+        };
+        draw(null, tree, new Set());
+        if (!visible.length) tree.append(el('p', '표시할 선언이 없습니다. 제공된 참조는 파일 본문과 전체 연결 목록에서 확인하세요.', 'muted'));
+        host.append(tree);
+        const body = source.filter(node => !visibleIds.has(node.id) && !implemented.has(node.id));
+        if (body.length) rawDetails('파일 본문 · 접힌 선언과 참조', body, host);
     }
 
     function nodeName(node) {
@@ -89,10 +213,10 @@
     }
 
     function eligible() {
-        if (arch) return nodes.filter(n => metrics[n.id] && (category === 'all' || data.categories[n.id] === category));
-        if (category === 'all') return nodes.filter(n => metrics[n.id]);
+        if (arch) return nodes.filter(n => isFile(n) && metrics[n.id] && (category === 'all' || data.categories[n.id] === category));
+        if (category === 'all') return nodes.filter(n => isFile(n) && metrics[n.id]);
         const ids = new Set(Object.values(network.rankings_by_category?.[category] || {}).flat().map(r => r.node_id));
-        return nodes.filter(n => ids.has(n.id));
+        return nodes.filter(n => isFile(n) && ids.has(n.id));
     }
 
     function sorted(rows, key) {
@@ -160,7 +284,7 @@
             tr.append(td);
             host.append(tr);
         }
-        $('list-count').textContent = `${rows.length.toLocaleString('ko-KR')}개 표시 / 조건 일치 ${matchingCount.toLocaleString('ko-KR')}개 · 전체 ${nodes.filter(n=>metrics[n.id]).length.toLocaleString('ko-KR')}개 대상`;
+        $('list-count').textContent = `${rows.length.toLocaleString('ko-KR')}개 표시 / 조건 일치 ${matchingCount.toLocaleString('ko-KR')}개 · 전체 ${nodes.filter(n=>isFile(n) && metrics[n.id]).length.toLocaleString('ko-KR')}개 대상`;
         $('page-label').textContent = `${rows.length?page+1:0} / ${Math.ceil(rows.length/50)} 페이지`;
         $('page-prev').disabled = page === 0;
         $('page-next').disabled = (page + 1) * 50 >= rows.length;
@@ -181,13 +305,14 @@
             const row = el('div', undefined, 'relationship');
             row.dataset.relationshipRow = '';
             for (const id of [edge.from_id, edge.to_id]) {
-                const n = nodeMap.get(id) || {
-                    id
-                };
+                const currentFile = details.node_files?.[selected] || (isFile(nodeMap.get(selected)) ? selected : null);
+                const targetFile = details.node_files?.[id];
+                const destination = fileMode && targetFile && currentFile && targetFile !== currentFile ? targetFile : fileMode ? displayOwner(id) : id;
+                const n = nodeMap.get(destination) || detailMap.get(destination) || {id: destination};
                 row.append(button(n));
                 if (id === edge.from_id) row.append(el('span', ' → '));
             }
-            row.append(el('div', `${edge.relation||'관계'} · ${edge.confidence||'static_certain'} · ${edge.resolution||'exact'}`));
+            row.append(el('div', `${edge.relation||'관계'} · ${edge.confidence||'static_certain'} · ${edge.resolution||'exact'} · 중복 횟수 ${format(edge.weight ?? 1)}`));
             row.append(el('div', evidenceText(edge.evidence), 'path'));
             rawDetails('연결의 전체 근거와 다른 대상 후보', edge, row);
             host.append(row);
@@ -225,9 +350,9 @@
             }
         };
         const neighbors = new Map();
-        for (const e of relations) {
+        for (const e of graphRelations) {
             const other = e.from_id === id ? e.to_id : e.from_id;
-            if (other === id || !nodeMap.has(other)) continue;
+            if (other === id || !(nodeMap.has(other) || detailMap.has(other))) continue;
             const weight = Math.min(weights.confidence?.[e.confidence || 'static_certain'] ?? 1, weights.resolution?.[e.resolution || 'exact'] ?? 1);
             const entry = neighbors.get(other) || {
                 weight: -Infinity,
@@ -239,14 +364,14 @@
             entry.outgoing ||= e.from_id === id;
             neighbors.set(other, entry);
         }
-        const chosen = [...neighbors].sort((a, b) => b[1].weight - a[1].weight || (finite(metrics[b[0]]?.fan_in) ? metrics[b[0]].fan_in : 0) - (finite(metrics[a[0]]?.fan_in) ? metrics[a[0]].fan_in : 0) || cmp(a[0], b[0])).slice(0, 30);
+        const chosen = [...neighbors].sort((a, b) => b[1].weight - a[1].weight || (finite(metrics[details.node_files?.[b[0]] || b[0]]?.fan_in) ? metrics[details.node_files?.[b[0]] || b[0]].fan_in : 0) - (finite(metrics[details.node_files?.[a[0]] || a[0]]?.fan_in) ? metrics[details.node_files?.[a[0]] || a[0]].fan_in : 0) || cmp(a[0], b[0])).slice(0, 30);
         status.dataset.shown = String(chosen.length);
         status.dataset.omitted = String(neighbors.size - chosen.length);
         status.textContent = `직접 이웃 ${chosen.length}개 표시 · ${neighbors.size-chosen.length}개 생략 · 분류 필터와 관계없이 연결 표시`;
         const elements = [{
                 data: {
                     id,
-                    label: nodeMap.get(id).display_label || nodeMap.get(id).label || id,
+                    label: (detailMap.get(id) || nodeMap.get(id)).display_label || (detailMap.get(id) || nodeMap.get(id)).label || id,
                     center: true
                 },
                 position: {
@@ -290,13 +415,13 @@
             elements.push({
                 data: {
                     id: key,
-                    label: nodeMap.get(key).display_label || nodeMap.get(key).label || key
+                    label: (detailMap.get(key) || nodeMap.get(key)).display_label || (detailMap.get(key) || nodeMap.get(key)).label || key
                 },
                 position
             });
         }
         $('graph-container').style.height = compact && chosen.length > 15 ? '520px' : '';
-        for (const e of relations) {
+        for (const e of graphRelations) {
             if (e.from_id === e.to_id || !ids.has(e.from_id === id ? e.to_id : e.from_id)) continue;
             const key = JSON.stringify([e.from_id, e.to_id]);
             if (!groups.has(key)) groups.set(key, []);
@@ -371,7 +496,7 @@
             window.ReportGraph.on('tap', 'edge', event => {
                 const host = $('grouped-edge-detail');
                 host.replaceChildren(el('h3', '묶인 연결의 개별 근거'));
-                for (const e of event.target.data('relations')) host.append(el('pre', JSON.stringify(e, null, 2)));
+                for (const e of event.target.data('relations')) host.append(el('pre', JSON.stringify(e.original || e, null, 2)));
             });
         } catch (error) {
             status.classList.add('error');
@@ -410,17 +535,30 @@
     }
 
     function selectNode(id) {
-        const n = nodeMap.get(id);
+        if (fileMode && detailMap.has(id)) id = displayOwner(id);
+        const original = detailMap.get(id);
+        const n = nodeMap.get(id) || original;
         if (!n) return;
+        const symbol = fileMode && !!original && !!details.node_files?.[id];
+        const ownerFile = symbol ? details.node_files?.[id] : isFile(n) ? id : null;
         selected = id;
         relationshipPage = 0;
-        relations = incident.get(id) || [];
+        relations = symbol ? detailIncident.get(id) || [] : fileMode && isFile(n) ? fileIncident.get(id) || [] : fileMode ? detailIncident.get(id) || incident.get(id) || [] : incident.get(id) || [];
+        graphRelations = symbol ? symbolGraphRelations(id) : incident.get(id) || [];
         const host = $('node-detail');
         host.replaceChildren();
         host.dataset.selectedNode = id;
+        host.dataset.selectedFile = ownerFile || '';
+        host.dataset.detailKind = symbol ? 'symbol' : fileMode && !isFile(n) ? 'boundary' : 'file';
+        if (symbol && ownerFile) {
+            const back = el('button', '파일 상세로 돌아가기');
+            back.id = 'back-to-file';
+            back.onclick = () => selectNode(ownerFile);
+            host.append(back);
+        }
         host.append(el('div', '03 / 대상 상세', 'eyebrow'), el('h2', n.display_label || n.label || id), el('p', n.span ? evidenceText(n.span) : '소스 위치 정보 없음', 'path'));
         const values = el('div', undefined, 'metrics');
-        for (const key of Object.keys(definitions)) {
+        for (const key of symbol ? [] : Object.keys(definitions)) {
             const box = el('div', undefined, 'metric-value');
             box.append(el('span', definitions[key][0]), el('strong', format(metrics[id]?.[key])));
             values.append(box);
@@ -436,7 +574,9 @@
             rawDetails('후보의 전체 기록', c, box);
             host.append(box);
         }
-        rawDetails('전체 지표 · 식별자 출현 컨텍스트', metrics[id] || {}, host);
+        if (!symbol) rawDetails(fileMode ? '파일 전체 지표' : '전체 지표 · 식별자 출현 컨텍스트', metrics[id] || {}, host);
+        if (symbol && n.docstring) host.append(el('p', n.docstring));
+        if (fileMode && isFile(n)) fileSymbols(id, host);
         rawDetails('심볼 · 시그니처 · 문서 · 플래그 · 메타데이터', n, host);
         const gh = el('div', undefined, 'graph-head');
         gh.append(el('h3', '직접 연결'));
@@ -496,7 +636,7 @@
 
     function appendix() {
         const host = $('appendix-content');
-        host.append(el('p', '토큰은 문자 기반 추정치입니다. 소스 범위가 겹칠 수 있으므로 합계를 저장소 고유 텍스트 양이나 실제 LLM 사용량으로 해석하면 안 됩니다. 식별자 컨텍스트별 파일 수는 서로 겹칠 수 있습니다.'));
+        host.append(el('p', fileMode ? '파일 토큰은 파일 전체 텍스트에서 한 번 계산합니다. 파일 간 경로는 함수 호출 연쇄를 보장하지 않습니다.' : '토큰은 문자 기반 추정치입니다. 소스 범위가 겹칠 수 있으므로 합계를 저장소 고유 텍스트 양이나 실제 LLM 사용량으로 해석하면 안 됩니다. 식별자 컨텍스트별 파일 수는 서로 겹칠 수 있습니다.'));
         for (const [label, value] of [
                 ['스냅샷 · 제외 정책', bottlenecks?.snapshot],
                 ['연결 가중치 · 줄 수 임계값', bottlenecks?.edge_weights],
@@ -586,8 +726,40 @@
                         if (metrics[row.node_id][key] === undefined) metrics[row.node_id][key] = row.value;
                     }
         }
+        fileMode = arch?.granularity === 'file' || bottlenecks?.granularity === 'file';
+        details = arch?.details || {};
+        if (fileMode) {
+            delete definitions.identifier_file_count;
+            kinds.large_node[1] = '파일 전체 줄 수가 설정한 임계값을 넘습니다.';
+            $('node-search').placeholder = '파일 이름 또는 경로';
+            $('report-summary').append(el('p', '파일 간 경로는 함수 호출 연쇄를 보장하지 않습니다.', 'notice'));
+        }
         nodeMap = new Map(nodes.map(n => [n.id, n]));
-        candidates = bottlenecks?.candidates || [];
+        detailMap = new Map((details.nodes || []).map(n => [n.id, n]));
+        detailIncident = new Map();
+        fileIncident = new Map();
+        implementationEdges = new Map();
+        implementationTargets = new Map();
+        for (const edge of details.edges || []) if (edge.relation === 'IMPLEMENTED_BY') implementationTargets.set(edge.from_id, edge.to_id);
+        for (const edge of details.edges || []) {
+            if (edge.relation === 'IMPLEMENTED_BY') {
+                const file = details.node_files?.[edge.to_id];
+                if (file) {
+                    if (!implementationEdges.has(file)) implementationEdges.set(file, []);
+                    implementationEdges.get(file).push(edge);
+                }
+            }
+            if (declarationEdge(edge)) continue;
+            for (const id of new Set([edge.from_id, edge.to_id, displayOwner(edge.from_id), displayOwner(edge.to_id)].filter(Boolean))) {
+                if (!detailIncident.has(id)) detailIncident.set(id, []);
+                detailIncident.get(id).push(edge);
+            }
+            for (const file of new Set([details.node_files?.[edge.from_id], details.node_files?.[edge.to_id]].filter(Boolean))) {
+                if (!fileIncident.has(file)) fileIncident.set(file, []);
+                fileIncident.get(file).push(edge);
+            }
+        }
+        candidates = (bottlenecks?.candidates || []).filter(c => !fileMode || c.target.startsWith('file:'));
         byTarget = new Map();
         for (const c of candidates) {
             if (!byTarget.has(c.target)) byTarget.set(c.target, []);
@@ -611,7 +783,7 @@
         const counts = $('summary-counts');
         for (const [key, label] of Object.entries(categoryLabels).filter(([k]) => k !== 'all')) {
             const box = el('div', undefined, 'count');
-            box.append(el('strong', arch ? String(nodes.filter(n => data.categories[n.id] === key).length) : '—'), el('span', label));
+            box.append(el('strong', arch ? String(nodes.filter(n => isFile(n) && data.categories[n.id] === key).length) : '—'), el('span', label));
             counts.append(box);
         }
         for (const [key, [label]] of Object.entries(kinds)) {

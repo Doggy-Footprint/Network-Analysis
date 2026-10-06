@@ -97,13 +97,14 @@ class AndroidArchitectureGraphBuilder:
     def __init__(self, include_models: bool = True, include_dependencies: bool = True,
                  include_language_graph: bool = True, parse_cache: Optional[KotlinParseCache] = None,
                  snapshot: Optional[RepositorySnapshot] = None,
-                 analysis_config: Optional[GraphAnalysisConfig] = None):
+                 analysis_config: Optional[GraphAnalysisConfig] = None, *, compute_metrics: bool = True):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.parse_cache = parse_cache
         self.snapshot = snapshot
         self.analysis_config = analysis_config
+        self.compute_metrics = compute_metrics
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "CALLS": "unique",
@@ -443,7 +444,7 @@ class AndroidArchitectureGraphBuilder:
         if self.snapshot is None:
             enrich_repository(arch)
         else:
-            contents = self.snapshot.content_map()
+            contents = self.snapshot.source_map
             enrich_repository(arch, file_inventory=tuple(contents),
                               file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
         arch.stats = {
@@ -455,11 +456,12 @@ class AndroidArchitectureGraphBuilder:
         }
         if migration_stats is not None:
             arch.stats["migration_matching"] = migration_stats
-        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
-            arch.nodes,
-            arch.edges,
-            project_path=arch.project_path,
-        )
+        if self.compute_metrics:
+            arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
+                arch.nodes,
+                arch.edges,
+                project_path=arch.project_path,
+            )
         arch.report_collections = self._build_report_collections(arch)
 
         return arch

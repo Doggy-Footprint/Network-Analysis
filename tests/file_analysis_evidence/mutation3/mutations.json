@@ -1,0 +1,73 @@
+{
+  "spec_version": 2,
+  "status": "three selected classes detected/restored; Mermaid class requires reconfirmation after file-arrow observation refinement",
+  "selection_reason": "Three blocking classes are strongest because existing evidence could admit concrete violations of selected Mermaid unit, browser boundary surface, and original dependency selection. Supplementary pair-max/cost invariance have accepted strong independent assertions but would not prove these gaps closed.",
+  "classes": [
+    {
+      "class": "mermaid-constant",
+      "finding": "VF01-MERMAID-UNIT"
+    },
+    {
+      "class": "boundary-browser-inclusion",
+      "finding": "VF02-BOUNDARY-BROWSER"
+    },
+    {
+      "class": "candidate-internal-edge-loss",
+      "finding": "VF03-CANDIDATE-SELECTION",
+      "selection_reason": "Internal actual-dependency loss directly violates A05 and the project recall-priority definition. Ownership-only exclusion additionally has exact positive automated absence/evidence-set checks in corrected threshold siblings; no extra Cartesian selection introduced."
+    }
+  ],
+  "executions": [
+    {
+      "class": "mermaid-constant",
+      "source": "code_analyzer/cli.py",
+      "before_sha256": "8b23f5efc4e42ce861de46485dfeed5026e9b45894f815d2c180200854cf4766",
+      "injected_sha256": "c338303223455fee1f708a57806bf45a05139e5c2d8ff1cba3e8bb9b77daf9a8",
+      "backup_verified": true,
+      "injected": true,
+      "intended_assertion": "test_V08_schemas_json_and_mermaid",
+      "test_command": ".venv/bin/python -m pytest -q",
+      "test_status": "intended assertions detected",
+      "exit_code": 1,
+      "log": "mutation1-mermaid.log",
+      "observed": "file node declarations1vs3 and symbol declarations a/main.py vs original app/router; both intended V08assertions fail. Additional NestJS expectedRoot failure corroborates.",
+      "full_result": "3 failed, 1038 passed, 197 subtests passed in 654.67s (0:10:54)",
+      "restored_sha256": "8b23f5efc4e42ce861de46485dfeed5026e9b45894f815d2c180200854cf4766",
+      "restore_verified": true
+    },
+    {
+      "class": "boundary-browser-inclusion",
+      "source": "renderers/html/static/app.js",
+      "before_sha256": "13453b33ad8aff84fa5317e914545f7a3bbc078fe0765f834cdc03d1f567a4b0",
+      "injected_sha256": "b07c2ffe66bfe89632f8acdf40fe8cc3834bdd8b410ced6a4f0d145f32be7b8b",
+      "backup_verified": true,
+      "injected": true,
+      "intended_assertion": "test_V10_file_symbol_external_back_fold_roles_and_filters",
+      "test_command": ".venv/bin/python -m pytest -q",
+      "test_status": "intended assertion detected",
+      "exit_code": 1,
+      "log": "mutation2-boundary.log",
+      "observed": "All-category file list includes extra external-boundary; exact three-file browser assertion fails. No unrelated failures.",
+      "full_result": "1 failed, 1040 passed, 200 subtests passed in 633.96s (0:10:33)",
+      "restored_sha256": "13453b33ad8aff84fa5317e914545f7a3bbc078fe0765f834cdc03d1f567a4b0",
+      "restore_verified": true
+    },
+    {
+      "class": "candidate-internal-edge-loss",
+      "source": "bottlenecks/core.py",
+      "before_sha256": "4b4f7bcb1aa924e8989221f2e0c1d9d614321e6a006c04d2ac7181a34a60451d",
+      "injected_sha256": "6e060b4027f573ea5fa79ca34cf33575ab2b4f575bb15f729ea578bbe723328e",
+      "backup_verified": true,
+      "injected": true,
+      "intended_assertion": "test_V06_two_files_spread and test_V06_unresolved_conditions_and_grouping[unresolved-many]",
+      "test_command": ".venv/bin/python -m pytest -q",
+      "test_status": "both intended assertions detected",
+      "exit_code": 1,
+      "log": "mutation3-candidates.log",
+      "observed": "Spread candidate expected1 becomes0; unresolved file candidate evidence loses unique internal line4. Both intended V06assertions fail, unrelated tests pass.",
+      "full_result": "2 failed, 1039 passed, 200 subtests passed in 648.89s (0:10:48)",
+      "restored_sha256": "4b4f7bcb1aa924e8989221f2e0c1d9d614321e6a006c04d2ac7181a34a60451d",
+      "restore_verified": true
+    }
+  ]
+}

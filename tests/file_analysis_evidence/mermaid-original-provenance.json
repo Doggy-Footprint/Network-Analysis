@@ -1,0 +1,16 @@
+{
+  "base_commit": "7eb255b0d552771c01e11fc2b4475663815c9567",
+  "source": "isolated git-archive original CLI public --mermaid FastAPI default symbol, exact existing FILES",
+  "command": "original python -m code_analyzer.cli <fixture> -f fastapi --mermaid -o baseline.html",
+  "input_sha256": "467ab5757141843e0f822b25078e251a7057251019f5011c1e738b080995ebd3",
+  "stdout_sha256": "994d26234f717c8547d830a9cb468f6c5cdd95f2d91f36c02e43ca5b2a20b32e",
+  "exit_code": 0,
+  "normalization": "absolute fixture root only",
+  "architecture_sha256": "758e8e87d3d885a4129fc83fe39f9c10300b58286ae9253293080460070ba2ce",
+  "architecture_source": "same original HEAD public CLI with --json added; CLI snapshot policy unlike directAPI explicit snapshot",
+  "original_cli_extracted_paths": [
+    "alembic/versions/first.py",
+    "main.py",
+    "models.py"
+  ]
+}

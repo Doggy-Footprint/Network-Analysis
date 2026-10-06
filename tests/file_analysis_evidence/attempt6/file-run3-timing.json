@@ -1,0 +1,18 @@
+{
+  "end": 398951.700977333,
+  "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html",
+  "mode": "file-run3",
+  "observer_overhead_seconds": 0.4789225420099683,
+  "pid": 11006,
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "spec_version": 2,
+  "stages": {
+    "conversion": 1.39538016699953,
+    "extraction": 71.66410141595406,
+    "integration": 0.0,
+    "metrics_candidates": 0.29059987503569573,
+    "output": 1.5179748750524595,
+    "snapshot": 0.06245562498224899
+  },
+  "total_seconds": 74.930511958024
+}

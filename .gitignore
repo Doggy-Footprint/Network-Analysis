@@ -40,3 +40,8 @@ output/
 agent-docs/specs/.active
 agent-docs/specs/.running/
 agent-docs/specs/.seed/
+
+/tests/file_analysis_evidence/**/*.html
+/tests/file_analysis_evidence/**/optimized-symbol-relations.json
+/tests/file_analysis_evidence/baseline-snapshot-contents.json
+/tests/file_analysis_evidence/compat-diagnostic/

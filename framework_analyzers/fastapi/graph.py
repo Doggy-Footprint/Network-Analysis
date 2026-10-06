@@ -114,12 +114,14 @@ class ArchitectureGraphBuilder:
         include_language_graph: bool = True,
         snapshot: Optional[RepositorySnapshot] = None,
         analysis_config: Optional[GraphAnalysisConfig] = None,
+        *, compute_metrics: bool = True,
     ):
         self.include_models = include_models
         self.include_dependencies = include_dependencies
         self.include_language_graph = include_language_graph
         self.snapshot = snapshot
         self.analysis_config = analysis_config
+        self.compute_metrics = compute_metrics
 
     FRAMEWORK_RULE_SPECIFICITY = {
         "MIDDLEWARE_OF": "unique",
@@ -458,7 +460,7 @@ class ArchitectureGraphBuilder:
         if self.snapshot is None:
             enrich_repository(arch)
         else:
-            contents = self.snapshot.content_map()
+            contents = self.snapshot.source_map
             enrich_repository(arch, file_inventory=tuple(contents),
                               file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
         arch.stats = {
@@ -474,11 +476,12 @@ class ArchitectureGraphBuilder:
             "edges_by_relation": dict(Counter(edge.relation for edge in arch.edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in arch.edges)),
         }
-        arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
-            arch.nodes,
-            arch.edges,
-            project_path=arch.project_path,
-        )
+        if self.compute_metrics:
+            arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
+                arch.nodes,
+                arch.edges,
+                project_path=arch.project_path,
+            )
         arch.report_collections = self._build_report_collections(arch)
 
         return arch

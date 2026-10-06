@@ -1,0 +1,17 @@
+{
+  "end": 353461.350032166,
+  "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/optimized-symbol.html",
+  "mode": "optimized-symbol",
+  "observer_overhead_seconds": 1.2528775000246242,
+  "pid": 9402,
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "stages": {
+    "conversion": 0.0,
+    "extraction": 71.87171424902044,
+    "integration": 0.0,
+    "metrics_candidates": 2.7633912499877624,
+    "output": 1.1097043749759905,
+    "snapshot": 0.0777814169996418
+  },
+  "total_seconds": 75.82259129098384
+}

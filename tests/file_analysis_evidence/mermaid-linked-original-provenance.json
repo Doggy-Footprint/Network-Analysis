@@ -1,0 +1,26 @@
+{
+  "base_commit": "7eb255b0d552771c01e11fc2b4475663815c9567",
+  "source": "original HEAD public CLI on existing V08oneexample strengthened by prefix from models import User; global FILES/directAPIgoldens unchanged",
+  "input_sha256": "056d8cb7e0ab5135e4b5a460ebd91e66cd4d47c1edb8c760cc21c882dc3274cf",
+  "architecture_sha256": "b690b47516a517fbbdace84a018666125c26a28392673760c66cf7b9a5624bf3",
+  "stdout_sha256": "a91e2919b486681dd09e3659eb8d8b9a2c156bc082b69e070523e733c4f88fbc",
+  "original_cli_extracted_paths": [
+    "alembic/versions/first.py",
+    "main.py",
+    "models.py"
+  ],
+  "cross_file_relations": [
+    [
+      "main.py",
+      "IMPORTS",
+      "models.py"
+    ],
+    [
+      "main.py",
+      "IMPORTS_SYMBOL",
+      "models.py"
+    ]
+  ],
+  "exit_code": 0,
+  "normalization": "absolute fixture root only"
+}

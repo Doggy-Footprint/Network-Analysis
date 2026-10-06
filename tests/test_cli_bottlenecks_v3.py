@@ -45,7 +45,7 @@ def out(tmp_path):
 
 
 def run_cli(monkeypatch, *arguments):
-    monkeypatch.setattr(sys, "argv", ["code-analyzer", *arguments])
+    monkeypatch.setattr(sys, "argv", ["code-analyzer", *arguments, "--granularity", "symbol"])
     try:
         cli.main()
     except SystemExit as exit_request:

@@ -60,7 +60,7 @@ def annotate_nodes(
         metadata["file_path"] = relative
         if absolute not in sources:
             if snapshot is not None:
-                sources[absolute] = snapshot.content_map().get(relative)
+                sources[absolute] = snapshot.source_map.get(relative)
             else:
                 try:
                     sources[absolute] = absolute.read_text(encoding="utf-8")

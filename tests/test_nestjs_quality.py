@@ -28,7 +28,7 @@ def cli_bytes(root, *flags, seed="0"):
         bottle = Path(temp) / "bottlenecks.json"
         environment = dict(os.environ, PYTHONHASHSEED=seed)
         command = [sys.executable, "-c", "from code_analyzer.cli import main; main()", str(root), *flags,
-                   "-o", str(output), "--json", "--bottlenecks", str(bottle)]
+                   "--granularity", "symbol", "-o", str(output), "--json", "--bottlenecks", str(bottle)]
         result = subprocess.run(command, cwd=REPO, env=environment, capture_output=True, text=True)
         if result.returncode:
             raise AssertionError(f"CLI exit {result.returncode}: {result.stderr}")

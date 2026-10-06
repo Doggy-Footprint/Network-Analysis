@@ -554,3 +554,23 @@ footer {
 .representative>.value {
     flex-shrink: 0;
 }
+
+.symbol-list {
+    margin: 16px 0;
+}
+
+.symbol-entry,
+.folded-symbol {
+    padding: 10px 0;
+}
+
+.symbol-children {
+    margin-left: 20px;
+    padding-left: 16px;
+    border-left: 2px solid var(--line);
+}
+
+.framework-role {
+    background: #f4eddb;
+    color: #785d21;
+}

@@ -1,0 +1,820 @@
+{
+  "spec_version": 2,
+  "correction_impact": {
+    "shared_causes": [
+      "Draft oracles checked relation names/current-symbol parity rather than independent semantic targets",
+      "Draft Mermaid test observed saved HTML rather than baseline stdout and classified single-language limitation as E01",
+      "Draft timing acceptance preceded browser checks; graph timer observed frames before layout completion",
+      "Draft option oracle confused schema and model kinds",
+      "Some draft float assertions inherited pytest approximate defaults broader than Q01"
+    ],
+    "affected_obligations": [
+      "V01",
+      "V03",
+      "V06",
+      "V07",
+      "V08",
+      "V12",
+      "V13",
+      "V14",
+      "V05"
+    ],
+    "checked_siblings": [
+      "V02: immutable raw equality unchanged; main scan/cache review pending",
+      "V04: ownership partitions unchanged",
+      "V05: independent chain equations/token arithmetic/discounts unchanged",
+      "V09: finite 100/101,50/51,0/1/30/31 and grouped targets unchanged",
+      "V10: mixed transitions/roles unchanged",
+      "V11: all five hostile surfaces/offline trace unchanged",
+      "V15: main source/README review pending",
+      "V16: no required test skipped"
+    ],
+    "changed_dependencies": [
+      "V01 depends on baseline public schema_main_UserOut and dep_main_get_db IDs; language nodes preserved",
+      "V07 depends on baseline public FastAPI DI IDs plus independently authored source endpoint/ORM/Android/Nest identity expectations",
+      "V08 language-only Mermaid is baseline characterization, success with diagnostic and no diagram",
+      "V13 verifies baseline pickle hash and optimized-symbol timing hash, unique worker PIDs/modes, finite timings and sums, all raw runs ≤600s, failure never leaves passed=true",
+      "V14 graph-completion observation uses public Cytoscape layoutstop plus two frames; browser artifacts record five fresh contexts and input SHA256",
+      "V03/V05 float assertions now explicitly apply abs1e-9 or rel1e-8; independent token arithmetic matches pre-existing digit-group tokenizer tests"
+    ],
+    "prior_acceptance_needing_invalidation": "none: all obligations remain pending, no feature tests executed"
+  },
+  "obligations": [
+    {
+      "obligation": "V01",
+      "parents": [
+        "F01",
+        "F02",
+        "F09",
+        "Q04",
+        "Q05",
+        "C01",
+        "C11"
+      ],
+      "variants_target_surface": "CLI/직접API",
+      "layer_selection_policy": "integration;기본 file7단독분석기·4builder 직접호출·3제외옵션 각1예제; symbol 기존값은 V08/V16의 원본 byte 특성검사",
+      "technique": "scenario",
+      "coverage_items": [
+        "python",
+        "typescript",
+        "kotlin",
+        "fastapi",
+        "android",
+        "sqlalchemy",
+        "nestjs",
+        "direct-fastapi",
+        "direct-android",
+        "direct-sqlalchemy",
+        "direct-nestjs",
+        "no-language",
+        "no-models",
+        "no-deps"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "file 순서·CLI1회·기존API기본계산·제외분석재실행0; symbol 기존 계산/출력은 V08/V16으로 보존 확인",
+      "procedure_artifact": "pytest trace, coverage.json, immutable Nest standalone byte baselines; direct-api-original.json + provenance direct-api-review.json (main original HEAD capture), all3 public stages exact equality",
+      "tests": [
+        "tests/test_file_analysis_cli.py:test_V01_single_cli_order_one_final_metrics",
+        "tests/test_file_analysis_cli.py:test_V01_direct_builder_defaults_characterization",
+        "tests/test_file_analysis_cli.py:test_V01_exclusions_applied_before_details"
+      ],
+      "independent_expected_source": "Default file 7 single analyzers: public GraphAnalyzer and snapshot trace, final graph IDs, one metric call; four direct builders preserve default metric execution; public PythonGraphAnalyzer.build spy for extraction/no reexecution and original FastAPI model/dependency identities for exclusions. Symbol original output preservation delegated to unchanged V08/V16 immutable byte characterization, no symbol1call requirement. Four direct outputs additionally compare ORIGINAL HEAD public schema5 builder serialization before/after default analyze_bottlenecks and complete default report; same FILES SHA467ab5757141843e0f822b25078e251a7057251019f5011c1e738b080995ebd3. Original commit7eb255b0... golden never refreshed; only absolute input-root aliases normalized.",
+      "escaping_defect": "File symbol-metric/repeated calculation or excluded-language reexecution; changed symbol fallback costs rejected by original immutable byte baselines. Direct default output/cost/prior-analysis mutation regression rejected by full original public3stage equality.",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V02",
+      "parents": [
+        "F03",
+        "F15",
+        "Q01",
+        "Q04",
+        "C03",
+        "C18"
+      ],
+      "variants_target_surface": "Kotlin/TESTS관계",
+      "layer_selection_policy": "integration;열거 작은fixture와 고정Tag-Manager",
+      "technique": "metamorphic testing",
+      "coverage_items": [
+        "case",
+        "unicode",
+        "string",
+        "comment",
+        "boundary",
+        "nonidentifier",
+        "nested",
+        "duplicates",
+        "ambiguous-order",
+        "Tag-Manager"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "변경전후 전체관계완전일치·scan횟수",
+      "procedure_artifact": "--baseline 변경전/--verify 변경후, symbol-equivalence.json",
+      "tests": [
+        "tests/test_file_analysis_benchmark.py:test_V13_real_snapshot_symbol_equivalence_and_three_processes",
+        "scripts/benchmark_file_analysis.py:verify_artifacts"
+      ],
+      "independent_expected_source": "Immutable pre-change raw characterization and snapshot SHA256; original full equality except metadata.analysis.",
+      "escaping_defect": "Boundary/case/order/duplicate/evidence change or symbolwise scan",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V03",
+      "parents": [
+        "F04",
+        "F05",
+        "F06",
+        "Q01",
+        "C04",
+        "C05",
+        "C06"
+      ],
+      "variants_target_surface": "공통변환",
+      "layer_selection_policy": "unit;손으로만든GraphNode/Edge, 추출결과를oracle로쓰지 않음",
+      "technique": "equivalence partitioning",
+      "coverage_items": [
+        "internal-only",
+        "isolated",
+        "empty-file",
+        "empty-graph",
+        "docs-only",
+        "mixed-key",
+        "candidate-only",
+        "duplicate-weight",
+        "package-membership",
+        "real-boundary",
+        "boundary-incoming"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "독립ID/edge/ref·self0·maxweight·boundary0",
+      "procedure_artifact": "pytest, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_core.py:test_V03_file_partitions",
+        "tests/test_file_analysis_core.py:test_V03_mixed_keys_candidate_only_duplicate_weights",
+        "tests/test_file_analysis_core.py:test_V03_package_boundary_and_incoming",
+        "tests/test_file_analysis_core.py:test_V03_every_raw_relation_field_and_order_preserved"
+      ],
+      "independent_expected_source": "Hand-authored partitions/IDs/ordered raw fields; mixed-key fixture varies confidence, resolution and relation separately, without Cartesian product; pair max1 not sum.",
+      "escaping_defect": "Self-edge/candidate dependency, sum instead of max, raw field loss",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V04",
+      "parents": [
+        "F05",
+        "F12",
+        "Q01",
+        "C07"
+      ],
+      "variants_target_surface": "소속/role/config",
+      "layer_selection_policy": "unit+integration;적합한 각언어/framework예제",
+      "technique": "classification tree",
+      "coverage_items": [
+        "nested-class",
+        "nested-function",
+        "method",
+        "field",
+        "top-reference",
+        "implemented-by",
+        "configuration",
+        "framework-same-relation-name"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "소속과실제의존보존",
+      "procedure_artifact": "pytest, browser.json, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_core.py:test_V04_owners_roles_configuration",
+        "tests/test_file_analysis_core.py:test_V04_ownership_priority_and_normalization",
+        "tests/test_file_analysis_browser.py:test_V10_file_symbol_external_back_fold_roles_and_filters"
+      ],
+      "independent_expected_source": "Spec ownership priority and manually assigned file/class IDs.",
+      "escaping_defect": "Wrong owner or semantic framework edge removal",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V05",
+      "parents": [
+        "F07",
+        "Q01",
+        "C08"
+      ],
+      "variants_target_surface": "file지표/비용",
+      "layer_selection_policy": "unit;A→B→C+D손그래프·전체텍스트·겹치는symbol",
+      "technique": "metamorphic testing",
+      "coverage_items": [
+        "PageRank",
+        "HITS",
+        "degree",
+        "betweenness",
+        "fan",
+        "weighted-fan",
+        "hop2",
+        "hop3",
+        "whole-text",
+        "duplicate-symbol-invariance",
+        "boundary-zero",
+        "discount-1",
+        "discount-0.1",
+        "discount-0",
+        "no-identifier"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "독립손계산/고정선형방정식·기존tokenizer산술·Q01오차",
+      "procedure_artifact": "pytest, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_core.py:test_V05_independent_chain_metrics_and_whole_text",
+        "tests/test_file_analysis_core.py:test_V05_duplicate_symbol_invariance_and_discounts"
+      ],
+      "independent_expected_source": "Independent chain PageRank normalization: a=d=b0, b=(1+d)b0, c=(1+d+d²)b0 so b0=1/(4+2d+d²), d=.85; L2 HITS1/sqrt(2); degree/(2*(n-1)); betweenness1/6; independent undirected hop sets; pre-existing tokenizer ASCII/digit arithmetic and discounts1/.1/0; Q01 tolerances explicit. Existing whole-text coverage also uses literal valid Python text value = \"a\\u2028b\":13characters, ceil(13/4)=4tokens, len(splitlines)=2filelines; source span1..1 preserved in details, filespan1..2, successful v5 report/token4. No extra selection matrix or error expectation.",
+      "escaping_defect": "Symbol score/cost summation, wrong normalization/discount",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V06",
+      "parents": [
+        "F08",
+        "Q01",
+        "C09",
+        "C10"
+      ],
+      "variants_target_surface": "후보",
+      "layer_selection_policy": "unit;고정threshold열거입력",
+      "technique": "boundary value analysis (3-value)",
+      "coverage_items": [
+        "large-T-1",
+        "large-T",
+        "large-T+1",
+        "spread-T-1",
+        "spread-T",
+        "spread-T+1",
+        "spread-2files",
+        "unresolved-many",
+        "dynamic-flag",
+        "ambiguous-only"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "초과조건·file/kind1후보·모든근거",
+      "procedure_artifact": "pytest, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_core.py:test_V06_large_three_value_boundary",
+        "tests/test_file_analysis_core.py:test_V06_spread_three_value_boundary",
+        "tests/test_file_analysis_core.py:test_V06_two_files_spread",
+        "tests/test_file_analysis_core.py:test_V06_unresolved_conditions_and_grouping"
+      ],
+      "independent_expected_source": "Literal threshold3 with2/3/4; two-source exact evidence positions, extent and unresolved source-file evidence grouping. A05 boundary edge has unique line3 absent from unresolved reference, independently asserted in source-file candidate and boundary target excluded.",
+      "escaping_defect": "Threshold off-by-one, per-symbol duplication or evidence loss",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V07",
+      "parents": [
+        "F01",
+        "F05",
+        "F09",
+        "Q01",
+        "Q05",
+        "C02"
+      ],
+      "variants_target_surface": "다중분석기·semantic관계",
+      "layer_selection_policy": "integration;C02의5조합 각1fixture의file/symbol",
+      "technique": "scenario",
+      "coverage_items": [
+        "fastapi-ts",
+        "android-fastapi",
+        "fastapi-sqlalchemy-ts",
+        "nestjs-ts",
+        "sqlalchemy-python"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "DI/HTTP/ORM/MIGRATES·기존대상보전",
+      "procedure_artifact": "pytest 독립원본기대값, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_cli.py:test_V07_combinations_preserve_semantic_details"
+      ],
+      "independent_expected_source": "Source-derived exact client/method/path target triples, fixed FastAPI DI identities (main independently observed baseline HEAD), migration file→User/Post targets, Android ViewModel→providesName and Nest C→S/Root→S. File vs symbol full raw parity is supplementary, not oracle.",
+      "escaping_defect": "Lost or retargeted semantic relationship",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V08",
+      "parents": [
+        "F09",
+        "F10",
+        "F14",
+        "Q05",
+        "C11",
+        "C12"
+      ],
+      "variants_target_surface": "schema/JSON/Mermaid",
+      "layer_selection_policy": "integration;file/symbol/기존입력",
+      "technique": "syntax testing",
+      "coverage_items": [
+        "architecture6",
+        "v5",
+        "architecture5",
+        "v4",
+        "v4-only",
+        "html-json-identical",
+        "no-symbol-metrics",
+        "file-mermaid",
+        "symbol-mermaid",
+        "language-mermaid-existing-limit"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "schema·ID·details참조·동일데이터·기존제한",
+      "procedure_artifact": "pytest, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_cli.py:test_V08_schemas_json_and_mermaid",
+        "tests/test_file_analysis_cli.py:test_V08_legacy_v4_only_renderer_does_not_invent_details",
+        "tests/test_file_analysis_cli.py:test_V08_language_mermaid_existing_limit_characterization",
+        "tests/test_nestjs_quality.py:TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical"
+      ],
+      "independent_expected_source": "Literal schema/unit and inline JSON equality; file-only one final metrics call; Mermaid original stdout and single-language existing limitation characterization. Symbol values, including metadata.analysis-dependent sourceless fallback, are pinned by unchanged original eight standalone adapter JSON/bottleneck byte hashes (FastAPI-template/Android included).",
+      "escaping_defect": "Wrong schema/unit or divergent embedded output",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V09",
+      "parents": [
+        "F11",
+        "F13",
+        "Q06",
+        "C13"
+      ],
+      "variants_target_surface": "순위/페이지/graph",
+      "layer_selection_policy": "end-to-end;열거경계",
+      "technique": "boundary value analysis (2-value)",
+      "coverage_items": [
+        "top100",
+        "top101",
+        "page50",
+        "page51",
+        "neighbors0",
+        "neighbors1",
+        "neighbors30",
+        "neighbors31",
+        "external-file-group",
+        "all-evidence"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "개수·페이지·상한·생략·근거접근",
+      "procedure_artifact": "Playwright pytest, browser.json",
+      "tests": [
+        "tests/test_file_analysis_browser.py:test_V09_file_top100_and_full_transition",
+        "tests/test_file_analysis_browser.py:test_V09_file_page_boundaries",
+        "tests/test_file_analysis_browser.py:test_V09_symbol_neighbor_limit_and_full_evidence",
+        "tests/test_file_analysis_browser.py:test_V09_external_group_original_targets_and_relationship_paging"
+      ],
+      "independent_expected_source": "Independent finite browser fixtures; browser agent supplies detailed item map.",
+      "escaping_defect": "Pagination/cutoff/cap off-by-one or omitted evidence loss",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V10",
+      "parents": [
+        "F11",
+        "F12",
+        "F13",
+        "Q06",
+        "C14"
+      ],
+      "variants_target_surface": "탐색/필터/role",
+      "layer_selection_policy": "end-to-end;고정mixedfixture의각전이",
+      "technique": "state transition testing",
+      "coverage_items": [
+        "file-to-class",
+        "file-to-function",
+        "symbol-to-external-file",
+        "back-to-file",
+        "method-fold",
+        "field-fold",
+        "nested-owner",
+        "framework-role",
+        "framework-only",
+        "search",
+        "category",
+        "candidate-filter",
+        "initial-no-graph"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "대상·소속·file중심·지연생성",
+      "procedure_artifact": "Playwright pytest, browser.json",
+      "tests": [
+        "tests/test_file_analysis_browser.py:test_V10_file_symbol_external_back_fold_roles_and_filters",
+        "tests/test_file_analysis_browser.py:test_V10_framework_only_available_information"
+      ],
+      "independent_expected_source": "Independent mixed ownership tree; folded selectors from approved handoff; class and folded-method IMPLEMENTED_BY roles; enum/config targets map to source file body and remain available as raw relationship targets; no eager folded DOM requirement.",
+      "escaping_defect": "Wrong transition/owner or premature graph",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V11",
+      "parents": [
+        "F14",
+        "Q08",
+        "C15"
+      ],
+      "variants_target_surface": "escaping/offline",
+      "layer_selection_policy": "end-to-end;5surface와network차단",
+      "technique": "error guessing",
+      "coverage_items": [
+        "title",
+        "path",
+        "docstring",
+        "evidence",
+        "candidate",
+        "offline-navigation"
+      ],
+      "coverage_target": "none — experience-based",
+      "observation_expected": "모든열거surface script/외부요청/error0·상세접근",
+      "procedure_artifact": "Playwright pytest, browser.json",
+      "tests": [
+        "tests/test_file_analysis_browser.py:test_V11_source_surfaces_inert_and_offline_navigation"
+      ],
+      "independent_expected_source": "Sentinel strings at all5surfaces; network/error trace; browser agent supplies detailed item map.",
+      "escaping_defect": "Script execution/network request/browser error",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V12",
+      "parents": [
+        "F16",
+        "Q07",
+        "E01",
+        "E02",
+        "E03",
+        "C16",
+        "C17"
+      ],
+      "variants_target_surface": "오류",
+      "layer_selection_policy": "integration;E01/E02각조건·3출력쓰기",
+      "technique": "decision table",
+      "coverage_items": [
+        "granularity",
+        "duplicate-analyzer",
+        "entrypoint",
+        "multi-mermaid",
+        "output-collision",
+        "missing-path",
+        "not-directory",
+        "bad-weights",
+        "bad-snapshot",
+        "bad-graph-id",
+        "bad-reference",
+        "ownership-conflict",
+        "html-write",
+        "architecture-write",
+        "bottleneck-write"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "정의신호·후속상태",
+      "procedure_artifact": "pytest writer/read spies·기존hash, coverage.json",
+      "tests": [
+        "tests/test_file_analysis_cli.py:test_V12_parser_errors_preserve_output",
+        "tests/test_file_analysis_cli.py:test_V12_output_collision",
+        "tests/test_file_analysis_cli.py:test_V12_input_errors_no_write",
+        "tests/test_file_analysis_cli.py:test_V12_invalid_api_input",
+        "tests/test_file_analysis_cli.py:test_V12_write_failures_nonzero"
+      ],
+      "independent_expected_source": "Spec exit codes, old-output bytes, input/render spies, typed API errors.",
+      "escaping_defect": "Invalid input reaching extraction/output or write error success",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V13",
+      "parents": [
+        "F15",
+        "Q02",
+        "Q04",
+        "E04",
+        "C18",
+        "C20"
+      ],
+      "variants_target_surface": "추출/전체시간",
+      "layer_selection_policy": "end-to-end;같은snapshot·file3독립process·symbol비교·실행기거절입력",
+      "technique": "scenario",
+      "coverage_items": [
+        "baseline-snapshot",
+        "baseline-relations",
+        "optimized-symbol",
+        "file-run1",
+        "file-run2",
+        "file-run3",
+        "snapshot-mismatch",
+        "relation-mismatch",
+        "timing-failure",
+        "missing-browser-evidence"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "완전등가·중앙값≤180·6단계/전체시간·오류거절",
+      "procedure_artifact": "--verify를pytest에포함, benchmark.json·baseline산출물",
+      "tests": [
+        "tests/test_file_analysis_benchmark.py:test_V13_real_snapshot_symbol_equivalence_and_three_processes",
+        "tests/test_file_analysis_benchmark.py:test_V13_runner_rejects_false_acceptance"
+      ],
+      "independent_expected_source": "Fixed baseline graph/full pickle digest, optimized-symbol hash and raw equality; three independent worker PIDs/modes, six finite additive stages; raw total ≤600seconds and median≤180; corrupted artifact partitions reject without passed=true.",
+      "escaping_defect": "Hash/relation mismatch accepted, weakened threshold or missing artifact accepted",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V14",
+      "parents": [
+        "Q03",
+        "C19"
+      ],
+      "variants_target_surface": "browser시간",
+      "layer_selection_policy": "end-to-end;기존largefixture와Tag-Manager fileHTML 각5freshcontexts",
+      "technique": "scenario",
+      "coverage_items": [
+        "synthetic-initial",
+        "synthetic-filter",
+        "synthetic-detail",
+        "Tag-Manager-initial",
+        "Tag-Manager-filter",
+        "Tag-Manager-detail"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "각중앙값 Q03·생값5개",
+      "procedure_artifact": "Playwright pytest, browser.json",
+      "tests": [
+        "tests/test_file_analysis_browser.py:test_V14_synthetic_five_fresh_contexts",
+        "tests/test_file_analysis_benchmark.py:test_V13_real_snapshot_symbol_equivalence_and_three_processes",
+        "tests/file_analysis_browser_support.py:measure_all"
+      ],
+      "independent_expected_source": "Five newly created contexts for each declared dataset; local-file navigation through summary/two frames, filter/two frames, graph public layout.stop callback/two frames; raw medians≤5000/300/1000ms.",
+      "escaping_defect": "Wrong context/dataset/threshold measurement",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V15",
+      "parents": [
+        "F14",
+        "Q09"
+      ],
+      "variants_target_surface": "공통변환/README",
+      "layer_selection_policy": "review;main의7분석기경로/README열거확인",
+      "technique": "scenario",
+      "coverage_items": [
+        "shared-converter",
+        "no-adapter-specific-aggregation",
+        "default-file-example",
+        "explicit-symbol-example",
+        "file-cost",
+        "candidate-unit",
+        "path-limitation"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "Q09구조와설명",
+      "procedure_artifact": "architecture-review.md",
+      "tests": [
+        "tests/file_analysis_evidence/architecture-review.md"
+      ],
+      "independent_expected_source": "Repeatable main source/README review procedure with seven enumerated observations.",
+      "escaping_defect": "Adapter-specific file aggregation or missing README meaning",
+      "status": "accepted verifier1 currentv2; unchanged dependencies",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    },
+    {
+      "obligation": "V16",
+      "parents": [
+        "I01",
+        "I02",
+        "I03",
+        "Q05"
+      ],
+      "variants_target_surface": "회귀",
+      "layer_selection_policy": "integration;기존전체pytest",
+      "technique": "scenario",
+      "coverage_items": [
+        "full-pytest"
+      ],
+      "coverage_target": "100%",
+      "observation_expected": "전체실패0·필수항목skip면제0",
+      "procedure_artifact": "Test command, coverage.json",
+      "tests": [
+        ".venv/bin/python -m pytest -q",
+        "tests/test_nestjs_quality.py:TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical"
+      ],
+      "independent_expected_source": "Full suite including mandatory real frozen Tag-Manager three fresh processes and two browser datasets with five fresh contexts each. Existing direct API regressions and immutable original standalone symbol bytes (explicit --granularity symbol); no hashes refreshed.",
+      "escaping_defect": "Regression or mandatory skipped evidence",
+      "status": "invalidated pending correction6",
+      "inapplicable": [],
+      "spec_version": 2,
+      "evidence_revision": "execution-revision.json + pytest-run5.log"
+    }
+  ],
+  "blocked": [
+    "VF01-MERMAID-UNIT",
+    "VF02-BOUNDARY-BROWSER",
+    "VF03-CANDIDATE-SELECTION"
+  ],
+  "acceptance": "Full suite5 executed on v2 current revision; all obligations pending independent verifier1. No prior acceptance inherited.",
+  "load_check": {
+    "command": ".venv/bin/python -m pytest --collect-only -q tests/test_file_analysis_core.py tests/test_file_analysis_cli.py tests/test_file_analysis_benchmark.py tests/test_file_analysis_browser.py tests/test_nestjs_quality.py",
+    "compile": ".venv/bin/python -m compileall -q tests/test_file_analysis_core.py",
+    "result": "batch5 compileall exit0; collect-only106tests exit0; no tests executed"
+  },
+  "spec_challenges": "none: v2 resolves universal-v1 metric-count contradiction; direct-API test adequacy question reported separately, no unsigned expectation added",
+  "correction_batch_1": {
+    "spec_version": 1,
+    "source": "main run1 measured behavior gaps + approved F12/A05 + handoff selectors; independent PageRank normalization",
+    "shared_causes": [
+      "Fold selectors confused declaration and folded-entry contracts",
+      "Framework-role fixture covered class only; body refs were not observed",
+      "Source unresolved reference masked source-to-boundary edge obligation",
+      "Browser timer used ignored root callback rather than public layout.stop",
+      "Language spy observed analyze rather than public build used by baseline builder",
+      "PageRank normalization counted damping coefficient three times rather than twice",
+      "Old immutable symbol byte tests used newly changed default CLI unit"
+    ],
+    "affected_obligations": [
+      "V01",
+      "V04",
+      "V05",
+      "V06",
+      "V10",
+      "V13",
+      "V14",
+      "V16"
+    ],
+    "checked_siblings": [
+      "V01 direct builder tests unchanged; exclusion exact framework IDs/language preservation retained",
+      "V03 pair max/key fields/raw preservation unchanged",
+      "V05 HITS/degree/betweenness/hop/token/discount expectations retained",
+      "V06 threshold/spread/dynamic/ambiguous siblings unchanged",
+      "V09 graph-cap and paging fixtures unchanged",
+      "V11 hostile surfaces use same browser engine but no measured callback; unchanged",
+      "V07/V08 semantic/schema/Mermaid expectations unchanged",
+      "Existing test_nestjs_cli.py already explicit symbol; direct API Nest tests unchanged"
+    ],
+    "changed_dependencies": [
+      "V01 public PythonGraphAnalyzer.build spy replaces analyze spy",
+      "V05 base=1/(4+2*0.85+0.85**2), derived sum of a,d,b,c terms independently",
+      "V06 unresolved-many unique line3 belongs solely to sourceless-boundary edge; source candidate retains it, boundary never candidate",
+      "V10 data-folded-symbol-id after expansion; absence before expansion permitted, exact1visible afterward",
+      "V10 folded method-role and enum/config body refs extend existing mixed scenario, no extra matrix",
+      "V13/V14 common timer wraps options.layout.stop and preserves previous callback/context before final frames",
+      "V16 existing Nest byte/determinism helper explicitly symbol; hashes untouched"
+    ],
+    "acceptance_needing_invalidation": "All prior statuses pending; no verifier acceptance. V01/V05/V06/V10/V13/V14/V16 attempt1 evidence does not establish current acceptance; main reruns affected/full suite."
+  },
+  "correction_batch_2": {
+    "spec_version": 1,
+    "shared_cause": "verify_artifacts reused file timing values variable for browser metric values, serializing last five browser timings as raw_seconds while median remained correct file median",
+    "affected_obligations": [
+      "V13",
+      "V14",
+      "V16"
+    ],
+    "checked_siblings": [
+      "V13 snapshot hash/raw symbol equality/six-stage/600seconds/180seconds checks unchanged",
+      "V14 five contexts and browser metric thresholds unchanged",
+      "V01–V12 acceptance criteria unchanged",
+      "V15 source review unaffected",
+      "Existing immutable symbol byte hashes untouched; backend/main own remaining compatibility failures"
+    ],
+    "changed_dependencies": [
+      "verify_artifacts now keeps file_values and browser_values separate",
+      "Existing successful V13 real fixture asserts raw_seconds equals three worker total_seconds and median coherence"
+    ],
+    "acceptance_needing_invalidation": "none accepted; all statuses pending. Attempt2 V13 artifact raw_seconds invalid; current V13/V16 evidence must be regenerated by main."
+  },
+  "correction_batch_3": {
+    "spec_version": 2,
+    "approved_source": "Same run v2 F01/F02/C01/Q04/V01/A07, user2026-10-06 file-only final1metric + symbol original calculation/output preservation",
+    "shared_cause": "v1 universal CLI1metric constraint contradicted original symbol adapter/final calculation output-dependent fallback semantics; v2 narrows the single calculation constraint to file and preserves original symbol bytes/API defaults",
+    "affected_obligations": [
+      "V01",
+      "V08",
+      "V13",
+      "V14",
+      "V16"
+    ],
+    "checked_siblings": [
+      "V01 default file7single analyzers,4direct defaults,3exclusion options unchanged",
+      "V02–V07 raw equivalence/aggregation/ownership/independent metrics/candidate/semantic assertions unchanged",
+      "V08 literal schemas/JSON equality/Mermaid stdout expectations unchanged",
+      "V09–V12 browser finite items/security/errors unchanged",
+      "V13 three raw file totals/median coherence/180seconds/600seconds/frozen snapshot/raw relations unchanged",
+      "V14 browser5contexts and5000/300/1000ms unchanged",
+      "V15 main owns review versions and evidence; no main script/artifact edits",
+      "V16 immutable byte hashes unchanged, explicit symbol helper retained"
+    ],
+    "changed_dependencies": [
+      "V08 GraphAnalyzer1call assertion applies only granularity=file; no guessed exact symbol count",
+      "V01/V08/V16 original symbol outputs reference unchanged eight original standalone JSON/bottleneck byte cases, especially fastapi-template andandroid fallback-cost fixtures",
+      "Generated benchmark/symbol-equivalence/browser/worker timings write spec_version2; immutable baseline records remain1; optimized raw relation dictionaries keep original structure to support exact equality",
+      "Coverage map all16obligations copies approved v2 policy/finite items, all statuses pending; prior correction records retain original v1 provenance",
+      "V01 existing direct4 scenarios now exact-match ORIGINAL HEAD public3stage golden, inputSHA467ab575... protected; normalize only current root spellings and recorded /private root alias; golden bytes unchanged"
+    ],
+    "acceptance_needing_invalidation": "none accepted, verifier0/2. v1 provisional suite3 interrupted exit130 is not completion; v2 main reruns all mandatory evidence.",
+    "shared_setup_correction": {
+      "failure": "all4direct variants TypeError build_snapshot missing relative_paths, before post-bottleneck assertions",
+      "verified_cause": "test setup used scanner API rather than original public capture explicit immutable RepositorySnapshot",
+      "change": "same existing Tests snapshot(FILES,root=str(file_project.resolve())) helper matches original snapshot.v1 contents/order/context exactly",
+      "affected_obligations": [
+        "V01",
+        "V16"
+      ],
+      "checked_siblings": [
+        "Initial builder golden comparison already passed main focused checks",
+        "V13 baseline uses saved immutable snapshot; unchanged",
+        "Other file conversion fixtures already use Tests explicit snapshot helper; unchanged"
+      ],
+      "acceptance_needing_invalidation": "none accepted; failed focused setup is not API failure; current assertions still require execution"
+    }
+  },
+  "pending_review_question": {
+    "source": "F02/A07 + V01 direct-* selection",
+    "disposition": "Resolved by main independently captured ORIGINAL HEAD public output golden for exact existing FILES; all4 variants compare builder-before-bottlenecks, builder-after-default-bottlenecks and default report. No new fixture/count/cost values and no baseline refresh."
+  },
+  "correction_batch_5": {
+    "spec_version": 2,
+    "shared_cause": "Approved file splitlines coordinate count includes U+2028 inside valid one-LF-line Python source, but shared validator previously rejected the converted file span as outside snapshot",
+    "affected_obligations": [
+      "V01",
+      "V03",
+      "V05",
+      "V06",
+      "V07",
+      "V08",
+      "V12",
+      "V13",
+      "V16"
+    ],
+    "changed_dependencies": [
+      "Existing V05 whole-text procedure adds one independently authored valid span1..1 / U+2028 source; exact4tokens/13chars/2filelines, filespan1..2, originaldetailspan1..1, successful default v5report/token4",
+      "Main/backend shared validator correction requires whole mandatory suite including original symbol API/error behavior; Tests introduces no additional expected error policy"
+    ],
+    "checked_siblings": [
+      "V04 ownership/role/config assertions unchanged",
+      "V09 caps/paging/browser targets unchanged",
+      "V10 foldedmethod roles/enum/config body navigation unchanged",
+      "V11 hostile/offline surfaces unchanged",
+      "V14 two datasets5freshcontexts/thresholds unchanged",
+      "V15 main architecture/README review unaffected",
+      "Existing directAPI4three-stage original goldens/hash guards unchanged",
+      "Existing immutable symbol byte baselines unchanged"
+    ],
+    "acceptance_needing_invalidation": "none accepted; suite4 pass predates the new whole-text probe and shared validator correction. All obligations pending fresh execution/audit."
+  },
+  "execution": {
+    "revision": "execution-revision.json",
+    "full_suite_log": "pytest-run5.log",
+    "full_suite_result": "1041 passed, 200 subtests passed; mandatory skips0",
+    "main_reviews": [
+      "architecture-review.md",
+      "scan-cache-review.json",
+      "direct-api-original.json",
+      "direct-api-review.json"
+    ],
+    "benchmark": "benchmark.json",
+    "browser": "browser.json",
+    "raw_equivalence": "symbol-equivalence.json"
+  },
+  "verifier1": "verifier1-audit.md"
+}

@@ -1,0 +1,7 @@
+{
+  "one.kt": "package one\nclass Duplicate\nclass Foo\nclass 한글\nfun `odd-name`() = 1\n",
+  "prod.py": "class Foo:\n    pass\ndef work():\n    return Foo()\n",
+  "tests/Checks.kt": "package checks\nfun tests() {\n  Foo(); Foo(); foo(); FooBar(); _Foo(); 한글()\n  val text = \"Foo 한글\"\n  // Foo 한글\n  /* Foo */\n  `odd-name`()\n  fun nested() { Foo() }\n  nested()\n  Duplicate()\n}\n",
+  "tests/test_prod.py": "from prod import Foo, work\ndef test_work():\n    # Foo\n    return work(), work(), Foo(), \"Foo\"\n",
+  "two.kt": "package two\nclass Duplicate\nfun create() = Duplicate()\n"
+}

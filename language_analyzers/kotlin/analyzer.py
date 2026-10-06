@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import bisect
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,6 +12,7 @@ if TYPE_CHECKING:
 
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
+from language_analyzers.core.positions import NamePositions
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.graph_models import (
     Confidence,
@@ -24,6 +26,7 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 
 from . import ast as ka
+from repository.models import SourceText
 
 
 @dataclass
@@ -74,7 +77,7 @@ class KotlinAnalyzer:
         if self.snapshot is None:
             enrich_repository(architecture)
         else:
-            contents = self.snapshot.content_map()
+            contents = self.snapshot.source_map
             enrich_repository(architecture, file_inventory=tuple(contents),
                               file_reader=lambda path: contents[path.relative_to(self.project_path).as_posix()])
         architecture.stats = {
@@ -94,21 +97,32 @@ class KotlinAnalyzer:
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}
         self._imports: Dict[str, List[Tuple[str, int]]] = {}
+        self._positions = {}
+        self._byte_starts = {}
+        self._valid_utf8 = {}
+        self._symbol_offsets = {}
 
         for path in self._discover_files():
             try:
                 if self.snapshot is None:
                     source, root = self._parse_cache.read_and_parse(path)
                 else:
-                    source = self.snapshot.content_map()[path.relative_to(self.project_path).as_posix()].encode("utf-8")
+                    source = self.snapshot.source_map[path.relative_to(self.project_path).as_posix()].encode("utf-8")
                     source, root = self._parse_cache.parse_snapshot(path, source)
             except OSError:
                 continue
             key = path.relative_to(self.project_path).as_posix()
-            text = source.decode("utf-8", "replace")
+            text = self.snapshot.source_map[key] if self.snapshot is not None else SourceText(source.decode("utf-8", "replace"))
             self._files[key] = (source, text, root)
+            self._positions[key] = NamePositions(text)
+            byte_starts = [0]
+            for character in text:
+                byte_starts.append(byte_starts[-1] + len(character.encode("utf-8")))
+            self._byte_starts[key] = byte_starts
+            self._valid_utf8[key] = source == text.encode("utf-8")
             self._collect_file(key, source, text, root)
 
+        self._name_order = {name: index for index, name in enumerate(self._by_name)}
         for symbol in self._symbols.values():
             self._add_symbol_node(symbol)
         for key in self._files:
@@ -252,6 +266,16 @@ class KotlinAnalyzer:
         source, _text, _root = self._files[symbol.file_key]
         node_text = ka.node_text(source, symbol.node)
         header = node_text.split("{", 1)[0]
+        positions = self._positions[symbol.file_key]
+        if symbol.id not in self._symbol_offsets:
+            offset = bisect.bisect_left(self._byte_starts[symbol.file_key], symbol.node.start_byte)
+            if not self._valid_utf8[symbol.file_key]:
+                offset = len(source[:symbol.node.start_byte].decode("utf-8", "replace"))
+            self._symbol_offsets[symbol.id] = offset
+        offset = self._symbol_offsets[symbol.id]
+        end_offset = offset + len(node_text)
+        def occurrences(name, header_only=False):
+            return positions.matches(name, offset, offset + len(header) if header_only else end_offset)
         if symbol.kind in (NodeKind.CLASS, NodeKind.INTERFACE):
             for name in ka.supertype_names(symbol.node, source):
                 target, resolution, confidence, candidates = self._resolve(name.rsplit(".", 1)[-1])
@@ -263,8 +287,8 @@ class KotlinAnalyzer:
             if target:
                 self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
                                SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
-        for name, targets in self._by_name.items():
-            if name == symbol.name or not re.search(rf"\b{re.escape(name)}\b", header):
+        for name in positions.candidate_names(self._name_order, offset, offset + len(header)):
+            if name == symbol.name or not occurrences(name, header_only=True):
                 continue
             target, resolution, confidence, candidates = self._resolve(name)
             if target and self._symbols[target].kind in (NodeKind.CLASS, NodeKind.INTERFACE):
@@ -274,7 +298,8 @@ class KotlinAnalyzer:
         for call in ka.call_expressions(symbol.node, source):
             name = call["name"]
             target, resolution, confidence, candidates = self._resolve(name)
-            line = self._line_of(node_text, name, ka.start_line(symbol.node))
+            matches = occurrences(name)
+            line = ka.start_line(symbol.node) + positions.line(matches[0][0]) - positions.line(offset) if matches else ka.start_line(symbol.node)
             if target is None:
                 unresolved.append({
                     "name": name, "resolution": str(Resolution.UNRESOLVED),
@@ -287,19 +312,20 @@ class KotlinAnalyzer:
         if unresolved:
             self._nodes[symbol.id].metadata["unresolved_calls"] = dict(Counter(item["name"] for item in unresolved))
             self._nodes[symbol.id].metadata["unresolved_references"] = unresolved[:20]
-        for name in self._by_name:
+        for name in positions.candidate_names(self._name_order, offset, end_offset):
             if name == symbol.name:
                 continue
-            for match in re.finditer(rf"\b{re.escape(name)}\b", node_text):
-                prefix = node_text[max(0, match.start() - 12):match.start()]
+            for absolute_start, absolute_end in occurrences(name):
+                match_start, match_end = absolute_start - offset, absolute_end - offset
+                prefix = node_text[max(0, match_start - 12):match_start]
                 if re.search(r"(class|fun|val|var)\s+$", prefix):
                     continue
                 target, resolution, confidence, candidates = self._resolve(name)
                 if target is None:
                     continue
-                tail = node_text[match.end():match.end() + 8]
+                tail = node_text[match_end:match_end + 8]
                 relation = RelationKind.WRITES if re.match(r"\s*(?:[+\-*/]?=|\+\+|--)", tail) else RelationKind.READS
-                line = node_text.count("\n", 0, match.start()) + ka.start_line(symbol.node)
+                line = positions.line(absolute_start) - positions.line(offset) + ka.start_line(symbol.node)
                 self._add_edge(symbol.id, target, relation, SourceSpan(symbol.file_key, line, line), confidence, resolution, candidates)
 
     def _resolve(self, name: str):

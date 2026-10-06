@@ -1,0 +1,145 @@
+........................................................................ [  6%]
+..................................................................... [ 13%]
+............................................................................. [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+...FF................................................................... [ 41%]
+........................................................................ [ 48%]
+........................................................... [ 54%]
+......................................... [ 58%]
+......................................................................................... [ 66%]
+.............................................................. [ 72%]
+........................................................................ [ 79%]
+........................................................................................................................... [ 91%]
+........................................................................ [ 98%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_V08_schemas_json_and_mermaid[file] ____________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x10a3617f0>
+file_project = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-68/test_V08_schemas_json_and_merm0/project')
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-68/test_V08_schemas_json_and_merm0')
+capsys = <_pytest.capture.CaptureFixture object at 0x10a361e50>
+granularity = 'file'
+
+    @pytest.mark.parametrize('granularity',['file','symbol'])
+    def test_V08_schemas_json_and_mermaid(monkeypatch,file_project,tmp_path,capsys,granularity):
+        linked_files={**FILES,'main.py':'from models import User\n'+FILES['main.py']}
+        (file_project/'main.py').write_text(linked_files['main.py'],encoding='utf-8')
+        calls=[]
+        original=GraphAnalyzer.analyze
+        def metrics(self,*args,**kwargs):
+            calls.append(1)
+            return original(self,*args,**kwargs)
+        monkeypatch.setattr(GraphAnalyzer,'analyze',metrics)
+        path=tmp_path/f'{granularity}.html'
+        assert run(monkeypatch,file_project,'-f','fastapi','--granularity',granularity,'-o',path,'--json','--bottlenecks',tmp_path/'b.json')==0
+        data=inline(path)
+        if granularity=='file':
+            assert calls==[1]
+        assert data['architecture']['schema_version']==('6' if granularity=='file' else '5')
+        assert data['bottlenecks']['schema']==('bottlenecks.v5' if granularity=='file' else 'bottlenecks.v4')
+        assert data['architecture']==json.loads(path.with_suffix('.json').read_text())
+        assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
+        if granularity=='symbol':
+            assert 'details' not in data['architecture']
+        capsys.readouterr()
+        calls.clear()
+        mermaid=tmp_path/'graph.md'
+        assert run(monkeypatch,file_project,'-f','fastapi','--granularity',granularity,'--mermaid','-o',mermaid)==0
+        text=capsys.readouterr().out
+        if granularity=='file':
+            assert calls==[1]
+        assert re.search(r'(?m)^graph TD\s*$',text)
+        evidence=Path(__file__).parent/'file_analysis_evidence'
+        provenance=json.loads((evidence/'mermaid-linked-original-provenance.json').read_text())
+        original_bytes=(evidence/'mermaid-linked-original-stdout.txt').read_bytes()
+        assert hashlib.sha256(original_bytes).hexdigest()==provenance['stdout_sha256']
+        assert hashlib.sha256(json.dumps(linked_files,sort_keys=True,ensure_ascii=False).encode()).hexdigest()==provenance['input_sha256']
+        assert provenance['base_commit']=='7eb255b0d552771c01e11fc2b4475663815c9567'
+        declarations,links,ids=mermaid_records(text)
+        if granularity=='symbol':
+            original_declarations,original_links,original_ids=mermaid_records(original_bytes.decode())
+            assert original_ids=={'app_main_app','router_main_router','ep_main_get_user_GET','ep_main_create_user_POST','dep_main_get_db','schema_main_UserOut'}
+            assert declarations==original_declarations
+            assert sorted(links,key=str)==sorted(original_links,key=str)
+            assert ids==original_ids
+        else:
+            original_architecture=(evidence/'mermaid-linked-original-architecture.json').read_bytes()
+            assert hashlib.sha256(original_architecture).hexdigest()==provenance['architecture_sha256']
+            source=json.loads(original_architecture)
+            node_paths={n['id']:n['span']['file_path'] if n.get('span') else None for n in source['nodes']}
+            expected_paths={'alembic/versions/first.py','main.py','models.py'}
+            assert {path for path in node_paths.values() if path}==expected_paths
+            assert len(declarations)==len(expected_paths)
+            assert set(declarations.values())==expected_paths
+            assert ids==set(declarations)
+            assert all(re.fullmatch(r'n\d+',ident) for ident in ids)
+            expected_links={(node_paths[e['from_id']],'-->',e['relation'],node_paths[e['to_id']]) for e in source['edges'] if e['relation'] not in ('CONTAINS','IMPLEMENTED_BY') and node_paths[e['from_id']] and node_paths[e['to_id']] and node_paths[e['from_id']]!=node_paths[e['to_id']]}
+            assert expected_links=={('main.py','-->','IMPORTS','models.py'),('main.py','-->','IMPORTS_SYMBOL','models.py')}
+            observed_links=[(declarations[source_id],arrow,relation,declarations[target_id]) for source_id,arrow,relation,target_id in links]
+>           assert len(observed_links)==len(expected_links)
+E           AssertionError: assert 0 == 2
+E            +  where 0 = len([])
+E            +  and   2 = len({('main.py', '-->', 'IMPORTS', 'models.py'), ('main.py', '-->', 'IMPORTS_SYMBOL', 'models.py')})
+
+tests/test_file_analysis_cli.py:279: AssertionError
+__________________ test_V08_schemas_json_and_mermaid[symbol] ___________________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x1097c9a00>
+file_project = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-68/test_V08_schemas_json_and_merm1/project')
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-68/test_V08_schemas_json_and_merm1')
+capsys = <_pytest.capture.CaptureFixture object at 0x1097c88f0>
+granularity = 'symbol'
+
+    @pytest.mark.parametrize('granularity',['file','symbol'])
+    def test_V08_schemas_json_and_mermaid(monkeypatch,file_project,tmp_path,capsys,granularity):
+        linked_files={**FILES,'main.py':'from models import User\n'+FILES['main.py']}
+        (file_project/'main.py').write_text(linked_files['main.py'],encoding='utf-8')
+        calls=[]
+        original=GraphAnalyzer.analyze
+        def metrics(self,*args,**kwargs):
+            calls.append(1)
+            return original(self,*args,**kwargs)
+        monkeypatch.setattr(GraphAnalyzer,'analyze',metrics)
+        path=tmp_path/f'{granularity}.html'
+        assert run(monkeypatch,file_project,'-f','fastapi','--granularity',granularity,'-o',path,'--json','--bottlenecks',tmp_path/'b.json')==0
+        data=inline(path)
+        if granularity=='file':
+            assert calls==[1]
+        assert data['architecture']['schema_version']==('6' if granularity=='file' else '5')
+        assert data['bottlenecks']['schema']==('bottlenecks.v5' if granularity=='file' else 'bottlenecks.v4')
+        assert data['architecture']==json.loads(path.with_suffix('.json').read_text())
+        assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
+        if granularity=='symbol':
+            assert 'details' not in data['architecture']
+        capsys.readouterr()
+        calls.clear()
+        mermaid=tmp_path/'graph.md'
+        assert run(monkeypatch,file_project,'-f','fastapi','--granularity',granularity,'--mermaid','-o',mermaid)==0
+        text=capsys.readouterr().out
+        if granularity=='file':
+            assert calls==[1]
+        assert re.search(r'(?m)^graph TD\s*$',text)
+        evidence=Path(__file__).parent/'file_analysis_evidence'
+        provenance=json.loads((evidence/'mermaid-linked-original-provenance.json').read_text())
+        original_bytes=(evidence/'mermaid-linked-original-stdout.txt').read_bytes()
+        assert hashlib.sha256(original_bytes).hexdigest()==provenance['stdout_sha256']
+        assert hashlib.sha256(json.dumps(linked_files,sort_keys=True,ensure_ascii=False).encode()).hexdigest()==provenance['input_sha256']
+        assert provenance['base_commit']=='7eb255b0d552771c01e11fc2b4475663815c9567'
+        declarations,links,ids=mermaid_records(text)
+        if granularity=='symbol':
+            original_declarations,original_links,original_ids=mermaid_records(original_bytes.decode())
+            assert original_ids=={'app_main_app','router_main_router','ep_main_get_user_GET','ep_main_create_user_POST','dep_main_get_db','schema_main_UserOut'}
+            assert declarations==original_declarations
+>           assert sorted(links,key=str)==sorted(original_links,key=str)
+E           AssertionError: assert [] == [('app_main_a...et_user_GET')]
+E             
+E             Right contains 6 more items, first extra item: ('app_main_app', '-->', 'include /api', 'router_main_router')
+E             Use -v to get more diff
+
+tests/test_file_analysis_cli.py:263: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_file_analysis_cli.py::test_V08_schemas_json_and_mermaid[file]
+FAILED tests/test_file_analysis_cli.py::test_V08_schemas_json_and_mermaid[symbol]
+2 failed, 1039 passed, 200 subtests passed in 672.66s (0:11:12)

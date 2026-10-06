@@ -1,0 +1,25 @@
+{
+  "spec_version": 2,
+  "positive_suite": "pytest-run7.log",
+  "execution_revision": "execution-revision.json",
+  "source_test_hash_mismatches": [],
+  "normal_artifacts_restored_and_sha_verified": [
+    "file-run1.html",
+    "file-run2.html",
+    "file-run3.html",
+    "optimized-symbol.html",
+    "optimized-symbol-relations.json",
+    "optimized-small-relations.json",
+    "benchmark.json",
+    "browser.json",
+    "optimized-symbol-timing.json",
+    "symbol-equivalence.json",
+    "file-run1-timing.json",
+    "file-run2-timing.json",
+    "file-run3-timing.json"
+  ],
+  "clean_manifest": "attempt7/clean-artifact-manifest.json",
+  "mermaid_reconfirmation": "mutation4-mermaid-relations.log",
+  "no_permanent_dependency_changes": "only temporary CLI --mermaid output probe, source identical after restore; positive fullsuite7 remains current",
+  "focused_post_restore": "2passed0.27s: exact file2arrows/symbol6arrows and selectednodes; git diff --check exit0; seednone"
+}

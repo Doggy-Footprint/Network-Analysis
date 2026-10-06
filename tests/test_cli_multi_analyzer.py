@@ -165,7 +165,7 @@ class CliFixture(unittest.TestCase):
 
         stdout, stderr = io.StringIO(), io.StringIO()
         code = 0
-        with patch.object(sys, "argv", ["code-analyzer", *arguments]):
+        with patch.object(sys, "argv", ["code-analyzer", *arguments, "--granularity", "symbol"]):
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 try:
                     cli.main(renderer_factory=factory or capturing_factory)

@@ -1,0 +1,71 @@
+........................................................................ [  6%]
+..................................................................... [ 13%]
+............................................................................. [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 34%]
+...............................................FF....................... [ 41%]
+........................................................................ [ 48%]
+........................................................... [ 54%]
+......................................... [ 58%]
+......................................................................................... [ 66%]
+.............................................................. [ 72%]
+........................................................................ [ 79%]
+........................................................................................................................... [ 91%]
+........................................................................ [ 98%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+__________________________ test_V06_two_files_spread ___________________________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-65/test_V06_two_files_spread0')
+
+    def test_V06_two_files_spread(tmp_path):
+        nodes = [node('a','a.py'),node('b','c.py'),node('c','c.py')]
+        edges = [edge('a','c',evidence=SourceSpan('a.py',1,1)),edge('b','c',evidence=SourceSpan('c.py',1,1))]
+        snap, result = converted({'a.py':'x','c.py':'z'}, nodes, edges)
+        candidates = [c for c in payload(snap,result,tmp_path)['candidates'] if c['kind']=='evidence_spread']
+>       assert len(candidates)==1
+E       assert 0 == 1
+E        +  where 0 = len([])
+
+tests/test_file_analysis_core.py:202: AssertionError
+_________ test_V06_unresolved_conditions_and_grouping[unresolved-many] _________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-65/test_V06_unresolved_conditions0')
+variant = 'unresolved-many'
+
+    @pytest.mark.parametrize('variant',['unresolved-many','dynamic-flag','ambiguous-only'])
+    def test_V06_unresolved_conditions_and_grouping(tmp_path,variant):
+        nodes=[node('a','a.py'),node('a2','a.py'),node('b','b.py')]
+        if variant=='dynamic-flag':
+            nodes[0].flags=['dynamic_attr']; edges=[]
+        elif variant=='unresolved-many':
+            nodes[1].metadata['unresolved_references']=[{'name':'missing','resolution':'unresolved','confidence':'dynamic_required','evidence':{'file_path':'a.py','start_line':2,'end_line':2}}]
+            nodes.append(node('external',kind='external'))
+            edges=[edge('a','b',Confidence.DYNAMIC_REQUIRED,Resolution.UNRESOLVED,evidence=SourceSpan('a.py',1,1)),edge('a2','b',Confidence.DYNAMIC_REQUIRED,Resolution.UNRESOLVED,evidence=SourceSpan('a.py',2,2)),edge('a','external',Confidence.DYNAMIC_REQUIRED,Resolution.UNRESOLVED,evidence=SourceSpan('a.py',3,3)),edge('a','a2',Confidence.DYNAMIC_REQUIRED,Resolution.UNRESOLVED,evidence=SourceSpan('a.py',4,4))]
+        else:
+            edges=[edge('a','b',resolution=Resolution.AMBIGUOUS)]
+        snap,result=converted({'a.py':'x\ny\nz\nw','b.py':'z'},nodes,edges)
+        candidates=[c for c in payload(snap,result,tmp_path)['candidates'] if c['kind']=='unresolved_boundary']
+        assert bool(candidates)==(variant!='ambiguous-only')
+        assert len({(c['target'],c['kind']) for c in candidates})==len(candidates)
+        if variant=='unresolved-many':
+            source_candidate=next(c for c in candidates if c['target']=='file:a.py')
+            def positions(value):
+                if isinstance(value,dict):
+                    path=value.get('path',value.get('file_path'))
+                    found={(path,value['start_line'])} if path and 'start_line' in value else set()
+                    return found.union(*(positions(child) for child in value.values()))
+                if isinstance(value,list):
+                    return set().union(*(positions(child) for child in value))
+                return set()
+>           assert {('a.py',1),('a.py',2),('a.py',3),('a.py',4)}<=positions(source_candidate['evidence'])
+E           AssertionError: assert {('a.py', 1),..., ('a.py', 4)} <= {('a.py', 1),..., ('a.py', 3)}
+E             
+E             Extra items in the left set:
+E             ('a.py', 4)
+
+tests/test_file_analysis_core.py:233: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_file_analysis_core.py::test_V06_two_files_spread - assert 0...
+FAILED tests/test_file_analysis_core.py::test_V06_unresolved_conditions_and_grouping[unresolved-many]
+2 failed, 1039 passed, 200 subtests passed in 648.89s (0:10:48)

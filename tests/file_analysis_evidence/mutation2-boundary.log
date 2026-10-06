@@ -1,0 +1,44 @@
+........................................................................ [  6%]
+..................................................................... [ 13%]
+............................................................................. [ 20%]
+........................................................................ [ 27%]
+................................................F....................... [ 34%]
+........................................................................ [ 41%]
+........................................................................ [ 48%]
+........................................................... [ 54%]
+......................................... [ 58%]
+......................................................................................... [ 66%]
+.............................................................. [ 72%]
+........................................................................ [ 79%]
+........................................................................................................................... [ 91%]
+........................................................................ [ 98%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_V10_file_symbol_external_back_fold_roles_and_filters ___________
+
+open_report = <function open_report.<locals>.open_page at 0x10ce23100>
+
+    def test_V10_file_symbol_external_back_fold_roles_and_filters(open_report):
+        arch = mixed_fixture()
+        bottlenecks=file_bottlenecks(arch)
+        for rankings in [bottlenecks['dependency_network']['rankings'],*bottlenecks['dependency_network']['rankings_by_category'].values()]:
+            for metric,ranking in rankings.items():
+                rankings[metric]=[row for row in ranking if row['node_id']!='external-boundary']
+        page = open_report(arch, bottlenecks)
+        assert page.evaluate('window.ReportGraph') is None
+        for metric in CORE:
+            ids = page.locator(f'[data-metric-group="{metric}"] [data-node-id]').evaluate_all('(els)=>els.map(e=>e.dataset.nodeId)')
+            assert ids and all(ident.startswith('file:') for ident in ids)
+        assert all(ident.startswith('file:') for ident in rows(page))
+        page.locator('#category-filter').select_option('all')
+>       assert set(rows(page))=={'file:src/a.py','file:src/b.py','file:tests/test_a.py'}
+E       AssertionError: assert {'external-bo...ts/test_a.py'} == {'file:src/a....ts/test_a.py'}
+E         
+E         Extra items in the left set:
+E         'external-boundary'
+E         Use -v to get more diff
+
+tests/test_file_analysis_browser.py:147: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_file_analysis_browser.py::test_V10_file_symbol_external_back_fold_roles_and_filters
+1 failed, 1040 passed, 200 subtests passed in 633.96s (0:10:33)

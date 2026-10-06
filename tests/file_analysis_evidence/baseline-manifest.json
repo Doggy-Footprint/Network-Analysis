@@ -1,0 +1,7 @@
+{
+  "measurement": "snapshot start through HTML save; preparation excluded",
+  "project": "/Users/hwansu/toy-projects/Tag-Manager",
+  "snapshot": "tests/file_analysis_evidence/baseline-snapshot.pickle",
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "spec_version": 1
+}

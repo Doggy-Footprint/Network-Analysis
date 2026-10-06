@@ -85,7 +85,7 @@ class AndroidAnalyzer:
                 if self.snapshot is None:
                     source, root = self._parse_cache.read_and_parse(file_path)
                 else:
-                    source = self.snapshot.content_map()[file_path.relative_to(self.project_path).as_posix()].encode("utf-8")
+                    source = self.snapshot.source_map[file_path.relative_to(self.project_path).as_posix()].encode("utf-8")
                     source, root = self._parse_cache.parse_snapshot(file_path, source)
             except OSError:
                 continue

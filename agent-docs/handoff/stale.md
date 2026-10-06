@@ -76,3 +76,17 @@ File: 8c21d77542561b51-drop-traceability-constraint.md
 Summary: Remove snapshot digest, profile hash, and digest-consistency mechanisms that existed only for the dropped result-traceability constraint.
 Related Files: repository/scan.py, repository/policy.py, analysis/edge_weights.py, bottlenecks/core.py, language_analyzers/python/graph.py, README.md
 Related Symbols: build_snapshot, RepositorySnapshot.digest, ScanPolicy.content_hash, EdgeWeights.content_hash, analyze_bottlenecks, _validate
+
+---
+
+File: df8e06a5dda281c8-file-granularity-project-refactor.md
+Summary: 파일 기본·심볼 선택 분석 전환의 프로젝트 전반 변경 계획, 호환성 경계, 성능 근거와 미확정 세부 정책을 인계한다.
+Related Files: code_analyzer/cli.py, repository/models.py, language_analyzers/core/serialization.py, language_analyzers/core/enrichment.py, language_analyzers/kotlin/analyzer.py, framework_analyzers/fastapi/graph.py, framework_analyzers/android/graph.py, framework_analyzers/sqlalchemy/graph.py, framework_analyzers/nestjs/graph.py, analysis/graph_metrics.py, bottlenecks/core.py, report/bottlenecks/generate.py, report/unified.py, renderers/html/static/app.js, README.md
+Related Symbols: RepositorySnapshot.content_map, GraphAnalyzer.analyze, analyze_bottlenecks, architecture_to_dict, render_unified_report, _run_analyzer, _run_merged, _add_symbol_edges
+
+---
+
+File: 0fc789ad2164e35b-file-analysis-paused.md
+Summary: 73.879초 중앙값·원본 관계 등가를 확보했고 사용자가 승인한 file-only single-pass 및 symbol 기존값 보존 v2의 구현·전체 검증을 진행한다.
+Related Files: agent-docs/specs/0fc789ad2164e35b-file-analysis-symbol-details.md, agent-docs/specs/0fc789ad2164e35b-frontend-staging.json, scripts/benchmark_file_analysis.py, tests/file_analysis_evidence/coverage.json, tests/file_analysis_evidence/baseline-timing.json
+Related Symbols: to_file_architecture, analyze_bottlenecks, architecture_to_dict, RepositorySnapshot.content_map

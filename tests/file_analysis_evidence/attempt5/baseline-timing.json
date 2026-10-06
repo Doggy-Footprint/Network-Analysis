@@ -1,0 +1,15 @@
+{
+  "end": 350707.352304166,
+  "html": "tests/file_analysis_evidence/baseline.html",
+  "observer_overhead_seconds": 1.4089297079481184,
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "stages": {
+    "conversion": 0.0,
+    "extraction": 1231.2565286670579,
+    "integration": 0.0,
+    "metrics_candidates": 5.212224624992814,
+    "output": 1.5521601249929518,
+    "snapshot": 0.06655537500046194
+  },
+  "total_seconds": 1238.087468792044
+}

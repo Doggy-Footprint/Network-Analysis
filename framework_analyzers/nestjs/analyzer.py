@@ -78,7 +78,7 @@ class NestJSAnalyzer:
         arch = NestJSProjectArchitecture(self.project_path.name, str(self.project_path))
         self.arch = arch
         self.files: Dict[str, _File] = {}
-        contents = self.snapshot.content_map() if self.snapshot is not None else None
+        contents = self.snapshot.source_map if self.snapshot is not None else None
         if contents is None:
             paths = sorted(p for p in self.project_path.rglob("*") if p.is_file())
             keys = [p.relative_to(self.project_path).as_posix() for p in paths]

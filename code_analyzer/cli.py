@@ -5,6 +5,7 @@ Command-line interface for the FastAPI Visualizer.
 import argparse
 import json
 import sys
+import time
 import webbrowser
 from collections import Counter
 from dataclasses import dataclass, field
@@ -18,6 +19,8 @@ from repository import (ScanPolicyError, build_snapshot, default_scan_policy_pat
 from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
 from language_analyzers.core.serialization import architecture_to_dict
+from analysis.file_graph import to_file_architecture
+from bottlenecks.core import _snapshot, _validate
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
@@ -138,7 +141,8 @@ def parse_args():
         action="store_true",
         help="Print Mermaid diagram markdown to stdout.",
     )
-    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottlenecks.v4 JSON.")
+    parser.add_argument("--granularity", choices=("file", "symbol"), default="file", help="Unit for network metrics and candidates.")
+    parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottleneck JSON for the selected granularity.")
     parser.add_argument(
         "--edge-weights",
         default=str(default_edge_weights_path()),
@@ -201,26 +205,24 @@ def _exclude_output_paths(
 
 
 def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single):
-    """Returns (architecture, graph builder or None, TypeScript HTTP call sites). Language
-    analyzers get their graph analysis here only in single runs; merged runs analyze once."""
     builder = None
     http_calls = []
     if kind == "language" and value == "python":
         arch = PythonGraphAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        if single and not args.bottlenecks:
+        if args.granularity == "symbol" and single and not args.bottlenecks:
             arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
                 arch.nodes, arch.edges, project_path=arch.project_path
             )
     elif kind == "language" and value == "typescript":
         arch = TypeScriptAnalyzer(project_path, snapshot=repository_snapshot).analyze()
         http_calls = arch.http_calls
-        if single:
+        if args.granularity == "symbol" and single:
             arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
                 arch.nodes, arch.edges, project_path=arch.project_path
             )
     elif kind == "language":
         arch = KotlinAnalyzer(project_path, snapshot=repository_snapshot).analyze()
-        if single:
+        if args.granularity == "symbol" and single:
             arch.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
                 arch.nodes, arch.edges, project_path=arch.project_path
             )
@@ -236,6 +238,7 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             parse_cache=parse_cache,
             snapshot=repository_snapshot,
             analysis_config=analysis_config,
+            compute_metrics=args.granularity == "symbol",
         )
         arch = builder.build_graph(arch)
     elif value == "nestjs":
@@ -247,6 +250,7 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             emit_language_graph=not explicit_ts and not args.no_language_graph,
             snapshot=repository_snapshot,
             analysis_config=analysis_config,
+            compute_metrics=args.granularity == "symbol",
         )
         arch = builder.build_graph(arch)
         if builder.emit_language_graph:
@@ -265,6 +269,7 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             emit_language_graph=not python_core_emitted,
             snapshot=repository_snapshot,
             analysis_config=analysis_config,
+            compute_metrics=args.granularity == "symbol",
         )
         arch = builder.build_graph(arch)
     else:
@@ -278,13 +283,14 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
             include_language_graph=not args.no_language_graph,
             snapshot=repository_snapshot,
             analysis_config=analysis_config,
+            compute_metrics=args.granularity == "symbol",
         )
         arch = builder.build_graph(arch)
     return arch, builder, http_calls
 
 
-def _run_merged(args, project_path, repository_snapshot, analysis_config) -> MergedArchitecture:
-    results = [
+def _run_merged(args, project_path, repository_snapshot, analysis_config, results=None) -> MergedArchitecture:
+    results = results if results is not None else [
         _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single=False)
         for kind, value in args.analyzers
     ]
@@ -316,10 +322,22 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config) -> Mer
     merged.stats["edges_by_relation"] = dict(Counter(edge.relation for edge in merged.edges))
     merged.stats["edges_by_confidence"] = dict(Counter(str(edge.confidence) for edge in merged.edges))
     merged.stats["route_matching"] = route_stats
-    merged.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
-        merged.nodes, merged.edges, project_path=merged.project_path
-    )
+    if args.granularity == "symbol":
+        merged.stats["analysis"] = GraphAnalyzer(analysis_config).analyze(
+            merged.nodes, merged.edges, project_path=merged.project_path
+        )
     return merged
+
+
+def _file_mermaid(architecture):
+    ids = {node.id: f"n{index}" for index, node in enumerate(architecture.nodes)}
+    lines = ["graph TD"]
+    for node in architecture.nodes:
+        label = str(node.label).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        lines.append(f'  {ids[node.id]}["{label}"]')
+    for edge in architecture.edges:
+        lines.append(f"  {ids[edge.from_id]} -->|{edge.relation}| {ids[edge.to_id]}")
+    return "\n".join(lines)
 
 
 def main(
@@ -336,8 +354,11 @@ def main(
     project_path = Path(args.project_path).resolve()
 
     if not project_path.exists():
-        print(f"[!] Error: Project path does not exist: {project_path}")
+        print(f"[!] Error: Project path does not exist: {project_path}", file=sys.stderr)
         sys.exit(1)
+    if not project_path.is_dir():
+        print(f"[!] Error: Project path is not a directory: {project_path}", file=sys.stderr)
+        raise SystemExit(1)
 
     labels = [
         (FRAMEWORK_LABELS if kind == "framework" else LANGUAGE_LABELS)[value]
@@ -363,34 +384,58 @@ def main(
         else:
             ignore_source, paths = "", inventory
         paths = _exclude_output_paths(project_path, paths, outputs)
+        timing = {}
+        overall_started = time.perf_counter()
+        stage_started = overall_started
         repository_snapshot = build_snapshot(
             project_path, paths, policy=scan_policy, reader=file_reader,
             ignore_source=ignore_source, excluded_paths=outputs,
         )
+        _snapshot(repository_snapshot)
+        timing["snapshot"] = time.perf_counter() - stage_started
     except (OSError, UnicodeError, ValueError, EdgeWeightsError, ScanPolicyError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
-    if len(args.analyzers) == 1:
-        kind, value = args.analyzers[0]
-        arch, builder, _http_calls = _run_analyzer(
-            kind, value, args, project_path, repository_snapshot, analysis_config,
-            single=True,
-        )
-    else:
-        arch = _run_merged(args, project_path, repository_snapshot, analysis_config)
-
     try:
-        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights)
-    except BottleneckInputError as exc:
+        stage_started = time.perf_counter()
+        results = [
+            _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single=len(args.analyzers) == 1)
+            for kind, value in args.analyzers
+        ]
+        timing["extraction"] = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
+        if len(results) == 1:
+            arch, builder, _http_calls = results[0]
+        else:
+            arch = _run_merged(args, project_path, repository_snapshot, analysis_config, results=results)
+        timing["integration"] = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
+        _validate(repository_snapshot, arch)
+        if args.granularity == "file":
+            arch = to_file_architecture(arch, repository_snapshot)
+        timing["conversion"] = time.perf_counter() - stage_started
+        stage_started = time.perf_counter()
+        if args.granularity == "file":
+            final_analysis = GraphAnalyzer(analysis_config).analyze(arch.nodes, arch.edges, project_path=arch.project_path)
+            arch.stats["analysis"] = final_analysis
+            bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis)
+        else:
+            bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights)
+        timing["metrics_candidates"] = time.perf_counter() - stage_started
+    except (OSError, UnicodeError, ValueError, BottleneckInputError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
 
+    stage_started = time.perf_counter()
     try:
         renderer = renderer_factory(title=args.title, framework_label=analyzer_label)
         output_html_path = Path(renderer.render(arch, str(outputs[0]), bottleneck_report=json.loads(bottlenecks_to_json(bottleneck_report)))).resolve()
     except (OSError, UnicodeError, ValueError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
         raise SystemExit(1)
+    timing["output"] = time.perf_counter() - stage_started
+    timing["total"] = time.perf_counter() - overall_started
+    main.last_timing = timing
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")
 
     if args.json:
@@ -411,7 +456,7 @@ def main(
         if builder is None:
             print("[!] Mermaid output is currently available for framework analyzers only.")
             return
-        mermaid_code = builder.generate_mermaid(arch)
+        mermaid_code = _file_mermaid(arch) if args.granularity == "file" else builder.generate_mermaid(arch)
         print("\n--- Mermaid Architecture Diagram ---")
         print(mermaid_code)
         print("------------------------------------\n")

@@ -1,0 +1,38 @@
+{
+  "spec_version": 2,
+  "status": "selected after verifier1; not injected",
+  "selection_reason": "Three blocking classes are strongest because existing evidence could admit concrete violations of selected Mermaid unit, browser boundary surface, and original dependency selection. Supplementary pair-max/cost invariance have accepted strong independent assertions but would not prove these gaps closed.",
+  "classes": [
+    {
+      "class": "mermaid-constant",
+      "finding": "VF01-MERMAID-UNIT"
+    },
+    {
+      "class": "boundary-browser-inclusion",
+      "finding": "VF02-BOUNDARY-BROWSER"
+    },
+    {
+      "class": "candidate-internal-edge-loss",
+      "finding": "VF03-CANDIDATE-SELECTION"
+    }
+  ],
+  "executions": [
+    {
+      "class": "mermaid-constant",
+      "source": "code_analyzer/cli.py",
+      "before_sha256": "8b23f5efc4e42ce861de46485dfeed5026e9b45894f815d2c180200854cf4766",
+      "injected_sha256": "c338303223455fee1f708a57806bf45a05139e5c2d8ff1cba3e8bb9b77daf9a8",
+      "backup_verified": true,
+      "injected": true,
+      "intended_assertion": "test_V08_schemas_json_and_mermaid",
+      "test_command": ".venv/bin/python -m pytest -q",
+      "test_status": "intended assertions detected",
+      "exit_code": 1,
+      "log": "mutation1-mermaid.log",
+      "observed": "file node declarations1vs3 and symbol declarations a/main.py vs original app/router; both intended V08assertions fail. Additional NestJS expectedRoot failure corroborates.",
+      "full_result": "3 failed, 1038 passed, 197 subtests passed in 654.67s (0:10:54)",
+      "restored_sha256": "8b23f5efc4e42ce861de46485dfeed5026e9b45894f815d2c180200854cf4766",
+      "restore_verified": true
+    }
+  ]
+}

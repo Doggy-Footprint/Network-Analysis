@@ -1,0 +1,7 @@
+{
+  "command": ".venv/bin/python -m pytest -q tests/test_file_analysis_core.py tests/test_file_analysis_cli.py::test_V08_schemas_json_and_mermaid tests/test_file_analysis_browser.py::test_V10_file_symbol_external_back_fold_roles_and_filters",
+  "result": "1 failed,36passed/19.65s",
+  "failure": "V08file authored expected4(.env included) vsactual3",
+  "verified_cause": "directAPI explicit snapshot golden includes.env; pinned-original CLI public snapshot excludes.env. Expected source must match selected CLI target surface. Other36 core/browser/symbol Mermaid pass.",
+  "failed_observer_attempt": "searching/tmp for default tempfile failed StopIteration: actual TMPDIR differs; regenerated explicit/tmp fixture before any capture."
+}

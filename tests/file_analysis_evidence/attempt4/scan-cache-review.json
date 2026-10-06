@@ -1,0 +1,118 @@
+{
+  "spec_version": 1,
+  "small_raw_relations_equal": true,
+  "scan_rows": [
+    {
+      "pattern": "\\b`odd\\-name`\\b",
+      "text_sha256": "263d5f8cc63aab2852c225950852e4e83719ebabe709cd7d6507303184897e37",
+      "input_paths": [
+        "two.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\b`odd\\-name`\\b",
+      "text_sha256": "30391a9a29ce12990b3f64d058747774618eb042984f8c36e4f744339815bd74",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\b`odd\\-name`\\b",
+      "text_sha256": "3e0cbcec9d61591baa7c844ef219f9de073e9d6f10ce3df771966fda72a6e4de",
+      "input_paths": [
+        "one.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\b`odd\\-name`\\b",
+      "text_sha256": "41623c86163a0f4e3bbd72b66cbb0430072a112c8e5271368eb4ad252ea1d6d5",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\bone\\.kt\\b",
+      "text_sha256": "41623c86163a0f4e3bbd72b66cbb0430072a112c8e5271368eb4ad252ea1d6d5",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\bprod\\.py\\b",
+      "text_sha256": "04a9ae0fa7fd727d876e137da8e6ac1c26520f7e424f2720fd1e6d525bd08206",
+      "input_paths": [
+        "tests/test_prod.py"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\btwo\\.kt\\b",
+      "text_sha256": "41623c86163a0f4e3bbd72b66cbb0430072a112c8e5271368eb4ad252ea1d6d5",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\w+",
+      "text_sha256": "04a9ae0fa7fd727d876e137da8e6ac1c26520f7e424f2720fd1e6d525bd08206",
+      "input_paths": [
+        "tests/test_prod.py"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\w+",
+      "text_sha256": "263d5f8cc63aab2852c225950852e4e83719ebabe709cd7d6507303184897e37",
+      "input_paths": [
+        "two.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\w+",
+      "text_sha256": "30391a9a29ce12990b3f64d058747774618eb042984f8c36e4f744339815bd74",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\w+",
+      "text_sha256": "3e0cbcec9d61591baa7c844ef219f9de073e9d6f10ce3df771966fda72a6e4de",
+      "input_paths": [
+        "one.kt"
+      ],
+      "whole_text_scans": 1
+    },
+    {
+      "pattern": "\\w+",
+      "text_sha256": "41623c86163a0f4e3bbd72b66cbb0430072a112c8e5271368eb4ad252ea1d6d5",
+      "input_paths": [
+        "tests/Checks.kt"
+      ],
+      "whole_text_scans": 1
+    }
+  ],
+  "whole_text_scan_max": 1,
+  "public_content_map_independent": true,
+  "source_lookup_readonly_reused": true,
+  "source_lines_reused": true,
+  "source_range_reused": true,
+  "reviewed_revision_sha256": {
+    "repository/models.py": "1855351a8bfbf0ec3f4484be071ef9a19f3e6db56b6ce00cd53803b9bd15bb44",
+    "language_analyzers/core/positions.py": "ab00d7789fb0fbdd10a1fb0581c5d86947778536354b1c9e8ebcbc0b53f3ede2",
+    "language_analyzers/core/enrichment.py": "37467b112b3b1311ab91b9bf60bacbedc239c208b1343db9bca0c7bb3274685f",
+    "language_analyzers/kotlin/analyzer.py": "f51ba49675b0a935c2bfd3ec845dfdc2e15f1d2ef5c78da338f463a10ee1f866",
+    "language_analyzers/core/cost.py": "2ae38f4ef06fe9c1551880ac93c6099c407731326727a8282ae6c3467f4d2cdf",
+    "code_analyzer/cli.py": "8b23f5efc4e42ce861de46485dfeed5026e9b45894f815d2c180200854cf4766",
+    "analysis/file_graph.py": "51c20164c96571f7960ea2527fdee7defbc151101d2aa5bbece19bd72a09f9a2",
+    "README.md": "e3be189ea27fcddc1f4fbcb70fd7bcfa20ad27b802191d0aace3bb5835ef4b8c"
+  },
+  "procedure": ".venv/bin/python tests/file_analysis_evidence/scan-cache-review.py"
+}

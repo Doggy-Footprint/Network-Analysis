@@ -169,7 +169,7 @@ class PythonGraphAnalyzer:
         if self.snapshot is None:
             enrich_repository(architecture)
         else:
-            contents = self.snapshot.content_map()
+            contents = self.snapshot.source_map
             enrich_repository(
                 architecture,
                 file_inventory=tuple(contents),

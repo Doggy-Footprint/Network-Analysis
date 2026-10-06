@@ -209,8 +209,14 @@ def _validate(payload: Any) -> Mapping[str, Any]:
     root = _object(payload, "$")
     fields = ("schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations")
     _required(root, "$", fields)
-    if _string(root["schema"], "$.schema") != SUPPORTED_SCHEMA:
-        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r}")
+    schema = _string(root["schema"], "$.schema")
+    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v5"):
+        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r} or 'bottlenecks.v5'")
+    if schema == "bottlenecks.v5":
+        _required(root, "$", ("granularity",))
+        if _string(root["granularity"], "$.granularity") != "file":
+            _error("$.granularity", "must equal 'file'")
+        fields = (*fields, "granularity")
     if set(root) != set(fields):
         _error("$", "contains unknown fields")
     for field in ("snapshot", "edge_weights", "versions", "coverage", "dependency_network"):

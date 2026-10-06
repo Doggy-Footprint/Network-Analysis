@@ -80,8 +80,8 @@ def collection_to_dict(collection: Any) -> Dict[str, Any]:
 
 
 def architecture_to_dict(architecture: Any) -> Dict[str, Any]:
-    return {
-        "schema_version": SCHEMA_VERSION,
+    result = {
+        "schema_version": "6" if getattr(architecture, "granularity", None) == "file" else SCHEMA_VERSION,
         "project_name": architecture.project_name,
         "project_path": architecture.project_path,
         "stats": getattr(architecture, "stats", {}) or {},
@@ -92,3 +92,6 @@ def architecture_to_dict(architecture: Any) -> Dict[str, Any]:
             for collection in getattr(architecture, "report_collections", []) or []
         },
     }
+    if getattr(architecture, "granularity", None) == "file":
+        result.update(granularity="file", details=architecture.details)
+    return result

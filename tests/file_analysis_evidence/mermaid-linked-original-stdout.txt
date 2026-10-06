@@ -1,0 +1,30 @@
+[*] Analyzing FastAPI project at: /private<PROJECT_ROOT>
+[✓] Generated unified dependency bottleneck report: /private<PROJECT_ROOT>/baseline.html
+[✓] Exported architecture JSON: /private<PROJECT_ROOT>/baseline.json
+
+--- Mermaid Architecture Diagram ---
+graph TD
+  %% FastAPI Architecture Diagram
+  subgraph App_app ["App: FastAPI App"]
+    app_main_app["🚀 FastAPI App"]
+  end
+  subgraph Router_router ["Router: router (/)"]
+    router_main_router["📁 router"]
+  end
+  app_main_app -->|include /api| router_main_router
+  router_main_router --> ep_main_get_user_GET
+  router_main_router --> ep_main_create_user_POST
+  ep_main_get_user_GET -.->|depends| dep_main_get_db
+  ep_main_create_user_POST -.->|depends| dep_main_get_db
+  ep_main_get_user_GET -.->|returns| schema_main_UserOut
+------------------------------------
+
+
+📊 Summary Statistics:
+  • Applications: 1
+  • Endpoints     2
+  • Routers       1
+  • Dependencies  1
+  • Schemas       1
+  • Methods:      {'GET': 1, 'POST': 1}
+  • Highest PageRank × effective token cost: main.py (2.5647)

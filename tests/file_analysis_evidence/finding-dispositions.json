@@ -1,0 +1,82 @@
+{
+  "spec_version": 2,
+  "verifier_invocations": 2,
+  "correction_batches": 8,
+  "findings": [
+    {
+      "id": "VF01-MERMAID-UNIT",
+      "classification": "obligation evidence gap",
+      "affected": [
+        "V08"
+      ],
+      "disposition": "closed accepted by verifier2",
+      "evidence": [
+        "coverage.json:correction_batch_6,correction_batch_7",
+        "mermaid-original-provenance.json",
+        "pytest-run6.log",
+        "mutation1-mermaid.log",
+        "mutations.json",
+        "pytest-run7.log",
+        "execution-revision.json",
+        "restoration-review.json",
+        "mermaid-linked-original-provenance.json",
+        "mutation4-mermaid-relations.log",
+        "verifier2-audit.md"
+      ],
+      "reason": "Exact original CLI node/relationship identities and selected file graph projection reject constant skeleton, original expectedsource matches CLI scan rather than explicitAPI snapshot."
+    },
+    {
+      "id": "VF02-BOUNDARY-BROWSER",
+      "classification": "obligation evidence gap",
+      "affected": [
+        "V09",
+        "V10"
+      ],
+      "disposition": "closed accepted by verifier2",
+      "evidence": [
+        "coverage.json:correction_batch_6",
+        "pytest-run6.log",
+        "mutation2-boundary.log",
+        "mutations.json",
+        "pytest-run7.log",
+        "execution-revision.json",
+        "restoration-review.json",
+        "verifier2-audit.md"
+      ],
+      "reason": "Existing mixed schema6scenario includes real sourceless nonfile boundary with dominating metrics, legal file-only rankings/candidates; all-category list/sixrepresentatives exclusion and original graph/evidence exploration asserted."
+    },
+    {
+      "id": "VF03-CANDIDATE-SELECTION",
+      "classification": "obligation evidence gap",
+      "affected": [
+        "V06"
+      ],
+      "disposition": "closed accepted by verifier2",
+      "evidence": [
+        "coverage.json:correction_batch_6",
+        "pytest-run6.log",
+        "mutation3-candidates.log",
+        "mutations.json",
+        "pytest-run7.log",
+        "execution-revision.json",
+        "restoration-review.json",
+        "verifier2-audit.md"
+      ],
+      "reason": "Existing two-source spread now includes file-internal actualdependency evidence; unresolved internalunique line4 preserved; threshold siblings add ownership-only declaration/IMPLEMENTED_BY with spread/unresolved-provoking evidence and require no forbiddencandidate orrecord."
+    }
+  ],
+  "spec_challenges": [],
+  "advisory": [],
+  "prior_resolved": [
+    "R06-PERF",
+    "R06-EVIDENCE",
+    "R07-ARTIFACT",
+    "R07-COMPAT(v2approved)",
+    "R10-directAPIsetup",
+    "R11-UNICODE",
+    "R14-CLIvsAPIsnapshotexpectedsource"
+  ],
+  "finding_child": "VF01-MERMAID-RELATIONS accepted and closed within VF01",
+  "status": "complete",
+  "blocked": []
+}

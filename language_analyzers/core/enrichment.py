@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
 from .cost import cost_for_text
+from .positions import NamePositions
 from .flags import is_test_path
 from .graph_models import (
     Confidence,
@@ -41,7 +42,7 @@ def enrich_repository(
         snapshot_root = Path(snapshot.root)
         if not root.is_absolute() or not snapshot_root.is_absolute() or root != snapshot_root:
             raise ValueError("project path and snapshot root must be absolute and match")
-        snapshot_contents = snapshot.content_map()
+        snapshot_contents = snapshot.source_map
         file_inventory = tuple(snapshot_contents)
         file_reader = lambda path: snapshot_contents[path.relative_to(root).as_posix()]
     nodes: List[GraphNode] = architecture.nodes
@@ -124,6 +125,12 @@ def _add_test_relations(
         _append_edge(edges, existing, source.id, target.id, RelationKind.TESTS,
                      edge.confidence, edge.resolution, edge.evidence, edge.candidates)
 
+    indexes = {}
+    production_names = {}
+    for target in production:
+        if target.kind in (NodeKind.CLASS, NodeKind.FUNCTION, NodeKind.METHOD, NodeKind.FILE, NodeKind.MODULE) and len(target.label) > 2:
+            production_names.setdefault(target.label, []).append(target)
+    production_order = {name: rank for rank, name in enumerate(production_names)}
     for test in test_nodes:
         path = _path_for(test)
         if not path or Path(path).suffix.lower() not in _CODE_SUFFIXES:
@@ -131,19 +138,31 @@ def _add_test_relations(
         file_text = contents.get(path, "")
         if not file_text:
             continue
-        lines = file_text.splitlines()
+        if path not in indexes:
+            lines = file_text.lines if hasattr(file_text, "lines") else file_text.splitlines()
+            normalized = "\n".join(lines)
+            starts = [0]
+            for line in lines:
+                starts.append(starts[-1] + len(line) + 1)
+            indexes[path] = (lines, starts, NamePositions(normalized))
+        lines, starts, index = indexes[path]
         start = test.span.start_line if test.span is not None else 1
         end = test.span.end_line if test.span is not None else len(lines)
-        text = "\n".join(lines[max(0, start - 1):end])
+        lo = min(len(lines), max(0, start - 1))
+        hi = min(len(lines), max(lo, end if end >= 0 else len(lines) + end))
+        range_start = starts[lo]
+        range_end = starts[hi] - 1 if hi > lo else range_start
         referenced_names: Dict[str, List[GraphNode]] = {}
-        for target in production:
-            if target.kind not in (NodeKind.CLASS, NodeKind.FUNCTION, NodeKind.METHOD, NodeKind.FILE, NodeKind.MODULE):
-                continue
-            if len(target.label) > 2 and re.search(rf"\b{re.escape(target.label)}\b", text):
-                referenced_names.setdefault(target.label, []).append(target)
+        first_positions = {}
+        for name in index.candidate_names(production_order, range_start, range_end):
+            targets = production_names[name]
+            matches = index.matches(name, range_start, range_end)
+            if matches:
+                referenced_names[name] = targets
+                first_positions[name] = matches[0][0]
         for name, matches in referenced_names.items():
             target = matches[0]
-            line = start + _first_line(text, name) - 1
+            line = start + index.line(first_positions[name]) - index.line(range_start)
             resolution = Resolution.UNIQUE_NAME if len(matches) == 1 else Resolution.AMBIGUOUS
             _append_edge(
                 edges, existing, test.id, target.id, RelationKind.TESTS,
