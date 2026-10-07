@@ -11,6 +11,8 @@ from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
+from language_analyzers.core.analysis_coverage import attach_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -463,6 +465,7 @@ class ArchitectureGraphBuilder:
             contents = self.snapshot.source_map
             enrich_repository(arch, file_inventory=tuple(contents),
                               file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
+        coverage = arch.stats.get("analysis_coverage")
         arch.stats = {
             "total_apps": len(arch.apps),
             "total_routers": len(arch.routers),
@@ -476,6 +479,7 @@ class ArchitectureGraphBuilder:
             "edges_by_relation": dict(Counter(edge.relation for edge in arch.edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in arch.edges)),
         }
+        attach_coverage(arch, self.snapshot, coverage)
         if self.compute_metrics:
             arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
                 arch.nodes,
@@ -496,7 +500,11 @@ class ArchitectureGraphBuilder:
 
     def _language_graph(self, arch: ProjectArchitecture):
         analyzer = PythonGraphAnalyzer(arch.project_path, self.snapshot)
-        return analyzer.build(PythonSourceAnalyzer(arch.project_path, self.snapshot).analyze())
+        source_analyzer = PythonSourceAnalyzer(arch.project_path, self.snapshot)
+        sources = source_analyzer.analyze()
+        result = analyzer.build(sources)
+        attach_coverage(arch, self.snapshot, getattr(source_analyzer, "analysis_coverage", {}))
+        return result
 
     @staticmethod
     def _implementation_edges(arch: ProjectArchitecture, known_ids: Set[str]) -> List[GraphEdge]:

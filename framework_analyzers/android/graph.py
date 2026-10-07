@@ -11,6 +11,8 @@ from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
+from language_analyzers.core.analysis_coverage import attach_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -427,9 +429,11 @@ class AndroidArchitectureGraphBuilder:
             edges.extend(migrate_edges)
         if self.include_language_graph:
             try:
-                language_nodes, language_edges = KotlinAnalyzer(
+                language_analyzer = KotlinAnalyzer(
                     arch.project_path, parse_cache=self.parse_cache, snapshot=self.snapshot
-                ).build()
+                )
+                language_nodes, language_edges = language_analyzer.build()
+                attach_coverage(arch, self.snapshot, getattr(language_analyzer, "analysis_coverage", {}))
             except ImportError:
                 language_nodes, language_edges = [], []
             known_ids = {node.id for node in nodes}
@@ -447,6 +451,7 @@ class AndroidArchitectureGraphBuilder:
             contents = self.snapshot.source_map
             enrich_repository(arch, file_inventory=tuple(contents),
                               file_reader=lambda path: contents[path.relative_to(Path(arch.project_path)).as_posix()])
+        coverage = arch.stats.get("analysis_coverage")
         arch.stats = {
             "total_composables": len(arch.composables),
             "total_viewmodels": len(arch.viewmodels),
@@ -456,6 +461,7 @@ class AndroidArchitectureGraphBuilder:
         }
         if migration_stats is not None:
             arch.stats["migration_matching"] = migration_stats
+        attach_coverage(arch, self.snapshot, coverage)
         if self.compute_metrics:
             arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(
                 arch.nodes,

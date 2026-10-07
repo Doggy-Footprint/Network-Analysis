@@ -695,10 +695,102 @@
         for (const [key, [name, desc, unit]] of Object.entries(definitions)) glossary.append(el('h3', name + ' · ' + key), el('p', desc + ' (' + unit + ')'));
         host.append(glossary);
     }
+    function renderCoverage() {
+        const coverage = arch?.stats?.analysis_coverage || bottlenecks?.coverage?.analysis_coverage;
+        const summary = $('coverage-summary'), disclosure = $('coverage-details');
+        if (!coverage) {
+            summary.append(el('p', '분석 범위 정보 없음: 스냅샷 없는 분석 또는 이전 보고서입니다.', 'notice'));
+            disclosure.hidden = true;
+            return;
+        }
+        const labels = {complete: '완료', partial: '부분 분석', failed: '실패', skipped: '건너뜀', not_targeted: '대상 밖', excluded: '제외'};
+        const producers = {'python-core': 'Python', 'typescript-core': 'TypeScript·JavaScript', 'kotlin-core': 'Kotlin', fastapi: 'FastAPI', android: 'Android', sqlalchemy: 'SQLAlchemy', nestjs: 'NestJS'};
+        const counts = el('div', undefined, 'counts');
+        for (const [status, label] of Object.entries(labels)) {
+            const box = el('div', undefined, 'count');
+            box.dataset.coverageStatus = status;
+            const value = el('strong', String(coverage.summary[status + '_file_count']));
+            value.dataset.coverageCount = status + '_file_count';
+            box.append(value, el('span', label));
+            counts.append(box);
+        }
+        const totals = el('p');
+        for (const [key, label] of [['inventory_file_count', '인벤토리'], ['collected_file_count', '수집'], ['targeted_file_count', '분석 대상']]) {
+            if (totals.childNodes.length) totals.append(document.createTextNode(' · '));
+            const value = el('span', String(coverage.summary[key]));
+            value.dataset.coverageCount = key;
+            totals.append(document.createTextNode(label + ' '), value);
+        }
+        summary.append(el('h2', '분석 범위'), counts, totals,
+            el('p', `수집 목록: ${coverage.scope.ignore_source} · 목록 밖 경로와 건수는 집계되지 않았습니다.`, 'muted'),
+            el('p', '완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다.', 'muted'));
+        const search = $('coverage-search'), statusFilter = $('coverage-status-filter'), analyzerFilter = $('coverage-analyzer-filter');
+        for (const [status, label] of Object.entries(labels)) {
+            const option = el('option', label);
+            option.value = status;
+            statusFilter.append(option);
+        }
+        for (const producer of coverage.analyzers) {
+            const option = el('option', producers[producer.analyzer_id] || producer.analyzer_id);
+            option.value = producer.analyzer_id;
+            analyzerFilter.append(option);
+        }
+        let built = false, currentPage = 0, indexed = [], matches = [];
+        const reasonText = reason => `${reason.code}: ${reason.message}` + (reason.span ? ` (${reason.span.file_path}:${reason.span.start_line}-${reason.span.end_line})` : '');
+        function draw() {
+            const host = $('coverage-list');
+            host.replaceChildren();
+            currentPage = Math.max(0, Math.min(currentPage, Math.max(0, Math.ceil(matches.length / 50) - 1)));
+            const fragment = document.createDocumentFragment();
+            for (const item of matches.slice(currentPage * 50, (currentPage + 1) * 50)) {
+                const row = el('tr');
+                row.dataset.coverageRow = item.file.file_path;
+                row.append(el('td', item.file.file_path, 'coverage-path'), el('td', labels[item.file.status]),
+                    el('td', item.file.results.map(result => `${producers[result.analyzer_id] || result.analyzer_id}: ${labels[result.status]}`).join('\n'), 'coverage-producers'),
+                    el('td', item.reasons || '—', 'coverage-reasons'));
+                fragment.append(row);
+            }
+            if (!matches.length) {
+                const row = el('tr'), cell = el('td', '일치하는 파일 없음');
+                cell.colSpan = 4;
+                row.append(cell);
+                fragment.append(row);
+            }
+            host.append(fragment);
+            $('coverage-prev').disabled = currentPage === 0;
+            $('coverage-next').disabled = (currentPage + 1) * 50 >= matches.length;
+            $('coverage-page-label').textContent = `${currentPage + 1} / ${Math.max(1, Math.ceil(matches.length / 50))} · ${matches.length}개 파일`;
+        }
+        function filter() {
+            if (!built) return;
+            currentPage = 0;
+            const query = search.value.toLocaleLowerCase();
+            matches = indexed.filter(item => (!query || item.search.includes(query)) &&
+                (statusFilter.value === 'all' || item.file.status === statusFilter.value) &&
+                (analyzerFilter.value === 'all' || item.producers.has(analyzerFilter.value)));
+            draw();
+        }
+        disclosure.addEventListener('toggle', () => {
+            if (!disclosure.open || built) return;
+            indexed = coverage.files.map(file => {
+                const reasons = file.results.length
+                    ? file.results.flatMap(result => result.reasons.map(reason => `${producers[result.analyzer_id] || result.analyzer_id}: ${reasonText(reason)}`)).join('\n')
+                    : file.reasons.map(reasonText).join('\n');
+                return {file, reasons, search: (file.file_path + '\n' + reasons).toLocaleLowerCase(), producers: new Set(file.results.map(result => result.analyzer_id))};
+            });
+            built = true;
+            filter();
+        });
+        search.oninput = filter;
+        statusFilter.onchange = analyzerFilter.onchange = filter;
+        $('coverage-prev').onclick = () => { currentPage--; draw(); };
+        $('coverage-next').onclick = () => { currentPage++; draw(); };
+    }
     try {
         data = JSON.parse($('report-data').textContent);
         arch = data.architecture;
         bottlenecks = data.bottlenecks;
+        renderCoverage();
         if ((!arch && !bottlenecks) || (arch && (!Array.isArray(arch.nodes) || !Array.isArray(arch.edges))) || (bottlenecks && (!bottlenecks.dependency_network || !Array.isArray(bottlenecks.candidates)))) throw new Error('보고서 데이터 구조가 올바르지 않습니다.');
         network = bottlenecks?.dependency_network || arch?.stats?.analysis || {};
         metrics = {

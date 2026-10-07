@@ -1,0 +1,630 @@
+{
+  "spec_version": 2,
+  "spec": "agent-docs/spec-logs/cfa172d091b48e63-analysis-coverage-reporting.md",
+  "selection_policy": "Only explicitly enumerated items; seven analyzer x three normal classes and ten characterization selections x two granularities are declared expansions. Ten merge decisions are finite named rows, no inferred Cartesian product.",
+  "status": "complete; audit2 passed, all obligations accepted, six confirming probes detected and restored",
+  "load_check": {
+    "command": "/private/tmp/network-analysis-coverage-venv/bin/python -m pytest tests/test_analysis_coverage_reporting.py tests/test_analysis_coverage_browser.py --collect-only -q",
+    "result": "91 collected, exit 0"
+  },
+  "correction_impact": {
+    "batch": "CR07",
+    "shared_causes": [
+      "Aggregate-reason equality/cardinality could hide identical producer-to-file loss of span/content.",
+      "Mutually derived common payload comparisons could pass missing or wrong version.",
+      "Scope notice assertion accepted generic tally label instead of not-enumerated meaning."
+    ],
+    "affected_obligations": [
+      "V03",
+      "V04",
+      "V05",
+      "V06"
+    ],
+    "changed_dependencies": [
+      "local test-only assert_wire_version helper used only V03/V04/V05 functions",
+      "V03 exact shuffled aggregate-reason literals, empty table reasons and composition reasons",
+      "assert_summary limitation assertion used by V06 capability and page-boundary fixtures only"
+    ],
+    "checked_siblings": {
+      "V03 merge decisions": "Same ten named table cases now check version1 plus independently empty aggregate/producer reasons; state/count checks retained.",
+      "V03 shuffled fixture": "Exact separate a/code-message-span and z/code-message dictionaries; both forward/backward version; empty inventory version asserted.",
+      "V03 common composition": "Standalone/intermediate/direct/composed version1; direct/composed exact independent a.py empty reasons and b.ts syntax_error/oracle-recovery.",
+      "V04 directAPI and conversion": "Every same seven APIs/builders and file-converted values have own independent version1 check.",
+      "V04 source/build-only and framework-disabled": "PythonSourceAnalyzer/Kotlin.build and same four disabled-framework cases own independent version1 checks.",
+      "V04 explicit python+sqlalchemy disabled and20 characterization CLI records": "Architecture and bottleneck version1 asserted separately; stage/count/equality unchanged.",
+      "V05 export/regeneration": "Architecture/bottleneck/inline/regenerated values individually version1; old/no-snapshot coverage stays absent.",
+      "V06 assert_summary callers": "Three available report capability variants and0/1/50/51 boundaries require actual unlisted-path/count limitation phrase. Legacy/unavailable and hostile-specific assertions unchanged.",
+      "V01/V02": "coverage_of,own_result,analyze andcli_capture helpers unchanged; no new version helper called from V01/V02. Their accepted assertions remain dependencies unchanged.",
+      "V07": "Read/parse runners/read guards unchanged. Timing does not call assert_summary or assert_wire_version; only existing expand helper reused unchanged. Thresholds/fresh contexts/measurement unchanged.",
+      "V08": "Composition/propagation/counter review accepted; stronger V03/V04 assertions corroborate existing behavior without changing main-review inputs or accepted architectural findings."
+    },
+    "acceptance_needing_invalidation": "V03/V04/V05/V06 remain open from verifier1 pending rerun and verifier2. No accepted V01/V02/V07/V08 observation/helper dependency changed; main owns disposition after targeted/full evidence."
+  },
+  "spec_challenges": [],
+  "inapplicable": [
+    {
+      "characteristic": "Flexibility",
+      "reason": "Deployment/platform expansion excluded by spec"
+    },
+    {
+      "characteristic": "Safety",
+      "reason": "No safety-critical action in report"
+    }
+  ],
+  "mutation_proposals": [
+    {
+      "class": "wrong aggregate state/count",
+      "rejecting_tests": [
+        "test_V03_merge_decision_table",
+        "test_V03_deterministic_reasons_empty_and_excluded"
+      ],
+      "distinct_defect": "complete+failed is collapsed to complete or duplicate producer increments counts"
+    },
+    {
+      "class": "wrong observed parse state",
+      "rejecting_tests": [
+        "test_V01_parse_errors_and_surviving_sibling"
+      ],
+      "distinct_defect": "recovered parser error is always reported complete"
+    },
+    {
+      "class": "lost coverage propagation",
+      "rejecting_tests": [
+        "test_V04_direct_snapshot_api",
+        "test_V05_characterization_and_V04_cli_stages"
+      ],
+      "distinct_defect": "builder stats replacement or bottleneck export drops common coverage"
+    },
+    {
+      "class": "aggregate reason content loss",
+      "rejecting_tests": [
+        "test_V03_deterministic_reasons_empty_and_excluded"
+      ],
+      "distinct_defect": "Remove span only from files[].reasons while retaining producer reasons."
+    },
+    {
+      "class": "common version wrong or missing",
+      "rejecting_tests": [
+        "test_V03_merge_decision_table",
+        "test_V04_direct_snapshot_api",
+        "test_V05_json_exports_and_regeneration"
+      ],
+      "distinct_defect": "Omit coverage.version or return2 while mutually derived reporting still agrees."
+    },
+    {
+      "class": "scope limitation missing",
+      "rejecting_tests": [
+        "test_V06_report_capabilities",
+        "test_V06_lazy_page_boundaries"
+      ],
+      "distinct_defect": "Delete not-enumerated notice while generic count labels remain."
+    }
+  ],
+  "obligations": {
+    "V01": {
+      "parents": [
+        "F01",
+        "F02",
+        "Q01",
+        "Q05",
+        "C01",
+        "C02",
+        "C03",
+        "C04"
+      ],
+      "variants_and_target_surface": "standalone snapshot producers; seven ids",
+      "test_layer": "integration",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "equivalence partitioning",
+      "coverage_items": [
+        "seven analyzers normal/empty/comment-only",
+        "four strict failures Python/FastAPI/SQLAlchemy/NestJS",
+        "three recovered TypeScript/Kotlin/Android errors",
+        "NestJS unsupported_expression/unresolved_reference/ambiguous_reference/bootstrap_unresolved"
+      ],
+      "target": "100% declared items",
+      "observation": "producer status, reason code/message/span, sibling result",
+      "expected_value_source": "F01/F02 statuses; hand-written parser partitions; existing public NestJS diagnostic data preserves original reason/span",
+      "escaping_defect": "constant complete; failed file drops valid sibling; semantic reasons lost",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "F01/F02 statuses; hand-written parser partitions; existing public NestJS diagnostic data preserves original reason/span",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "pytest.xml",
+          "pytest.log"
+        ]
+      },
+      "test_names": [
+        "test_V01_valid_partitions",
+        "test_V01_parse_errors_and_surviving_sibling",
+        "test_V01_nestjs_existing_diagnostics_preserved"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged",
+      "acceptance_source": "verifier-1.md"
+    },
+    "V02": {
+      "parents": [
+        "F03",
+        "Q01",
+        "Q05",
+        "C05",
+        "C06"
+      ],
+      "variants_and_target_surface": "snapshot scanner, producer discovery, CLI inventory",
+      "test_layer": "unit/integration",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "boundary value analysis (2-value)",
+      "coverage_items": [
+        "explicit_output",
+        "lockfile",
+        "vendored",
+        "generated_path",
+        "unreadable",
+        "too_large",
+        "binary",
+        "generated_marker",
+        "agent_document_disabled",
+        "max/max+1",
+        "TS/NestJS node_modules discovery skip; Kotlin/Android build discovery skip",
+        "unrelated .txt",
+        "empty inventory",
+        "existing output/new output"
+      ],
+      "target": "100% declared items",
+      "observation": "excluded row and reason, reader invocation list, inventory paths",
+      "expected_value_source": "fixed independent nine-code mapping; byte counts 1000/1001; output paths drawn only from input list; inherited scanner precedence tests in full suite",
+      "escaping_defect": "max equality excluded; output read before exclusion; newly invented output row; skipped conflated with not_targeted",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "fixed independent nine-code mapping; byte counts 1000/1001; output paths drawn only from input list; inherited scanner precedence tests in full suite",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "pytest.xml",
+          "pytest.log"
+        ]
+      },
+      "test_names": [
+        "test_V02_scanner_codes_and_size_boundary",
+        "test_V02_discovery_excluded_vs_unrelated",
+        "test_V02_cli_output_inventory_without_reading_or_invention",
+        "test_V03_deterministic_reasons_empty_and_excluded"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "evidence_revision": 2,
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged",
+      "acceptance_source": "verifier-1.md"
+    },
+    "V03": {
+      "parents": [
+        "F04",
+        "Q01",
+        "C07"
+      ],
+      "variants_and_target_surface": "shared accumulator API",
+      "test_layer": "unit",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "decision table",
+      "coverage_items": [
+        "complete",
+        "partial",
+        "failed",
+        "skipped",
+        "complete+failed",
+        "complete+skipped",
+        "partial+failed",
+        "failed+skipped",
+        "duplicate complete",
+        "duplicate mixed",
+        "no result",
+        "excluded overriding complete producer",
+        "shuffled reports/reasons",
+        "compose common values"
+      ],
+      "target": "100% declared items",
+      "observation": "Exact common and per-producer summaries; producer statuses; duplicate producer targeted count one; shuffled aggregate reasons equal independently supplied code/message/span dictionaries; empty fixture/merge reasons are empty; composition aggregate reason dictionaries exact; every observed accumulator coverage version has integer type and value1.",
+      "expected_value_source": "finite F04 merge decision table; summary conservation calculated from two fixture files; separate aggregate-reason literal dictionaries do not alias producer input; Signatures specifies integer version1",
+      "escaping_defect": "duplicate accounting; producer overwrite; reasons dropped; scanner exclusion bypassed; producer summaries all zero or duplicate producer count greater than one; aggregate-only reason span stripped; common version absent/boolean/2",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "finite F04 merge decision table; summary conservation calculated from two fixture files",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "pytest.xml",
+          "pytest.log"
+        ]
+      },
+      "test_names": [
+        "test_V03_merge_decision_table",
+        "test_V03_deterministic_reasons_empty_and_excluded",
+        "test_V03_common_coverage_composition"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "evidence_revision": 7,
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged"
+    },
+    "V04": {
+      "parents": [
+        "F05",
+        "F06",
+        "Q01",
+        "Q03",
+        "C08",
+        "C09",
+        "C10"
+      ],
+      "variants_and_target_surface": "CLI file/symbol and direct snapshot APIs",
+      "test_layer": "integration",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "combinatorial (base choice)",
+      "coverage_items": [
+        "7 standalone file/symbol",
+        "fastapi+sqlalchemy file/symbol",
+        "nestjs+typescript file/symbol",
+        "android+kotlin --no-language-graph file/symbol",
+        "four frameworks language disabled",
+        "explicit python+sqlalchemy language disabled",
+        "PythonSourceAnalyzer.analyze",
+        "KotlinAnalyzer.build",
+        "seven analyze APIs",
+        "four builders",
+        "legacy duck architecture"
+      ],
+      "target": "100% declared items",
+      "observation": "producer id sets, unique counts, architecture/bottleneck equality, file conversion retains common value; independently assert integer coverage.version1 on directAPIs, conversion, source/build-only, disabled-framework builders, explicit disabled-language CLI and20 characterization CLI records",
+      "expected_value_source": "explicit hand-written expected stage sets from F05; own result complete on empty source; schema5/6,v4/v5 from fixed spec; Signatures independently requires integer version1 at each observed reporting boundary",
+      "escaping_defect": "implicit stage lost; disabled stage fabricated; direct build loses coverage; bottleneck differs",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "explicit hand-written expected stage sets from F05; own result complete on empty source; schema5/6,v4/v5 from fixed spec",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "pytest.xml",
+          "pytest.log",
+          "regression.json"
+        ]
+      },
+      "test_names": [
+        "test_V04_direct_snapshot_api",
+        "test_V04_source_and_build_only_apis",
+        "test_V04_framework_disabled_language",
+        "test_V04_explicit_python_sqlalchemy_disabled",
+        "test_V04_no_snapshot_and_unknown_legacy_architecture",
+        "test_V05_characterization_and_V04_cli_stages",
+        "test_V05_json_exports_and_regeneration"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "evidence_revision": 7,
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged"
+    },
+    "V05": {
+      "parents": [
+        "F06",
+        "F08",
+        "Q03",
+        "Q05",
+        "C10",
+        "C11",
+        "C12"
+      ],
+      "variants_and_target_surface": "serialization, regenerated reports, fatal signals",
+      "test_layer": "integration",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "scenario",
+      "coverage_items": [
+        "7 standalone+3 combinations x file/symbol",
+        "old architecture5/6 + bottleneck4/5",
+        "JSON-only regeneration",
+        "fatal reader RuntimeError",
+        "fatal analyzer RuntimeError"
+      ],
+      "target": "100% declared items",
+      "observation": "full payload equality ignoring exactly two coverage fields, schema, inline exports and regenerated payload, RuntimeError signal/no result output; independently assert integer coverage.version1 on observed architecture/bottleneck and inline/regenerated serialized outputs",
+      "expected_value_source": "immutable characterization-baseline.json; fixed fatal marker; additive schema requirements; Signatures independently requires integer version1 rather than equality between derived payloads",
+      "escaping_defect": "graph/metrics regression hidden by normalization; serialization strips coverage; fatal errors broadly swallowed",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "immutable characterization-baseline.json; fixed fatal marker; additive schema requirements",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "regression.json",
+          "pytest.xml",
+          "pytest.log",
+          "characterization-baseline.json"
+        ]
+      },
+      "test_names": [
+        "test_V05_characterization_and_V04_cli_stages",
+        "test_V05_json_exports_and_regeneration",
+        "test_V05_fatal_signals_preserved",
+        "test_V06_legacy_schema_pairs",
+        "TestRegression.test_O11_characterization_existing_standalone_outputs_are_byte_identical"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "evidence_revision": 7,
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged"
+    },
+    "V06": {
+      "parents": [
+        "F07",
+        "Q04",
+        "Q06",
+        "C11",
+        "C12",
+        "C13"
+      ],
+      "variants_and_target_surface": "offline HTML combined/architecture-only/bottleneck-only/legacy/no-snapshot",
+      "test_layer": "end-to-end",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "scenario",
+      "coverage_items": [
+        "five report capability fixtures",
+        "0/1/50/51 rows",
+        "path search",
+        "reason search",
+        "status filter",
+        "producer filter excludes unmatched/untargeted/excluded",
+        "filter page reset",
+        "prev/next bounds",
+        "hostile path/code/message",
+        "legacy schema pairs"
+      ],
+      "target": "100% declared items",
+      "observation": "Exact summary counts paired with independent human status labels; four table cells per file match path, human file status, each producer human label+status, attributed code/message/span lines or em dash; DOM file path rows, controls, browser errors/requests/attack flag.; summary notice explicitly states that paths/counts outside the list are not enumerated, so generic tally labels or raw token cannot satisfy the observation",
+      "expected_value_source": "independently synthesized six-state records and fixed malicious string; selection computed over fixture list; fixed status and analyzer human-label dictionaries provided as interface choices; exact producer/status/reason text calculated only from fixture fields; F07 scope limitation, visible notice \"목록 밖 경로와 건수는 집계되지 않았습니다\"",
+      "escaping_defect": "eager 10k DOM creation; query ignored; stale page after filter; HTML injection; invented coverage for legacy; missing status cells; wrong human status labels; producer statuses omitted; reason attributed to every producer instead of its owner",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "independently synthesized six-state records and fixed malicious string; selection computed over fixture list",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "browser.json",
+          "pytest.xml",
+          "pytest.log"
+        ],
+        "render_readiness": "Shared expand helper waits for first coverage-list tbody tr to attach. This includes the zero-match row; no fixed sleeps. Timing includes readiness wait."
+      },
+      "test_names": [
+        "test_V06_report_capabilities",
+        "test_V06_lazy_page_boundaries",
+        "test_V06_search_filters_reset_and_producer_membership",
+        "test_V06_hostile_paths_codes_messages_are_literal",
+        "test_V06_legacy_schema_pairs"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "evidence_revision": 7,
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged"
+    },
+    "V07": {
+      "parents": [
+        "F01",
+        "F07",
+        "Q02",
+        "Q07",
+        "C13"
+      ],
+      "variants_and_target_surface": "read/parse cost and 10k offline UI",
+      "test_layer": "integration/end-to-end",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "scenario",
+      "coverage_items": [
+        "seven standalone source-read guard",
+        "immutable exact counters on all20 selected variants",
+        "10000 files x 7 producers per file",
+        "5 fresh contexts",
+        "summary/disclosure/search/status/producer/page median",
+        "existing full-suite performance criteria"
+      ],
+      "target": "100% declared items",
+      "observation": "exact source-read/parse counts; five raw timings and medians; <=50 rows",
+      "expected_value_source": "immutable counter-baseline.json; Q02 thresholds <=5000 summary and <=300 others; independent 10000-row/all-targeted fixture",
+      "escaping_defect": "extra AST reparse unnoticed; faster small fixture substituted; wrong timing threshold; all rows eagerly created",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "immutable counter-baseline.json; Q02 thresholds <=5000 summary and <=300 others; independent 10000-row/all-targeted fixture",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "counters.json",
+          "performance.json",
+          "counter-baseline.json",
+          "pytest.xml",
+          "pytest.log"
+        ]
+      },
+      "test_names": [
+        "test_V07_snapshot_has_no_extra_source_reads",
+        "test_V07_read_parse_counts_match_immutable_characterization",
+        "test_V07_large_report_five_fresh_context_medians",
+        "existing performance suite via exact wrapper"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged",
+      "acceptance_source": "verifier-1.md"
+    },
+    "V08": {
+      "parents": [
+        "F01",
+        "F04",
+        "F05",
+        "F08",
+        "Q07"
+      ],
+      "variants_and_target_surface": "shared accounting architecture and integration",
+      "test_layer": "integration + repeatable main review",
+      "selection_policy": "each named item exactly; no arbitrary representative selection",
+      "technique": "scenario",
+      "coverage_items": [
+        "one merger implementation",
+        "seven producer recording paths",
+        "four implicit builder paths",
+        "merge/file-conversion/bottleneck propagation"
+      ],
+      "target": "100% declared items",
+      "observation": "main enumerates aggregation call paths and unchanged extraction/read/parse behavior; automated public composition/propagation/counter checks",
+      "expected_value_source": "F01/F04/F05/F08; one common merger invariant requires implementation-aware main review independent of test author",
+      "escaping_defect": "independent adapter merge policies drift; build-only stage missing; duplicate producer identity lost",
+      "procedure": {
+        "inputs": "fixed fixture sources, independent synthetic wire payloads, or immutable pre-change main captures as named by tests",
+        "observation_boundary": "public producer/accumulator APIs, CLI serialized payloads, DOM and browser events",
+        "expected_result": "F01/F04/F05/F08; one common merger invariant requires implementation-aware main review independent of test author",
+        "repeatable_command": "python scripts/coverage_reporting_checks.py",
+        "artifacts": [
+          "verifier-1.md",
+          "coverage.json",
+          "counters.json",
+          "regression.json"
+        ],
+        "review_inputs": [
+          "spec v2",
+          "all seven producer adapters",
+          "four framework builder paths",
+          "CLI merge, file conversion, bottleneck propagation",
+          "counter-baseline.json versus counters.json"
+        ],
+        "review_observation": "Main identifies shared merger call paths, integration paths that actually execute parse/extraction, and any reporting-related new source read/parse operation. Record evidence references, observations and dispositions in verifier-1.md; isolated test author receives only behavior-level findings."
+      },
+      "test_names": [
+        "test_V03_common_coverage_composition",
+        "test_V04_direct_snapshot_api",
+        "test_V05_characterization_and_V04_cli_stages",
+        "test_V07_read_parse_counts_match_immutable_characterization"
+      ],
+      "execution": "suite7 passed at all declared items",
+      "review_status": "main implementation-aware review complete, counters and regression confirmed; independent audit pending",
+      "review": {
+        "spec_version": 2,
+        "procedure": "Read shared merger, seven producer paths, four implicit builder paths, CLI merge, file conversion and bottleneck propagation; compare main captured regression and parser/read counters. No implementation excerpts supplied to isolated test roles.",
+        "observations": [
+          {
+            "item": "single accounting policy",
+            "evidence": "language_analyzers/core/analysis_coverage.py",
+            "result": "one shared merger and status reducer; producer/common reports share grouping by file+analyzer id"
+          },
+          {
+            "item": "seven actual recording paths",
+            "evidence": "Python source; TypeScript _parse; Kotlin build; FastAPI/SQLAlchemy existing Python source passes; Android analyze; NestJS parse and existing diagnostics",
+            "result": "records emitted at existing parsing/extraction boundaries, empty valid source completes and recovery/errors preserve existing extraction"
+          },
+          {
+            "item": "four actual implicit builder paths",
+            "evidence": "FastAPI/SQLAlchemy source+build; Android Kotlin.build with original cache; NestJS TypeScript.analyze",
+            "result": "actual stage report retained before stats replacement and even graph emission suppression; disabled stages not synthesized"
+          },
+          {
+            "item": "integration",
+            "evidence": "code_analyzer/cli.py; analysis/file_graph.py; bottlenecks/core.py; report/bottlenecks/generate.py",
+            "result": "CLI uses shared accounting; file conversion copies stats; bottleneck propagates same value; existing JSON regeneration permits nested field"
+          },
+          {
+            "item": "read/parse invariance",
+            "evidence": "counters.json vs immutable counter-baseline.json,20 variants",
+            "result": "zero extra reads/parses verified"
+          },
+          {
+            "item": "extraction invariance",
+            "evidence": "regression.json vs immutable characterization-baseline.json,20 variants",
+            "result": "serialized graph/details/metrics/candidates unchanged ignoring only added coverage fields"
+          },
+          {
+            "item": "fatal/legacy behavior",
+            "evidence": "main source diff and new automated assertions",
+            "result": "no new broad catches or graph extraction rules; legacy None stats preserved"
+          }
+        ]
+      },
+      "acceptance": "accepted by final independent audit2; retained audit1 where dependencies unchanged",
+      "acceptance_source": "verifier-1.md"
+    }
+  },
+  "test_command_result": {
+    "exit_code": 0,
+    "passed": 1132,
+    "subtests_passed": 200,
+    "seconds": 686.34,
+    "artifacts": [
+      "pytest.xml",
+      "pytest.log",
+      "run.json"
+    ]
+  },
+  "findings": [
+    {
+      "id": "TF02-DISCOVERY",
+      "disposition": "corrected same four declared discovery fixtures to original policy"
+    },
+    {
+      "id": "TF03-JSON-BOUNDARY",
+      "disposition": "corrected JSON comparison boundary; immutable baseline unchanged"
+    },
+    {
+      "id": "TF04-PRODUCER-COUNTS",
+      "disposition": "exact producer summaries observed in same merge-table cases"
+    },
+    {
+      "id": "TF05-TOGGLE-TIMING",
+      "disposition": "observable render readiness replaces immediate asynchronous DOM read"
+    },
+    {
+      "id": "TF05-LEGACY-HASH",
+      "disposition": "only approved coverage additions removed before unchanged original hashes"
+    },
+    {
+      "id": "TF06-UI-RESULTS",
+      "disposition": "same fixtures now observe visible status/producer/reason attribution"
+    }
+  ],
+  "mutations": {
+    "artifact": "mutations.json",
+    "run": 6,
+    "detected": 6,
+    "all_restored": true,
+    "classes": [
+      "duplicate accounting",
+      "observed parser status",
+      "coverage information corruption across aggregation/wire/export/display"
+    ]
+  },
+  "audit1": {
+    "artifact": "verifier-1.md",
+    "accepted": [
+      "V01",
+      "V02",
+      "V07",
+      "V08"
+    ],
+    "open": [
+      "V03",
+      "V04",
+      "V05",
+      "V06"
+    ]
+  },
+  "post_audit_findings": [
+    {
+      "id": "TF03-AGGREGATE-REASONS",
+      "disposition": "corrected in same fixture; aggregate-reason-span assertion detected; closed by independent audit2"
+    },
+    {
+      "id": "TF03-COMMON-VERSION",
+      "disposition": "integer1 independently observed at declared surfaces; common-coverage-version assertion detected; closed by independent audit2"
+    },
+    {
+      "id": "TF06-SCOPE-LIMITATION",
+      "disposition": "actual human limitation observed; generic-tally replacement assertion detected; closed by independent audit2"
+    }
+  ],
+  "audit2": {
+    "artifact": "verifier-2.md",
+    "result": "pass",
+    "invocations": 2,
+    "open_findings": []
+  }
+}

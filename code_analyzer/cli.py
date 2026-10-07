@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, List, Mapping, Optional
 
+from language_analyzers.core.analysis_coverage import attach_coverage
 from analysis import (EdgeWeightsError, GraphAnalysisConfig, GraphAnalyzer,
                       default_edge_weights_path, load_edge_weights)
 from repository import (ScanPolicyError, build_snapshot, default_scan_policy_path,
@@ -313,6 +314,7 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config, result
         for key, item in arch.stats.items():
             if key != "analysis":
                 merged.stats.setdefault(key, item)
+    attach_coverage(merged, repository_snapshot, *(arch.stats.get("analysis_coverage") for arch, _, _ in results))
     for arch, _builder, _calls in results:
         merged.edges.extend(edge for edge in getattr(arch, "pending_implementation_edges", ())
                             if edge.from_id in seen and edge.to_id in seen)
@@ -383,7 +385,6 @@ def main(
             ignore_source, paths = inventory
         else:
             ignore_source, paths = "", inventory
-        paths = _exclude_output_paths(project_path, paths, outputs)
         timing = {}
         overall_started = time.perf_counter()
         stage_started = overall_started

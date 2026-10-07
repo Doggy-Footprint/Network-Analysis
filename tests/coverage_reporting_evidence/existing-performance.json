@@ -1,0 +1,10 @@
+{
+  "spec_version": 2,
+  "passed": true,
+  "current_existing_performance_evidence": "suite7 pytest.xml includes successful original real-snapshot three-process benchmark and browser performance assertions; original raw reports were restored by wrapper",
+  "retained_suite6_live_median_file_seconds": 79.10973837494384,
+  "threshold_file_seconds": 180,
+  "retained_observation": "Actual live benchmark.json observed during suite6 before restoration; V07 acceptance retained, unchanged dependencies. No numerical claim is made for restored suite7 raw reports.",
+  "full_suite_status": "1132 passed, 200 subtests passed in 686.34s",
+  "historical_reports_restored": true
+}

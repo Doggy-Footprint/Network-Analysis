@@ -4,6 +4,8 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Union
 
+from language_analyzers.core.analysis_coverage import analysis_report, attach_coverage, build_analysis_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -50,14 +52,20 @@ class SQLAlchemyAnalyzer:
             project_name=self.project_path.name,
             project_path=str(self.project_path),
         )
+        source_analyzer = PythonSourceAnalyzer(self.project_path, self.snapshot)
         sources = sorted(
-            PythonSourceAnalyzer(self.project_path, self.snapshot).analyze(),
+            source_analyzer.analyze(),
             key=lambda source: self._relative(source),
         )
         for source in sources:
             relative = self._relative(source)
             self._extract_models(source, relative, arch)
             self._extract_migration(source, relative, arch)
+        self.analysis_coverage = build_analysis_coverage(self.snapshot, [analysis_report("sqlalchemy", [
+            {"file_path": row["file_path"], "status": row["status"], "reasons": row["reasons"]}
+            for row in source_analyzer.analysis_coverage["files"] if row["results"]
+        ])]) if self.snapshot is not None else {}
+        attach_coverage(arch, self.snapshot, self.analysis_coverage)
         return arch
 
     def _relative(self, source: PythonSourceFile) -> str:

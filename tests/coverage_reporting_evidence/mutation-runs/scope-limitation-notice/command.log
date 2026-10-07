@@ -1,0 +1,65 @@
+........................................................................ [  6%]
+.....F
+=================================== FAILURES ===================================
+____________________ test_V06_report_capabilities[combined] ____________________
+
+open_report = <function open_report.<locals>.open_page at 0x10839f7e0>
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-81/test_V06_report_capabilities_c0')
+variant = 'combined'
+
+    @pytest.mark.parametrize('variant',('combined','architecture-only','bottlenecks-only','legacy','no-snapshot'))
+    def test_V06_report_capabilities(open_report,tmp_path,variant):
+        arch,bottlenecks,cov=payloads(tmp_path,6,variant)
+        page=open_report(arch,bottlenecks)
+        if variant in ('legacy','no-snapshot'):
+            assert any(word in page.locator('#coverage-summary').inner_text().lower() for word in ('없음','unavailable','제공되지','정보가 없'))
+            assert rows(page)==[]
+        else:
+>           assert_summary(page,cov)
+
+tests/test_analysis_coverage_browser.py:85: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='file:///private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-81/test_V06_report_capabilities_c0/report-0.html'>
+cov = {'version': 1, 'scope': {'ignore_source': 'provided', 'unlisted_files': 'not_enumerated'}, 'summary': {'complete_file_... {'complete_file_count': 1, 'partial_file_count': 1, 'failed_file_count': 1, 'skipped_file_count': 1, ...}}, ...], ...}
+
+    def assert_summary(page,cov):
+        for key,value in cov['summary'].items():
+            count=page.locator(f'[data-coverage-count="{key}"]')
+            expect(count).to_have_text(str(value))
+            status=key.removesuffix('_file_count')
+            if status in STATUS_LABELS:
+                expect(count.locator('..')).to_contain_text(STATUS_LABELS[status])
+>       expect(page.locator('#coverage-summary')).to_contain_text('목록 밖 경로와 건수는 집계되지 않았습니다')
+E       AssertionError: Locator expected to contain text '목록 밖 경로와 건수는 집계되지 않았습니다'
+E       Actual value: 분석 범위1완료1부분 분석1실패1건너뜀1대상 밖1제외인벤토리 6 · 수집 5 · 분석 대상 4수집 목록: provided · 파일 집계.완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다. 
+E       Call log:
+E         - Expect "to_contain_text" locator("#coverage-summary") with timeout 5000ms
+E         - waiting for locator("#coverage-summary")
+E           14 × locator resolved to <div id="coverage-summary">…</div>
+E              - unexpected value "분석 범위1완료1부분 분석1실패1건너뜀1대상 밖1제외인벤토리 6 · 수집 5 · 분석 대상 4수집 목록: provided · 파일 집계.완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다."
+E       
+E       Aria snapshot:
+E       - heading "분석 범위" [level=2]
+E       - strong: "1"
+E       - text: 완료
+E       - strong: "1"
+E       - text: 부분 분석
+E       - strong: "1"
+E       - text: 실패
+E       - strong: "1"
+E       - text: 건너뜀
+E       - strong: "1"
+E       - text: 대상 밖
+E       - strong: "1"
+E       - text: 제외
+E       - paragraph: 인벤토리 6 · 수집 5 · 분석 대상 4
+E       - paragraph: "수집 목록: provided · 파일 집계."
+E       - paragraph: 완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다.
+
+tests/test_analysis_coverage_browser.py:52: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_analysis_coverage_browser.py::test_V06_report_capabilities[combined]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 77 passed in 8.19s
+

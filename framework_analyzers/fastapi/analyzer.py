@@ -10,6 +10,8 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
+from language_analyzers.core.analysis_coverage import analysis_report, attach_coverage, build_analysis_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -93,10 +95,17 @@ class FastAPIAnalyzer:
             schemas=unique_schemas,
         )
 
+        attach_coverage(arch, self.snapshot, self.analysis_coverage)
         return arch
 
     def _discover_and_parse_files(self):
-        for source_file in PythonSourceAnalyzer(self.project_path, self.snapshot).analyze():
+        source_analyzer = PythonSourceAnalyzer(self.project_path, self.snapshot)
+        sources = source_analyzer.analyze()
+        self.analysis_coverage = build_analysis_coverage(self.snapshot, [analysis_report("fastapi", [
+            {"file_path": row["file_path"], "status": row["status"], "reasons": row["reasons"]}
+            for row in source_analyzer.analysis_coverage["files"] if row["results"]
+        ])]) if self.snapshot is not None else {}
+        for source_file in sources:
             file_ast = PythonFileAST(
                 file_path=source_file.file_path,
                 module_name=source_file.module_name,

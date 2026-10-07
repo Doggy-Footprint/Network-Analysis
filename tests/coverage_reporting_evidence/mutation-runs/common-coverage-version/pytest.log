@@ -1,0 +1,32 @@
+................................F
+=================================== FAILURES ===================================
+____________ test_V03_merge_decision_table[states0-complete-False] _____________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-80/test_V03_merge_decision_table_0')
+states = ['complete'], expected = 'complete', same_producer = False
+
+    @pytest.mark.parametrize('states,expected,same_producer', [
+     (['complete'],'complete',False),(['partial'],'partial',False),(['failed'],'failed',False),(['skipped'],'skipped',False),
+     (['complete','failed'],'partial',False),(['complete','skipped'],'partial',False),(['partial','failed'],'partial',False),
+     (['failed','skipped'],'failed',False),(['complete','complete'],'complete',True),(['failed','complete','skipped'],'partial',True)])
+    def test_V03_merge_decision_table(tmp_path,states,expected,same_producer):
+        from language_analyzers.core.analysis_coverage import analysis_report, build_analysis_coverage
+        reports=[analysis_report('python-core' if same_producer else f'producer-{i}',[{'file_path':'a.py','status':state,'reasons':[]}]) for i,state in enumerate(states)]
+        coverage=build_analysis_coverage(snapshot(tmp_path,{'a.py':'','notes.txt':''}),reports)
+>       assert_wire_version(coverage)
+
+tests/test_analysis_coverage_reporting.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+coverage = {'version': 2, 'scope': {'ignore_source': 'snapshot.v1', 'unlisted_files': 'not_enumerated'}, 'summary': {'inventory_f...ary': {'complete_file_count': 1, 'partial_file_count': 0, 'failed_file_count': 0, 'skipped_file_count': 0, ...}}], ...}
+
+    def assert_wire_version(coverage):
+        assert type(coverage['version']) is int
+>       assert coverage['version']==1
+E       assert 2 == 1
+
+tests/test_analysis_coverage_reporting.py:16: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_analysis_coverage_reporting.py::test_V03_merge_decision_table[states0-complete-False]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 32 passed in 0.38s

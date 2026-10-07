@@ -240,6 +240,14 @@ class TestRegression(unittest.TestCase):
                 project = REPO / case["relative_project"]
                 outputs = cli_bytes(project, *case["flags"], seed="0")
                 for name, content in zip(("json", "bottlenecks"), outputs):
+                    payload = json.loads(content)
+                    if name == "json":
+                        payload["stats"].pop("analysis_coverage", None)
+                        content = json.dumps(payload, indent=2, ensure_ascii=False).encode("utf-8")
+                    else:
+                        payload["coverage"].pop("analysis_coverage", None)
+                        content = (json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                                              ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
                     portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
                     self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
                     if str(REPO) == baseline["captured_root"]:

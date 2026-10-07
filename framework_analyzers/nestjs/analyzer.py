@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
 from language_analyzers.core.graph_models import SourceSpan
 from language_analyzers.typescript import ast as ts
 from language_analyzers.typescript.analyzer import IGNORED_DIRECTORIES, SOURCE_EXTENSIONS
@@ -84,6 +85,9 @@ class NestJSAnalyzer:
             keys = [p.relative_to(self.project_path).as_posix() for p in paths]
         else:
             keys = sorted(contents)
+        paths = [self.project_path / key for key in keys if Path(key).suffix in SOURCE_EXTENSIONS
+                 and not any(part in IGNORED_DIRECTORIES or part.startswith(".") for part in Path(key).parts)]
+        recorder = CoverageRecorder(self.snapshot, "nestjs", paths, SOURCE_EXTENSIONS)
         for key in keys:
             path = Path(key)
             if path.suffix not in SOURCE_EXTENSIONS or any(p in IGNORED_DIRECTORIES or p.startswith(".") for p in path.parts):
@@ -100,6 +104,7 @@ class NestJSAnalyzer:
             if tree.root_node.has_error:
                 self._diagnostic_raw("syntax_error", SourceSpan(key, 1, max(1, content.count("\n") + 1)), "", "file contains a syntax error")
                 continue
+            recorder.record(key)
             self.files[key] = _File(key, source, tree)
         for file in self.files.values():
             self._index(file)
@@ -140,6 +145,11 @@ class NestJSAnalyzer:
         arch.declarations.sort(key=lambda d: d.id)
         arch.references.sort(key=lambda r: (r.from_id, r.to_id, r.relation, r.evidence.file_path, r.evidence.start_line))
         arch.diagnostics.sort(key=lambda d: (d.span.file_path, d.span.start_line, d.span.start_col, d.code, d.expression))
+        for diagnostic in arch.diagnostics:
+            recorder.record(diagnostic.span.file_path, "failed" if diagnostic.code == "syntax_error" else "partial",
+                            [{"code": diagnostic.code, "message": diagnostic.reason, "span": dict(diagnostic.span.__dict__)}])
+        self.analysis_coverage = recorder.coverage()
+        attach_coverage(arch, self.snapshot, self.analysis_coverage)
         return arch
 
     def _diagnostic_raw(self, code, span, expression, reason):

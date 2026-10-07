@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Union
 
+from language_analyzers.core.analysis_coverage import CoverageRecorder
 from repository.models import RepositorySnapshot
 
 
@@ -59,6 +60,7 @@ class PythonSourceAnalyzer:
 
     def _analyze_snapshot(self) -> List[PythonSourceFile]:
         self.coverage = {"python_file_count": 0, "parsed_python_file_count": 0, "invalid_python_files": []}
+        recorder = CoverageRecorder(self.snapshot, "python-core", [], set())
         files = []
         for relative, source_code in self.snapshot.source_map.items():
             if not relative.endswith(".py"):
@@ -67,11 +69,14 @@ class PythonSourceAnalyzer:
             file_path = self.project_path / relative
             try:
                 tree = ast.parse(source_code, filename=str(file_path))
-            except (SyntaxError, ValueError):
+            except (SyntaxError, ValueError) as exc:
+                recorder.record(relative, "failed", [{"code": "syntax_error", "message": str(exc)}])
                 self.coverage["invalid_python_files"].append(relative)
                 continue
+            recorder.record(relative)
             files.append(PythonSourceFile(file_path, self._module_name(file_path), source_code, tree))
             self.coverage["parsed_python_file_count"] += 1
+        self.analysis_coverage = recorder.coverage()
         return files
 
     def _module_name(self, file_path: Path) -> str:

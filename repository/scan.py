@@ -139,6 +139,9 @@ def build_snapshot(
         {Path(path).as_posix().lstrip("./") for path in relative_paths}
     )
     for relative in normalized_paths:
+        if _matches_output(relative, explicit_outputs):
+            excluded.append(ExcludedFile(relative, "explicit_output"))
+            continue
         try:
             text = reader(root / relative)
         except (OSError, UnicodeError):

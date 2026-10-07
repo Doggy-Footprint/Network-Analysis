@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
+from language_analyzers.core.analysis_coverage import attach_coverage
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
 from language_analyzers.core.enrichment import enrich_repository
@@ -183,6 +184,7 @@ class PythonGraphAnalyzer:
             "edges_by_relation": dict(Counter(edge.relation for edge in edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in edges)),
         }
+        attach_coverage(architecture, self.snapshot, getattr(source_analyzer, "analysis_coverage", {}))
         architecture.report_collections = [self._symbol_collection(nodes)]
         return architecture
 

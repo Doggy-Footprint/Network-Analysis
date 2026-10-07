@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
+from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -112,7 +114,9 @@ class TypeScriptAnalyzer:
             self.project_path = snapshot_root
 
     def analyze(self) -> TypeScriptProjectArchitecture:
-        modules = [self._parse(path) for path in self._discover_files()]
+        paths = self._discover_files()
+        self._coverage_recorder = CoverageRecorder(self.snapshot, "typescript-core", paths, SOURCE_EXTENSIONS)
+        modules = [self._parse(path) for path in paths]
         modules = [module for module in modules if module is not None]
         self._modules: Dict[str, _Module] = {module.file_key: module for module in modules}
         self._symbols: Dict[str, _Symbol] = {}
@@ -154,6 +158,8 @@ class TypeScriptAnalyzer:
         self._enrich(architecture)
         architecture.stats["nodes_by_kind"] = dict(Counter(node.kind for node in architecture.nodes))
         architecture.stats["edges_by_relation"] = dict(Counter(edge.relation for edge in architecture.edges))
+        self.analysis_coverage = self._coverage_recorder.coverage()
+        attach_coverage(architecture, self.snapshot, self.analysis_coverage)
         return architecture
 
     def _function_body_ids(self) -> Dict[str, Dict[Tuple[int, int], str]]:
@@ -195,6 +201,7 @@ class TypeScriptAnalyzer:
         source = text.encode("utf-8")
         tree = ts.parser_for_suffix(path.suffix).parse(source)
         file_key = path.relative_to(self.project_path).as_posix()
+        self._coverage_recorder.parsed(file_key, tree.root_node.has_error)
         return _Module(
             id=self._file_id(file_key),
             file_key=file_key,

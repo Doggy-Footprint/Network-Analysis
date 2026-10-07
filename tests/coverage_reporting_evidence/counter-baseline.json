@@ -1,0 +1,122 @@
+{
+  "android-kotlin:file": {
+    "kotlin_parse": 2,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "android-kotlin:symbol": {
+    "kotlin_parse": 2,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "android:file": {
+    "kotlin_parse": 1,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "android:symbol": {
+    "kotlin_parse": 1,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "fastapi-sqlalchemy:file": {
+    "kotlin_parse": 0,
+    "python_parse": 8,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "fastapi-sqlalchemy:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 8,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "fastapi:file": {
+    "kotlin_parse": 0,
+    "python_parse": 4,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "fastapi:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 4,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "kotlin:file": {
+    "kotlin_parse": 1,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "kotlin:symbol": {
+    "kotlin_parse": 1,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "nestjs-typescript:file": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 3
+  },
+  "nestjs-typescript:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 3
+  },
+  "nestjs:file": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 2
+  },
+  "nestjs:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 2
+  },
+  "python:file": {
+    "kotlin_parse": 0,
+    "python_parse": 2,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "python:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 2,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "sqlalchemy:file": {
+    "kotlin_parse": 0,
+    "python_parse": 4,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "sqlalchemy:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 4,
+    "read": 5,
+    "typescript_parse": 0
+  },
+  "typescript:file": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 1
+  },
+  "typescript:symbol": {
+    "kotlin_parse": 0,
+    "python_parse": 0,
+    "read": 5,
+    "typescript_parse": 1
+  }
+}

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
+from language_analyzers.core.analysis_coverage import attach_coverage
 from analysis import GraphAnalyzer
 from language_analyzers.core.cost import cost_for_span
 from language_analyzers.core.graph_models import Confidence, GraphEdge, GraphNode, Resolution
@@ -48,6 +49,7 @@ class NestJSGraphBuilder:
         arch.pending_implementation_edges = []
         if self.include_language_graph:
             language = TypeScriptAnalyzer(arch.project_path, snapshot=self.snapshot).analyze()
+            attach_coverage(arch, self.snapshot, language.stats.get("analysis_coverage"))
             language_ids = {node.id for node in language.nodes}
             for d in declarations:
                 if d.kind == "application":
@@ -78,6 +80,7 @@ class NestJSGraphBuilder:
         arch.edges = edges
         arch.report_collections.extend(self._collections(arch, declarations))
         counts = Counter(d.kind for d in declarations)
+        coverage = arch.stats.get("analysis_coverage")
         arch.stats = {
             "nestjs": {**{kind: counts.get(kind, 0) for kind in ("application", "module", "controller", "provider", "endpoint")},
                        "diagnostics": [d.as_dict() for d in arch.diagnostics]},
@@ -85,6 +88,7 @@ class NestJSGraphBuilder:
             "edges_by_relation": dict(Counter(edge.relation for edge in edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in edges)),
         }
+        attach_coverage(arch, self.snapshot, coverage)
         if self.compute_metrics:
             arch.stats["analysis"] = GraphAnalyzer(self.analysis_config).analyze(nodes, edges, project_path=arch.project_path)
         return arch

@@ -1,0 +1,27 @@
+{
+  "boundaries": [
+    0,
+    1,
+    50,
+    51
+  ],
+  "external_requests": [],
+  "fixtures": [
+    "combined",
+    "architecture-only",
+    "bottlenecks-only",
+    "legacy",
+    "no-snapshot"
+  ],
+  "hostile_literal": true,
+  "interactions": [
+    "path-search",
+    "reason-search",
+    "status-filter",
+    "producer-filter",
+    "reset",
+    "page-bounds"
+  ],
+  "pageerrors": [],
+  "spec_version": 2
+}

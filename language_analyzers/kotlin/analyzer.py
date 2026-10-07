@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -87,6 +89,7 @@ class KotlinAnalyzer:
             "edges_by_relation": dict(Counter(edge.relation for edge in architecture.edges)),
             "edges_by_confidence": dict(Counter(str(edge.confidence) for edge in architecture.edges)),
         }
+        attach_coverage(architecture, self.snapshot, self.analysis_coverage)
         architecture.report_collections = [self._symbol_collection(architecture.nodes)]
         return architecture
 
@@ -102,16 +105,20 @@ class KotlinAnalyzer:
         self._valid_utf8 = {}
         self._symbol_offsets = {}
 
-        for path in self._discover_files():
+        paths = self._discover_files()
+        recorder = CoverageRecorder(self.snapshot, "kotlin-core", paths, {".kt"})
+        for path in paths:
             try:
                 if self.snapshot is None:
                     source, root = self._parse_cache.read_and_parse(path)
                 else:
                     source = self.snapshot.source_map[path.relative_to(self.project_path).as_posix()].encode("utf-8")
                     source, root = self._parse_cache.parse_snapshot(path, source)
-            except OSError:
+            except OSError as exc:
+                recorder.record(path.relative_to(self.project_path).as_posix(), "failed", [{"code": "unreadable", "message": str(exc)}])
                 continue
             key = path.relative_to(self.project_path).as_posix()
+            recorder.parsed(key, root.has_error)
             text = self.snapshot.source_map[key] if self.snapshot is not None else SourceText(source.decode("utf-8", "replace"))
             self._files[key] = (source, text, root)
             self._positions[key] = NamePositions(text)
@@ -130,6 +137,7 @@ class KotlinAnalyzer:
         for symbol in self._symbols.values():
             self._add_symbol_edges(symbol)
 
+        self.analysis_coverage = recorder.coverage()
         return list(self._nodes.values()), list(self._edges.values())
 
     def _discover_files(self) -> List[Path]:

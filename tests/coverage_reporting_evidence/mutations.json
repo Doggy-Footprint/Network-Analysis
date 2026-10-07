@@ -1,0 +1,154 @@
+{
+  "spec_version": 2,
+  "results": [
+    {
+      "name": "aggregate-reason-span",
+      "rationale": "Audit1 TF03-AGGREGATE-REASONS: aggregated reason location must survive independently of producer reasons.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": "test_V03_deterministic_reasons_empty_and_excluded",
+      "failures": [
+        {
+          "name": "test_V03_deterministic_reasons_empty_and_excluded",
+          "message": "AssertionError: assert [{'code': 'a'...age': 'last'}] == [{'code': 'a'...age': 'last'}]\n  \n  At index 0 diff: {'code': 'a', 'message': 'first'} != {'code': 'a', 'message': 'first', 'span': {'file_path': 'a.py', 'start_line': 2, 'end_line': 2}}\n  Use -v to get more diff"
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/aggregate-reason-span",
+      "original_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored": true
+    },
+    {
+      "name": "common-coverage-version",
+      "rationale": "Audit1 TF03-COMMON-VERSION: required production wire version must be independently observed.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": [
+        "test_V01_valid_partitions",
+        "test_V03_merge_decision_table",
+        "test_V03_deterministic_reasons_empty_and_excluded",
+        "test_V04_direct_snapshot_api"
+      ],
+      "failures": [
+        {
+          "name": "test_V03_merge_decision_table[states0-complete-False]",
+          "message": "assert 2 == 1"
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/common-coverage-version",
+      "original_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored": true
+    },
+    {
+      "name": "scope-limitation-notice",
+      "rationale": "Audit1 TF06-SCOPE-LIMITATION: a generic tally must not replace the scope limitation.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": "test_V06_report_capabilities",
+      "failures": [
+        {
+          "name": "test_V06_report_capabilities[combined]",
+          "message": "AssertionError: Locator expected to contain text '목록 밖 경로와 건수는 집계되지 않았습니다'\nActual value: 분석 범위1완료1부분 분석1실패1건너뜀1대상 밖1제외인벤토리 6 · 수집 5 · 분석 대상 4수집 목록: provided · 파일 집계.완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다. \nCall log:\n  - Expect \"to_contain_text\" locator(\"#coverage-summary\") with timeout 5000ms\n  - waiting for locator(\"#coverage-summary\")\n    14 × locator resolved to <div id=\"coverage-summary\">…</div>\n       - unexpected value \"분석 범위1완료1부분 분석1실패1건너뜀1대상 밖1제외인벤토리 6 · 수집 5 · 분석 대상 4수집 목록: provided · 파일 집계.완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다.\"\n\nAria snapshot:\n- heading \"분석 범위\" [level=2]\n- strong: \"1\"\n- text: 완료\n- strong: \"1\"\n- text: 부분 분석\n- strong: \"1\"\n- text: 실패\n- strong: \"1\"\n- text: 건너뜀\n- strong: \"1\"\n- text: 대상 밖\n- strong: \"1\"\n- text: 제외\n- paragraph: 인벤토리 6 · 수집 5 · 분석 대상 4\n- paragraph: \"수집 목록: provided · 파일 집계.\"\n- paragraph: 완료는 선택된 분석 절차가 관측된 오류 없이 끝났다는 뜻이며, 모든 관계를 발견했다는 보증은 아닙니다."
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/scope-limitation-notice",
+      "original_sha256": "fb81db060ed8bcc2b3c18e6b6b7c2967d533ef674dc7639f9fd0e25aeb8d066e",
+      "restored_sha256": "fb81db060ed8bcc2b3c18e6b6b7c2967d533ef674dc7639f9fd0e25aeb8d066e",
+      "restored": true
+    },
+    {
+      "name": "duplicate-producer-count",
+      "rationale": "Duplicate executions must count one file per producer; this exercises the formerly unobserved producer summary.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": "test_V03_merge_decision_table",
+      "failures": [
+        {
+          "name": "test_V03_merge_decision_table[states8-complete-True]",
+          "message": "AssertionError: assert {'complete_fi...ount': 0, ...} == {'complete_fi...ount': 0, ...}\n  \n  Omitting 4 identical items, use -vv to show\n  Differing items:\n  {'targeted_file_count': 2} != {'targeted_file_count': 1}\n  Use -v to get more diff"
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/duplicate-producer-count",
+      "original_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored": true
+    },
+    {
+      "name": "recovered-ast-status",
+      "rationale": "Parser recovery must not be reported complete; this affects all three recovering frontends.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": "test_V01_parse_errors_and_surviving_sibling",
+      "failures": [
+        {
+          "name": "test_V01_parse_errors_and_surviving_sibling[typescript-core]",
+          "message": "AssertionError: assert 'complete' == 'partial'\n  \n  - partial\n  + complete"
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/recovered-ast-status",
+      "original_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored_sha256": "6516d06336f3a8905ae665fc111ab59049f2dbf917b515c22e0252ceccf563c8",
+      "restored": true
+    },
+    {
+      "name": "coverage-export-loss",
+      "rationale": "Export must retain the complete shared value, including file/producer results and summaries.",
+      "spec_version": 2,
+      "command": [
+        "/private/tmp/network-analysis-coverage-venv/bin/python",
+        "scripts/coverage_reporting_checks.py"
+      ],
+      "exit_code": 1,
+      "mutation_executed": true,
+      "intended_test_prefix": "test_V05_characterization_and_V04_cli_stages",
+      "failures": [
+        {
+          "name": "test_V05_characterization_and_V04_cli_stages",
+          "message": "AssertionError: assert {'version': 1..., ...}}], ...} == {'version': 1}\n  \n  Omitting 1 identical items, use -vv to show\n  Left contains 4 more items:\n  {'analyzers': [{'analyzer_id': 'python-core',\n                  'summary': {'complete_file_count': 2,\n                              'failed_file_count': 0,\n                              'partial_file_count': 0,...\n  \n  ...Full output truncated (37 lines hidden), use '-vv' to show"
+        }
+      ],
+      "detected": true,
+      "artifact": "tests/coverage_reporting_evidence/mutation-runs/coverage-export-loss",
+      "original_sha256": "46c316a6659453d65a8d822c677716b95aa916d308f94b3dc134e1bd97f2bb7e",
+      "restored_sha256": "46c316a6659453d65a8d822c677716b95aa916d308f94b3dc134e1bd97f2bb7e",
+      "restored": true
+    }
+  ],
+  "selected_classes": [
+    "duplicate accounting",
+    "observed parser status",
+    "coverage information corruption across aggregation, wire, export and display"
+  ],
+  "passing_evidence_restored": true
+}

@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
+from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
+
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
@@ -80,15 +82,19 @@ class AndroidAnalyzer:
             project_path=str(self.project_path),
         )
 
-        for file_path in self._discover_files():
+        paths = self._discover_files()
+        recorder = CoverageRecorder(self.snapshot, "android", paths, {".kt"})
+        for file_path in paths:
             try:
                 if self.snapshot is None:
                     source, root = self._parse_cache.read_and_parse(file_path)
                 else:
                     source = self.snapshot.source_map[file_path.relative_to(self.project_path).as_posix()].encode("utf-8")
                     source, root = self._parse_cache.parse_snapshot(file_path, source)
-            except OSError:
+            except OSError as exc:
+                recorder.record(file_path.relative_to(self.project_path).as_posix(), "failed", [{"code": "unreadable", "message": str(exc)}])
                 continue
+            recorder.parsed(file_path.relative_to(self.project_path).as_posix(), root.has_error)
             module = self._module_for(file_path)
             for decl in ka.top_level_declarations(root):
                 self._extract_declaration(decl, source, module, arch)
@@ -96,6 +102,8 @@ class AndroidAnalyzer:
 
         self._link(arch)
 
+        self.analysis_coverage = recorder.coverage()
+        attach_coverage(arch, self.snapshot, self.analysis_coverage)
         return arch
 
     def _discover_files(self) -> List[Path]:

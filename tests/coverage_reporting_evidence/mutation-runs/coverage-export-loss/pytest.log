@@ -1,0 +1,30 @@
+............................................................F
+=================================== FAILURES ===================================
+_________________ test_V05_characterization_and_V04_cli_stages _________________
+
+    def test_V05_characterization_and_V04_cli_stages():
+        baseline=json.loads((Path(__file__).parent/'coverage_reporting_evidence'/'characterization-baseline.json').read_text())
+        current=baseline_runner().capture()
+        assert without_coverage(current)==without_coverage(baseline), 'Characterization: extraction, schema, metrics and candidates changed'
+        expected={**{key:{key+'-core'} for key in ('python','typescript','kotlin')},'fastapi':{'fastapi','python-core'},'sqlalchemy':{'sqlalchemy','python-core'},'android':{'android','kotlin-core'},'nestjs':{'nestjs','typescript-core'},'fastapi-sqlalchemy':{'fastapi','sqlalchemy','python-core'},'nestjs-typescript':{'nestjs','typescript-core'},'android-kotlin':{'android','kotlin-core'}}
+        for name,record in current.items():
+            cov=record['architecture']['stats']['analysis_coverage']
+            assert_wire_version(cov)
+            assert_wire_version(record['bottlenecks']['coverage']['analysis_coverage'])
+>           assert cov==record['bottlenecks']['coverage']['analysis_coverage']
+E           AssertionError: assert {'version': 1..., ...}}], ...} == {'version': 1}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Left contains 4 more items:
+E             {'analyzers': [{'analyzer_id': 'python-core',
+E                             'summary': {'complete_file_count': 2,
+E                                         'failed_file_count': 0,
+E                                         'partial_file_count': 0,...
+E             
+E             ...Full output truncated (37 lines hidden), use '-vv' to show
+
+tests/test_analysis_coverage_reporting.py:185: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 60 passed in 0.54s

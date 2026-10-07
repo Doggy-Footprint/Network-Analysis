@@ -1,0 +1,31 @@
+..........................................F
+=================================== FAILURES ===================================
+______________ test_V03_deterministic_reasons_empty_and_excluded _______________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-79/test_V03_deterministic_reasons0')
+
+    def test_V03_deterministic_reasons_empty_and_excluded(tmp_path):
+        from language_analyzers.core.analysis_coverage import analysis_report, build_analysis_coverage
+        reasons=[{'code':'z','message':'last'},{'code':'a','message':'first','span':{'file_path':'a.py','start_line':2,'end_line':2}}]
+        snap=snapshot_of({'a.py':'','out.txt':'old'},root=tmp_path,excluded_paths=['out.txt'])
+        reports=[analysis_report('python-core',[{'file_path':'a.py','status':'partial','reasons':reasons+reasons},{'file_path':'out.txt','status':'complete','reasons':[]}]),analysis_report('typescript-core',[{'file_path':'a.py','status':'skipped','reasons':list(reversed(reasons))}])]
+        forward=build_analysis_coverage(snap,reports)
+        backward=build_analysis_coverage(snap,list(reversed(reports)))
+        assert_wire_version(forward)
+        assert_wire_version(backward)
+        assert forward==backward
+>       assert sorted(forward['files'][0]['reasons'],key=lambda reason:reason['code'])==[
+            {'code':'a','message':'first','span':{'file_path':'a.py','start_line':2,'end_line':2}},
+            {'code':'z','message':'last'},
+        ]
+E       AssertionError: assert [{'code': 'a'...age': 'last'}] == [{'code': 'a'...age': 'last'}]
+E         
+E         At index 0 diff: {'code': 'a', 'message': 'first'} != {'code': 'a', 'message': 'first', 'span': {'file_path': 'a.py', 'start_line': 2, 'end_line': 2}}
+E         Use -v to get more diff
+
+tests/test_analysis_coverage_reporting.py:104: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_analysis_coverage_reporting.py::test_V03_deterministic_reasons_empty_and_excluded
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 42 passed in 0.83s
+

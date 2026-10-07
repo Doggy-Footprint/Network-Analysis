@@ -574,3 +574,5 @@ footer {
     background: #f4eddb;
     color: #785d21;
 }
+
+#coverage-summary{margin-top:2rem}#coverage-details{margin:1rem 0}#coverage-list td{vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}.coverage-path{font-family:monospace}.coverage-producers,.coverage-reasons{font-size:.85rem}

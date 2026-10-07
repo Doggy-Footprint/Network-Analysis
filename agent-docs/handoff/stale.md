@@ -90,3 +90,9 @@ File: 0fc789ad2164e35b-file-analysis-paused.md
 Summary: 73.879초 중앙값·원본 관계 등가를 확보했고 사용자가 승인한 file-only single-pass 및 symbol 기존값 보존 v2의 구현·전체 검증을 진행한다.
 Related Files: agent-docs/specs/0fc789ad2164e35b-file-analysis-symbol-details.md, agent-docs/specs/0fc789ad2164e35b-frontend-staging.json, scripts/benchmark_file_analysis.py, tests/file_analysis_evidence/coverage.json, tests/file_analysis_evidence/baseline-timing.json
 Related Symbols: to_file_architecture, analyze_bottlenecks, architecture_to_dict, RepositorySnapshot.content_map
+
+---
+File: fce458d3be4db333-analysis-coverage-reporting.md
+Summary: 분석하지 못한 부분을 결과에 함께 보여주기; 현재 한계와 재개 시 결정할 정책·검증 항목.
+Related Files: repository/scan.py, repository/models.py, language_analyzers/python/source.py, language_analyzers/python/graph.py, code_analyzer/cli.py, bottlenecks/core.py, report/unified.py, renderers/html/static/app.js
+Related Symbols: build_snapshot, RepositorySnapshot, PythonSourceAnalyzer, analyze_bottlenecks

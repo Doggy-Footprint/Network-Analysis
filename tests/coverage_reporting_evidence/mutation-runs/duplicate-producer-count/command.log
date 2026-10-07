@@ -1,0 +1,40 @@
+........................................F
+=================================== FAILURES ===================================
+_____________ test_V03_merge_decision_table[states8-complete-True] _____________
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-82/test_V03_merge_decision_table_8')
+states = ['complete', 'complete'], expected = 'complete', same_producer = True
+
+    @pytest.mark.parametrize('states,expected,same_producer', [
+     (['complete'],'complete',False),(['partial'],'partial',False),(['failed'],'failed',False),(['skipped'],'skipped',False),
+     (['complete','failed'],'partial',False),(['complete','skipped'],'partial',False),(['partial','failed'],'partial',False),
+     (['failed','skipped'],'failed',False),(['complete','complete'],'complete',True),(['failed','complete','skipped'],'partial',True)])
+    def test_V03_merge_decision_table(tmp_path,states,expected,same_producer):
+        from language_analyzers.core.analysis_coverage import analysis_report, build_analysis_coverage
+        reports=[analysis_report('python-core' if same_producer else f'producer-{i}',[{'file_path':'a.py','status':state,'reasons':[]}]) for i,state in enumerate(states)]
+        coverage=build_analysis_coverage(snapshot(tmp_path,{'a.py':'','notes.txt':''}),reports)
+        assert_wire_version(coverage)
+        rows=coverage['files']
+        assert all(row['reasons']==[] for row in rows)
+        assert all(result['reasons']==[] for row in rows for result in row['results'])
+        assert rows[0]['status']==expected
+        assert rows[1]['status']=='not_targeted'
+        assert len(rows[0]['results'])==(1 if same_producer else len(states))
+        producer_states={'python-core':expected} if same_producer else {f'producer-{i}':state for i,state in enumerate(states)}
+        assert [producer['analyzer_id'] for producer in coverage['analyzers']]==sorted(producer_states)
+        for producer in coverage['analyzers']:
+            producer_state=producer_states[producer['analyzer_id']]
+>           assert producer['summary']=={**{f'{state}_file_count':int(state==producer_state) for state in ('complete','partial','failed','skipped')},'targeted_file_count':1}
+E           AssertionError: assert {'complete_fi...ount': 0, ...} == {'complete_fi...ount': 0, ...}
+E             
+E             Omitting 4 identical items, use -vv to show
+E             Differing items:
+E             {'targeted_file_count': 2} != {'targeted_file_count': 1}
+E             Use -v to get more diff
+
+tests/test_analysis_coverage_reporting.py:89: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_analysis_coverage_reporting.py::test_V03_merge_decision_table[states8-complete-True]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 40 passed in 0.38s
+
