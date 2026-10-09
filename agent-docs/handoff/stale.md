@@ -103,3 +103,10 @@ File: e6f962102cb7de1a-ambiguous-route-candidates.md
 Summary: 구현/전체1258개+하위200개 통과; 독립 감사2/2 후 심볼 UI 기여도 증거 V3-F5가 남아 추가 감사 승인 필요.
 Related Files: framework_analyzers/route_matching.py, language_analyzers/core/graph_models.py, analysis/file_graph.py, analysis/graph_metrics.py, analysis/edge_weights.py, renderers/html/static/app.js, tests/test_route_client_call_edges.py
 Related Symbols: match_routes, GraphEdge, to_file_architecture, GraphAnalyzer.analyze
+
+---
+
+File: ec9d04784407ee5b-v3-real-repository-validation.md
+Summary: Validate bottlenecks.v3 and edge weights on a real repository.
+Related Files: fixtures/registry.py, code_analyzer/cli.py, bottlenecks/core.py
+Related Symbols: analyze_bottlenecks, load_edge_weights
