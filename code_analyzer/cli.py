@@ -8,6 +8,7 @@ import sys
 import time
 import webbrowser
 from collections import Counter
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, List, Mapping, Optional
@@ -21,6 +22,7 @@ from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
 from language_analyzers.core.serialization import architecture_to_dict
 from analysis.file_graph import to_file_architecture
+from analysis.candidate_projection import AMBIGUITY_POLICY
 from bottlenecks.core import _snapshot, _validate
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
@@ -416,12 +418,17 @@ def main(
             arch = to_file_architecture(arch, repository_snapshot)
         timing["conversion"] = time.perf_counter() - stage_started
         stage_started = time.perf_counter()
+        final_analysis = GraphAnalyzer(analysis_config).analyze(arch.nodes, arch.edges, project_path=arch.project_path)
         if args.granularity == "file":
-            final_analysis = GraphAnalyzer(analysis_config).analyze(arch.nodes, arch.edges, project_path=arch.project_path)
-            arch.stats["analysis"] = final_analysis
-            bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis)
-        else:
-            bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights)
+            arch.stats["analysis"] = deepcopy(final_analysis)
+        elif "analysis" not in arch.stats:
+            arch.stats["analysis"] = {
+                "ambiguity_policy": final_analysis["ambiguity_policy"],
+                "edge_weights": deepcopy(final_analysis["edge_weights"]),
+            }
+        elif not isinstance(arch.stats["analysis"], Mapping) or arch.stats["analysis"].get("ambiguity_policy") != AMBIGUITY_POLICY:
+            raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
+        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis)
         timing["metrics_candidates"] = time.perf_counter() - stage_started
     except (OSError, UnicodeError, ValueError, BottleneckInputError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)

@@ -79,7 +79,7 @@ def test_V2_neighbor_boundaries_and_omitted_evidence(open_report,count):
     if count:
         assert f'evidence-{count+9}.py' in page.locator('#relationship-list').inner_text()
         open_disclosures(page.locator('#relationship-list'))
-        expect(page.locator('#relationship-list')).to_contain_text('other-target')
+        expect(page.locator('#relationship-list')).to_contain_text(f'n{count-1:02}')
         page.locator('#graph-zoom-in').click()
         zoom = page.evaluate('ReportGraph.zoom()')
         page.locator('#graph-zoom-out').click()
@@ -194,7 +194,9 @@ def test_V2_sixty_arrows_incoming_layout_and_configured_weights(open_report,tmp_
     payload=bottleneck_fixture(tmp_path,nodes,edges,candidate_count=0)
     payload['edge_weights']['confidence']['static_certain']=0.1
     payload['edge_weights']['confidence']['static_inferred']=0.9
-    page=open_report(architecture(nodes,edges),payload);select(page,'center')
+    arch=architecture(nodes,edges)
+    arch['stats']['analysis']['edge_weights']=copy.deepcopy(payload['edge_weights'])
+    page=open_report(arch,payload);select(page,'center')
     graph=topology(page)
     assert len(graph['edges'])==59
     assert {n['id'] for n in graph['nodes']}=={'center','n30'}|{f'n{i:02}' for i in range(29)}

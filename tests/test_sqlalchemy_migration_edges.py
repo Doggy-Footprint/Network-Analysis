@@ -391,6 +391,6 @@ def test_VO6_C18_alembic_migration_effective_cost_is_a_tenth_of_token_cost(tmp_p
     node = migration_node(arch, "0001_x.py")
     assert "migration" in node.flags
     assert metrics[node.id]["token_cost"] > 0
-    assert metrics[node.id]["effective_token_cost"] == pytest.approx(0.1 * metrics[node.id]["token_cost"])
+    assert metrics[node.id]["effective_token_cost"] == pytest.approx(0.1 * metrics[node.id]["token_cost"], abs=1e-9, rel=0)
     model = nodes_in(arch, "sqlalchemy_model")[0]
-    assert metrics[model.id]["effective_token_cost"] == pytest.approx(metrics[model.id]["token_cost"])
+    assert metrics[model.id]["effective_token_cost"] == pytest.approx(metrics[model.id]["token_cost"], abs=1e-9, rel=0)

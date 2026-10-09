@@ -96,3 +96,10 @@ File: fce458d3be4db333-analysis-coverage-reporting.md
 Summary: 분석하지 못한 부분을 결과에 함께 보여주기; 현재 한계와 재개 시 결정할 정책·검증 항목.
 Related Files: repository/scan.py, repository/models.py, language_analyzers/python/source.py, language_analyzers/python/graph.py, code_analyzer/cli.py, bottlenecks/core.py, report/unified.py, renderers/html/static/app.js
 Related Symbols: build_snapshot, RepositorySnapshot, PythonSourceAnalyzer, analyze_bottlenecks
+
+---
+
+File: e6f962102cb7de1a-ambiguous-route-candidates.md
+Summary: 구현/전체1258개+하위200개 통과; 독립 감사2/2 후 심볼 UI 기여도 증거 V3-F5가 남아 추가 감사 승인 필요.
+Related Files: framework_analyzers/route_matching.py, language_analyzers/core/graph_models.py, analysis/file_graph.py, analysis/graph_metrics.py, analysis/edge_weights.py, renderers/html/static/app.js, tests/test_route_client_call_edges.py
+Related Symbols: match_routes, GraphEdge, to_file_architecture, GraphAnalyzer.analyze

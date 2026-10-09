@@ -1,0 +1,37 @@
+{
+  "spec_version": 3,
+  "context": "current workstation, installed Chrome, local file, five fresh contexts; fixture preparation excluded",
+  "raw_ms": {
+    "summary_ms": [
+      238.91875008121133,
+      241.17870803456753,
+      239.90854097064584,
+      240.21816602908075,
+      240.85920804645866
+    ],
+    "filter_page_ms": [
+      33.799999952316284,
+      33.10000002384186,
+      34.39999997615814,
+      34.10000002384186,
+      34.299999952316284
+    ],
+    "detail_graph_ms": [
+      24.5,
+      26.199999928474426,
+      24.300000071525574,
+      24.5,
+      25.299999952316284
+    ]
+  },
+  "median_ms": {
+    "summary_ms": 240.21816602908075,
+    "filter_page_ms": 34.10000002384186,
+    "detail_graph_ms": 24.5
+  },
+  "threshold_ms": {
+    "summary_ms": 5000,
+    "filter_page_ms": 300,
+    "detail_graph_ms": 1000
+  }
+}

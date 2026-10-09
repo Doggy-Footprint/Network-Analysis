@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
+from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
 
 if TYPE_CHECKING:
@@ -98,7 +99,7 @@ class KotlinAnalyzer:
         self._symbols: Dict[str, _KotlinSymbol] = {}
         self._by_name: Dict[str, List[str]] = {}
         self._nodes: Dict[str, GraphNode] = {}
-        self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}
+        self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
         self._imports: Dict[str, List[Tuple[str, int]]] = {}
         self._positions = {}
         self._byte_starts = {}
@@ -349,9 +350,9 @@ class KotlinAnalyzer:
         confidence: str = Confidence.STATIC_CERTAIN, resolution: str = Resolution.EXACT,
         candidates: Optional[List[str]] = None,
     ) -> None:
-        if source == target:
+        if not has_external_candidate(source, target, resolution, candidates):
             return
-        key = (source, target, relation)
+        key = candidate_relation_key(source, target, relation, resolution, candidates)
         if key in self._edges:
             self._edges[key].weight += 1.0
             return

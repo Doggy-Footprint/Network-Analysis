@@ -1,0 +1,236 @@
+{
+  "spec_version": 4,
+  "run_id": "9c41e725d083ab6f",
+  "invocation": 3,
+  "evidence_revision": 8,
+  "result": "pass",
+  "implementation_inspected": false,
+  "scope": "Approved spec, test code/imported test helpers, evidence map, prior audits and main-owned review/execution/mutation artifacts only. No implementation, source diff or injected code read. No tests or mutations executed by verifier.",
+  "spec_reconciliation": "Active Verification Obligations table was initially mistranscribed as audit-state rows. Main restored the original approved finite obligations verbatim from immutable v3; verifier reread all eight restored rows. Document-only correction C8-D1 changes no expectation, selection or threshold. Version4 budget amendment supersedes the historical two-invocation assumption and preserves counts.",
+  "findings": {
+    "V3-F1": {
+      "status": "resolved; prior disposition retained",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "VO1"
+      ],
+      "parents": [
+        "FR2",
+        "FR3",
+        "QR1"
+      ],
+      "evidence": "audit2.json; test_VO1_pagerank_competing_exact_edge_independent_allocation; mutation-v4-pagerank-full-candidate-weight.log",
+      "rationale": "Independent mixed exact/ambiguous closed forms distinguish allocation from common-factor PageRank normalization; three approved profiles remain unchanged."
+    },
+    "V3-F2": {
+      "status": "resolved; prior disposition retained",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "VO1",
+        "VO2",
+        "VO3"
+      ],
+      "parents": [
+        "QR1"
+      ],
+      "evidence": "audit2.json; quantitative tests use abs=TOL,rel=0; mutation-v4-absolute-tolerance-error.log",
+      "rationale": "Approved absolute1e-9 comparison remains strict; executed5e-8 error fails intended star assertion."
+    },
+    "V3-F3": {
+      "status": "resolved; prior disposition retained",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "VO6"
+      ],
+      "parents": [
+        "FR8",
+        "C7"
+      ],
+      "evidence": "audit2.json; test_VO6_unknown_candidate_generation_rejected",
+      "rationale": "Specific BottleneckInputError remains required; no successful document or generic exception acceptance."
+    },
+    "V3-F4": {
+      "status": "resolved; prior disposition retained",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "VO5"
+      ],
+      "parents": [
+        "FR7",
+        "QR3"
+      ],
+      "evidence": "audit2.json; file per-target allocation lines; test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff; mutation-v4-html-omit-file-share-sum.log",
+      "rationale": "Associated visible shares/contributions and file/raw-symbol neighbor selection remain unchanged and independently observed."
+    },
+    "V3-F5": {
+      "status": "resolved",
+      "classification": "Blocking evidence gap",
+      "obligations": [
+        "VO5"
+      ],
+      "parents": [
+        "FR7",
+        "QR3",
+        "C10"
+      ],
+      "evidence": "tests/test_ambiguous_candidates_browser.py::assert_visible_symbol_allocations; test_VO5_symbol_source_and_every_alternative[s/a/b]; test_VO5_architecture_only_custom_profile_share_and_max_neighbor_order; tests/candidate_policy_metadata_support.py; tests/edge_weights_support.py; mutation-symbol-contribution-v4.json/log",
+      "previous_escaping_behavior": "Correct topology/share/file output with constant incorrect symbolic contribution0.3 for default two-candidate group.",
+      "rationale": "Tests-supplied literal default confidence1/resolution.3 and two targets independently imply share.5/contribution.15. Both distinct target-associated direct allocation lines must be visible and exactly correct BEFORE raw disclosure for source and each candidate. Custom sibling separately requires.5/.3, avoiding a constant.15 oracle escape. Exact-overlap row cannot satisfy ambiguous .5 prefix. Existing navigation, topology, raw groups, multiplicity and safety assertions retained. Executed display-only constant.3 mutation fails intended visible.15 assertion."
+    }
+  },
+  "audit_map": {
+    "VO1": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR1",
+        "FR2",
+        "FR3",
+        "QR1",
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "coverage": "100% of nine declared finite items",
+      "evidence": "audit2.json; evidence-map revision8 procedureA; test_VO1_independent_closed_form_star six rows; test_VO1_all_metrics_metamorphic two transformations; test_VO1_pagerank_competing_exact_edge_independent_allocation three profiles; full5; two numeric mutation logs",
+      "rationale": "Public metrics observed against closed forms and explicit costs; strict absolute tolerance, competing exact edge and metamorphic invariants reject missing alternatives, ignored profiles, multiplicity, representative priority and normalized-share defects.",
+      "dependency_check": "Correction8 changes browser symbol fixture/helper only. Relevant quantitative inputs/oracles and implementation unchanged; no reopening evidence."
+    },
+    "VO2": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR3",
+        "FR4",
+        "FR5",
+        "QR1",
+        "C4",
+        "C5",
+        "C6"
+      ],
+      "coverage": "100% of ten declared finite items",
+      "evidence": "audit2.json; evidence-map procedureF; test_VO2_file_decision_table six rows; test_VO2_overlap_provenance_and_no_double_split two rows; test_VO2_nine_symbols_same_file_has_exact_full_share; full5",
+      "rationale": "Explicit expected file shares/pairs independently observe within-original sum, across-original max, retained denominator, external boundaries, no second split and unique provenance; original raw detail fields preserved.",
+      "dependency_check": "No file oracle/helper or implementation changes under correction8; prior acceptance valid."
+    },
+    "VO3": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR5",
+        "FR9",
+        "C2",
+        "C4",
+        "C8"
+      ],
+      "coverage": "100% of declared each-choice producer items",
+      "evidence": "audit2.json; evidence-map procedureP; test_VO3 language/enrichment/FastAPI/Android/HTTP/migration/controlled-emitter cases; full5",
+      "rationale": "Named fixture groups, evidence and counters plus public contributions observe every approved producer selection, self representative external retention and distinct-group dedupe. No Cartesian product added.",
+      "dependency_check": "No producer fixture/emitter test/oracle changes under correction8; prior acceptance valid."
+    },
+    "VO4": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR6",
+        "FR9",
+        "C9"
+      ],
+      "coverage": "100% of seven declared items",
+      "evidence": "audit1.json/audit2.json; procedureB; test_VO4_symmetric_evidence_and_unique_projected_pairs four rows; overlapping evidence and lossless registry tests; candidate_group_storage_support.py; full5",
+      "rationale": "Independent pair counts/target sets/evidence ranges and original record comparison establish symmetric evidence, deduplication, registry order/duplicates/representative fidelity, unchanged exact shape, raw preservation and repeat output.",
+      "dependency_check": "No storage/evidence helper or implementation change; prior acceptance retained."
+    },
+    "VO5": {
+      "status": "accepted",
+      "parents": [
+        "FR7",
+        "QR3",
+        "QR5",
+        "C10",
+        "C12"
+      ],
+      "coverage": "100% of ten declared finite items",
+      "evidence": "evidence-map revision8 procedureU; tests/test_ambiguous_candidates_browser.py all VO5 scenarios; DEFAULT_TABLES literal helper; ambiguity-correction-8.log; full5; symbol mutation and HTML file-sum mutation logs",
+      "rationale": "Every existing source/alternative selection independently observes topology/navigation, whole groups, weighted visible semantics and multiplicity. Default/custom target-associated visible numerical observations resolve F5 and its shared-pattern sibling. Previously accepted file lines/cutoff, original symbols/boundary, limits/pagination, hostile literal text and zero attack/external-request checks remain valid.",
+      "dependency_check": "Changed symbol helper/default profile/custom labels audited fully; file/safety/storage siblings inspected and unchanged. No new blocking gap."
+    },
+    "VO6": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR8",
+        "QR2",
+        "QR4",
+        "C7",
+        "C11"
+      ],
+      "coverage": "100% of twelve declared finite items",
+      "evidence": "audit2.json; procedureR; supported payload shapes; eight generation marker rows; four injected marker rows; unknown-candidate analyzer/file/bottleneck/generator checks; invalid-share partitions; stale analysis marker checks; full5",
+      "rationale": "Valid exact payload roundtrip, declared failure types before output, visible loader error with zero node rows/no graph, and no successful reduced/fallback result remain observed.",
+      "dependency_check": "No error/marker fixture or oracle change under correction8; prior acceptance retained."
+    },
+    "VO7": {
+      "status": "accepted after invalidation",
+      "parents": [
+        "FR9",
+        "QR2",
+        "QR4",
+        "C13"
+      ],
+      "coverage": "100% of four declared finite items",
+      "evidence": "ambiguity-full-5.log1258pass/200subtests696.96s; exact/unique/unresolved repeat characterization; deterministic sampler tests; test_candidate_policy_transition.py and constrained helper; hash-verified standalone corpus via test_nestjs_quality.py; real-repository-v4-final benchmark/browser artifacts; ambiguity-restored-v4.log91pass",
+      "rationale": "Fresh exact full Test command replaces invalidated full4 baseline for correction8. Frozen originals/source-backed allowed transitions and negative comparator cases retain unrelated fields and reject unexplained changes. Repeat and sampler evidence unchanged. Fresh independent-process/five-context real-report validation supports inherited checks.",
+      "dependency_check": "VO7 was correctly invalidated by test correction8, then recomputed with settled revision8; implementation unchanged. Historical generated artifact cleanup preserves immutable current evidence copies."
+    },
+    "VO8": {
+      "status": "retained acceptance",
+      "parents": [
+        "FR1",
+        "FR2",
+        "FR4",
+        "FR5",
+        "FR6",
+        "FR7",
+        "QR6"
+      ],
+      "coverage": "100% of seven declared review items",
+      "evidence": "audit1.json/audit2.json; 9c41e725d083ab6f-architecture-review.md",
+      "rationale": "Main-owned repeatable named fixture/consumer review covers metrics, file aggregation, bottleneck, HTML, raw fields, discovery multiplicity and sampling; v4 continuation explicitly declares unchanged procedure and source dependencies.",
+      "dependency_check": "Budget amendment and test-only display evidence correction do not change reviewed consumers. Verifier does not inspect implementation."
+    }
+  },
+  "coverage": "UI1, signatures, FR1-FR9, declared Errors, C1-C13 and QR1-QR6 accounted for through traceability and complete finite VO1-VO8 map. All approved finite targets100%; no inapplicable items or structure-based percentage target. No open blocking evidence gap or spec challenge.",
+  "quality": "QR1 strict absolute1e-9 independent tiny-graph oracles; QR2 exact serialization and policy partition errors; QR3 candidate navigation/associated visible semantics/bounds; QR4 deterministic repeats and invalid-input failure; QR5 literal hostile rendering/zero script and request probes; QR6 repeatable main-owned consumer review. No new performance obligation. Existing VO7 regression benchmarks retain seconds<=180 (three-process median73.069), five fresh Chrome contexts/local-file provenance and milliseconds summary1774.34<=5000/filter29.1<=300/detail43.2<=1000; nested spec_version2 identifies inherited file-analysis evidence, not this workflow spec.",
+  "mutation_outcomes": {
+    "executed": [
+      {
+        "class": "PageRank-only full candidate weight, fan/HITS untouched",
+        "detector": "test_VO1_pagerank_competing_exact_edge_independent_allocation[no-profile-1]",
+        "signal": "observed.17342342343069422 versus expected.13944256756756754 ±1e-9",
+        "evidence": "mutation-v4-pagerank-full-candidate-weight.log"
+      },
+      {
+        "class": "Numerical5e-8 error",
+        "detector": "test_VO1_independent_closed_form_star[two-2-alternatives0-no-profile-1]",
+        "signal": "observed.4864865364663595 versus expected.48648648648648646 ±1e-9",
+        "evidence": "mutation-v4-absolute-tolerance-error.log"
+      },
+      {
+        "class": "HTML same-original file share sum omitted",
+        "detector": "test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff[symbol-source]",
+        "signal": "required file:b.py absent from selected neighbors",
+        "evidence": "mutation-v4-html-omit-file-share-sum.log"
+      },
+      {
+        "class": "Symbol visible weighted contribution constant.3 with correct share/topology",
+        "detector": "test_VO5_symbol_source_and_every_alternative[s]",
+        "signal": "visible TARGET_ALPHA contribution.3 versus expected.15",
+        "evidence": "mutation-symbol-contribution-v4.log"
+      }
+    ],
+    "restoration": "Main-owned JSON records matching pre/post SHA256 and successful restoration; mutations-v4.json records source equality. Restored focused baseline91pass13.51s. No restoration claim based on verifier implementation inspection.",
+    "proposed_not_executed": [
+      "Representative-only projection: existing explicit source target-set/topology assertions are predicted detectors.",
+      "Candidate discovery multiplicity used as contribution: explicit87/91 fixture versus independently required weighted values is a predicted detector."
+    ],
+    "note": "Proposals are optional strengthening, not findings or claims of executed detection. Main still owns workflow mutation execution, artifact restoration and terminal closure."
+  },
+  "open_blocking_findings": [],
+  "advisories": []
+}

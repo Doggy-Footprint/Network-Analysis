@@ -7,6 +7,8 @@ from typing import Any, Mapping, Tuple, Optional
 from types import SimpleNamespace
 
 from analysis.edge_weights import EdgeWeights
+from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection, candidate_targets
+from language_analyzers.core.serialization import edge_to_dict
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
@@ -78,7 +80,8 @@ def _validate_structure(snapshot: RepositorySnapshot, architecture: Any) -> tupl
     for edge in edges:
         source, target = getattr(edge, "from_id", None), getattr(edge, "to_id", None)
         if source not in node_ids or target not in node_ids or any(item not in node_ids for item in getattr(edge, "candidates", ())): raise BottleneckInputError("edge reference is outside architecture")
-        if source != target: pairs.add((source, target))
+        for target, _share in candidate_projection(edge, node_ids):
+            if source != target: pairs.add((source, target))
     return nodes, edges, pairs
 
 
@@ -111,8 +114,11 @@ def _candidate(identifier: str, kind: str, target: str, metrics: Mapping[str, An
 def _candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
     candidates = []
     by_target = {}
+    evidence_records = {}
     for edge in architecture.edges:
-        if getattr(edge, "evidence", None) is not None: by_target.setdefault(edge.to_id, []).append(edge)
+        if getattr(edge, "evidence", None) is not None:
+            for target in candidate_targets(edge):
+                by_target.setdefault(target, []).append(edge)
         if str(getattr(edge, "resolution", "")) == "unresolved" or str(getattr(edge, "confidence", "")) == "dynamic_required": candidates.append(_candidate(f"{edge.from_id}|{edge.to_id}|boundary", "unresolved_boundary", edge.to_id, {}, {"from_id": edge.from_id, "to_id": edge.to_id, "relation": str(getattr(edge, "relation", ""))}, "static_analyzer_relation"))
     for node in architecture.nodes:
         metadata = getattr(node, "metadata", {}) or {}
@@ -122,9 +128,16 @@ def _candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
         span = getattr(node, "span", None)
         if span is not None and span.end_line - span.start_line + 1 > threshold:
             candidates.append(_candidate(node.id + "|large_node", "large_node", node.id, {"line_count": span.end_line - span.start_line + 1, "line_threshold": threshold}, {"path": span.file_path, "start_line": span.start_line, "end_line": span.end_line}, "architecture_node_span"))
+    def evidence_record(edge):
+        key = id(edge)
+        if key not in evidence_records:
+            evidence_records[key] = dict(edge_to_dict(edge) if str(edge.resolution) == "ambiguous" else {},
+                path=edge.evidence.file_path, start_line=edge.evidence.start_line, end_line=edge.evidence.end_line)
+        return evidence_records[key]
+
     for target, edges in sorted(by_target.items()):
         paths = {edge.evidence.file_path for edge in edges}; span = max(edge.evidence.end_line for edge in edges) - min(edge.evidence.start_line for edge in edges) + 1 if len(paths) == 1 else 0
-        if len(paths) > 1 or span > threshold: candidates.append(_candidate(target + "|spread", "evidence_spread", target, {"file_count": len(paths), "line_span": span, "line_threshold": threshold}, [{"path": edge.evidence.file_path, "start_line": edge.evidence.start_line, "end_line": edge.evidence.end_line} for edge in edges], "static_analyzer_relation"))
+        if len(paths) > 1 or span > threshold: candidates.append(_candidate(target + "|spread", "evidence_spread", target, {"file_count": len(paths), "line_span": span, "line_threshold": threshold}, [evidence_record(edge) for edge in edges], "static_analyzer_relation"))
     return sorted({item["id"]: item for item in candidates}.values(), key=lambda item: (item["kind"], item["id"]))
 
 
@@ -138,13 +151,15 @@ def _file_candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any
     for index, edge in enumerate(details["edges"]):
         if ownership_edge(SimpleNamespace(**edge), original_nodes):
             continue
+        targets = set(node_files[target] or target for target in candidate_targets(edge))
         target = node_files[edge["to_id"]]
         evidence = edge.get("evidence")
         record = dict(edge, detail_edge_index=index)
         if evidence is not None:
             record.update(path=evidence["file_path"], start_line=evidence["start_line"], end_line=evidence["end_line"])
-        if target is not None and evidence is not None:
-            incoming.setdefault(target, []).append(record)
+        if evidence is not None:
+            for possible_target in targets:
+                incoming.setdefault(possible_target, []).append(record)
         if edge.get("resolution") == "unresolved" or edge.get("confidence") == "dynamic_required":
             affected = target or node_files[edge["from_id"]]
             if affected is not None:
@@ -183,6 +198,31 @@ def _file_candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any
     return sorted(candidates, key=lambda item: (item["kind"], item["id"]))
 
 
+def _intern_candidate_groups(candidates):
+    groups = {}
+    group_ids = {}
+    visited = set()
+    for candidate in candidates:
+        evidence = candidate["evidence"]
+        for record in evidence if isinstance(evidence, list) else [evidence]:
+            if not isinstance(record, dict) or id(record) in visited:
+                continue
+            visited.add(id(record))
+            if record.get("resolution") != "ambiguous" or "candidates" not in record:
+                continue
+            key = (record["to_id"], tuple(record["candidates"]))
+            group_id = group_ids.get(key)
+            if group_id is None:
+                group = {"to_id": record["to_id"], "candidates": record["candidates"]}
+                encoded = json.dumps(group, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+                group_id = "cg:" + hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+                group_ids[key] = group_id
+                groups[group_id] = group
+            record.pop("candidates")
+            record["candidate_group_id"] = group_id
+    return groups
+
+
 def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None) -> BottleneckReport:
     try:
         _weights(weights)
@@ -190,6 +230,8 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         is_file = getattr(architecture, "granularity", None) == "file"
         if analysis is None:
             analysis = GraphAnalyzer(GraphAnalysisConfig(edge_weights=weights)).analyze(nodes, edges, getattr(architecture, "project_path", None))
+        if analysis.get("ambiguity_policy") != AMBIGUITY_POLICY:
+            raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
         metrics = analysis["node_metrics"]
         if not is_file:
             names = {node.id: node_identifier(getattr(node, "label", None)) for node in nodes}
@@ -201,12 +243,19 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _file_candidates(architecture, weights.large_node_line_threshold) if is_file else _candidates(architecture, weights.large_node_line_threshold)
+        candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
         coverage = {"source_file_count": len(snapshot.contents), "limitations": limitations}
         if (getattr(architecture, "stats", {}) or {}).get("analysis_coverage") is not None:
             coverage["analysis_coverage"] = architecture.stats["analysis_coverage"]
-        return BottleneckReport("bottlenecks.v5" if is_file else "bottlenecks.v4", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, coverage, {"node_count": len(nodes), "edge_count": len(pairs), "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings, "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"], "betweenness_sample_size": analysis["betweenness_sample_size"]}, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        network = {"ambiguity_policy": AMBIGUITY_POLICY, "node_count": len(nodes), "edge_count": len(pairs),
+            "node_metrics": {item: metrics[item] for item in sorted(metrics)}, "rankings": rankings,
+            "rankings_by_category": rankings_by_category, "betweenness_strategy": analysis["betweenness_strategy"],
+            "betweenness_sample_size": analysis["betweenness_sample_size"]}
+        if candidate_groups:
+            network["candidate_groups"] = candidate_groups
+        return BottleneckReport("bottlenecks.v5" if is_file else "bottlenecks.v4", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

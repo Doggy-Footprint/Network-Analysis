@@ -37,6 +37,7 @@ def sample_architecture():
         metadata={"module": "mod"},
     )
     other = GraphNode(id="py:mod#helper", label="helper", group="function", category="function")
+    alternative = GraphNode(id="py:other#helper", label="helper", group="function", category="function")
     edge = GraphEdge(
         from_id="py:mod#run",
         to_id="py:mod#helper",
@@ -56,8 +57,8 @@ def sample_architecture():
     return SimpleNamespace(
         project_name="sample",
         project_path="/project",
-        stats={"total_symbols": 2},
-        nodes=[node, other],
+        stats={"total_symbols": 3, "analysis": {"ambiguity_policy": "equal-symbol-share.v1"}},
+        nodes=[node, other, alternative],
         edges=[edge],
         report_collections=[collection],
     )

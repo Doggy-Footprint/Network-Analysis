@@ -127,21 +127,23 @@ def invoke(args, mode, timeout):
 def verify_artifacts(directory):
     dump(directory/'benchmark.json',{'spec_version':2,'passed':False,'status':'verification in progress'})
     from tests.file_analysis_support import characterization, CHARACTERIZATION_FILES
+    from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+    frozen = pickle.loads((directory / 'baseline-snapshot.pickle').read_bytes())
     if json.loads((directory / 'baseline-small-inputs.json').read_text()) != CHARACTERIZATION_FILES:
         raise AssertionError('Small characterization inputs changed')
     small = characterization()
     dump(directory / 'optimized-small-relations.json', small)
-    if small != json.loads((directory / 'baseline-small-relations.json').read_text()):
-        raise AssertionError('Small Kotlin/TESTS characterization changed')
+    small_baseline = json.loads((directory / 'baseline-small-relations.json').read_text())
+    if set(small) != set(small_baseline):
+        raise AssertionError('Small characterization analyzer set changed')
+    for flavor in small_baseline:
+        assert_candidate_policy_transition(small_baseline[flavor], small[flavor], CHARACTERIZATION_FILES)
     baseline = json.loads((directory / 'baseline-relations.json').read_text())
     optimized = json.loads((directory / 'optimized-symbol-relations.json').read_text())
     equal = baseline == optimized
-    dump(directory / 'symbol-equivalence.json', {'equal': equal, 'excluded_fields': ['nodes[*].metadata.analysis'], 'spec_version': 2})
-    if not equal:
-        raise AssertionError('Optimized symbol raw relations differ from immutable baseline')
+    assert_candidate_policy_transition(baseline, optimized, frozen.contents)
+    dump(directory / 'symbol-equivalence.json', {'equal': equal, 'candidate_policy_transition': True, 'comparison': 'approved-candidate-policy-transition', 'excluded_fields': ['nodes[*].metadata.analysis'], 'spec_version': 2})
     manifest = json.loads((directory / 'baseline-manifest.json').read_text())
-    import pickle
-    frozen=pickle.loads((directory / 'baseline-snapshot.pickle').read_bytes())
     if digest(frozen)!=manifest['snapshot_hash']:
         raise AssertionError('Immutable baseline snapshot hash mismatch')
     optimized_timing=json.loads((directory/'optimized-symbol-timing.json').read_text())

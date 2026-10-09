@@ -1,6 +1,7 @@
 """Spec 7a2c91e6d80f4b35 v2: O8–O9, O11–O12 boundaries and quality."""
 import ast
 import hashlib
+import gzip
 import json
 import os
 import subprocess
@@ -16,6 +17,7 @@ from repository import RepositorySnapshot
 from renderers.html import HTMLRenderer
 
 from tests.nestjs_support import analyze, diagnostics, fixture, framework_edges, framework_nodes, write_project
+from tests.standalone_candidate_policy_support import assert_standalone_candidate_policy_transition
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -235,10 +237,16 @@ class TestRegression(unittest.TestCase):
         baseline = json.loads(BASELINES.read_text(encoding="utf-8"))
         self.assertEqual(baseline["hash_seed"], "0")
         self.assertEqual(len(baseline["cases"]), 8)
+        originals = json.loads(gzip.decompress((Path(__file__).parent / 'ambiguous_candidates_evidence' / 'standalone-originals.json.gz').read_bytes()))
+        self.assertEqual(originals['base_commit'], '5737113df15f6ed1705c1adadcf6b9c86bf9523e')
+        cases = {case['name']: case for case in originals['cases']}
+        self.assertEqual(set(cases), {case['name'] for case in baseline['cases']})
         for case in baseline["cases"]:
             with self.subTest(case=case["name"]):
                 project = REPO / case["relative_project"]
                 outputs = cli_bytes(project, *case["flags"], seed="0")
+                current = {}
+                original = cases[case['name']]
                 for name, content in zip(("json", "bottlenecks"), outputs):
                     payload = json.loads(content)
                     if name == "json":
@@ -249,9 +257,12 @@ class TestRegression(unittest.TestCase):
                         content = (json.dumps(payload, sort_keys=True, separators=(",", ":"),
                                               ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
                     portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
-                    self.assertEqual(hashlib.sha256(portable).hexdigest(), case["hashes"][name])
-                    if str(REPO) == baseline["captured_root"]:
-                        self.assertEqual(hashlib.sha256(content).hexdigest(), case["raw_hashes"][name])
+                    current[name] = json.loads(portable)
+                    archived = original['outputs'][name].encode('utf-8')
+                    self.assertEqual(hashlib.sha256(archived).hexdigest(), case["hashes"][name])
+                    archived_raw = archived.replace(b'<REPO_ROOT>', baseline['captured_root'].encode())
+                    self.assertEqual(hashlib.sha256(archived_raw).hexdigest(), case["raw_hashes"][name])
+                assert_standalone_candidate_policy_transition(json.loads(original['outputs']['json']), json.loads(original['outputs']['bottlenecks']), current['json'], current['bottlenecks'], original['snapshot_contents'], original['category_members'])
 
     def test_O12_repeated_and_hash_seeded_json_and_bottlenecks(self):
         first = cli_bytes(fixture(), "-f", "nestjs", seed="0")

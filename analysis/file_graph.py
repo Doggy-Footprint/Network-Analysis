@@ -1,4 +1,5 @@
 from copy import deepcopy
+from analysis.candidate_projection import candidate_projection, candidate_targets
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List
@@ -127,7 +128,7 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
                 file_node.flags.append(flag)
     node_files = {node_id: "file:" + path if path is not None else None for node_id, path in files.items()}
     dependency_edges = [(index, edge) for index, edge in enumerate(edges) if not ownership_edge(edge, by_id)]
-    boundary_ids = {endpoint for _, edge in dependency_edges for endpoint in (edge.from_id, edge.to_id) if node_files[endpoint] is None}
+    boundary_ids = {endpoint for _, edge in dependency_edges for endpoint in (edge.from_id, *candidate_targets(edge)) if node_files[endpoint] is None}
     for node in nodes:
         if node.id in boundary_ids:
             boundary = deepcopy(node)
@@ -137,16 +138,24 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
             output_nodes.append(boundary)
     grouped = {}
     for index, edge in dependency_edges:
-        source, target = node_files[edge.from_id] or edge.from_id, node_files[edge.to_id] or edge.to_id
-        if source == target:
-            continue
-        key = (source, target, edge.relation, str(edge.confidence), str(edge.resolution))
-        if key not in grouped:
-            grouped[key] = GraphEdge(source, target, edge.relation, label=edge.label,
-                                     confidence=edge.confidence, resolution=edge.resolution,
-                                     metadata={"detail_edge_indices": [], "evidence_count": 0})
-        grouped[key].metadata["detail_edge_indices"].append(index)
-        grouped[key].metadata["evidence_count"] += 1
+        source = node_files[edge.from_id] or edge.from_id
+        projection = candidate_projection(edge, by_id)
+        target_counts = {}
+        for target_id, _share in projection:
+            target = node_files[target_id] or target_id
+            if source != target:
+                target_counts[target] = target_counts.get(target, 0) + 1
+        for target, count in target_counts.items():
+            share = projection[0][1] if "candidate_share" in (edge.metadata or {}) else count / len(projection)
+            key = (source, target, edge.relation, str(edge.confidence), str(edge.resolution))
+            if key not in grouped:
+                grouped[key] = GraphEdge(source, target, edge.relation, label=edge.label,
+                                         confidence=edge.confidence, resolution=edge.resolution,
+                                         metadata={"detail_edge_indices": [], "evidence_count": 0, "candidate_share": share})
+            item = grouped[key].metadata
+            item["candidate_share"] = max(item["candidate_share"], share)
+            item["detail_edge_indices"].append(index)
+            item["evidence_count"] += 1
     stats = deepcopy(getattr(architecture, "stats", {}) or {})
     stats.pop("analysis", None)
     stats.update(total_files=len(file_nodes), granularity="file")

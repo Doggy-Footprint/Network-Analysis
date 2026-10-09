@@ -1,0 +1,27 @@
+{
+  "spec_version": 3,
+  "invocation": 1,
+  "result": "retry",
+  "findings": {
+    "V3-F1": "Single-group PageRank normalization cancels candidate allocation; add competing exact relation oracle.",
+    "V3-F2": "Default pytest relative tolerance permits error above approved absolute1e-9; set rel=0 across quantitative siblings.",
+    "V3-F3": "Report-validation outside-architecture exception expected too broadly; require BottleneckInputError.",
+    "V3-F4": "File numerical UI shares not associated with target and candidate-specific cutoff not observed."
+  },
+  "accepted": [
+    "VO4",
+    "VO7 at full3 revision",
+    "VO8"
+  ],
+  "open": [
+    "VO1",
+    "VO2",
+    "VO3 quantitative",
+    "VO5",
+    "VO6"
+  ],
+  "subsequent_invalidation": [
+    "VO7 after test correction7"
+  ],
+  "implementation_inspected": false
+}

@@ -1,0 +1,18 @@
+{
+  "end": 629259.715971916,
+  "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/optimized-symbol.html",
+  "mode": "optimized-symbol",
+  "observer_overhead_seconds": 1.615004291990772,
+  "pid": 24092,
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "spec_version": 2,
+  "stages": {
+    "conversion": 0.0,
+    "extraction": 65.42317812598776,
+    "integration": 0.0,
+    "metrics_candidates": 12.142638458055444,
+    "output": 4.136210291064344,
+    "snapshot": 0.08370908291544765
+  },
+  "total_seconds": 81.785735958023
+}

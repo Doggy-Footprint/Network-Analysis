@@ -1,0 +1,32 @@
+.............................................F
+=================================== FAILURES ===================================
+_ test_VO1_pagerank_competing_exact_edge_independent_allocation[no-profile-1] __
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-111/test_VO1_pagerank_competing_ex0')
+profile = 'no-profile', total = 1
+
+    @pytest.mark.parametrize('profile,total', [('no-profile', 1), ('default-profile', .3), ('custom-profile', .6)])
+    def test_VO1_pagerank_competing_exact_edge_independent_allocation(tmp_path, profile, total):
+        nodes = symbol_nodes('S', 'A', 'B', 'C')
+        edges = [edge('S', 'A', resolution=Resolution.AMBIGUOUS, candidates=['B'], weight=87), edge('S', 'C')]
+        edges += [edge(target, 'S') for target in 'ABC']
+        weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
+        observed = metrics(nodes, edges, weights)['node_metrics']
+        damping = .85
+        teleport = .15 / 4
+        source = (teleport + damping) / (1 + damping)
+        candidate = teleport + damping * source * (total / 2) / (1 + total)
+        exact = teleport + damping * source / (1 + total)
+        for ident, expected in {'S': source, 'A': candidate, 'B': candidate, 'C': exact}.items():
+>           assert observed[ident]['pagerank'] == pytest.approx(expected, abs=TOL, rel=0)
+E           assert 0.17342342343069422 == 0.13944256756756754 ± 1.0e-09
+E             
+E             comparison failed
+E             Obtained: 0.17342342343069422
+E             Expected: 0.13944256756756754 ± 1.0e-09
+
+tests/test_ambiguous_candidates.py:102: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ambiguous_candidates.py::test_VO1_pagerank_competing_exact_edge_independent_allocation[no-profile-1]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 45 passed in 0.32s

@@ -9,6 +9,7 @@ import pytest
 
 from tests.coverage_reporting_support import ADAPTERS, BUILDERS, IDS, adapter, analyze, baseline_runner, coverage_of, dump, own_result, snapshot, without_coverage
 from tests.test_repository_scan import policy, snapshot_of
+from tests.candidate_policy_metadata_support import without_candidate_policy_metadata
 
 
 def assert_wire_version(coverage):
@@ -176,7 +177,8 @@ def test_V04_framework_disabled_language(tmp_path,framework):
 def test_V05_characterization_and_V04_cli_stages():
     baseline=json.loads((Path(__file__).parent/'coverage_reporting_evidence'/'characterization-baseline.json').read_text())
     current=baseline_runner().capture()
-    assert without_coverage(current)==without_coverage(baseline), 'Characterization: extraction, schema, metrics and candidates changed'
+    normalized = {name: {surface: without_candidate_policy_metadata(payload, surface) for surface, payload in record.items()} for name, record in current.items()}
+    assert without_coverage(normalized)==without_coverage(baseline), 'Characterization: extraction, schema, metrics and candidates changed'
     expected={**{key:{key+'-core'} for key in ('python','typescript','kotlin')},'fastapi':{'fastapi','python-core'},'sqlalchemy':{'sqlalchemy','python-core'},'android':{'android','kotlin-core'},'nestjs':{'nestjs','typescript-core'},'fastapi-sqlalchemy':{'fastapi','sqlalchemy','python-core'},'nestjs-typescript':{'nestjs','typescript-core'},'android-kotlin':{'android','kotlin-core'}}
     for name,record in current.items():
         cov=record['architecture']['stats']['analysis_coverage']
@@ -186,7 +188,7 @@ def test_V05_characterization_and_V04_cli_stages():
         assert {a['analyzer_id'] for a in cov['analyzers']}==expected[name.split(':')[0]]
         assert cov['summary']['inventory_file_count']==5
         assert all(len({r['analyzer_id'] for r in f['results']})==len(f['results']) for f in cov['files'])
-    dump('regression.json',{'spec_version':2,'cases':sorted(current),'equal_ignoring_only_coverage':True})
+    dump('regression.json',{'spec_version':2,'cases':sorted(current),'equal_after_asserting_candidate_policy_metadata_and_removing_coverage':True})
 
 
 @pytest.mark.parametrize('ident',IDS)

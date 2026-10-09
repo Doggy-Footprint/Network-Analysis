@@ -1,0 +1,48 @@
+........................................................................ [  5%]
+.........................................F
+=================================== FAILURES ===================================
+_______________ test_VO5_symbol_source_and_every_alternative[s] ________________
+
+open_report = <function open_report.<locals>.open_page at 0x10c0a1440>
+selected = 's'
+
+    @pytest.mark.parametrize('selected', ['s', 'a', 'b'])
+    def test_VO5_symbol_source_and_every_alternative(open_report, selected):
+        nodes = [node(i) for i in ['s', 'a', 'b']]
+        nodes[1]['label'] = 'TARGET_ALPHA'
+        nodes[2]['label'] = 'TARGET_BETA'
+        arch = architecture(nodes, [ambiguous()])
+        arch['stats']['analysis']['edge_weights'] = copy.deepcopy(DEFAULT_TABLES)
+        page = open_report(arch)
+        select(page, selected)
+        edges = {(e['source'], e['target']) for e in topology(page)['edges']}
+        assert edges == ({('s', 'a'), ('s', 'b')} if selected == 's' else {('s', selected)})
+>       assert_visible_symbol_allocations(page, ['TARGET_ALPHA', 'TARGET_BETA'], '0.15')
+
+tests/test_ambiguous_candidates_browser.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='file:///private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-110/test_VO5_symbol_source_and_eve0/report-0.html'>
+labels = ['TARGET_ALPHA', 'TARGET_BETA'], contribution = '0.15'
+
+    def assert_visible_symbol_allocations(page, labels, contribution):
+        for label in labels:
+            line = page.locator('[data-relationship-row] > div').filter(has_text=re.compile(r'^' + re.escape(label) + r' · 배분 몫 0\.5 ·'))
+            expect(line).to_be_visible()
+>           expect(line).to_have_text(f'{label} · 배분 몫 0.5 · 가중 기여도 {contribution}')
+E           AssertionError: Locator expected to have text 'TARGET_ALPHA · 배분 몫 0.5 · 가중 기여도 0.15'
+E           Actual value: TARGET_ALPHA · 배분 몫 0.5 · 가중 기여도 0.3 
+E           Call log:
+E             - Expect "to_have_text" locator("[data-relationship-row] > div").filter(has_text=re.compile(r"^TARGET_ALPHA · 배분 몫 0\.5 ·")) with timeout 5000ms
+E             - waiting for locator("[data-relationship-row] > div").filter(has_text=re.compile(r"^TARGET_ALPHA · 배분 몫 0\.5 ·"))
+E               14 × locator resolved to <div>TARGET_ALPHA · 배분 몫 0.5 · 가중 기여도 0.3</div>
+E                  - unexpected value "TARGET_ALPHA · 배분 몫 0.5 · 가중 기여도 0.3"
+E           
+E           Aria snapshot:
+E           - text: TARGET_ALPHA · 배분 몫 0.5 · 가중 기여도 0.3
+
+tests/test_ambiguous_candidates_browser.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ambiguous_candidates_browser.py::test_VO5_symbol_source_and_every_alternative[s]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 113 passed in 7.51s

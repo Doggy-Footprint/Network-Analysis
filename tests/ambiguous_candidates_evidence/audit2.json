@@ -1,0 +1,46 @@
+{
+  "spec_version": 3,
+  "run_id": "9c41e725d083ab6f",
+  "invocation": 2,
+  "evidence_revision": 7,
+  "result": "retry",
+  "implementation_inspected": false,
+  "prior_findings": {
+    "V3-F1": "resolved: competing exact/ambiguous closed-form PageRank oracle, all three selected profiles and PageRank-specific mutation failure",
+    "V3-F2": "resolved: related quantitative siblings use rel=0 with declared absolute bounds; 5e-8 mutation rejected",
+    "V3-F3": "resolved: outside-architecture generation requires BottleneckInputError",
+    "V3-F4": "resolved: per-target visible file allocation lines and file/raw-symbol cutoff scenarios; raw-symbol file-sum mutation rejected"
+  },
+  "findings": {
+    "V3-F5": {
+      "classification": "Blocking evidence gap",
+      "obligations": ["VO5"],
+      "parents": ["FR7", "QR3", "C10"],
+      "evidence": "tests/test_ambiguous_candidates_browser.py::test_VO5_symbol_source_and_every_alternative and test_VO5_architecture_only_custom_profile_share_and_max_neighbor_order; tests/unified_support.py::architecture/REGRESSION_EDGE_WEIGHTS",
+      "gap": "Symbol source/every-alternative scenario checks 0.5 anywhere after opening raw disclosures. Under the fixture's ambiguous resolution weight 0.3, 0.5 is the allocation share and the weighted contribution is 0.15. The selected visible symbolic weighted contribution is not independently asserted. The custom-profile scenario requires 0.3 anywhere, so a symbol-only display that always reports contribution 0.3 while retaining correct share, topology, ordering and file allocation lines can satisfy both scenarios.",
+      "escaping_behavior": "Correct symbol topology, candidate navigation and share display, but incorrect constant 0.3 symbolic weighted contribution for the default-profile two-candidate fixture, whose required contribution is 0.15.",
+      "status": "open",
+      "history": "Newly identified pending VO5 evidence gap; no accepted VO4 or VO8 evidence reopened. Existing V3-F4 file observations remain accepted."
+    }
+  },
+  "audit_map": {
+    "VO1": {"status": "accepted", "evidence": "evidence-map revision7 procedure A; test_VO1_independent_closed_form_star six selected rows, test_VO1_all_metrics_metamorphic two transformations, mixed reciprocal-star PageRank three profiles; full4; two quantitative mutation failure logs", "rationale": "All nine declared items observed at public analyzer. Closed forms and assigned costs independently determine metrics; mixed exact relation exposes normalized-share errors; abs1e-9 rel0 enforced."},
+    "VO2": {"status": "accepted", "evidence": "evidence-map procedure F; test_VO2_file_decision_table six rows, overlap/provenance two rows, nine-symbol full-share assertion; full4", "rationale": "All ten declared items observed through conversion then analysis using explicit shares/pairs/original provenance; excluded alternatives remain in denominator and aggregated edges are not split twice."},
+    "VO3": {"status": "accepted", "evidence": "evidence-map procedure P; all test_VO3 language/framework/HTTP/migration/enrichment/controlled-emitter cases; full4; rel0 quantitative assertions", "rationale": "Every each-choice producer item covered with independently named target groups, source evidence and counters, plus public fan contributions. Controlled emitters observe retained external groups and distinct candidate-set deduplication without requiring a Cartesian product."},
+    "VO4": {"status": "retained acceptance", "evidence": "audit1 acceptance; v3 procedure B, symmetric/overlapping evidence tests and lossless registry tests/helper; full4", "rationale": "No correction7 dependency change. Existing evidence checks every declared pair/evidence partition and lossless ordered groups, repeated output, original fields and unchanged exact wire shape."},
+    "VO5": {"status": "open", "finding": "V3-F5", "evidence": "evidence-map procedure U and revision7; browser candidate/source navigation, file per-target allocations/cutoff, boundary/same-file, limits/pagination/hostile text, report-only storage recovery; full4", "rationale": "All finite scenario selections exist and file numerical display gap is resolved. Symbol numerical contribution display can still violate FR7 while selected assertions pass; therefore complete VO5 acceptance is blocked."},
+    "VO6": {"status": "accepted", "evidence": "evidence-map procedure R; supported payload shapes, eight generation policy partitions, four injected-marker partitions, unknown-candidate boundaries and exact generation error, malformed-share partitions and stale-analysis rejection; full4", "rationale": "Every declared item has valid/error observation at the named boundary with no successful partial result; specific exception correction resolves V3-F3."},
+    "VO7": {"status": "accepted", "evidence": "ambiguity-full-4.log 1258 passed/200 subtests; exact/unique/unresolved repeat characterization; unchanged whole-result identity/serialization goldens; hash-verified eight standalone originals and constrained transition helper/rejection tests; deterministic sampler tests; real-repository-v3-final; ambiguity-restored-v3.log", "rationale": "Fresh full regression replaces invalidated full3 evidence. Approved transitions use frozen source/original provenance, unrelated fields stay exact, repeat outputs and fixed sampler are observed. Large report has fresh five-context browser evidence; inherited performance bounds retain context and units."},
+    "VO8": {"status": "retained acceptance", "evidence": "audit1 acceptance; 9c41e725d083ab6f-architecture-review.md seven-item trace/review procedure", "rationale": "Main-owned repeatable review records fixtures, expected shares/max rules, named consumer paths, original raw fields, multiplicity and unchanged sampler. Implementation dependency unchanged after full3; test-only correction7 does not invalidate it."}
+  },
+  "coverage": "Every declared VO1-VO8 obligation accounted for; no spec-approved inapplicability or new structure-based target. VO5 selected items have a remaining oracle gap; overall acceptance cannot pass.",
+  "mutation_outcomes": {
+    "executed": [
+      "PageRank-only full candidate weight: mixed exact/ambiguous PageRank assertion fails, log mutation-pagerank-full-candidate-weight.log",
+      "5e-8 numerical PageRank error: strict abs1e-9 rel0 star assertion fails, log mutation-absolute-tolerance-error.log",
+      "HTML same-original file-sum omission: raw-symbol cutoff B membership assertion fails, log mutation-html-omit-file-share-sum.log"
+    ],
+    "restoration": "mutations.json records backup SHA256 validation and pre-injection equality for each restoration; focused restored baseline91 passed; no active seed reported by main",
+    "unexecuted_defect_class": "Incorrect constant symbolic visible contribution while graph/share/file display remain correct; current symbolic assertions do not establish detection."
+  }
+}

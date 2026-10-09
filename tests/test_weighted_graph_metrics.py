@@ -48,9 +48,9 @@ def expected_star_pagerank():
 def test_V3_C2_pagerank_function_splits_by_weight_ratio():
     result = pagerank({"A": {"B": 1.0, "C": 0.3}, "B": {"A": 1.0}, "C": {"A": 1.0}}, GraphAnalysisConfig(**EXACT_CONFIG))
     expected = expected_star_pagerank()
-    assert sum(result.values()) == pytest.approx(1.0, abs=TOLERANCE)
+    assert sum(result.values()) == pytest.approx(1.0, abs=TOLERANCE, rel=0)
     for node_id, value in expected.items():
-        assert result[node_id] == pytest.approx(value, abs=TOLERANCE), node_id
+        assert result[node_id] == pytest.approx(value, abs=TOLERANCE, rel=0), node_id
 
 
 def test_V3_C2_pagerank_function_is_consistent_for_any_damping():
@@ -60,8 +60,8 @@ def test_V3_C2_pagerank_function_is_consistent_for_any_damping():
     s = result["A"]
     d = (3 * s - 1) / (2 - 3 * s)
     teleport = (1 - d) / 3
-    assert result["B"] == pytest.approx(teleport + d * s / 1.3, abs=TOLERANCE)
-    assert result["C"] == pytest.approx(teleport + d * s * 0.3 / 1.3, abs=TOLERANCE)
+    assert result["B"] == pytest.approx(teleport + d * s / 1.3, abs=TOLERANCE, rel=0)
+    assert result["C"] == pytest.approx(teleport + d * s * 0.3 / 1.3, abs=TOLERANCE, rel=0)
 
 
 def test_V3_C2_analyzer_pagerank_uses_default_yaml_weights():
@@ -74,7 +74,7 @@ def test_V3_C2_analyzer_pagerank_uses_default_yaml_weights():
     ]
     metrics = analyze(nodes, edges, load_edge_weights(default_edge_weights_path()), **EXACT_CONFIG)["node_metrics"]
     for node_id, value in expected_star_pagerank().items():
-        assert metrics[node_id]["pagerank"] == pytest.approx(value, abs=TOLERANCE), node_id
+        assert metrics[node_id]["pagerank"] == pytest.approx(value, abs=TOLERANCE, rel=0), node_id
 
 
 def test_V3_hits_branch_weighted_bipartite_graph_matches_closed_form(tmp_path):
@@ -103,8 +103,8 @@ def test_V3_hits_branch_weighted_bipartite_graph_matches_closed_form(tmp_path):
     expected_hub = {"H1": 1 / hub_norm, "H2": 0.5 / hub_norm, "X": 0.0, "Y": 0.0}
     expected_authority = {"H1": 0.0, "H2": 0.0, "X": 1 / authority_norm, "Y": 0.3 / authority_norm}
     for node_id in expected_hub:
-        assert metrics[node_id]["hub_score"] == pytest.approx(expected_hub[node_id], abs=TOLERANCE), node_id
-        assert metrics[node_id]["authority_score"] == pytest.approx(expected_authority[node_id], abs=TOLERANCE), node_id
+        assert metrics[node_id]["hub_score"] == pytest.approx(expected_hub[node_id], abs=TOLERANCE, rel=0), node_id
+        assert metrics[node_id]["authority_score"] == pytest.approx(expected_authority[node_id], abs=TOLERANCE, rel=0), node_id
 
 
 def graph_of_python_sources(directory):
@@ -207,16 +207,16 @@ def test_V5_weighted_fan_values_use_merged_weights():
     expected_in = {"a": 0.0, "b": 1.0, "c": 0.3 + 1.0 + 0.3, "d": 0.0, "e": 0.3}
     expected_out = {"a": 1.0 + 0.3, "b": 1.0, "c": 0.3, "d": 0.3, "e": 0.0}
     for node_id in "abcde":
-        assert metrics[node_id]["weighted_fan_in"] == pytest.approx(expected_in[node_id], abs=1e-12), node_id
-        assert metrics[node_id]["weighted_fan_out"] == pytest.approx(expected_out[node_id], abs=1e-12), node_id
+        assert metrics[node_id]["weighted_fan_in"] == pytest.approx(expected_in[node_id], abs=1e-12, rel=0), node_id
+        assert metrics[node_id]["weighted_fan_out"] == pytest.approx(expected_out[node_id], abs=1e-12, rel=0), node_id
 
 
 def test_V5_weighted_fan_equals_counts_when_weights_are_one(tmp_path):
     nodes, edges = mixed_fan_graph()
     metrics = analyze(nodes, edges, load_weights(tmp_path, uniform_weights_data()))["node_metrics"]
     for node_id in "abcde":
-        assert metrics[node_id]["weighted_fan_in"] == pytest.approx(metrics[node_id]["fan_in"], abs=1e-12)
-        assert metrics[node_id]["weighted_fan_out"] == pytest.approx(metrics[node_id]["fan_out"], abs=1e-12)
+        assert metrics[node_id]["weighted_fan_in"] == pytest.approx(metrics[node_id]["fan_in"], abs=1e-12, rel=0)
+        assert metrics[node_id]["weighted_fan_out"] == pytest.approx(metrics[node_id]["fan_out"], abs=1e-12, rel=0)
 
 
 def test_V5_C11_self_loop_only_graph_has_zero_weighted_fan():
@@ -231,8 +231,8 @@ def test_V2_C3_certain_and_inferred_duplicates_merge_to_full_weight():
     edges = [edge("A", "B", Confidence.FRAMEWORK_INFERRED), edge("A", "B", Confidence.STATIC_CERTAIN)]
     metrics = analyze(nodes, edges, load_edge_weights(default_edge_weights_path()))["node_metrics"]
     assert metrics["B"]["fan_in"] == 1
-    assert metrics["B"]["weighted_fan_in"] == pytest.approx(1.0, abs=1e-12)
-    assert metrics["A"]["weighted_fan_out"] == pytest.approx(1.0, abs=1e-12)
+    assert metrics["B"]["weighted_fan_in"] == pytest.approx(1.0, abs=1e-12, rel=0)
+    assert metrics["A"]["weighted_fan_out"] == pytest.approx(1.0, abs=1e-12, rel=0)
 
 
 @pytest.mark.parametrize("order", ["larger-first", "smaller-first"])
@@ -244,6 +244,6 @@ def test_V2_F7_merge_takes_the_maximum_regardless_of_order_or_relation(tmp_path,
     smaller = edge("A", "B", Confidence.FRAMEWORK_INFERRED, relation="IMPORTS")
     edges = [larger, smaller] if order == "larger-first" else [smaller, larger]
     metrics = analyze(symbol_nodes("A", "B"), edges, weights)["node_metrics"]
-    assert metrics["B"]["weighted_fan_in"] == pytest.approx(0.5, abs=1e-12)
-    assert metrics["A"]["weighted_fan_out"] == pytest.approx(0.5, abs=1e-12)
+    assert metrics["B"]["weighted_fan_in"] == pytest.approx(0.5, abs=1e-12, rel=0)
+    assert metrics["A"]["weighted_fan_out"] == pytest.approx(0.5, abs=1e-12, rel=0)
     assert metrics["B"]["fan_in"] == 1

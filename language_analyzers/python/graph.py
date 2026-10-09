@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
+from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from language_analyzers.core.analysis_coverage import attach_coverage
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
@@ -192,7 +193,7 @@ class PythonGraphAnalyzer:
         table = build_symbol_table(sources, self.project_path, resolve_root=self.snapshot is None)
         self._table = table
         self._nodes: Dict[str, GraphNode] = {}
-        self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}
+        self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
 
         self._build_package_nodes(table)
         for entry in table.modules.values():
@@ -284,9 +285,9 @@ class PythonGraphAnalyzer:
         evidence: Optional[SourceSpan] = None,
         candidates: Optional[List[str]] = None,
     ):
-        if from_id == to_id or from_id not in self._nodes or to_id not in self._nodes:
+        if not has_external_candidate(from_id, to_id, resolution, candidates) or from_id not in self._nodes or to_id not in self._nodes:
             return
-        key = (from_id, to_id, relation)
+        key = candidate_relation_key(from_id, to_id, relation, resolution, candidates)
         existing = self._edges.get(key)
         if existing is not None:
             existing.weight += 1.0

@@ -1,4 +1,6 @@
 from dataclasses import asdict, is_dataclass
+from copy import deepcopy
+from analysis.candidate_projection import AMBIGUITY_POLICY
 from typing import Any, Dict, List, Optional
 
 SCHEMA_VERSION = "5"
@@ -92,6 +94,10 @@ def architecture_to_dict(architecture: Any) -> Dict[str, Any]:
             for collection in getattr(architecture, "report_collections", []) or []
         },
     }
+    analysis = result["stats"].get("analysis")
+    if not analysis and not any(node["metadata"].get("analysis") for node in result["nodes"]):
+        result["stats"] = deepcopy(result["stats"])
+        result["stats"]["analysis"] = {"ambiguity_policy": AMBIGUITY_POLICY}
     if getattr(architecture, "granularity", None) == "file":
         result.update(granularity="file", details=architecture.details)
     return result

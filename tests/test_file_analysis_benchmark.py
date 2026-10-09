@@ -10,6 +10,8 @@ import pytest
 
 from scripts.benchmark_file_analysis import STAGES, digest, dump, verify_artifacts
 from tests.file_analysis_support import snapshot
+from tests.file_analysis_support import CHARACTERIZATION_FILES
+from tests.candidate_policy_transition_support import assert_candidate_policy_transition
 
 ROOT=Path(__file__).resolve().parents[1]
 EVIDENCE=Path(__file__).parent/'file_analysis_evidence'
@@ -27,8 +29,13 @@ def test_V13_real_snapshot_symbol_equivalence_and_three_processes(file_benchmark
     manifest=json.loads((directory/'baseline-manifest.json').read_text())
     baseline=json.loads((directory/'baseline-relations.json').read_text())
     optimized=json.loads((directory/'optimized-symbol-relations.json').read_text())
-    assert baseline==optimized
-    assert json.loads((directory/'baseline-small-relations.json').read_text())==json.loads((directory/'optimized-small-relations.json').read_text())
+    frozen = pickle.loads((directory/'baseline-snapshot.pickle').read_bytes())
+    assert_candidate_policy_transition(baseline, optimized, frozen.contents)
+    small_baseline = json.loads((directory/'baseline-small-relations.json').read_text())
+    small_optimized = json.loads((directory/'optimized-small-relations.json').read_text())
+    assert small_baseline.keys() == small_optimized.keys()
+    for name in small_baseline:
+        assert_candidate_policy_transition(small_baseline[name], small_optimized[name], CHARACTERIZATION_FILES)
     result=json.loads((directory/'benchmark.json').read_text())
     assert result['spec_version']==2
     assert json.loads((directory/'symbol-equivalence.json').read_text())['spec_version']==2
@@ -50,9 +57,10 @@ def test_V13_real_snapshot_symbol_equivalence_and_three_processes(file_benchmark
 @pytest.mark.parametrize('defect',['snapshot-mismatch','relation-mismatch','timing-failure','missing-browser-evidence'])
 def test_V13_runner_rejects_false_acceptance(monkeypatch,tmp_path,defect):
     import tests.file_analysis_support as support
-    monkeypatch.setattr(support,'characterization',lambda:{'small':'fixed-independent-oracle'})
+    small_oracle = {'small': {'nodes': [{'id': 'small-oracle', 'metadata': {}}], 'edges': []}}
+    monkeypatch.setattr(support,'characterization',lambda:copy.deepcopy(small_oracle))
     dump(tmp_path/'baseline-small-inputs.json',support.CHARACTERIZATION_FILES)
-    dump(tmp_path/'baseline-small-relations.json',{'small':'fixed-independent-oracle'})
+    dump(tmp_path/'baseline-small-relations.json',small_oracle)
     relations={'nodes':[{'id':'oracle','metadata':{}}],'edges':[]}
     dump(tmp_path/'baseline-relations.json',relations)
     alternate=copy.deepcopy(relations)

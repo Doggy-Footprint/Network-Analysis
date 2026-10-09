@@ -1,0 +1,193 @@
+{
+  "spec_version": 2,
+  "obligations": {
+    "V09-top100": {
+      "count": 100,
+      "assertions": "exact IDs, upper limit and full transition"
+    },
+    "V09-top101": {
+      "count": 101,
+      "assertions": "exact IDs, upper limit and full transition"
+    },
+    "V09-page50": {
+      "count": 50,
+      "assertions": "exact page contents and next/previous enabled state"
+    },
+    "V09-page51": {
+      "count": 51,
+      "assertions": "exact page contents and next/previous enabled state"
+    },
+    "V09-neighbors0": {
+      "shown": 0,
+      "omitted": 0,
+      "all_original_evidence": 0
+    },
+    "V09-neighbors1": {
+      "shown": 1,
+      "omitted": 0,
+      "all_original_evidence": 1
+    },
+    "V09-neighbors30": {
+      "shown": 30,
+      "omitted": 0,
+      "all_original_evidence": 30
+    },
+    "V09-neighbors31": {
+      "shown": 30,
+      "omitted": 1,
+      "all_original_evidence": 31
+    },
+    "V09-external-file-group-all-evidence": {
+      "group_count": 1,
+      "original_targets": [
+        "b1",
+        "b2"
+      ],
+      "relationship_pages": [
+        50,
+        1
+      ]
+    },
+    "V10-framework-only": {
+      "only_available_framework_node": "only-service"
+    },
+    "V11-title": {
+      "surface": "title",
+      "unexpected_script": 0,
+      "external_requests": 0,
+      "unhandled_errors": 0,
+      "offline_navigation": true
+    },
+    "V11-path": {
+      "surface": "path",
+      "unexpected_script": 0,
+      "external_requests": 0,
+      "unhandled_errors": 0,
+      "offline_navigation": true
+    },
+    "V11-docstring": {
+      "surface": "docstring",
+      "unexpected_script": 0,
+      "external_requests": 0,
+      "unhandled_errors": 0,
+      "offline_navigation": true
+    },
+    "V11-evidence": {
+      "surface": "evidence",
+      "unexpected_script": 0,
+      "external_requests": 0,
+      "unhandled_errors": 0,
+      "offline_navigation": true
+    },
+    "V11-candidate": {
+      "surface": "candidate",
+      "unexpected_script": 0,
+      "external_requests": 0,
+      "unhandled_errors": 0,
+      "offline_navigation": true
+    },
+    "V10-transitions": {
+      "boundary_observation": {
+        "excluded_from_all_file_list": true,
+        "excluded_from_all_six_representatives": true,
+        "graph_and_original_evidence_retained": true
+      },
+      "items": [
+        "initial-no-graph",
+        "file-to-class",
+        "file-to-function",
+        "symbol-to-external-file",
+        "back-to-file",
+        "method-fold",
+        "field-fold",
+        "nested-owner",
+        "framework-role",
+        "search",
+        "category",
+        "candidate-filter"
+      ]
+    }
+  },
+  "datasets": {
+    "synthetic": {
+      "context": "current workstation, installed Chrome, local file, five fresh contexts; preparation excluded",
+      "html_path": "/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/tmpshia5rr8/synthetic.html",
+      "html_sha256": "f81992bc6fbe601d0db27d7bf5c8d636010d8bbe2d8f7bd4a401f8d93fba0c50",
+      "fresh_context_count": 5,
+      "graph_completion": "Cytoscape layoutstop followed by two animation frames",
+      "raw_ms": {
+        "summary_ms": [
+          297.9861249914393,
+          255.67912496626377,
+          254.3920410098508,
+          241.3611669326201,
+          242.28104203939438
+        ],
+        "filter_page_ms": [
+          24.799999952316284,
+          25,
+          26.5,
+          24,
+          23.5
+        ],
+        "detail_graph_ms": [
+          33.90000009536743,
+          28.100000023841858,
+          27,
+          29.399999976158142,
+          27.899999976158142
+        ]
+      },
+      "median_ms": {
+        "summary_ms": 254.3920410098508,
+        "filter_page_ms": 24.799999952316284,
+        "detail_graph_ms": 28.100000023841858
+      },
+      "threshold_ms": {
+        "summary_ms": 5000,
+        "filter_page_ms": 300,
+        "detail_graph_ms": 1000
+      }
+    },
+    "Tag-Manager": {
+      "context": "current workstation, installed Chrome, local file, five fresh contexts; preparation excluded",
+      "html_path": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run1.html",
+      "html_sha256": "673a2f713ac96470dc499f65feceb5dff13c70aa4787a5b095613c5c11f14c99",
+      "fresh_context_count": 5,
+      "graph_completion": "Cytoscape layoutstop followed by two animation frames",
+      "raw_ms": {
+        "summary_ms": [
+          1774.349290993996,
+          1757.6366249704733,
+          1774.3402919732034,
+          1806.4157919725403,
+          1771.9878329662606
+        ],
+        "filter_page_ms": [
+          28.700000047683716,
+          30,
+          28.600000023841858,
+          29.699999928474426,
+          29.100000023841858
+        ],
+        "detail_graph_ms": [
+          44.40000009536743,
+          43.199999928474426,
+          41.799999952316284,
+          43.89999997615814,
+          43
+        ]
+      },
+      "median_ms": {
+        "summary_ms": 1774.3402919732034,
+        "filter_page_ms": 29.100000023841858,
+        "detail_graph_ms": 43.199999928474426
+      },
+      "threshold_ms": {
+        "summary_ms": 5000,
+        "filter_page_ms": 300,
+        "detail_graph_ms": 1000
+      }
+    }
+  }
+}

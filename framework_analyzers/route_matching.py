@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+from analysis.candidate_projection import candidate_relation_key
+
 from language_analyzers.core.graph_models import (Confidence, GraphEdge, GraphNode,
                                                   RelationKind, Resolution, SourceSpan)
 from language_analyzers.typescript.http_calls import HttpCallSite
@@ -68,7 +70,7 @@ def match_routes(
             ))
 
     stats = {"matched": 0, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
-    edges: Dict[Tuple[str, str], GraphEdge] = {}
+    edges: Dict[Tuple[Any, ...], GraphEdge] = {}
     for source_id, key, evidence in clients:
         if key is None:
             stats["unresolvable"] += 1
@@ -80,9 +82,10 @@ def match_routes(
         ambiguous = len(candidates) > 1
         stats["ambiguous" if ambiguous else "matched"] += 1
         target = candidates[0]
-        if (source_id, target) in edges:
+        edge_key = candidate_relation_key(source_id, target, RelationKind.CALLS_ROUTE, Resolution.AMBIGUOUS, candidates) if ambiguous else (source_id, target)
+        if edge_key in edges:
             continue
-        edges[(source_id, target)] = GraphEdge(
+        edges[edge_key] = GraphEdge(
             from_id=source_id,
             to_id=target,
             relation=RelationKind.CALLS_ROUTE,

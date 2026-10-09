@@ -58,7 +58,8 @@
         let built = false;
         d.addEventListener('toggle', () => {
             if (d.open && !built) {
-                d.append(el('pre', typeof value === 'string' ? value : JSON.stringify(value, null, 2)));
+                const resolved = typeof value === 'function' ? value() : value;
+                d.append(el('pre', typeof resolved === 'string' ? resolved : JSON.stringify(resolved, null, 2)));
                 built = true;
             }
         });
@@ -95,6 +96,31 @@
         return details.node_files?.[id] || id;
     }
 
+    function candidateTargets(edge) {
+        return edge.resolution === 'ambiguous' ? [...new Set([edge.to_id, ...(edge.candidates || [])])].sort(cmp) : [edge.to_id];
+    }
+
+    function candidateShare(edge) {
+        const explicit = edge.metadata?.candidate_share;
+        if (explicit !== undefined) {
+            if (candidateTargets(edge).length !== 1) throw new Error('candidate_share는 단일 집계 대상에만 사용할 수 있습니다.');
+            if (typeof explicit !== 'number' || !Number.isFinite(explicit) || explicit <= 0 || explicit > 1) throw new Error('candidate_share가 올바르지 않습니다.');
+            return explicit;
+        }
+        return 1 / candidateTargets(edge).length;
+    }
+
+    function contribution(edge) {
+        const weights = bottlenecks?.edge_weights || arch?.stats?.analysis?.edge_weights;
+        return Math.min(weights?.confidence?.[edge.confidence || 'static_certain'] ?? 1,
+                        weights?.resolution?.[edge.resolution || 'exact'] ?? 1) * (edge.projected_share ?? candidateShare(edge));
+    }
+
+    function projectedEdges(edges) {
+        return edges.flatMap(edge => (edge.metadata?.candidate_share !== undefined ? [edge.to_id] : candidateTargets(edge)).map(target =>
+            ({...edge, to_id: target, projected_share: candidateShare(edge), original: edge})));
+    }
+
     function declarationEdge(edge) {
         if (edge.relation === 'IMPLEMENTED_BY') return true;
         if (!['CONTAINS', 'DECLARES', 'EXPORTS'].includes(edge.relation)) return false;
@@ -107,14 +133,24 @@
 
     function symbolGraphRelations(id) {
         const file = details.node_files?.[id];
-        return (detailIncident.get(id) || []).map(edge => {
+        const result = [];
+        for (const original of detailIncident.get(id) || []) {
             const endpoint = key => {
                 const target = implementationTargets.get(key) || key;
                 const targetFile = details.node_files?.[target];
                 return targetFile && targetFile !== file ? targetFile : displayOwner(target);
             };
-            return {...edge, from_id: endpoint(edge.from_id), to_id: endpoint(edge.to_id), original: edge};
-        });
+            const pairs = new Map();
+            for (const edge of projectedEdges([original])) {
+                const source = endpoint(edge.from_id), target = endpoint(edge.to_id);
+                if (source === target || (source !== id && target !== id)) continue;
+                const key = JSON.stringify([source, target]);
+                if (pairs.has(key)) pairs.get(key).projected_share += edge.projected_share;
+                else pairs.set(key, {...edge, from_id: source, to_id: target, original});
+            }
+            result.push(...pairs.values());
+        }
+        return result;
     }
 
     function fileSymbols(id, host) {
@@ -304,7 +340,7 @@
         for (const edge of relations.slice(relationshipPage * 50, relationshipPage * 50 + 50)) {
             const row = el('div', undefined, 'relationship');
             row.dataset.relationshipRow = '';
-            for (const id of [edge.from_id, edge.to_id]) {
+            for (const id of [edge.from_id, ...candidateTargets(edge.original || edge)]) {
                 const currentFile = details.node_files?.[selected] || (isFile(nodeMap.get(selected)) ? selected : null);
                 const targetFile = details.node_files?.[id];
                 const destination = fileMode && targetFile && currentFile && targetFile !== currentFile ? targetFile : fileMode ? displayOwner(id) : id;
@@ -313,6 +349,25 @@
                 if (id === edge.from_id) row.append(el('span', ' → '));
             }
             row.append(el('div', `${edge.relation||'관계'} · ${edge.confidence||'static_certain'} · ${edge.resolution||'exact'} · 중복 횟수 ${format(edge.weight ?? 1)}`));
+            row.append(el('div', `배분 몫 ${format(edge.projected_share ?? candidateShare(edge))} · 가중 기여도 ${format(contribution(edge))}`));
+            const original = edge.original || edge;
+            if (original.resolution === 'ambiguous') {
+                for (const target of candidateTargets(original)) {
+                    const projected = {...original, to_id: target, projected_share: candidateShare(original)};
+                    const name = (detailMap.get(target) || nodeMap.get(target))?.display_label || (detailMap.get(target) || nodeMap.get(target))?.label || target;
+                    row.append(el('div', `${name} · 배분 몫 ${format(candidateShare(original))} · 가중 기여도 ${format(contribution(projected))}`));
+                }
+                if (fileMode) {
+                    const shares = new Map();
+                    const source = details.node_files?.[original.from_id] || original.from_id;
+                    for (const target of candidateTargets(original)) {
+                        const file = details.node_files?.[target] || target;
+                        if (file !== source) shares.set(file, (shares.get(file) || 0) + candidateShare(original));
+                    }
+                    for (const [file, share] of shares) row.append(el('div', `${(nodeMap.get(file)?.label || file)} · 파일 배분 몫 ${format(share)} · 가중 기여도 ${format(contribution({...original, projected_share: share}))}`));
+                }
+            }
+            if (edge.resolution === 'ambiguous') row.append(el('div', '모호한 후보 그룹: 가능한 대안'));
             row.append(el('div', evidenceText(edge.evidence), 'path'));
             rawDetails('연결의 전체 근거와 다른 대상 후보', edge, row);
             host.append(row);
@@ -335,25 +390,11 @@
             status.textContent = '연결 탐색 불가: 아키텍처 데이터가 없습니다.';
             return;
         }
-        const weights = bottlenecks?.edge_weights || {
-            confidence: {
-                static_certain: 1,
-                static_inferred: .3,
-                framework_inferred: .3,
-                dynamic_required: .3
-            },
-            resolution: {
-                exact: 1,
-                unique_name: 1,
-                ambiguous: .3,
-                unresolved: .3
-            }
-        };
         const neighbors = new Map();
         for (const e of graphRelations) {
             const other = e.from_id === id ? e.to_id : e.from_id;
             if (other === id || !(nodeMap.has(other) || detailMap.has(other))) continue;
-            const weight = Math.min(weights.confidence?.[e.confidence || 'static_certain'] ?? 1, weights.resolution?.[e.resolution || 'exact'] ?? 1);
+            const weight = contribution(e);
             const entry = neighbors.get(other) || {
                 weight: -Infinity,
                 incoming: false,
@@ -496,7 +537,7 @@
             window.ReportGraph.on('tap', 'edge', event => {
                 const host = $('grouped-edge-detail');
                 host.replaceChildren(el('h3', '묶인 연결의 개별 근거'));
-                for (const e of event.target.data('relations')) host.append(el('pre', JSON.stringify(e.original || e, null, 2)));
+                for (const e of event.target.data('relations')) { host.append(el('div', `${e.resolution || 'exact'} · 배분 몫 ${format(e.projected_share ?? candidateShare(e))} · 가중 기여도 ${format(contribution(e))} · 중복 횟수 ${format(e.weight ?? 1)}`)); host.append(el('pre', JSON.stringify(e.original || e, null, 2))); }
             });
         } catch (error) {
             status.classList.add('error');
@@ -510,6 +551,15 @@
         if (c.kind === 'large_node') return `소스 범위 ${format(m.line_count)}줄 · 임계값 ${format(m.line_threshold)}줄`;
         if (c.kind === 'evidence_spread') return `근거 ${format(m.file_count)}개 파일 · 줄 범위 ${format(m.line_span)}줄 · 임계값 ${format(m.line_threshold)}줄`;
         return finite(m.unresolved_count) ? `미확정 참조 ${format(m.unresolved_count)}건` : '참조 대상을 확정하려면 추가 확인이 필요합니다.';
+    }
+
+    function resolvedCandidate(c) {
+        const resolve = record => {
+            if (!record || !record.candidate_group_id) return record;
+            const group = network.candidate_groups?.[record.candidate_group_id];
+            return {...record, to_id: group.to_id, candidates: group.candidates};
+        };
+        return {...c, evidence: Array.isArray(c.evidence) ? c.evidence.map(resolve) : resolve(c.evidence)};
     }
 
     function candidateEvidence(c, host) {
@@ -544,6 +594,7 @@
         selected = id;
         relationshipPage = 0;
         relations = symbol ? detailIncident.get(id) || [] : fileMode && isFile(n) ? fileIncident.get(id) || [] : fileMode ? detailIncident.get(id) || incident.get(id) || [] : incident.get(id) || [];
+        relations = [...new Set(relations.map(edge => edge.original || edge))];
         graphRelations = symbol ? symbolGraphRelations(id) : incident.get(id) || [];
         const host = $('node-detail');
         host.replaceChildren();
@@ -571,7 +622,7 @@
             const box = el('article', undefined, 'candidate');
             box.append(el('h3', kinds[c.kind]?.[0] || c.kind), el('p', kinds[c.kind]?.[1] || ''), el('p', candidateReason(c)));
             candidateEvidence(c, box);
-            rawDetails('후보의 전체 기록', c, box);
+            rawDetails('후보의 전체 기록', () => resolvedCandidate(c), box);
             host.append(box);
         }
         if (!symbol) rawDetails(fileMode ? '파일 전체 지표' : '전체 지표 · 식별자 출현 컨텍스트', metrics[id] || {}, host);
@@ -790,8 +841,29 @@
         data = JSON.parse($('report-data').textContent);
         arch = data.architecture;
         bottlenecks = data.bottlenecks;
-        renderCoverage();
+        if ((arch && arch.stats?.analysis?.ambiguity_policy !== 'equal-symbol-share.v1') || (bottlenecks && bottlenecks.dependency_network?.ambiguity_policy !== 'equal-symbol-share.v1')) throw new Error('지원하지 않거나 누락된 ambiguity_policy입니다.');
         if ((!arch && !bottlenecks) || (arch && (!Array.isArray(arch.nodes) || !Array.isArray(arch.edges))) || (bottlenecks && (!bottlenecks.dependency_network || !Array.isArray(bottlenecks.candidates)))) throw new Error('보고서 데이터 구조가 올바르지 않습니다.');
+        for (const graph of [arch, arch?.details].filter(Boolean)) {
+            const ids = new Set((graph.nodes || []).map(node => node.id));
+            for (const edge of graph.edges || []) {
+                if (!ids.has(edge.from_id) || [edge.to_id, ...(edge.candidates || [])].some(target => !ids.has(target))) throw new Error('아키텍처 밖의 후보 참조입니다.');
+                candidateShare(edge);
+            }
+        }
+        const candidateGroups = bottlenecks?.dependency_network?.candidate_groups === undefined ? {} : bottlenecks.dependency_network.candidate_groups;
+        if (!candidateGroups || typeof candidateGroups !== 'object' || Array.isArray(candidateGroups)) throw new Error('모호한 후보 그룹 데이터가 올바르지 않습니다.');
+        for (const [groupId, group] of Object.entries(candidateGroups)) {
+            if (!groupId || !group || typeof group !== 'object' || Array.isArray(group) || typeof group.to_id !== 'string' || !group.to_id || !Array.isArray(group.candidates) || group.candidates.some(id => typeof id !== 'string' || !id)) throw new Error('모호한 후보 그룹 데이터가 올바르지 않습니다.');
+        }
+        for (const candidate of bottlenecks?.candidates || []) {
+            const evidence = Array.isArray(candidate.evidence) ? candidate.evidence : [candidate.evidence];
+            for (const record of evidence) {
+                if (!record || !Object.hasOwn(record, 'candidate_group_id')) continue;
+                const groupId = record.candidate_group_id;
+                if (typeof groupId !== 'string' || !groupId || !Object.hasOwn(candidateGroups, groupId) || candidateGroups[groupId].to_id !== record.to_id) throw new Error('모호한 후보 그룹 참조가 올바르지 않습니다.');
+            }
+        }
+        renderCoverage();
         network = bottlenecks?.dependency_network || arch?.stats?.analysis || {};
         metrics = {
             ...(network.node_metrics || {})
@@ -842,11 +914,11 @@
                 }
             }
             if (declarationEdge(edge)) continue;
-            for (const id of new Set([edge.from_id, edge.to_id, displayOwner(edge.from_id), displayOwner(edge.to_id)].filter(Boolean))) {
+            for (const id of new Set([edge.from_id, ...candidateTargets(edge), displayOwner(edge.from_id), ...candidateTargets(edge).map(displayOwner)].filter(Boolean))) {
                 if (!detailIncident.has(id)) detailIncident.set(id, []);
                 detailIncident.get(id).push(edge);
             }
-            for (const file of new Set([details.node_files?.[edge.from_id], details.node_files?.[edge.to_id]].filter(Boolean))) {
+            for (const file of new Set([details.node_files?.[edge.from_id], ...candidateTargets(edge).map(target => details.node_files?.[target])].filter(Boolean))) {
                 if (!fileIncident.has(file)) fileIncident.set(file, []);
                 fileIncident.get(file).push(edge);
             }
@@ -858,7 +930,7 @@
             byTarget.get(c.target).push(c);
         }
         incident = new Map();
-        for (const e of arch?.edges || []) {
+        for (const e of projectedEdges(arch?.edges || [])) {
             for (const id of new Set([e.from_id, e.to_id])) {
                 if (!incident.has(id)) incident.set(id, []);
                 incident.get(id).push(e);

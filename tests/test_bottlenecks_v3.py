@@ -119,11 +119,11 @@ def test_V6_weighted_fan_rankings_use_merged_weights_and_descending_order():
     fan_in = [(item["node_id"], item["value"]) for item in rankings["weighted_fan_in"]]
     assert [name for name, _ in fan_out] == ["a", "b", "c"]
     assert [name for name, _ in fan_in] == ["b", "c", "a"]
-    assert [value for _, value in fan_out] == pytest.approx([1.3, 0.3, 0.0], abs=1e-12)
-    assert [value for _, value in fan_in] == pytest.approx([1.0, 0.6, 0.0], abs=1e-12)
+    assert [value for _, value in fan_out] == pytest.approx([1.3, 0.3, 0.0], abs=1e-12, rel=0)
+    assert [value for _, value in fan_in] == pytest.approx([1.0, 0.6, 0.0], abs=1e-12, rel=0)
     metrics = payload_of(snapshot, architecture)["dependency_network"]["node_metrics"]
-    assert metrics["c"]["weighted_fan_in"] == pytest.approx(0.6, abs=1e-12)
-    assert metrics["a"]["weighted_fan_out"] == pytest.approx(1.3, abs=1e-12)
+    assert metrics["c"]["weighted_fan_in"] == pytest.approx(0.6, abs=1e-12, rel=0)
+    assert metrics["a"]["weighted_fan_out"] == pytest.approx(1.3, abs=1e-12, rel=0)
 
 
 @pytest.mark.parametrize(

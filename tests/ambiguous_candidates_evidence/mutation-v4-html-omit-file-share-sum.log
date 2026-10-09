@@ -1,0 +1,43 @@
+........................................................................ [  5%]
+.......................................................F
+=================================== FAILURES ===================================
+_ test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff[symbol-source] _
+
+open_report = <function open_report.<locals>.open_page at 0x10c1bc680>
+view = 'symbol-source'
+
+    @pytest.mark.parametrize('view', ['file-source', 'symbol-source'])
+    def test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff(open_report, view):
+        high_paths = [f'high{i:02}.py' for i in range(28)]
+        paths = ['a.py', 'b.py', 'c.py', 'middle0.py', 'middle1.py', *high_paths]
+        originals = [symbol('s', 'a.py'), symbol('a', 'b.py'), symbol('b', 'b.py'), symbol('c', 'c.py')]
+        originals += [symbol(f'middle{i}', f'middle{i}.py') for i in range(2)]
+        originals += [symbol(f'high{i:02}', path) for i, path in enumerate(high_paths)]
+        relations = [ambiguous(others=('b', 'c'))]
+        relations += [edge('s', f'high{i:02}') for i in range(28)]
+        relations += [edge('s', f'middle{i}', confidence='framework_inferred') for i in range(2)]
+        arch = file_arch([file_node(path) for path in paths], originals, relations)
+        arch['stats']['analysis']['edge_weights'] = copy.deepcopy(DEFAULT_TABLES)
+        arch['stats']['analysis']['edge_weights']['confidence']['framework_inferred'] = .15
+        arch['edges'] = []
+        for target, share in [('file:b.py', 2/3), ('file:c.py', 1/3)]:
+            relation = copy.deepcopy(relations[0])
+            relation.update(from_id='file:a.py', to_id=target, candidates=[], metadata={'candidate_share': share, 'detail_edge_indices': [0], 'evidence_count': 1})
+            arch['edges'].append(relation)
+        for ordinal, relation in enumerate(relations[1:], 1):
+            aggregate = copy.deepcopy(relation)
+            aggregate.update(from_id='file:a.py', to_id=arch['details']['node_files'][relation['to_id']], candidates=[], metadata={'candidate_share': 1, 'detail_edge_indices': [ordinal], 'evidence_count': 1})
+            arch['edges'].append(aggregate)
+        page = open_report(arch)
+        select(page, 'file:a.py')
+        if view == 'symbol-source':
+            select(page, 's')
+        neighbors = {entry['id'] for entry in topology(page)['nodes']}
+>       assert 'file:b.py' in neighbors
+E       AssertionError: assert 'file:b.py' in {'file:high00.py', 'file:high01.py', 'file:high02.py', 'file:high03.py', 'file:high04.py', 'file:high05.py', ...}
+
+tests/test_ambiguous_candidates_browser.py:263: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ambiguous_candidates_browser.py::test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff[symbol-source]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 127 passed in 13.58s

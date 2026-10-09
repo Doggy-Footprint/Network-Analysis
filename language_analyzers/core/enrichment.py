@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, 
 if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
+from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from .cost import cost_for_text
 from .positions import NamePositions
 from .flags import is_test_path
@@ -113,14 +114,14 @@ def _add_test_relations(
     contents: Mapping[str, str],
 ) -> None:
     by_id = {node.id: node for node in nodes}
-    existing = {(edge.from_id, edge.to_id, edge.relation) for edge in edges}
+    existing = {candidate_relation_key(edge.from_id, edge.to_id, edge.relation, edge.resolution, edge.candidates) for edge in edges}
     test_nodes = [node for node in nodes if _is_test_node(node)]
     production = [node for node in nodes if not _is_test_node(node)]
 
     for edge in list(edges):
         source = by_id.get(edge.from_id)
         target = by_id.get(edge.to_id)
-        if source is None or target is None or not _is_test_node(source) or _is_test_node(target):
+        if source is None or target is None or not _is_test_node(source) or not any(not _is_test_node(by_id[item]) for item in candidate_targets(edge) if item in by_id):
             continue
         _append_edge(edges, existing, source.id, target.id, RelationKind.TESTS,
                      edge.confidence, edge.resolution, edge.evidence, edge.candidates)
@@ -192,7 +193,7 @@ def _add_configuration_relations(
     edges: List[GraphEdge],
     contents: Mapping[str, str],
 ) -> None:
-    existing = {(edge.from_id, edge.to_id, edge.relation) for edge in edges}
+    existing = {candidate_relation_key(edge.from_id, edge.to_id, edge.relation, edge.resolution, edge.candidates) for edge in edges}
     existing_node_ids = {node.id for node in nodes}
     code_nodes_by_path: Dict[str, List[GraphNode]] = {}
     for node in nodes:
@@ -335,8 +336,8 @@ def _append_edge(
     confidence: str, resolution: str, evidence: Optional[SourceSpan], candidates: List[str],
     metadata: Optional[Dict[str, Any]] = None,
 ) -> None:
-    key = (source, target, relation)
-    if source == target or key in existing:
+    key = candidate_relation_key(source, target, relation, resolution, candidates)
+    if not has_external_candidate(source, target, resolution, candidates) or key in existing:
         return
     existing.add(key)
     edges.append(GraphEdge(

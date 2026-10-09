@@ -1,0 +1,11 @@
+{
+  "spec_version": 3,
+  "original_report_bytes": 599017124,
+  "current_report_bytes": 267141946,
+  "smoke_load_seconds": 2.0064538340084255,
+  "visible_rows": 50,
+  "report_status": "",
+  "page_errors": [],
+  "qualifies_as_benchmark": false,
+  "benchmark_note": "Fresh-context five-iteration full suite measurement remains required; smoke ran concurrently with another backend process."
+}

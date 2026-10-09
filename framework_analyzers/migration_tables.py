@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+from analysis.candidate_projection import candidate_relation_key
 
 from language_analyzers.core.graph_models import (Confidence, GraphEdge, RelationKind,
                                                   Resolution, SourceSpan)
@@ -94,7 +96,7 @@ def match_migration_tables(
     migrations: Sequence[Tuple[str, Sequence[Optional[str]], SourceSpan]],
 ) -> Tuple[List[GraphEdge], Dict[str, int]]:
     stats = {"matched": 0, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
-    edges: Dict[Tuple[str, str], GraphEdge] = {}
+    edges: Dict[Tuple[Any, ...], GraphEdge] = {}
     for migration_id, refs, evidence in migrations:
         seen = set()
         for ref in refs:
@@ -111,9 +113,10 @@ def match_migration_tables(
             ambiguous = len(candidates) > 1
             stats["ambiguous" if ambiguous else "matched"] += 1
             target = candidates[0]
-            if (migration_id, target) in edges:
+            edge_key = candidate_relation_key(migration_id, target, RelationKind.MIGRATES, Resolution.AMBIGUOUS, candidates) if ambiguous else (migration_id, target)
+            if edge_key in edges:
                 continue
-            edges[(migration_id, target)] = GraphEdge(
+            edges[edge_key] = GraphEdge(
                 from_id=migration_id,
                 to_id=target,
                 relation=RelationKind.MIGRATES,

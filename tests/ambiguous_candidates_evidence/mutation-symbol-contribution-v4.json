@@ -1,0 +1,13 @@
+{
+  "spec_version": 4,
+  "finding": "V3-F5",
+  "class": "symbol candidate display constant0.3 instead of required0.15",
+  "file": "renderers/html/static/app.js",
+  "selection": "exact full Test command with fail-fast runtime option",
+  "expected_assertion": "test_VO5_symbol_source_and_every_alternative",
+  "before_sha256": "0ccdb2332b33098d3a665b90ff50dada5d836155d85fb88c716f657b9ee3fffa",
+  "exit_code": 1,
+  "detected": true,
+  "restored": true,
+  "after_sha256": "0ccdb2332b33098d3a665b90ff50dada5d836155d85fb88c716f657b9ee3fffa"
+}

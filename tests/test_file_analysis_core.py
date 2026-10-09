@@ -52,8 +52,8 @@ def test_V03_mixed_keys_candidate_only_duplicate_weights(tmp_path):
     assert out['details']['edges'][0]['candidates'] == ['candidate']
     weights = load_weights(tmp_path, weights_data())
     metrics = GraphAnalyzer(GraphAnalysisConfig(edge_weights=weights)).analyze(result.nodes, result.edges, snap.root)['node_metrics']
-    assert metrics['file:b.py']['weighted_fan_in'] == pytest.approx(1.0, abs=1e-9, rel=1e-8)
-    assert metrics['file:a.py']['weighted_fan_out'] == pytest.approx(1.0, abs=1e-9, rel=1e-8)
+    assert metrics['file:b.py']['weighted_fan_in'] == pytest.approx(1.0, abs=1e-9, rel=0)
+    assert metrics['file:a.py']['weighted_fan_out'] == pytest.approx(1.0, abs=1e-9, rel=0)
     assert metrics['file:c.py']['fan_in'] == 0
 
 
@@ -123,16 +123,16 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
     tokens = {'a': 1, 'b': 2, 'c': 3, 'd': 1}
     for letter in 'abcd':
         row = metrics[f'file:{letter}.py']
-        assert row['pagerank'] == pytest.approx(expected_rank[letter], abs=1e-9, rel=1e-8)
+        assert row['pagerank'] == pytest.approx(expected_rank[letter], abs=1e-9, rel=0)
         assert row['token_cost'] == tokens[letter]
         assert row['fan_in'] == int(letter in 'bc')
         assert row['fan_out'] == int(letter in 'ab')
         assert row['weighted_fan_in'] == int(letter in 'bc')
         assert row['weighted_fan_out'] == int(letter in 'ab')
-        assert row['degree_centrality'] == pytest.approx({'a':1/6,'b':1/3,'c':1/6,'d':0}[letter],abs=1e-9,rel=1e-8)
-        assert row['betweenness_centrality'] == pytest.approx(1/6 if letter == 'b' else 0,abs=1e-9,rel=1e-8)
-        assert row['hub_score'] == pytest.approx(1/math.sqrt(2) if letter in 'ab' else 0,abs=1e-9,rel=1e-8)
-        assert row['authority_score'] == pytest.approx(1/math.sqrt(2) if letter in 'bc' else 0,abs=1e-9,rel=1e-8)
+        assert row['degree_centrality'] == pytest.approx({'a':1/6,'b':1/3,'c':1/6,'d':0}[letter],abs=1e-9,rel=0)
+        assert row['betweenness_centrality'] == pytest.approx(1/6 if letter == 'b' else 0,abs=1e-9,rel=0)
+        assert row['hub_score'] == pytest.approx(1/math.sqrt(2) if letter in 'ab' else 0,abs=1e-9,rel=0)
+        assert row['authority_score'] == pytest.approx(1/math.sqrt(2) if letter in 'bc' else 0,abs=1e-9,rel=0)
         for hop in (2, 3):
             neighbors = set('abc') - {letter} if letter != 'd' else set()
             assert row[f'hop_{hop}_node_count'] == len(neighbors)
@@ -162,7 +162,7 @@ def test_V05_duplicate_symbol_invariance_and_discounts(tmp_path, flags, discount
     for result in (single, duplicate):
         metrics = payload(snap, result, tmp_path)['dependency_network']['node_metrics']['file:a.py']
         assert metrics['token_cost'] == 3
-        assert metrics['effective_token_cost'] == pytest.approx(3 * discount,abs=1e-9,rel=1e-8)
+        assert metrics['effective_token_cost'] == pytest.approx(3 * discount,abs=1e-9,rel=0)
 
 
 @pytest.mark.parametrize(('lines', 'expected'), [(2, 0), (3, 0), (4, 1)], ids=['T-1','T','T+1'])

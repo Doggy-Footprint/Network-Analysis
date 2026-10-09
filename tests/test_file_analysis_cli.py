@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from analysis import GraphAnalyzer
+from tests.candidate_policy_metadata_support import IDENTITY_TABLES, without_candidate_policy_metadata
 from tests.file_analysis_support import architecture, converted, node, snapshot
 from tests.edge_weights_support import edge
 from tests.test_cli_multi_analyzer import PROJECT_FILES
@@ -110,10 +111,10 @@ def test_V01_direct_builder_defaults_characterization(monkeypatch,file_project,n
         for root in sorted({str(file_project),str(file_project.resolve())},key=len,reverse=True):
             encoded=encoded.replace(root,'<PROJECT_ROOT>')
         return json.loads(encoded.replace('/private<PROJECT_ROOT>','<PROJECT_ROOT>'))
-    assert normalized(serialize(result))==normalized(golden['builder'])
+    assert normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES))==normalized(golden['builder'])
     report=analyze_bottlenecks(snapshot(FILES,root=str(file_project.resolve())),result,load_edge_weights(default_edge_weights_path()))
-    assert normalized(serialize(result))==normalized(golden['after_bottlenecks'])
-    assert normalized(json.loads(bottlenecks_to_json(report)))==normalized(golden['bottlenecks'])
+    assert normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES))==normalized(golden['after_bottlenecks'])
+    assert normalized(without_candidate_policy_metadata(json.loads(bottlenecks_to_json(report)), 'bottlenecks'))==normalized(golden['bottlenecks'])
 
 
 @pytest.mark.parametrize('option',['--no-language-graph','--no-models','--no-deps'])

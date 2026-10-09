@@ -1,0 +1,44 @@
+{
+  "spec_version": 3,
+  "evidence_revision": "correction7",
+  "selection": [
+    {
+      "defect": "PageRank-only full profile weight for each ambiguous candidate",
+      "findings": [
+        "V3-F1"
+      ],
+      "obligations": [
+        "VO1"
+      ],
+      "reason": "The original full-weight mutation is strengthened to isolate normalized PageRank while fan/HITS remain correct; this directly targets the escaping behavior audit1 identified."
+    },
+    {
+      "defect": "PageRank error5e-8 above approved absolute1e-9",
+      "findings": [
+        "V3-F2"
+      ],
+      "obligations": [
+        "VO1",
+        "VO2",
+        "VO3"
+      ],
+      "reason": "Distinguishes enforced absolute tolerance from old pytest relative tolerance; exercises the shared numeric comparison correction."
+    },
+    {
+      "defect": "HTML omits same-original file candidate share sum",
+      "findings": [
+        "V3-F4"
+      ],
+      "obligations": [
+        "VO5"
+      ],
+      "reason": "The original file-allocation mutation is strengthened to the independently rendered UI and 30-neighbor selection, whose old assertions could miss wrong file shares."
+    }
+  ],
+  "unselected_finding": {
+    "id": "V3-F3",
+    "reason": "Exact exception expectation is independently reviewable and covered by declared boundary test; numerical allocation, tolerance and file rendering are the three strongest distinct escaping classes."
+  },
+  "execution_status": "3/3 intended assertions detected; all seeds restored",
+  "procedure": "Same full Test command/selection with fail-fast option; intended assertion failure only counts; seed backup/restore byte-for-byte after every mutation."
+}

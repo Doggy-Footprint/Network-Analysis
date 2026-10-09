@@ -75,7 +75,9 @@ def test_VR2_configured_resolution_minimum_and_raw_relation_identity(open_report
     payload=bottleneck_fixture(tmp_path,nodes,edges,candidate_count=0)
     payload['edge_weights']['confidence'].update(static_certain=.8,framework_inferred=.1,dynamic_required=.4)
     payload['edge_weights']['resolution'].update(exact=1,ambiguous=.2,unresolved=.3)
-    page=open_report(architecture(nodes,edges),payload);select(page,'center')
+    arch=architecture(nodes,edges)
+    arch['stats']['analysis']['edge_weights']=copy.deepcopy(payload['edge_weights'])
+    page=open_report(arch,payload);select(page,'center')
     assert {n['id'] for n in topology(page)['nodes']}=={'center'}|{f'n{i:02}' for i in range(1,31)}
     relationships=page.locator('#relationship-list')
     open_disclosures(relationships)

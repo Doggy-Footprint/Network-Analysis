@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from analysis.edge_weights import EdgeWeights
+from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection, edge_value
 from language_analyzers.core.cost import CHARACTERS_PER_TOKEN, DIGIT_GROUP_SIZE, estimate_tokens
+from language_analyzers.core.graph_models import Confidence, Resolution
 
 
 def _display_name(node: Any, fallback: str) -> str:
@@ -84,14 +86,18 @@ class GraphAnalyzer:
 
         for edge in edges:
             source = self._edge_value(edge, "from_id", "from")
-            target = self._edge_value(edge, "to_id", "to")
-            if source not in node_by_id or target not in node_by_id or source == target:
+            projection = candidate_projection(edge)
+            if str(edge_value(edge, "resolution", "exact")) != "ambiguous" and (
+                    source not in node_by_id or any(target not in node_by_id for target, _ in projection)):
                 continue
-            outgoing[source].add(target)
-            incoming[target].add(source)
-            weight = self._edge_weight(edge)
-            pair = (source, target)
-            pair_weights[pair] = max(pair_weights.get(pair, 0.0), weight)
+            for target, share in candidate_projection(edge, node_by_id):
+                if source == target:
+                    continue
+                outgoing[source].add(target)
+                incoming[target].add(source)
+                weight = self._edge_weight(edge) * share
+                pair = (source, target)
+                pair_weights[pair] = max(pair_weights.get(pair, 0.0), weight)
 
         token_costs = {
             node_id: self._node_token_cost(node, project_path)
@@ -146,6 +152,14 @@ class GraphAnalyzer:
                 metadata["analysis"] = node_metrics
 
         return {
+            "ambiguity_policy": AMBIGUITY_POLICY,
+            "edge_weights": {
+                "confidence": dict(self.config.edge_weights.confidence),
+                "resolution": dict(self.config.edge_weights.resolution),
+            } if self.config.edge_weights is not None else {
+                "confidence": {item.value: 1.0 for item in Confidence},
+                "resolution": {item.value: 1.0 for item in Resolution},
+            },
             "node_metrics": metrics,
             "top_pagerank": self._rank(metrics, node_by_id, "pagerank"),
             "top_hubs": self._rank(metrics, node_by_id, "hub_score"),

@@ -1,0 +1,18 @@
+{
+  "end": 630916.107266833,
+  "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run2.html",
+  "mode": "file-run2",
+  "observer_overhead_seconds": 0.8216907909372821,
+  "pid": 87905,
+  "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
+  "spec_version": 2,
+  "stages": {
+    "conversion": 1.802133750054054,
+    "extraction": 65.89501025085337,
+    "integration": 0.0,
+    "metrics_candidates": 1.122157542151399,
+    "output": 4.0263512909878045,
+    "snapshot": 0.061130792018957436
+  },
+  "total_seconds": 72.90678362606559
+}

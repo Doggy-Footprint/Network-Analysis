@@ -9,6 +9,7 @@ METRICS = CORE + ('hub_score', 'authority_score', 'degree_centrality', 'hop_3_to
 CATEGORIES = ('production', 'test', 'generated', 'vendored', 'unknown')
 PATHS = {'production': 'src/app.py', 'test': 'tests/test_app.py', 'generated': 'generated/app.py', 'vendored': 'vendor/app.py', 'unknown': None}
 HOSTILE = '</script><img src="https://invalid.example/x" onerror="window.attack=1"><script>window.attack=1</script>'
+REGRESSION_EDGE_WEIGHTS = {'confidence': {'static_certain': 1, 'static_inferred': .3, 'framework_inferred': .3, 'dynamic_required': .3}, 'resolution': {'exact': 1, 'unique_name': 1, 'ambiguous': .3, 'unresolved': .3}}
 
 
 def node(node_id, category='production', value=1):
@@ -17,11 +18,11 @@ def node(node_id, category='production', value=1):
 
 
 def edge(source, target, confidence='static_certain', resolution='exact', line=5):
-    return {'from_id': source, 'to_id': target, 'relation': 'CALLS', 'confidence': confidence, 'resolution': resolution, 'weight': 999, 'evidence': {'file_path': f'evidence-{line}.py', 'start_line': line, 'end_line': line + 2}, 'candidates': ['other-target']}
+    return {'from_id': source, 'to_id': target, 'relation': 'CALLS', 'confidence': confidence, 'resolution': resolution, 'weight': 999, 'evidence': {'file_path': f'evidence-{line}.py', 'start_line': line, 'end_line': line + 2}, 'candidates': []}
 
 
 def architecture(nodes=(), edges=(), collection_count=0):
-    return {'schema_version': '5', 'project_name': 'ORACLE PROJECT', 'project_path': '/oracle', 'nodes': list(nodes), 'edges': list(edges), 'stats': {'analysis': {'node_metrics': {n['id']: copy.deepcopy(n['metadata']['analysis']) for n in nodes}, 'betweenness_strategy': 'sampled', 'betweenness_sample_size': 37}}, 'collections': {'oracle': {'label': 'ORACLE COLLECTION', 'view': 'table', 'columns': [{'key': 'id', 'label': 'ID', 'format': 'text'}], 'rows': [{'id': f'collection-{i:03}'} for i in range(collection_count)]}}}
+    return {'schema_version': '5', 'project_name': 'ORACLE PROJECT', 'project_path': '/oracle', 'nodes': list(nodes), 'edges': list(edges), 'stats': {'analysis': {'ambiguity_policy': 'equal-symbol-share.v1', 'edge_weights': copy.deepcopy(REGRESSION_EDGE_WEIGHTS), 'node_metrics': {n['id']: copy.deepcopy(n['metadata']['analysis']) for n in nodes}, 'betweenness_strategy': 'sampled', 'betweenness_sample_size': 37}}, 'collections': {'oracle': {'label': 'ORACLE COLLECTION', 'view': 'table', 'columns': [{'key': 'id', 'label': 'ID', 'format': 'text'}], 'rows': [{'id': f'collection-{i:03}'} for i in range(collection_count)]}}}
 
 
 def document(arch, bottlenecks=None, **kwargs):

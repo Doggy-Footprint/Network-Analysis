@@ -1,0 +1,167 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 17%]
+..................................................................... [ 22%]
+........................................................................ [ 28%]
+............................................................................. [ 34%]
+........................................................................ [ 40%]
+.........................E.............................................. [ 46%]
+........................................................................ [ 52%]
+........................................................................ [ 57%]
+..................................................... [ 62%]
+............................................... [ 65%]
+....................................................................................................................................................... [ 77%]
+........................................................................ [ 83%]
+.......................................................... [ 88%]
+................................................................. [ 93%]
+........................................................................ [ 99%]
+........                                                                 [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_V13_real_snapshot_symbol_equivalence_and_three_processes _
+
+    @pytest.fixture(scope='session')
+    def file_benchmark_evidence():
+        command=[sys.executable,str(ROOT/'scripts/benchmark_file_analysis.py'),'--verify','--project','/Users/hwansu/toy-projects/Tag-Manager','--evidence-dir',str(EVIDENCE)]
+>       subprocess.run(command,cwd=ROOT,check=True,timeout=6000)
+
+tests/test_file_analysis_benchmark.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+input = None, capture_output = False, timeout = 6000, check = True
+popenargs = (['/Users/hwansu/toy-projects/network-analysis/.venv/bin/python', '/Users/hwansu/toy-projects/network-analysis/scripts/benchmark_file_analysis.py', '--verify', '--project', '/Users/hwansu/toy-projects/Tag-Manager', '--evidence-dir', ...],)
+kwargs = {'cwd': PosixPath('/Users/hwansu/toy-projects/network-analysis')}
+
+    def run(*popenargs,
+            input=None, capture_output=False, timeout=None, check=False, **kwargs):
+        """Run command with arguments and return a CompletedProcess instance.
+    
+        The returned instance will have attributes args, returncode, stdout and
+        stderr. By default, stdout and stderr are not captured, and those attributes
+        will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them,
+        or pass capture_output=True to capture both.
+    
+        If check is True and the exit code was non-zero, it raises a
+        CalledProcessError. The CalledProcessError object will have the return code
+        in the returncode attribute, and output & stderr attributes if those streams
+        were captured.
+    
+        If timeout (seconds) is given and the process takes too long,
+         a TimeoutExpired exception will be raised.
+    
+        There is an optional argument "input", allowing you to
+        pass bytes or a string to the subprocess's stdin.  If you use this argument
+        you may not also use the Popen constructor's "stdin" argument, as
+        it will be used internally.
+    
+        By default, all communication is in bytes, and therefore any "input" should
+        be bytes, and the stdout and stderr will be bytes. If in text mode, any
+        "input" should be a string, and stdout and stderr will be strings decoded
+        according to locale encoding, or by "encoding" if set. Text mode is
+        triggered by setting any of text, encoding, errors or universal_newlines.
+    
+        The other arguments are the same as for the Popen constructor.
+        """
+        if input is not None:
+            if kwargs.get('stdin') is not None:
+                raise ValueError('stdin and input arguments may not both be used.')
+            kwargs['stdin'] = PIPE
+    
+        if capture_output:
+            if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
+                raise ValueError('stdout and stderr arguments may not be used '
+                                 'with capture_output.')
+            kwargs['stdout'] = PIPE
+            kwargs['stderr'] = PIPE
+    
+        with Popen(*popenargs, **kwargs) as process:
+            try:
+                stdout, stderr = process.communicate(input, timeout=timeout)
+            except TimeoutExpired as exc:
+                process.kill()
+                if _mswindows:
+                    # Windows accumulates the output in a single blocking
+                    # read() call run on child threads, with the timeout
+                    # being done in a join() on those threads.  communicate()
+                    # _after_ kill() is required to collect that and add it
+                    # to the exception.
+                    exc.stdout, exc.stderr = process.communicate()
+                else:
+                    # POSIX _communicate already populated the output so
+                    # far into the TimeoutExpired exception.
+                    process.wait()
+                raise
+            except:  # Including KeyboardInterrupt, communicate handled that.
+                process.kill()
+                # We don't call process.wait() as .__exit__ does that for us.
+                raise
+            retcode = process.poll()
+            if check and retcode:
+>               raise CalledProcessError(retcode, process.args,
+                                         output=stdout, stderr=stderr)
+E               subprocess.CalledProcessError: Command '['/Users/hwansu/toy-projects/network-analysis/.venv/bin/python', '/Users/hwansu/toy-projects/network-analysis/scripts/benchmark_file_analysis.py', '--verify', '--project', '/Users/hwansu/toy-projects/Tag-Manager', '--evidence-dir', '/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence']' returned non-zero exit status 1.
+
+/opt/homebrew/Cellar/python@3.12/3.12.11/Frameworks/Python.framework/Versions/3.12/lib/python3.12/subprocess.py:571: CalledProcessError
+---------------------------- Captured stdout setup -----------------------------
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/optimized-symbol.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: LocalMediaIndexDelegate (46.9268)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run1.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (232.6515)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run2.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (232.6515)
+[*] Analyzing Android project at: /Users/hwansu/toy-projects/Tag-Manager
+[✓] Generated unified dependency bottleneck report: /Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run3.html
+
+📊 Summary Statistics:
+  • Composables   111
+  • ViewModels    1
+  • DI Bindings   0
+  • Room Entities 8
+  • Retrofit APIs 0
+  • Room Migrations7
+  • Highest PageRank × effective token cost: app/src/main/java/com/doggy/voice/VoiceArchiveCore.kt (232.6515)
+---------------------------- Captured stderr setup -----------------------------
+Traceback (most recent call last):
+  File "/Users/hwansu/toy-projects/network-analysis/scripts/benchmark_file_analysis.py", line 224, in <module>
+    main()
+  File "/Users/hwansu/toy-projects/network-analysis/scripts/benchmark_file_analysis.py", line 214, in main
+    measure_all(browser, directory / 'file-run1.html', directory)
+  File "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_browser_support.py", line 194, in measure_all
+    actual = measure_tag_manager_html(chromium, html_path, evidence_dir)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_browser_support.py", line 180, in measure_tag_manager_html
+    return measure_html(chromium, html_path, 'Tag-Manager', evidence_dir)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_browser_support.py", line 118, in measure_html
+    assert initial_ids
+           ^^^^^^^^^^^
+AssertionError
+=========================== short test summary info ============================
+ERROR tests/test_file_analysis_benchmark.py::test_V13_real_snapshot_symbol_equivalence_and_three_processes
+1247 passed, 1 error, 200 subtests passed in 753.20s (0:12:33)

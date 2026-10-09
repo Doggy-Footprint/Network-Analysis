@@ -1,0 +1,48 @@
+.....................................F
+=================================== FAILURES ===================================
+___ test_VO1_independent_closed_form_star[two-2-alternatives0-no-profile-1] ____
+
+tmp_path = PosixPath('/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-105/test_VO1_independent_closed_fo0')
+case = 'two', count = 2, alternatives = ['B'], profile = 'no-profile', total = 1
+
+    @pytest.mark.parametrize('case,count,alternatives,profile,total', [
+        ('two', 2, ['B'], 'no-profile', 1),
+        ('three', 3, ['B', 'C'], 'no-profile', 1),
+        ('duplicates', 2, ['A', 'B', 'B'], 'no-profile', 1),
+        ('no-alternatives', 1, [], 'no-profile', 1),
+        ('default-profile', 2, ['B'], 'default-profile', .3),
+        ('custom-profile', 2, ['B'], 'custom-profile', .6),
+    ])
+    def test_VO1_independent_closed_form_star(tmp_path, case, count, alternatives, profile, total):
+        targets = list('ABC'[:count])
+        nodes = symbol_nodes('S', *targets)
+        for i, n in enumerate(nodes):
+            n.cost = NodeCost(i + 1, 4 * (i + 1), 1)
+        edges = [edge('S', 'A', resolution=Resolution.AMBIGUOUS, candidates=alternatives, weight=87)]
+        edges += [edge(t, 'S') for t in targets]
+        weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
+        result = metrics(nodes, edges, weights)
+        assert result['ambiguity_policy'] == POLICY
+        n = count + 1
+        teleport = (1 - .85) / n
+        source_rank = (teleport + .85) / 1.85
+        target_rank = teleport + .85 * source_rank / count
+        for ident in ['S', *targets]:
+            m = result['node_metrics'][ident]
+            is_source = ident == 'S'
+            assert m['fan_in'] == (count if is_source else 1)
+            assert m['fan_out'] == (count if is_source else 1)
+            assert m['weighted_fan_out'] == pytest.approx(total if is_source else 1, abs=TOL, rel=0)
+            assert m['weighted_fan_in'] == pytest.approx(count if is_source else total / count, abs=TOL, rel=0)
+>           assert m['pagerank'] == pytest.approx(source_rank if is_source else target_rank, abs=TOL, rel=0)
+E           assert 0.4864865364663595 == 0.48648648648648646 ± 1.0e-09
+E             
+E             comparison failed
+E             Obtained: 0.4864865364663595
+E             Expected: 0.48648648648648646 ± 1.0e-09
+
+tests/test_ambiguous_candidates.py:51: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_ambiguous_candidates.py::test_VO1_independent_closed_form_star[two-2-alternatives0-no-profile-1]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 37 passed in 0.37s

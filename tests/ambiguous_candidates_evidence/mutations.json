@@ -1,0 +1,38 @@
+[
+  {
+    "name": "pagerank-full-candidate-weight",
+    "file": "analysis/graph_metrics.py",
+    "exit_code": 1,
+    "expected_assertion": "test_VO1_pagerank_competing_exact_edge_independent_allocation",
+    "detected": true,
+    "log": "tests/ambiguous_candidates_evidence/mutation-pagerank-full-candidate-weight.log",
+    "procedure": "same full Test command/selection, fail-fast runtime option; intended assertion must fail",
+    "restored": true,
+    "restoration_validation": "seed restore validates backup SHA256 and runner asserts restored text equals pre-injection source; seed status none",
+    "restored_file_sha256": "cfb910774299f84ce9cb41ece4e5dad7572063baadfac298687731b12f3a208c"
+  },
+  {
+    "name": "absolute-tolerance-error",
+    "file": "analysis/graph_metrics.py",
+    "exit_code": 1,
+    "expected_assertion": "test_VO1_independent_closed_form_star",
+    "detected": true,
+    "log": "tests/ambiguous_candidates_evidence/mutation-absolute-tolerance-error.log",
+    "procedure": "same full Test command/selection, fail-fast runtime option; intended assertion must fail",
+    "restored": true,
+    "restoration_validation": "seed restore validates backup SHA256 and runner asserts restored text equals pre-injection source; seed status none",
+    "restored_file_sha256": "cfb910774299f84ce9cb41ece4e5dad7572063baadfac298687731b12f3a208c"
+  },
+  {
+    "name": "html-omit-file-share-sum",
+    "file": "renderers/html/static/app.js",
+    "exit_code": 1,
+    "expected_assertion": "test_VO5_same_original_file_sum_selects_target_at_neighbor_cutoff",
+    "detected": true,
+    "log": "tests/ambiguous_candidates_evidence/mutation-html-omit-file-share-sum.log",
+    "procedure": "same full Test command/selection, fail-fast runtime option; intended assertion must fail",
+    "restored": true,
+    "restoration_validation": "seed restore validates backup SHA256 and runner asserts restored text equals pre-injection source; seed status none",
+    "restored_file_sha256": "0ccdb2332b33098d3a665b90ff50dada5d836155d85fb88c716f657b9ee3fffa"
+  }
+]

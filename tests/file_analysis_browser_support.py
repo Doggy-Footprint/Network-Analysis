@@ -38,16 +38,24 @@ def file_arch(files, symbols=(), relations=(), owners=None, mappings=None):
     grouped = {}
     for index, relation in enumerate(relations):
         source = mappings.get(relation['from_id']) or relation['from_id']
-        target = mappings.get(relation['to_id']) or relation['to_id']
-        if source == target or relation['relation'] in ('CONTAINS', 'IMPLEMENTED_BY'):
+        if relation['relation'] in ('CONTAINS', 'IMPLEMENTED_BY'):
             continue
-        key = (source, target, relation['relation'], relation['confidence'], relation['resolution'])
-        if key not in grouped:
-            aggregate = copy.deepcopy(relation)
-            aggregate.update(from_id=source, to_id=target, weight=1, metadata={'detail_edge_indices': [], 'evidence_count': 0})
-            grouped[key] = aggregate
-        grouped[key]['metadata']['detail_edge_indices'].append(index)
-        grouped[key]['metadata']['evidence_count'] += 1
+        candidates = set([relation['to_id'], *relation.get('candidates', [])]) if relation['resolution'] == 'ambiguous' else {relation['to_id']}
+        shares = {}
+        for candidate in candidates:
+            target = mappings.get(candidate) or candidate
+            if candidate == relation['from_id'] or target == source:
+                continue
+            shares[target] = shares.get(target, 0) + 1 / len(candidates)
+        for target, share in shares.items():
+            key = (source, target, relation['relation'], relation['confidence'], relation['resolution'])
+            if key not in grouped:
+                aggregate = copy.deepcopy(relation)
+                aggregate.update(from_id=source, to_id=target, candidates=[], weight=1, metadata={'candidate_share': share, 'detail_edge_indices': [], 'evidence_count': 0})
+                grouped[key] = aggregate
+            grouped[key]['metadata']['candidate_share'] = max(grouped[key]['metadata']['candidate_share'], share)
+            grouped[key]['metadata']['detail_edge_indices'].append(index)
+            grouped[key]['metadata']['evidence_count'] += 1
     result['edges'] = list(grouped.values())
     return result
 
@@ -70,7 +78,7 @@ def file_bottlenecks(arch, candidate_count=3):
                            'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'})
     return {'schema': 'bottlenecks.v5', 'granularity': 'file', 'snapshot': {}, 'versions': {}, 'coverage': {},
             'edge_weights': {'confidence': {'static_certain': 1, 'static_inferred': .3, 'framework_inferred': .3, 'dynamic_required': .3}, 'resolution': {'exact': 1, 'unique_name': 1, 'ambiguous': .3, 'unresolved': .3}, 'large_node_line_threshold': 2000},
-            'dependency_network': {'node_count': len(arch['nodes']), 'edge_count': len(arch['edges']), 'node_metrics': metrics, 'rankings': rankings(metrics), 'rankings_by_category': {key: rankings(ids) for key, ids in categories.items()}, 'betweenness_strategy': 'exact', 'betweenness_sample_size': None},
+            'dependency_network': {'ambiguity_policy': 'equal-symbol-share.v1', 'node_count': len(arch['nodes']), 'edge_count': len(arch['edges']), 'node_metrics': metrics, 'rankings': rankings(metrics), 'rankings_by_category': {key: rankings(ids) for key, ids in categories.items()}, 'betweenness_strategy': 'exact', 'betweenness_sample_size': None},
             'candidates': candidates, 'limitations': []}
 
 

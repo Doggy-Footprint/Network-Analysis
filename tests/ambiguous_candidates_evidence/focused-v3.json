@@ -1,0 +1,9 @@
+{
+  "spec_version": 3,
+  "command": ".venv/bin/python -m pytest -q tests/test_ambiguous_candidates.py tests/test_ambiguous_candidates_browser.py tests/test_candidate_policy_transition.py tests/test_nestjs_quality.py -k \"VO or policy or O11\"",
+  "passed": 121,
+  "subtests_passed": 8,
+  "deselected": 11,
+  "duration_seconds": 38.72,
+  "full_suite_acceptance": false
+}

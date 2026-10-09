@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
+from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
 
 if TYPE_CHECKING:
@@ -122,7 +123,7 @@ class TypeScriptAnalyzer:
         self._symbols: Dict[str, _Symbol] = {}
         self._by_simple_name: Dict[str, List[str]] = {}
         self._nodes: Dict[str, GraphNode] = {}
-        self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}
+        self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
 
         for module in modules:
             self._collect_module(module)
@@ -529,9 +530,9 @@ class TypeScriptAnalyzer:
         evidence: Optional[SourceSpan] = None,
         candidates: Optional[List[str]] = None,
     ):
-        if from_id == to_id or from_id not in self._nodes or to_id not in self._nodes:
+        if not has_external_candidate(from_id, to_id, resolution, candidates) or from_id not in self._nodes or to_id not in self._nodes:
             return
-        key = (from_id, to_id, relation)
+        key = candidate_relation_key(from_id, to_id, relation, resolution, candidates)
         existing = self._edges.get(key)
         if existing is not None:
             existing.weight += 1.0

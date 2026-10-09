@@ -1,0 +1,26 @@
+{
+  "cases": [
+    "android-kotlin:file",
+    "android-kotlin:symbol",
+    "android:file",
+    "android:symbol",
+    "fastapi-sqlalchemy:file",
+    "fastapi-sqlalchemy:symbol",
+    "fastapi:file",
+    "fastapi:symbol",
+    "kotlin:file",
+    "kotlin:symbol",
+    "nestjs-typescript:file",
+    "nestjs-typescript:symbol",
+    "nestjs:file",
+    "nestjs:symbol",
+    "python:file",
+    "python:symbol",
+    "sqlalchemy:file",
+    "sqlalchemy:symbol",
+    "typescript:file",
+    "typescript:symbol"
+  ],
+  "equal_after_asserting_candidate_policy_metadata_and_removing_coverage": true,
+  "spec_version": 2
+}

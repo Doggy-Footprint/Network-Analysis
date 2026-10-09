@@ -193,12 +193,12 @@ def test_V07_large_report_five_fresh_context_medians(open_report,tmp_path):
 
 @pytest.mark.parametrize('mode',('file','symbol'))
 def test_V06_legacy_schema_pairs(open_report,mode):
+    from report.shared.document import ReportInputError
+    from tests.unified_support import document
     from tests.coverage_reporting_support import EVIDENCE
     baseline=json.loads((EVIDENCE/'characterization-baseline.json').read_text())
     payload=baseline['python:'+mode]
     assert payload['architecture']['schema_version']==('6' if mode=='file' else '5')
     assert payload['bottlenecks']['schema']==('bottlenecks.v5' if mode=='file' else 'bottlenecks.v4')
-    page=open_report(payload['architecture'],payload['bottlenecks'])
-    assert any(word in page.locator('#coverage-summary').inner_text().lower() for word in ('없음','unavailable','제공되지','정보가 없'))
-    assert rows(page)==[]
-    assert_clean(page)
+    with pytest.raises(ReportInputError, match='ambiguity_policy'):
+        document(payload['architecture'],payload['bottlenecks'])

@@ -4,9 +4,43 @@ from pathlib import Path
 from typing import Any, Mapping, Optional
 
 from language_analyzers.core.flags import path_flags
+from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection
+from report.shared.document import ReportInputError
 
 
-def render_unified_report(architecture: Optional[Mapping[str, Any]], bottlenecks: Optional[Mapping[str, Any]], *, title: Optional[str] = None, framework_label: str = "") -> str:
+def render_unified_report(architecture: Optional[Mapping[str, Any]], bottlenecks: Optional[Mapping[str, Any]] = None, *, title: Optional[str] = None, framework_label: str = "") -> str:
+    for component, analysis in ((architecture, (architecture or {}).get("stats", {}).get("analysis", {})),
+                                (bottlenecks, (bottlenecks or {}).get("dependency_network", {}))):
+        if component is not None and analysis.get("ambiguity_policy") != AMBIGUITY_POLICY:
+            raise ReportInputError("missing or unsupported ambiguity_policy")
+    if bottlenecks is not None:
+        groups = bottlenecks.get("dependency_network", {}).get("candidate_groups", {})
+        if not isinstance(groups, Mapping):
+            raise ReportInputError("candidate_groups must be a mapping")
+        for group_id, group in groups.items():
+            if (not isinstance(group_id, str) or not group_id or not isinstance(group, Mapping)
+                    or not isinstance(group.get("to_id"), str) or not group["to_id"]
+                    or not isinstance(group.get("candidates"), list)
+                    or any(not isinstance(item, str) or not item for item in group["candidates"])):
+                raise ReportInputError("candidate_groups contains an invalid group")
+        for candidate in bottlenecks.get("candidates", []):
+            evidence = candidate.get("evidence")
+            for record in evidence if isinstance(evidence, list) else [evidence]:
+                if not isinstance(record, Mapping) or "candidate_group_id" not in record:
+                    continue
+                group_id = record["candidate_group_id"]
+                if (not isinstance(group_id, str) or not group_id or group_id not in groups
+                        or record.get("to_id") != groups[group_id]["to_id"]):
+                    raise ReportInputError("candidate_group_id is invalid or does not match its representative")
+    if architecture is not None:
+        from bottlenecks.core import BottleneckInputError
+        try:
+            for graph in (architecture, architecture.get("details", {})):
+                node_ids = {node["id"] for node in graph.get("nodes", [])}
+                for edge in graph.get("edges", []):
+                    candidate_projection(edge, node_ids)
+        except (TypeError, KeyError, ValueError) as error:
+            raise BottleneckInputError("architecture edge reference or candidate_share is invalid") from error
     package = Path(__file__).resolve().parents[1] / "renderers" / "html"
     categories = {}
     file_mode = (architecture or {}).get("granularity") == "file"
