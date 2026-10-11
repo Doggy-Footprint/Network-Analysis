@@ -1,65 +1,65 @@
 {
-  "median_seconds": 77.83787295897491,
+  "median_seconds": 70.75510275000124,
   "passed": true,
   "raw_seconds": [
-    76.56982758396771,
-    79.53871541598346,
-    77.83787295897491
+    70.93635516700306,
+    70.66223616800562,
+    70.75510275000124
   ],
   "runs": [
     {
-      "end": 401750.145916,
-      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run1.html",
+      "end": 65490.322715291,
+      "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run1.html",
       "mode": "file-run1",
-      "observer_overhead_seconds": 0.48727312503615394,
-      "pid": 93916,
+      "observer_overhead_seconds": 0.7616175829971326,
+      "pid": 41018,
       "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
       "spec_version": 2,
       "stages": {
-        "conversion": 1.4104654589900747,
-        "extraction": 72.89323558309115,
+        "conversion": 1.7687838330020895,
+        "extraction": 64.37575166799797,
         "integration": 0.0,
-        "metrics_candidates": 0.3033347919699736,
-        "output": 1.8950149999582209,
-        "snapshot": 0.0677767499582842
+        "metrics_candidates": 1.1058768750008312,
+        "output": 3.6233280829983414,
+        "snapshot": 0.06261470800382085
       },
-      "total_seconds": 76.56982758396771
+      "total_seconds": 70.93635516700306
     },
     {
-      "end": 401830.612197875,
-      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run2.html",
+      "end": 65562.33696825,
+      "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run2.html",
       "mode": "file-run2",
-      "observer_overhead_seconds": 0.6129320840118453,
-      "pid": 96917,
+      "observer_overhead_seconds": 0.7641365410017897,
+      "pid": 42552,
       "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
       "spec_version": 2,
       "stages": {
-        "conversion": 1.627466625010129,
-        "extraction": 75.87907058186829,
+        "conversion": 1.7691157079971163,
+        "extraction": 64.35354254401318,
         "integration": 0.0,
-        "metrics_candidates": 0.3210585010237992,
-        "output": 1.6487744580372237,
-        "snapshot": 0.06234525004401803
+        "metrics_candidates": 1.102317499986384,
+        "output": 3.374964208007441,
+        "snapshot": 0.0622962080014986
       },
-      "total_seconds": 79.53871541598346
+      "total_seconds": 70.66223616800562
     },
     {
-      "end": 401909.390787375,
-      "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html",
+      "end": 65634.341475291,
+      "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run3.html",
       "mode": "file-run3",
-      "observer_overhead_seconds": 0.503460250038188,
-      "pid": 366,
+      "observer_overhead_seconds": 0.7635643329995219,
+      "pid": 44101,
       "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
       "spec_version": 2,
       "stages": {
-        "conversion": 1.418190207972657,
-        "extraction": 74.63917275093263,
+        "conversion": 1.7612119580007857,
+        "extraction": 64.25764537598297,
         "integration": 0.0,
-        "metrics_candidates": 0.30750770802842453,
-        "output": 1.380992749996949,
-        "snapshot": 0.09200954204425216
+        "metrics_candidates": 1.1067242910066852,
+        "output": 3.5718619999970542,
+        "snapshot": 0.057659125013742596
       },
-      "total_seconds": 77.83787295897491
+      "total_seconds": 70.75510275000124
     }
   ],
   "spec_version": 2,

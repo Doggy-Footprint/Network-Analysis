@@ -38,10 +38,21 @@ def chromium():
         browser.close()
 
 
+CDN_URL = 'https://unpkg.com/vis-network@9.1.9/standalone/umd/vis-network.min.js'
+VIS_FILE = Path(__file__).parent / 'fixtures' / 'vis-network-9.1.9' / 'vis-network.min.js'
+GRAPH_READY = "() => window.ReportGraph != null && document.body.dataset.graphReady === 'true'"
+
+
+def wants_graph(arch):
+    return bool(arch) and arch.get('granularity') == 'file' and any(item.get('kind') == 'file' for item in arch.get('nodes', ()))
+
+
 @pytest.fixture
 def open_report(chromium, tmp_path):
     contexts = []
-    def open_page(arch, bottlenecks=None, width=1440, initial_script=None, html=None, **kwargs):
+    def open_page(arch, bottlenecks=None, width=1440, initial_script=None, html=None, cdn='local', graph=None, **kwargs):
+        """cdn: 'local' serves the pinned vis-network copy at the CDN URL (A08); 'abort' fails that request; 'http-500' answers it with an error status.
+        graph: wait for the graph-ready marker; default waits when a file-granularity architecture has file nodes and cdn is local."""
         path = tmp_path / f'report-{len(contexts)}.html'
         path.write_text(document(arch, bottlenecks, **kwargs) if html is None else html, encoding='utf-8')
         context = chromium.new_context(viewport={'width': width, 'height': 900})
@@ -50,15 +61,23 @@ def open_report(chromium, tmp_path):
         requests, errors = [], []
         context.route('http://**/*', lambda route: route.abort())
         context.route('https://**/*', lambda route: route.abort())
+        if cdn == 'local':
+            context.route(CDN_URL, lambda route: route.fulfill(status=200, content_type='application/javascript', body=VIS_FILE.read_bytes()))
+        elif cdn == 'http-500':
+            context.route(CDN_URL, lambda route: route.fulfill(status=500, content_type='text/plain', body='unavailable'))
         context.on('request', lambda request: requests.append(request.url) if request.url.startswith(('http:', 'https:')) else None)
         if initial_script:
             context.add_init_script(initial_script)
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(path.as_uri())
-        page.locator('#report-summary').wait_for()
+        page.wait_for_load_state('load')
         page.external_requests = requests
         page.unhandled_errors = errors
+        if graph is None:
+            graph = html is None and cdn == 'local' and wants_graph(arch)
+        if graph:
+            page.wait_for_function(GRAPH_READY, timeout=15000)
         return page
     yield open_page
     for context in contexts:
@@ -67,15 +86,6 @@ def open_report(chromium, tmp_path):
 
 def rows(page):
     return page.locator('#node-list [data-node-row]').evaluate_all('(rows) => rows.map(row => row.dataset.nodeRow)')
-
-
-def select(page, node_id):
-    page.locator(f'[data-node-id="{node_id}"]').first.click()
-    assert page.locator('#node-detail').get_attribute('data-selected-node') == node_id
-
-
-def topology(page):
-    return page.evaluate('''() => ({nodes: ReportGraph.nodes().map(n => ({id:n.id(), pos:n.position()})), edges:ReportGraph.edges().map(e => ({source:e.source().id(), target:e.target().id()}))})''')
 
 
 def bottleneck_fixture(directory,nodes,edges=(),candidate_count=3):
@@ -101,27 +111,6 @@ def bottleneck_fixture(directory,nodes,edges=(),candidate_count=3):
     return payload
 
 
-def open_disclosures(scope):
-    for _ in range(200):
-        closed = scope.locator('details:not([open]) > summary')
-        if closed.count() == 0:
-            return
-        summary = closed.first
-        summary.click()
-        scope.evaluate('() => new Promise(resolve => requestAnimationFrame(resolve))')
-    raise AssertionError('Disclosure expansion did not finish within 200 user actions')
-
-
-def visible_record(scope,label):
-    summary=scope.get_by_text(label,exact=True)
-    summary.wait_for(state='visible',timeout=5000)
-    disclosure=summary.locator('..')
-    if not disclosure.evaluate('(element)=>element.open'):
-        summary.click()
-    pre=disclosure.locator('pre').first
-    expect(pre).to_be_visible()
-    import json
-    return json.loads(pre.inner_text())
 
 
 def tab_to(page,selector,limit=400):
@@ -153,17 +142,3 @@ def keyboard_choose(page,selector,value):
         session.detach()
     expect(control).to_have_value(value)
 
-
-def visible_records(scope,label):
-    summaries=scope.get_by_text(label,exact=True)
-    summaries.first.wait_for(state='visible',timeout=5000)
-    import json
-    records=[]
-    for summary in summaries.all():
-        disclosure=summary.locator('..')
-        if not disclosure.evaluate('(element)=>element.open'):
-            summary.click()
-        pre=disclosure.locator('pre').first
-        expect(pre).to_be_visible()
-        records.append(json.loads(pre.inner_text()))
-    return records

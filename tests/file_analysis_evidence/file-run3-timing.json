@@ -1,18 +1,18 @@
 {
-  "end": 401909.390787375,
-  "html": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run3.html",
+  "end": 65634.341475291,
+  "html": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run3.html",
   "mode": "file-run3",
-  "observer_overhead_seconds": 0.503460250038188,
-  "pid": 366,
+  "observer_overhead_seconds": 0.7635643329995219,
+  "pid": 44101,
   "snapshot_hash": "40acc8efd2d3ff9dabc5b88f7a5c29bbff4446cb09d9a69848ee5f8779fee99c",
   "spec_version": 2,
   "stages": {
-    "conversion": 1.418190207972657,
-    "extraction": 74.63917275093263,
+    "conversion": 1.7612119580007857,
+    "extraction": 64.25764537598297,
     "integration": 0.0,
-    "metrics_candidates": 0.30750770802842453,
-    "output": 1.380992749996949,
-    "snapshot": 0.09200954204425216
+    "metrics_candidates": 1.1067242910066852,
+    "output": 3.5718619999970542,
+    "snapshot": 0.057659125013742596
   },
-  "total_seconds": 77.83787295897491
+  "total_seconds": 70.75510275000124
 }

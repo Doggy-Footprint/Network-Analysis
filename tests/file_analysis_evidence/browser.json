@@ -89,59 +89,51 @@
     "V10-transitions": {
       "boundary_observation": {
         "excluded_from_all_file_list": true,
-        "excluded_from_all_six_representatives": true,
-        "graph_and_original_evidence_retained": true
+        "excluded_from_all_six_representatives": true
       },
       "items": [
-        "initial-no-graph",
-        "file-to-class",
-        "file-to-function",
-        "symbol-to-external-file",
-        "back-to-file",
-        "method-fold",
-        "field-fold",
-        "nested-owner",
-        "framework-role",
+        "file-only-lists",
         "search",
         "category",
-        "candidate-filter"
+        "candidate-filter",
+        "modal-opens-for-file"
       ]
     }
   },
   "datasets": {
     "synthetic": {
       "context": "current workstation, installed Chrome, local file, five fresh contexts; preparation excluded",
-      "html_path": "/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-67/test_V14_synthetic_five_fresh_0/synthetic.html",
-      "html_sha256": "55e9b31201ae7056acd7b154f808c6f4d68668c08a6afba8d6c10dbf6655b889",
+      "html_path": "/private/var/folders/bw/zkbgtfrs3bg0c2p1d2fdx4qm0000gn/T/pytest-of-hwansu/pytest-86/test_V14_synthetic_five_fresh_0/synthetic.html",
+      "html_sha256": "b14ded34b0427772deeff38f95797fa9262f8a78a8bf79303e1d5c3b9c4a9603",
       "fresh_context_count": 5,
-      "graph_completion": "Cytoscape layoutstop followed by two animation frames",
+      "graph_completion": "click until [role=dialog] has a non-empty box",
       "raw_ms": {
         "summary_ms": [
-          242.1069170231931,
-          243.48483397625387,
-          253.2118329545483,
-          244.2345839808695,
-          250.4832919803448
+          328.9894999907119,
+          355.58458299783524,
+          336.4345419977326,
+          336.6078330000164,
+          354.1371250030352
         ],
         "filter_page_ms": [
-          27.899999976158142,
-          27.799999952316284,
-          29,
-          14.599999964237213,
-          28.19999998807907
+          26.799999997019768,
+          29.399999998509884,
+          30.30000000447035,
+          30.100000001490116,
+          30
         ],
         "detail_graph_ms": [
-          27.900000035762787,
-          28.80000001192093,
-          28.80000001192093,
-          26.599999964237213,
-          28.700000047683716
+          2.7999999970197678,
+          3,
+          2.899999998509884,
+          2.7000000029802322,
+          2.7999999970197678
         ]
       },
       "median_ms": {
-        "summary_ms": 244.2345839808695,
-        "filter_page_ms": 27.899999976158142,
-        "detail_graph_ms": 28.700000047683716
+        "summary_ms": 336.6078330000164,
+        "filter_page_ms": 30,
+        "detail_graph_ms": 2.7999999970197678
       },
       "threshold_ms": {
         "summary_ms": 5000,
@@ -151,37 +143,37 @@
     },
     "Tag-Manager": {
       "context": "current workstation, installed Chrome, local file, five fresh contexts; preparation excluded",
-      "html_path": "/Users/hwansu/orca/workspaces/network-analysis/report-faceoff/tests/file_analysis_evidence/file-run1.html",
-      "html_sha256": "56701fc8ec61ee66c16a1af2fa531ccb4af7c593d7a4012d7a59c0ffee5e91ec",
+      "html_path": "/Users/hwansu/toy-projects/network-analysis/tests/file_analysis_evidence/file-run1.html",
+      "html_sha256": "4fb7dd51bf3029129e7965fd3348537b59ed3b64fa88fa2ae2dcaf1c8168c6b9",
       "fresh_context_count": 5,
-      "graph_completion": "Cytoscape layoutstop followed by two animation frames",
+      "graph_completion": "click until [role=dialog] has a non-empty box",
       "raw_ms": {
         "summary_ms": [
-          927.1441660239361,
-          951.2321250513196,
-          1052.2859169868752,
-          1036.3234159885906,
-          1111.8686249828897
+          2689.94045900763,
+          2555.7570420060074,
+          2565.963415996521,
+          2565.281125003821,
+          2556.102375005139
         ],
         "filter_page_ms": [
-          28.200000047683716,
-          29.30000001192093,
-          29,
-          28.099999964237213,
-          28.5
+          286.8999999985099,
+          289.79999999701977,
+          294,
+          291.70000000298023,
+          291.79999999701977
         ],
         "detail_graph_ms": [
-          41.80000001192093,
-          55.80000001192093,
-          40.39999997615814,
-          40.39999997615814,
-          41.5
+          4.600000001490116,
+          4.700000002980232,
+          4.5999999940395355,
+          4.600000001490116,
+          5.100000001490116
         ]
       },
       "median_ms": {
-        "summary_ms": 1036.3234159885906,
-        "filter_page_ms": 28.5,
-        "detail_graph_ms": 41.5
+        "summary_ms": 2565.281125003821,
+        "filter_page_ms": 291.70000000298023,
+        "detail_graph_ms": 4.600000001490116
       },
       "threshold_ms": {
         "summary_ms": 5000,

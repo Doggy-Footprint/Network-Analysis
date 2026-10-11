@@ -1,5 +1,7 @@
 {
-  "equal": true,
+  "candidate_policy_transition": true,
+  "comparison": "approved-candidate-policy-transition",
+  "equal": false,
   "excluded_fields": [
     "nodes[*].metadata.analysis"
   ],

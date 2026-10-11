@@ -1,0 +1,350 @@
+{
+ "spec_version": 1,
+ "term_state_region": [
+  [
+   "Authority",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "Betweenness",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "Fan-in",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "Fan-out",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "Hub",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "PageRank",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "hop",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "layer",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "layer",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "layer",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "가중",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "가중 기여도",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "경로를 잇는 곳",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "경로를 잇는 곳",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "경로를 잇는 곳",
+   "list-tab",
+   "card"
+  ],
+  [
+   "경로를 잇는 곳",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "근거 분산",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "근거 분산",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "근거 분산",
+   "list-tab",
+   "list"
+  ],
+  [
+   "근거 분산",
+   "list-tab",
+   "page"
+  ],
+  [
+   "나가는 연결이 많은 곳",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "나가는 연결이 많은 곳",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "나가는 연결이 많은 곳",
+   "list-tab",
+   "card"
+  ],
+  [
+   "나가는 연결이 많은 곳",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "들어오는 연결이 많은 곳",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "들어오는 연결이 많은 곳",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "들어오는 연결이 많은 곳",
+   "list-tab",
+   "card"
+  ],
+  [
+   "들어오는 연결이 많은 곳",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "배분 몫",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "부분 분석",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "부분 분석",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "부분 분석",
+   "list-tab",
+   "page"
+  ],
+  [
+   "실패",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "실패",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "실패",
+   "list-tab",
+   "page"
+  ],
+  [
+   "완료",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "완료",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "완료",
+   "list-tab",
+   "page"
+  ],
+  [
+   "운영 코드",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "운영 코드",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "운영 코드",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "정적 분석 미확정 참조",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "정적 분석 미확정 참조",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "정적 분석 미확정 참조",
+   "list-tab",
+   "list"
+  ],
+  [
+   "정적 분석 미확정 참조",
+   "list-tab",
+   "page"
+  ],
+  [
+   "주변 코드가 넓은 곳",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "주변 코드가 넓은 곳",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "주변 코드가 넓은 곳",
+   "list-tab",
+   "card"
+  ],
+  [
+   "주변 코드가 넓은 곳",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "중심에 있는 큰 코드",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "중심에 있는 큰 코드",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "중심에 있는 큰 코드",
+   "list-tab",
+   "card"
+  ],
+  [
+   "중심에 있는 큰 코드",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "참조가 모이는 곳",
+   "appendix-open",
+   "card"
+  ],
+  [
+   "참조가 모이는 곳",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "참조가 모이는 곳",
+   "graph-tab",
+   "card"
+  ],
+  [
+   "참조가 모이는 곳",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "참조가 모이는 곳",
+   "list-tab",
+   "card"
+  ],
+  [
+   "참조가 모이는 곳",
+   "list-tab",
+   "list"
+  ],
+  [
+   "참조가 모이는 곳",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "큰 노드",
+   "appendix-open",
+   "appendix"
+  ],
+  [
+   "큰 노드",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "큰 노드",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "큰 노드",
+   "list-tab",
+   "list"
+  ],
+  [
+   "큰 노드",
+   "list-tab",
+   "page"
+  ],
+  [
+   "큰 노드",
+   "modal-open",
+   "modal"
+  ],
+  [
+   "할인",
+   "appendix-open",
+   "appendix"
+  ]
+ ],
+ "escape_with_tooltip_also_closed_modal_for": [
+  "경로를 잇는 곳",
+  "나가는 연결이 많은 곳",
+  "들어오는 연결이 많은 곳",
+  "운영 코드",
+  "주변 코드가 넓은 곳",
+  "중심에 있는 큰 코드",
+  "참조가 모이는 곳",
+  "큰 노드"
+ ]
+}

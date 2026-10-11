@@ -8,6 +8,65 @@ from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection
 from report.shared.document import ReportInputError
 
 
+FRAMEWORK_LAYER_PRIORITY = {
+    "android": ("viewmodel", "activity_fragment", "room_database", "room_dao", "room_entity", "room_migration", "dagger_component", "di_module", "di_binding", "retrofit_api", "composable"),
+    "fastapi": ("app", "router", "endpoint", "dependency", "middleware", "schema"),
+    "sqlalchemy": ("alembic_migration", "sqlalchemy_model"),
+    "nestjs": ("application", "module", "controller", "endpoint", "provider"),
+}
+SOURCE_ROOTS = ("src/main/java", "src/main/kotlin", "src/test/java", "src/test/kotlin", "src/androidTest/java", "src/androidTest/kotlin", "src")
+# Language analyzers emit generic kinds such as "module" that collide with framework role names.
+LANGUAGE_PROVENANCE = {"python-core", "typescript-core", "kotlin-core", "file-aggregation"}
+
+
+def _strip_source_root(parts: list) -> tuple:
+    for root in SOURCE_ROOTS:
+        root_parts = root.split("/")
+        for start in range(len(parts) - len(root_parts) + 1):
+            if parts[start:start + len(root_parts)] == root_parts:
+                return parts[start + len(root_parts):], True
+    return parts, False
+
+
+def file_layers(architecture: Mapping[str, Any]) -> dict:
+    architecture = architecture or {}
+    details = architecture.get("details") or {}
+    node_files = details.get("node_files") or {}
+    best = {}
+    for node in details.get("nodes") or []:
+        file_id = node_files.get(node.get("id"))
+        kind = node.get("kind") or node.get("category")
+        if not file_id or node.get("provenance") in LANGUAGE_PROVENANCE:
+            continue
+        for ranks in FRAMEWORK_LAYER_PRIORITY.values():
+            if kind in ranks and (file_id not in best or ranks.index(kind) < best[file_id][0]):
+                best[file_id] = (ranks.index(kind), kind)
+    files = {}
+    for node in architecture.get("nodes") or []:
+        node_id = node.get("id")
+        if (node.get("kind") or node.get("category")) != "file" or not isinstance(node_id, str) or (node.get("metadata") or {}).get("boundary"):
+            continue
+        path = ((node.get("span") or {}).get("file_path") or (node.get("metadata") or {}).get("file_path") or node_id.removeprefix("file:")).replace("\\", "/")
+        parts = path.split("/")
+        rest, rooted = _strip_source_root(parts)
+        files[node_id] = (path, rest[:-1] if rooted else parts[:-1][:1], rooted)
+    production = [dirs for path, dirs, rooted in files.values() if rooted and not path_flags(path)]
+    common = list(production[0]) if production else []
+    for dirs in production[1:]:
+        size = 0
+        while size < min(len(common), len(dirs)) and common[size] == dirs[size]:
+            size += 1
+        del common[size:]
+    layers = {}
+    for node_id, (_, dirs, rooted) in files.items():
+        if node_id in best:
+            layers[node_id] = {"layer": best[node_id][1], "source": "framework"}
+            continue
+        rest = dirs[len(common):] if rooted and dirs[:len(common)] == common else dirs
+        layers[node_id] = {"layer": rest[0] if rest else "(root)", "source": "package"}
+    return layers
+
+
 def render_unified_report(architecture: Optional[Mapping[str, Any]], bottlenecks: Optional[Mapping[str, Any]] = None, *, title: Optional[str] = None, framework_label: str = "") -> str:
     for component, analysis in ((architecture, (architecture or {}).get("stats", {}).get("analysis", {})),
                                 (bottlenecks, (bottlenecks or {}).get("dependency_network", {}))):
@@ -51,16 +110,14 @@ def render_unified_report(architecture: Optional[Mapping[str, Any]], bottlenecks
             file_path = (node.get("metadata") or {}).get("file_path")
         flags = path_flags(file_path) if file_path else []
         categories[node["id"]] = next((kind for kind in ("vendored", "generated", "test") if kind in flags), "production" if file_path else "unknown")
-    payload = json.dumps({"architecture": architecture, "bottlenecks": bottlenecks, "categories": categories, "framework_label": framework_label}, ensure_ascii=False, default=str).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
+    payload = json.dumps({"architecture": architecture, "bottlenecks": bottlenecks, "categories": categories, "layers": file_layers(architecture) if architecture is not None else {}, "framework_label": framework_label}, ensure_ascii=False, default=str).replace("&", "\\u0026").replace("<", "\\u003c").replace(">", "\\u003e")
     document = (package / "templates" / "dashboard.html").read_text(encoding="utf-8")
     replacements = {
         "{{TITLE}}": html.escape(title or (architecture or {}).get("project_name") or "의존성 병목 보고서"),
         "{{CSS}}": (package / "static" / "styles.css").read_text(encoding="utf-8"),
         "{{DATA}}": payload,
-        "{{VENDOR}}": (package / "vendor" / "cytoscape-3.30.2.min.js").read_text(encoding="utf-8"),
-        "{{LICENSE}}": (package / "vendor" / "cytoscape-3.30.2.LICENSE").read_text(encoding="utf-8"),
         "{{JS}}": (package / "static" / "app.js").read_text(encoding="utf-8"),
     }
     import re
 
-    return re.sub(r"\{\{(?:TITLE|CSS|DATA|VENDOR|LICENSE|JS)\}\}", lambda match: replacements[match.group()], document)
+    return re.sub(r"\{\{(?:TITLE|CSS|DATA|JS)\}\}", lambda match: replacements[match.group()], document)

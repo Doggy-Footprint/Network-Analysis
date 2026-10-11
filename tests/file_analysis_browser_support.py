@@ -5,7 +5,7 @@ from pathlib import Path
 import statistics
 import time
 
-from tests.unified_support import METRICS, architecture, node, edge, document, rows
+from tests.unified_support import CDN_URL, METRICS, VIS_FILE, architecture, node, edge, document, rows
 
 EVIDENCE_DIR = Path(__file__).parent / 'file_analysis_evidence'
 
@@ -103,16 +103,18 @@ def measure_html(chromium, html_path, dataset, evidence_dir=EVIDENCE_DIR):
         requests, errors = [], []
         context.route('http://**/*', lambda route: route.abort())
         context.route('https://**/*', lambda route: route.abort())
+        context.route(CDN_URL, lambda route: route.fulfill(status=200, content_type='application/javascript', body=VIS_FILE.read_bytes()))
         context.on('request', lambda r: requests.append(r.url) if r.url.startswith(('http:', 'https:')) else None)
         page = context.new_page()
         page.on('pageerror', lambda error: errors.append(str(error)))
         try:
             start = time.perf_counter()
             page.goto(html_path.as_uri())
-            page.locator('#report-summary').wait_for()
+            page.locator('#node-list [data-node-row]').first.wait_for(state='attached')
             page.evaluate('() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))')
             readings['summary_ms'].append((time.perf_counter() - start) * 1000)
-            assert page.evaluate('window.ReportGraph') is None
+            if dataset == 'synthetic':
+                assert page.evaluate('window.ReportGraph == null')
             initial_ids = rows(page)
             initial_count = page.locator('#list-count').inner_text()
             assert initial_ids
@@ -124,33 +126,18 @@ def measure_html(chromium, html_path, dataset, evidence_dir=EVIDENCE_DIR):
             }'''))
             assert page.locator('select#category-filter, #category-filter select').input_value() == 'all'
             selected = rows(page)[0]
+            # key name kept for scripts/benchmark_file_analysis.py: it now times a click until the modal dialog is visible
             readings['detail_graph_ms'].append(page.evaluate('''async () => {
-                const original=window.cytoscape;
-                let finished=false;
-                function measured(options) {
-                    const layout=options.layout || {};
-                    const previous=layout.stop;
-                    return original({...options,layout:{...layout,stop:function(event) {
-                        if (previous) previous.call(this,event);
-                        finished=true;
-                    }}});
-                }
-                Object.assign(measured,original);
-                window.cytoscape=measured;
                 const start=performance.now();
                 document.querySelector('#node-list [data-node-id]').click();
-                while (!finished) {
-                    if (performance.now()-start>5000) throw Error('Graph layout never completed');
+                while (!document.querySelector('[role=dialog]') || document.querySelector('[role=dialog]').getBoundingClientRect().height===0) {
+                    if (performance.now()-start>5000) throw Error('Modal never opened');
                     await new Promise(r=>requestAnimationFrame(r));
                 }
-                await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-                window.cytoscape=original;
-                if (!window.ReportGraph) throw Error('Graph never initialized');
                 return performance.now()-start;
             }'''))
-            assert page.locator('#node-detail').get_attribute('data-selected-node') == selected
-            assert 1 <= page.evaluate('ReportGraph.nodes().length') <= 31
-            assert not errors and not requests
+            page.keyboard.press('Escape')
+            assert not errors and set(requests) <= {CDN_URL}
             if dataset == 'synthetic':
                 assert rows(page) == [f'n{i:05}' for i in range(50)]
                 assert initial_ids == [f'n{i:05}' for i in range(50)]
@@ -168,7 +155,7 @@ def measure_html(chromium, html_path, dataset, evidence_dir=EVIDENCE_DIR):
         finally:
             context.close()
     result = {'context': 'current workstation, installed Chrome, local file, five fresh contexts; preparation excluded',
-              'html_path': str(html_path), 'html_sha256': hashlib.sha256(html_path.read_bytes()).hexdigest(), 'fresh_context_count': 5, 'graph_completion': 'Cytoscape layoutstop followed by two animation frames', 'raw_ms': readings, 'median_ms': {key: statistics.median(values) for key, values in readings.items()},
+              'html_path': str(html_path), 'html_sha256': hashlib.sha256(html_path.read_bytes()).hexdigest(), 'fresh_context_count': 5, 'graph_completion': 'click until [role=dialog] has a non-empty box', 'raw_ms': readings, 'median_ms': {key: statistics.median(values) for key, values in readings.items()},
               'threshold_ms': {'summary_ms': 5000, 'filter_page_ms': 300, 'detail_graph_ms': 1000}}
     record_browser(dataset, result, evidence_dir)
     for key, threshold in result['threshold_ms'].items():

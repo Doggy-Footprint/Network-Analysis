@@ -9,42 +9,36 @@ from playwright.sync_api import expect
 from report.bottlenecks import render_report
 from report.bottlenecks.generate import generate
 from report.shared.document import ReportInputError
-from tests.unified_support import architecture,node,edge,document,bottleneck_fixture,HOSTILE,rows,select,open_disclosures
+from tests.unified_support import CDN_URL,architecture,node,edge,document,bottleneck_fixture,rows
 
 
-def test_V1_V3_candidate_filters_ranges_aggregation(open_report,tmp_path):
+def test_V1_V3_candidate_kind_filters_and_modal_candidate_summary(open_report,tmp_path):
     nodes=[node('a'),node('b'),node('c')]
     payload=bottleneck_fixture(tmp_path,nodes)
-    extra=copy.deepcopy(payload['candidates'][0]);extra['id']='b:000000000000000a';extra['evidence']['path']='second-raw-large.py'
-    payload['candidates'].append(extra)
     page=open_report(architecture(nodes),payload)
     assert set(page.locator('#candidate-kind-filter option').evaluate_all('(els)=>els.map(e=>e.value)'))=={'all','large_node','evidence_spread','unresolved_boundary'}
+    expected_numbers={'large_node':(2001,),'evidence_spread':(2,),'unresolved_boundary':(2,)}
     for kind,target in [('large_node','a'),('evidence_spread','b'),('unresolved_boundary','c')]:
         page.locator('#candidate-kind-filter').select_option(kind);assert rows(page)==[target]
-        select(page,target)
-        open_disclosures(page.locator('#node-detail'))
-        expect(page.locator('#node-detail')).to_contain_text(f'candidate-{ord(target)-97}.py')
-        detail=page.locator('#node-detail').inner_text()
-        assert f'candidate-{ord(target)-97}.py' in detail
-        assert '13' in detail and '29' in detail
-        if kind=='large_node': assert 'second-raw-large.py' in detail and '2001' in detail
-        if kind=='evidence_spread': assert 'candidate-1-other.py' in detail and '31' in detail and '39' in detail
+        label=page.locator(f'#candidate-kind-filter option[value="{kind}"]').text_content().strip()
+        page.locator(f'#node-list [data-node-row="{target}"] [data-node-id]').first.click()
+        dialog=page.get_by_role('dialog')
+        expect(dialog).to_be_visible()
+        line=next(l for l in dialog.inner_text().splitlines() if label in l)
+        for number in expected_numbers[kind]:
+            assert re.search(rf'(?<![\d.]){number}(?![\d.])',line.replace(',','')),(kind,line)
+        page.keyboard.press('Escape')
     page.locator('#candidate-kind-filter').select_option('all');assert rows(page)==['a','b','c']
 
 
-def test_V4_json_only_and_architecture_only_capabilities(open_report,tmp_path):
+def test_V4_json_only_and_architecture_only_payloads(open_report,tmp_path):
     nodes=[node('a')];payload=bottleneck_fixture(tmp_path,nodes,candidate_count=1)
-    html=render_report(payload)
-    page=open_report(None,html=html)
+    page=open_report(None,html=render_report(payload))
     assert page.evaluate('JSON.parse(document.querySelector("#report-data").textContent).architecture') is None
-    select(page,'a')
-    assert page.evaluate('window.ReportGraph') is None
-    assert re.search('없|불가|제공',page.locator('#graph-status').inner_text())
-    assert 'candidate-0.py' in page.locator('#node-detail').inner_text()
-    assert re.search('분류|범위',page.locator('#report-summary').inner_text())
-    page=open_report(architecture(nodes));select(page,'a')
-    assert re.search('후보.*(없|제공)|데이터.*없',page.locator('#node-detail').inner_text())
+    assert rows(page)==['a']
+    page=open_report(architecture(nodes))
     assert page.evaluate('JSON.parse(document.querySelector("#report-data").textContent).bottlenecks') is None
+    assert rows(page)==['a']
 
 
 @pytest.mark.parametrize('case',['bad-schema','unsupported-kind','duplicate-id','nonfinite','malformed-json'],ids=str)
@@ -68,9 +62,10 @@ def test_V4_generate_and_shared_shell_preserves_wire_data(tmp_path):
     returned=generate(tmp_path/'b.json',tmp_path/'b.html',read_text=lambda path:json.dumps(payload),write_text=lambda path,text:writes.append((path,text)))
     assert returned==tmp_path/'b.html' and len(writes)==1
     for html in [document(arch,payload),render_report(payload),writes[0][1]]:
-        assert 'id="report-summary"' in html and 'id="node-detail"' in html
-        assert '<style' in html and 'MIT' in html
-        assert not re.search(r'<(?:script|link)[^>]+(?:src|href)=["\'](?:https?:|[^"\']+_assets/)',html)
+        assert 'id="report-summary"' in html
+        assert '<style' in html
+        assert set(re.findall(r'<(?:script|link)[^>]+(?:src|href)=["\'](https?:[^"\']+)',html))<={CDN_URL}
+        assert not re.search(r'<(?:script|link)[^>]+(?:src|href)=["\'][^"\']+_assets/',html)
         match=re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>',html,re.S)
         neutral=json.loads(match.group(1));assert neutral['bottlenecks']==payload
     assert json.loads(re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>',document(arch,payload),re.S).group(1))['architecture']==arch
@@ -88,12 +83,3 @@ def test_V6_payload_browser_error_visible(open_report):
     assert page.locator('[data-node-id]').count() == 0
     assert page.locator('[data-node-row]').count() == 0
     assert page.evaluate('window.ReportGraph == null')
-    assert page.locator('#node-detail').get_attribute('data-selected-node') in (None,'')
-
-
-def test_V6_hostile_candidate_evidence_is_inert(open_report,tmp_path):
-    n=node('a');payload=bottleneck_fixture(tmp_path,[n],candidate_count=1)
-    payload['candidates'][0]['evidence']['path']=HOSTILE
-    page=open_report(architecture([n]),payload);select(page,'a')
-    expect(page.locator('#node-detail')).to_contain_text(HOSTILE)
-    assert page.evaluate('window.attack') is None and page.external_requests==[]

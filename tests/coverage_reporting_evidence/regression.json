@@ -21,6 +21,6 @@
     "typescript:file",
     "typescript:symbol"
   ],
-  "equal_ignoring_only_coverage": true,
+  "equal_after_asserting_candidate_policy_metadata_and_removing_coverage": true,
   "spec_version": 2
 }
