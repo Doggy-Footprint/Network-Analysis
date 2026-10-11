@@ -4,7 +4,7 @@ Builds a repository's dependency network from static analysis and surfaces its s
 The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
 The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
 
-<!-- harness:begin 0.16.1 -->
+<!-- harness:begin 0.18.0 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
@@ -125,7 +125,7 @@ Required file structure:
 - `## Next Step`
 - `## Open Questions`
 - `## Spec` (active or archived spec path, version, status, and run ID)
-- `## Execution Ledger` (findings and dispositions, evidence and mutation outcomes, correction and verifier counters)
+- `## Execution Ledger` (findings and dispositions, evidence, fuzz, and mutation outcomes (hand and tool), correction and verifier counters)
 
 An incomplete nonterminal workflow keeps its active spec in `agent-docs/specs/`
 and records this handoff path in the spec. A limit handoff points to the archived
