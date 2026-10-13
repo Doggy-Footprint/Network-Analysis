@@ -4,7 +4,7 @@ Builds a repository's dependency network from static analysis and surfaces its s
 The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
 The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
 
-<!-- harness:begin 0.18.0 -->
+<!-- harness:begin 0.22.0 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
@@ -143,5 +143,5 @@ When the task completes, remove its entry from `index.md` and move the file to `
 
 ## User Decision
 
-DO NOT decide unspecified task details yourself. Talk back freely to resolve unspecified or ambiguous ones.
+Never decide unspecified task details silently. Resolve what the project, code, and conversation can answer. For the rest, either ask, or state a default (what you chose, why, and how to change it later) so the user can veto it before it takes effect. Ask instead when the choice is expensive or risky to reverse, or contradicts what the user or project has stated.
 <!-- harness:end -->
