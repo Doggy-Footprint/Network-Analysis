@@ -229,17 +229,3 @@ class SQLAlchemyGraphBuilder:
                 ],
             ),
         ]
-
-    def generate_mermaid(self, arch: SQLAlchemyProjectArchitecture) -> str:
-        lines = ["graph TD", "  %% SQLAlchemy/Alembic Architecture Diagram"]
-        framework_ids = {
-            node.id for node in arch.nodes
-            if (node.provenance or self.PROVENANCE) == self.PROVENANCE
-        }
-        for edge in arch.edges:
-            if edge.from_id not in framework_ids or edge.to_id not in framework_ids:
-                continue
-            lbl = f"|{edge.label}|" if edge.label else ""
-            arrow = "-.->" if edge.dashes else "-->"
-            lines.append(f"  {edge.from_id} {arrow}{lbl} {edge.to_id}")
-        return "\n".join(lines)

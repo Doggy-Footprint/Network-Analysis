@@ -221,7 +221,7 @@ def server_ids(exported):
 
 class TestVO1ArgvDecisionTable(CliFixture):
     """Rules: none; -l only; -f only; -f+-l mixed; order preserved; duplicate value;
-    mermaid+multi; entrypoint with/without fastapi; mermaid single."""
+    entrypoint with/without fastapi."""
 
     def assert_labels(self, argv, expected_label):
         code, _, stderr, labels = self.run_main(str(self.root), *argv, "-o", str(self.out / "a.html"))
@@ -277,32 +277,6 @@ class TestVO1ArgvDecisionTable(CliFixture):
         self.assertEqual(code, 2)
         self.assertEqual(labels, [])
         self.assertEqual(list(self.out.iterdir()), [])
-
-    def test_rule_mermaid_with_multiple_analyzers_is_a_parser_error(self):
-        for argv in (
-            ["-f", "fastapi", "-f", "android", "--mermaid"],
-            ["-f", "fastapi", "-l", "typescript", "--mermaid"],
-            ["-l", "python", "-l", "typescript", "--mermaid"],
-        ):
-            with self.subTest(argv=argv):
-                code, _ = self.parse_exit_code(*argv)
-                self.assertEqual(code, 2)
-
-    def test_rule_mermaid_with_multiple_analyzers_analyzes_nothing(self):
-        code, _, _, labels = self.run_main(
-            str(self.root), "-f", "fastapi", "-f", "android", "--mermaid", "-o", str(self.out / "a.html")
-        )
-        self.assertEqual(code, 2)
-        self.assertEqual(labels, [])
-        self.assertEqual(list(self.out.iterdir()), [])
-
-    def test_rule_mermaid_with_single_analyzer_is_accepted(self):
-        code, stdout, stderr, labels = self.run_main(
-            str(self.root), "-f", "fastapi", "--mermaid", "-o", str(self.out / "a.html")
-        )
-        self.assertEqual(code, 0, stderr)
-        self.assertEqual(labels, ["FastAPI"])
-        self.assertIn("Mermaid Architecture Diagram", stdout)
 
     def test_rule_entrypoint_with_fastapi_among_frameworks_is_accepted(self):
         for argv in (

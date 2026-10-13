@@ -3,7 +3,7 @@
 VO5 (decision table) rules over `cli.main` on a tmp git project with models, revisions and a FastAPI app:
   D1 `-f sqlalchemy` alone, D2 + --no-language-graph, D3 + --no-models, D4 `-f fastapi -f sqlalchemy`,
   D5 `-f sqlalchemy -f fastapi`, D6 `-l python -f sqlalchemy`, D7 `-f fastapi --no-language-graph -f sqlalchemy`,
-  D8 `--entrypoint` with sqlalchemy only -> exit 2, D9 `-f sqlalchemy --mermaid` -> exit 0 and `graph`.
+  D8 `--entrypoint` with sqlalchemy only -> exit 2.
   Observations: exit code, node id uniqueness, python-core presence, IMPLEMENTED_BY targets exist,
   MIGRATES present/absent.
 VO7 (equivalence partitioning, the parts not covered by the existing suite): `-f android` on a Room project
@@ -298,14 +298,6 @@ class TestVO5DecisionTable(CliFixture):
     def test_D8_entrypoint_is_accepted_when_fastapi_is_also_selected(self):
         code, stderr = self.parse_exit_code("-f", "fastapi", "-f", "sqlalchemy", "-e", "main.py")
         self.assertIsNone(code, stderr)
-
-    def test_D9_mermaid_exits_zero_and_prints_a_graph_block(self):
-        code, stdout, stderr, labels = self.run_main(
-            str(self.root), "-f", "sqlalchemy", "--mermaid", "-o", str(self.out / "a.html")
-        )
-        self.assertEqual(code, 0, stderr)
-        self.assertEqual(labels, ["SQLAlchemy"])
-        self.assertIn("graph", stdout)
 
     def test_FR1_sqlalchemy_is_a_valid_repeatable_framework_choice(self):
         for argv in (["-f", "sqlalchemy"], ["-f", "sqlalchemy", "-l", "python"], ["-f", "sqlalchemy", "-f", "android"]):

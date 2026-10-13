@@ -204,25 +204,8 @@ def test_V07_combinations_preserve_semantic_details(monkeypatch,file_project,tmp
         assert all(detail[i]['relation']==e['relation'] for i in e['metadata']['detail_edge_indices'])
 
 
-def mermaid_records(text):
-    declarations={}
-    links=[]
-    for line in text.splitlines():
-        declaration=re.fullmatch(r'\s*([A-Za-z_]\w*)\["(.*)"\]\s*',line)
-        if declaration:
-            assert declaration[1] not in declarations
-            declarations[declaration[1]]=json.loads('"'+declaration[2]+'"')
-        link=re.fullmatch(r'\s*([A-Za-z_]\w*)\s+(-->|-\.->)(?:\|([^|]+)\|)?\s+([A-Za-z_]\w*)\s*',line)
-        if link:
-            links.append((link[1],link[2],link[3],link[4]))
-        elif '-->' in line or '-.->' in line:
-            pytest.fail('Unparsed Mermaid relation: '+line)
-    nodes=set(declarations)|{ident for source,_,_,target in links for ident in (source,target)}
-    return declarations,links,nodes
-
-
 @pytest.mark.parametrize('granularity',['file','symbol'])
-def test_V08_schemas_json_and_mermaid(monkeypatch,file_project,tmp_path,capsys,granularity):
+def test_V08_schemas_and_json(monkeypatch,file_project,tmp_path,granularity):
     linked_files={**FILES,'main.py':'from models import User\n'+FILES['main.py']}
     (file_project/'main.py').write_text(linked_files['main.py'],encoding='utf-8')
     calls=[]
@@ -242,51 +225,27 @@ def test_V08_schemas_json_and_mermaid(monkeypatch,file_project,tmp_path,capsys,g
     assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
     if granularity=='symbol':
         assert 'details' not in data['architecture']
-    capsys.readouterr()
-    calls.clear()
-    mermaid=tmp_path/'graph.md'
-    assert run(monkeypatch,file_project,'-f','fastapi','--granularity',granularity,'--mermaid','-o',mermaid)==0
-    text=capsys.readouterr().out
-    if granularity=='file':
-        assert calls==[1]
-    assert re.search(r'(?m)^graph TD\s*$',text)
+        return
     evidence=Path(__file__).parent/'file_analysis_evidence'
     provenance=json.loads((evidence/'mermaid-linked-original-provenance.json').read_text())
-    original_bytes=(evidence/'mermaid-linked-original-stdout.txt').read_bytes()
-    assert hashlib.sha256(original_bytes).hexdigest()==provenance['stdout_sha256']
     assert hashlib.sha256(json.dumps(linked_files,sort_keys=True,ensure_ascii=False).encode()).hexdigest()==provenance['input_sha256']
     assert provenance['base_commit']=='7eb255b0d552771c01e11fc2b4475663815c9567'
-    declarations,links,ids=mermaid_records(text)
-    if granularity=='symbol':
-        original_declarations,original_links,original_ids=mermaid_records(original_bytes.decode())
-        assert original_ids=={'app_main_app','router_main_router','ep_main_get_user_GET','ep_main_create_user_POST','dep_main_get_db','schema_main_UserOut'}
-        assert declarations==original_declarations
-        assert sorted(links,key=str)==sorted(original_links,key=str)
-        assert ids==original_ids
-    else:
-        original_architecture=(evidence/'mermaid-linked-original-architecture.json').read_bytes()
-        assert hashlib.sha256(original_architecture).hexdigest()==provenance['architecture_sha256']
-        source=json.loads(original_architecture)
-        node_paths={n['id']:n['span']['file_path'] if n.get('span') else None for n in source['nodes']}
-        expected_paths={'alembic/versions/first.py','main.py','models.py'}
-        assert {path for path in node_paths.values() if path}==expected_paths
-        assert len(declarations)==len(expected_paths)
-        assert set(declarations.values())==expected_paths
-        assert ids==set(declarations)
-        assert all(re.fullmatch(r'n\d+',ident) for ident in ids)
-        expected_links={(node_paths[e['from_id']],'-->',e['relation'],node_paths[e['to_id']]) for e in source['edges'] if e['relation'] not in ('CONTAINS','IMPLEMENTED_BY') and node_paths[e['from_id']] and node_paths[e['to_id']] and node_paths[e['from_id']]!=node_paths[e['to_id']]}
-        assert expected_links=={('main.py','-->','IMPORTS','models.py'),('main.py','-->','IMPORTS_SYMBOL','models.py')}
-        observed_links=[(declarations[source_id],arrow,relation,declarations[target_id]) for source_id,arrow,relation,target_id in links]
-        assert len(observed_links)==len(expected_links)
-        assert set(observed_links)==expected_links
-        selected=data['architecture']
-        assert {n['id'] for n in selected['nodes']}=={'file:'+path for path in expected_paths}
-        assert {(e['from_id'].removeprefix('file:'),'-->',e['relation'],e['to_id'].removeprefix('file:')) for e in selected['edges']}==expected_links
+    original_architecture=(evidence/'mermaid-linked-original-architecture.json').read_bytes()
+    assert hashlib.sha256(original_architecture).hexdigest()==provenance['architecture_sha256']
+    source=json.loads(original_architecture)
+    node_paths={n['id']:n['span']['file_path'] if n.get('span') else None for n in source['nodes']}
+    expected_paths={'alembic/versions/first.py','main.py','models.py'}
+    assert {path for path in node_paths.values() if path}==expected_paths
+    expected_links={(node_paths[e['from_id']],e['relation'],node_paths[e['to_id']]) for e in source['edges'] if e['relation'] not in ('CONTAINS','IMPLEMENTED_BY') and node_paths[e['from_id']] and node_paths[e['to_id']] and node_paths[e['from_id']]!=node_paths[e['to_id']]}
+    assert expected_links=={('main.py','IMPORTS','models.py'),('main.py','IMPORTS_SYMBOL','models.py')}
+    selected=data['architecture']
+    assert {n['id'] for n in selected['nodes']}=={'file:'+path for path in expected_paths}
+    assert {(e['from_id'].removeprefix('file:'),e['relation'],e['to_id'].removeprefix('file:')) for e in selected['edges']}==expected_links
 
 
 @pytest.mark.parametrize(('case','flags'),[
     ('granularity',['--granularity','folder']),('duplicate-analyzer',['-l','python','-l','python']),
-    ('entrypoint',['-f','sqlalchemy','--entrypoint','main.py']),('multi-mermaid',['-f','fastapi','-l','python','--mermaid'])])
+    ('entrypoint',['-f','sqlalchemy','--entrypoint','main.py'])])
 def test_V12_parser_errors_preserve_output(monkeypatch,tmp_path,file_project,capsys,case,flags):
     import code_analyzer.cli as cli
     monkeypatch.setattr(cli,'build_snapshot',lambda *args,**kwargs: pytest.fail('Invalid parser input reached extraction'))
@@ -357,11 +316,3 @@ def test_V08_legacy_v4_only_renderer_does_not_invent_details(tmp_path):
     assert data['bottlenecks']['schema']=='bottlenecks.v4'
     if data['architecture'] is not None:
         assert 'details' not in data['architecture']
-
-
-def test_V08_language_mermaid_existing_limit_characterization(monkeypatch,file_project,tmp_path,capsys):
-    assert run(monkeypatch,file_project,'-l','python','--mermaid','-o',tmp_path/'language.html')==0
-    captured=capsys.readouterr()
-    assert '```mermaid' not in captured.out
-    assert not re.search(r'(?m)^\s*(?:graph|flowchart)\s+(?:TD|LR|TB)',captured.out)
-    assert re.search(r'Mermaid|mermaid',captured.out+captured.err)

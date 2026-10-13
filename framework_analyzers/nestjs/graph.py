@@ -118,16 +118,3 @@ class NestJSGraphBuilder:
                                        rows=[{**d.as_dict(), "file_path": d.span.file_path, "line_number": d.span.start_line}
                                              for d in arch.diagnostics]))
         return result
-
-    @staticmethod
-    def generate_mermaid(arch):
-        framework = [node for node in arch.nodes if node.provenance == "nestjs"]
-        ids = {node.id for node in framework}
-        aliases = {node.id: f"n{i}" for i, node in enumerate(framework)}
-        lines = ["graph TD"]
-        for node in framework:
-            lines.append(f'  {aliases[node.id]}["{node.label.replace(chr(34), chr(39))}"]')
-        for edge in arch.edges:
-            if edge.from_id in ids and edge.to_id in ids:
-                lines.append(f"  {aliases[edge.from_id]} -->|{edge.relation}| {aliases[edge.to_id]}")
-        return "\n".join(lines)

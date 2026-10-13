@@ -139,11 +139,6 @@ def parse_args():
         action="store_true",
         help="Also export architecture graph metadata as a JSON file.",
     )
-    parser.add_argument(
-        "--mermaid",
-        action="store_true",
-        help="Print Mermaid diagram markdown to stdout.",
-    )
     parser.add_argument("--granularity", choices=("file", "symbol"), default="file", help="Unit for network metrics and candidates.")
     parser.add_argument("--bottlenecks", metavar="PATH", help="Write bottleneck JSON for the selected granularity.")
     parser.add_argument(
@@ -161,8 +156,6 @@ def parse_args():
         parser.error("the same -f/-l value may not be repeated")
     if args.entrypoint and ("framework", "fastapi") not in args.analyzers:
         parser.error("--entrypoint is only supported with --framework fastapi")
-    if args.mermaid and len(args.analyzers) > 1:
-        parser.error("--mermaid is not supported with multiple analyzers")
     output = Path(args.output).resolve()
     output_paths = [output, output.with_name(f"{output.stem}_assets")]
     if args.bottlenecks:
@@ -333,17 +326,6 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config, result
     return merged
 
 
-def _file_mermaid(architecture):
-    ids = {node.id: f"n{index}" for index, node in enumerate(architecture.nodes)}
-    lines = ["graph TD"]
-    for node in architecture.nodes:
-        label = str(node.label).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-        lines.append(f'  {ids[node.id]}["{label}"]')
-    for edge in architecture.edges:
-        lines.append(f"  {ids[edge.from_id]} -->|{edge.relation}| {ids[edge.to_id]}")
-    return "\n".join(lines)
-
-
 def main(
     *,
     file_lister: Callable = list_repository_files,
@@ -371,7 +353,6 @@ def main(
     analyzer_label = " + ".join(labels)
     print(f"[*] Analyzing {analyzer_label} project at: {project_path}")
 
-    builder = None
     repository_snapshot = None
     bottleneck_report = None
     outputs = _output_paths(project_path, args)
@@ -408,7 +389,7 @@ def main(
         timing["extraction"] = time.perf_counter() - stage_started
         stage_started = time.perf_counter()
         if len(results) == 1:
-            arch, builder, _http_calls = results[0]
+            arch, _builder, _http_calls = results[0]
         else:
             arch = _run_merged(args, project_path, repository_snapshot, analysis_config, results=results)
         timing["integration"] = time.perf_counter() - stage_started
@@ -459,15 +440,6 @@ def main(
         bottleneck_path = Path(args.bottlenecks).resolve()
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
-
-    if args.mermaid:
-        if builder is None:
-            print("[!] Mermaid output is currently available for framework analyzers only.")
-            return
-        mermaid_code = _file_mermaid(arch) if args.granularity == "file" else builder.generate_mermaid(arch)
-        print("\n--- Mermaid Architecture Diagram ---")
-        print(mermaid_code)
-        print("------------------------------------\n")
 
     stats = arch.stats
     print(f"\n📊 Summary Statistics:")

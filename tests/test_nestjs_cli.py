@@ -67,7 +67,6 @@ class TestNestJSCli(unittest.TestCase):
                 code = 0
             except SystemExit as error:
                 code = error.code if isinstance(error.code, int) else 1
-        self.last_stdout = stdout.getvalue()
         report = json.loads((self.out / f"{name}.json").read_text()) if code == 0 and output else None
         return code, stderr.getvalue(), report, labels
 
@@ -170,14 +169,8 @@ class TestNestJSCli(unittest.TestCase):
                 if name == "mixed":
                     self.assertTrue(any(n["provenance"] == "fastapi" for n in report["nodes"]))
 
-    def test_O6_mermaid_and_error_rules(self):
-        code, err, _, _ = self.cli("-f", "nestjs", "--mermaid", name="mermaid", output=False)
-        self.assertEqual(code, 0, err)
-        self.assertIn("graph TD", self.last_stdout)
-        for name in ("Root", "C", "S", "C.ok"):
-            self.assertIn(name, self.last_stdout)
+    def test_O6_error_rules(self):
         for label, flags in [
-            ("multi", ("-f", "nestjs", "-l", "typescript", "--mermaid")),
             ("entry", ("-f", "nestjs", "--entrypoint", "src/main.ts")),
             ("duplicate", ("-f", "nestjs", "-f", "nestjs")),
         ]:

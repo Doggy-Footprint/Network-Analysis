@@ -264,18 +264,6 @@ app.include_router(users_router, prefix="/api/v1")
         self.assertGreater(len(framework_edges), 0)
         self.assertEqual(absolute, [])
 
-    def test_mermaid_generation(self):
-        self._create_sample_fastapi_app()
-        analyzer = FastAPIAnalyzer(str(self.project_path))
-        arch = analyzer.analyze()
-        builder = ArchitectureGraphBuilder()
-        arch = builder.build_graph(arch)
-
-        mermaid = builder.generate_mermaid(arch)
-        self.assertTrue(mermaid.startswith("graph TD"))
-        self.assertIn("Sample API", mermaid)
-
-
     def test_node_labels_are_bare_identifiers_and_decoration_reaches_the_rendered_html(self):
         self._create_sample_fastapi_app()
         builder = ArchitectureGraphBuilder(include_models=True, include_dependencies=True)

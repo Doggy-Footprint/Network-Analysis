@@ -477,17 +477,6 @@ class MainActivity : ComponentActivity() {
         self.assertIn("room_entity", categories)
         self.assertFalse(any(e.relation in ("PROVIDES", "BINDS", "INSTALLS_IN", "INJECTS") for e in no_deps_arch.edges))
 
-    def test_mermaid_generation(self):
-        self._create_sample_android_app()
-        analyzer = AndroidAnalyzer(str(self.project_path))
-        arch = analyzer.analyze()
-        builder = AndroidArchitectureGraphBuilder()
-        arch = builder.build_graph(arch)
-
-        mermaid = builder.generate_mermaid(arch)
-        self.assertTrue(mermaid.startswith("graph TD"))
-        self.assertIn("-->", mermaid)
-
     def test_language_graph_is_merged_without_mutating_kotlin_edges(self):
         self._create_sample_android_app()
         core_nodes, core_edges = KotlinAnalyzer(self.project_path).build()

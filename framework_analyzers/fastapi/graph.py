@@ -713,29 +713,3 @@ class ArchitectureGraphBuilder:
             "HEAD": "HEAD",
         }
         return icons.get(method.upper(), method.upper())
-
-    def generate_mermaid(self, arch: ProjectArchitecture) -> str:
-        lines = ["graph TD", "  %% FastAPI Architecture Diagram"]
-        
-        for app in arch.apps:
-            lines.append(f'  subgraph App_{app.var_name} ["App: {app.title}"]')
-            lines.append(f'    {app.id}["🚀 {app.title}"]')
-            lines.append("  end")
-
-        for router in arch.routers:
-            lines.append(f'  subgraph Router_{router.var_name} ["Router: {router.var_name} ({router.prefix or "/"})"]')
-            lines.append(f'    {router.id}["📁 {router.var_name}"]')
-            lines.append("  end")
-
-        framework_ids = {
-            node.id for node in arch.nodes
-            if (node.provenance or self.PROVENANCE) == self.PROVENANCE
-        }
-        for edge in arch.edges:
-            if edge.from_id not in framework_ids or edge.to_id not in framework_ids:
-                continue
-            lbl = f"|{edge.label}|" if edge.label else ""
-            arrow = "-.->" if edge.dashes else "-->"
-            lines.append(f"  {edge.from_id} {arrow}{lbl} {edge.to_id}")
-
-        return "\n".join(lines)

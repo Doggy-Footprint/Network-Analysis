@@ -596,11 +596,3 @@ class AndroidArchitectureGraphBuilder:
                       for m in arch.room_migrations],
             ))
         return collections
-
-    def generate_mermaid(self, arch: AndroidProjectArchitecture) -> str:
-        lines = ["graph TD", "  %% Android Architecture Diagram"]
-        for edge in arch.edges:
-            lbl = f"|{edge.label}|" if edge.label else ""
-            arrow = "-.->" if edge.dashes else "-->"
-            lines.append(f"  {edge.from_id} {arrow}{lbl} {edge.to_id}")
-        return "\n".join(lines)
