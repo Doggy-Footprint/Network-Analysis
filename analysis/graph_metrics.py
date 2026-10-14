@@ -1,10 +1,7 @@
-import ast
 import json
-import math
 import sys
 from collections import deque
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from analysis.edge_weights import EdgeWeights
@@ -70,8 +67,6 @@ def pagerank(
 class GraphAnalyzer:
     def __init__(self, config: Optional[GraphAnalysisConfig] = None):
         self.config = config or GraphAnalysisConfig()
-        self._source_cache: Dict[Path, str] = {}
-        self._tree_cache: Dict[Path, Optional[ast.AST]] = {}
 
     def analyze(
         self,
@@ -100,7 +95,7 @@ class GraphAnalyzer:
                 pair_weights[pair] = max(pair_weights.get(pair, 0.0), weight)
 
         token_costs = {
-            node_id: self._node_token_cost(node, project_path)
+            node_id: self._node_token_cost(node)
             for node_id, node in node_by_id.items()
         }
         effective_token_costs = {
@@ -112,7 +107,6 @@ class GraphAnalyzer:
             for node_id, targets in outgoing.items()
         }
         pagerank = self._pagerank(weighted_outgoing)
-        hub_scores, authority_scores = self._hits(outgoing, incoming, pair_weights)
         betweenness, betweenness_strategy, betweenness_sample_size = self._betweenness_for_graph(outgoing)
         undirected = {
             node_id: outgoing[node_id] | incoming[node_id]
@@ -122,29 +116,21 @@ class GraphAnalyzer:
             node_id: token_costs[node_id] * round(10 * self._cost_multiplier(node))
             for node_id, node in node_by_id.items()
         }
-        neighborhood_metrics, neighborhood_strategy = self._neighborhood_metrics(undirected, tick_costs)
-        denominator = max(1, 2 * (len(node_by_id) - 1))
+        neighborhood_costs, neighborhood_strategy = self._neighborhood_metrics(undirected, tick_costs)
 
         metrics: Dict[str, Dict[str, Any]] = {}
         for node_id, node in node_by_id.items():
-            hop_2_count, hop_2_cost, hop_3_count, hop_3_cost = neighborhood_metrics[node_id]
             node_metrics = {
                 "token_cost": token_costs[node_id],
                 "effective_token_cost": effective_token_costs[node_id],
                 "pagerank": pagerank[node_id],
-                "hub_score": hub_scores[node_id],
-                "authority_score": authority_scores[node_id],
-                "degree_centrality": (len(outgoing[node_id]) + len(incoming[node_id])) / denominator,
                 "betweenness_centrality": betweenness[node_id],
                 "weighted_centrality_cost": pagerank[node_id] * effective_token_costs[node_id],
                 "fan_in": len(incoming[node_id]),
                 "fan_out": len(outgoing[node_id]),
                 "weighted_fan_in": sum(pair_weights[(source, node_id)] for source in incoming[node_id]),
                 "weighted_fan_out": sum(weighted_outgoing[node_id].values()),
-                "hop_2_node_count": hop_2_count,
-                "hop_2_token_cost": hop_2_cost,
-                "hop_3_node_count": hop_3_count,
-                "hop_3_token_cost": hop_3_cost,
+                "hop_2_token_cost": neighborhood_costs[node_id],
             }
             metrics[node_id] = node_metrics
             metadata = getattr(node, "metadata", None)
@@ -162,11 +148,9 @@ class GraphAnalyzer:
             },
             "node_metrics": metrics,
             "top_pagerank": self._rank(metrics, node_by_id, "pagerank"),
-            "top_hubs": self._rank(metrics, node_by_id, "hub_score"),
             "top_betweenness": self._rank(metrics, node_by_id, "betweenness_centrality"),
             "top_weighted_cost": self._rank(metrics, node_by_id, "weighted_centrality_cost"),
             "top_hop_2_cost": self._rank(metrics, node_by_id, "hop_2_token_cost"),
-            "top_hop_3_cost": self._rank(metrics, node_by_id, "hop_3_token_cost"),
             "total_token_cost": sum(token_costs.values()),
             "total_effective_token_cost": sum(effective_token_costs.values()),
             "cost_policy": {
@@ -195,42 +179,6 @@ class GraphAnalyzer:
 
     def _pagerank(self, outgoing: Mapping[str, Mapping[str, float]]) -> Dict[str, float]:
         return pagerank(outgoing, self.config)
-
-    def _hits(
-        self,
-        outgoing: Mapping[str, Set[str]],
-        incoming: Mapping[str, Set[str]],
-        pair_weights: Mapping[Tuple[str, str], float],
-    ) -> tuple[Dict[str, float], Dict[str, float]]:
-        if not outgoing:
-            return {}, {}
-        hubs = {node_id: 1.0 for node_id in outgoing}
-        authorities = {node_id: 1.0 for node_id in outgoing}
-
-        for _ in range(self.config.max_iterations):
-            next_authorities = {
-                node_id: sum(hubs[source] * pair_weights[(source, node_id)] for source in incoming[node_id])
-                for node_id in outgoing
-            }
-            self._normalize(next_authorities)
-            next_hubs = {
-                node_id: sum(next_authorities[target] * pair_weights[(node_id, target)] for target in outgoing[node_id])
-                for node_id in outgoing
-            }
-            self._normalize(next_hubs)
-            delta = sum(abs(next_hubs[item] - hubs[item]) for item in hubs)
-            delta += sum(abs(next_authorities[item] - authorities[item]) for item in authorities)
-            hubs, authorities = next_hubs, next_authorities
-            if delta <= self.config.tolerance:
-                break
-        return hubs, authorities
-
-    @staticmethod
-    def _normalize(values: Dict[str, float]) -> None:
-        norm = math.sqrt(sum(value * value for value in values.values()))
-        if norm:
-            for key in values:
-                values[key] /= norm
 
     @staticmethod
     def _betweenness(
@@ -279,35 +227,20 @@ class GraphAnalyzer:
         return scores
 
     @staticmethod
-    def _neighborhoods(
-        start: str,
-        adjacency: Mapping[str, Set[str]],
-    ) -> tuple[Set[str], Set[str]]:
-        visited = {start}
-        frontier = {start}
-        hop_2: Set[str] = set()
-        for depth in range(1, 4):
-            frontier = {
-                neighbor
-                for node_id in frontier
-                for neighbor in adjacency[node_id]
-                if neighbor not in visited
-            }
-            visited.update(frontier)
-            if depth == 2:
-                hop_2 = visited - {start}
-            if not frontier:
-                break
-        if not hop_2:
-            hop_2 = visited - {start}
-        return hop_2, visited - {start}
+    def _two_hop_neighborhood(start: str, adjacency: Mapping[str, Set[str]]) -> Set[str]:
+        first = adjacency[start]
+        reached = set(first)
+        for node_id in first:
+            reached |= adjacency[node_id]
+        reached.discard(start)
+        return reached
 
     def _neighborhood_metrics(
         self,
         adjacency: Mapping[str, Set[str]],
         tick_costs: Mapping[str, int],
-    ) -> tuple[Dict[str, Tuple[int, float, int, float]], str]:
-        metrics: Dict[str, Tuple[int, float, int, float]] = {}
+    ) -> tuple[Dict[str, float], str]:
+        metrics: Dict[str, float] = {}
         remaining = set(adjacency)
         used_bfs = False
         used_bitsets = False
@@ -340,16 +273,12 @@ class GraphAnalyzer:
             for node_id in adjacency:
                 if node_id in metrics:
                     continue
-                hop_2, hop_3 = self._neighborhoods(node_id, adjacency)
-                hop_2_ticks = sum(tick_costs[target] for target in hop_2)
-                hop_3_ticks = hop_2_ticks + sum(tick_costs[target] for target in hop_3 - hop_2)
-                metrics[node_id] = (len(hop_2), hop_2_ticks / 10, len(hop_3), hop_3_ticks / 10)
-            del hop_2, hop_3
+                metrics[node_id] = sum(tick_costs[target] for target in self._two_hop_neighborhood(node_id, adjacency)) / 10
 
         if used_bitsets:
             strategy = "exact_hybrid" if used_bfs else "exact_bitset"
         else:
-            strategy = "single_bfs_to_3_hops"
+            strategy = "single_bfs_to_2_hops"
         return metrics, strategy
 
     @staticmethod
@@ -378,7 +307,7 @@ class GraphAnalyzer:
         adjacency: Mapping[str, Set[str]],
         tick_costs: Mapping[str, int],
         cost_bit_count: int,
-    ) -> Dict[str, Tuple[int, float, int, float]]:
+    ) -> Dict[str, float]:
         indices = {node_id: index for index, node_id in enumerate(component)}
         closed_1 = [0] * len(component)
         closed_2 = [0] * len(component)
@@ -401,17 +330,11 @@ class GraphAnalyzer:
                 mask |= closed_1[indices[neighbor]]
             closed_2[index] = mask
 
-        metrics: Dict[str, Tuple[int, float, int, float]] = {}
+        metrics: Dict[str, float] = {}
         for index, node_id in enumerate(component):
-            mask = closed_2[index]
-            for neighbor in adjacency[node_id]:
-                mask |= closed_2[indices[neighbor]]
-            own_bit = 1 << index
-            hop_2 = closed_2[index] ^ own_bit
-            hop_3 = mask ^ own_bit
+            hop_2 = closed_2[index] ^ (1 << index)
             hop_2_ticks = sum((hop_2 & plane).bit_count() << place for place, plane in enumerate(cost_planes))
-            hop_3_ticks = sum((hop_3 & plane).bit_count() << place for place, plane in enumerate(cost_planes))
-            metrics[node_id] = (hop_2.bit_count(), hop_2_ticks / 10, hop_3.bit_count(), hop_3_ticks / 10)
+            metrics[node_id] = hop_2_ticks / 10
         return metrics
 
     @staticmethod
@@ -426,22 +349,12 @@ class GraphAnalyzer:
             return 0.1
         return 1.0
 
-    def _node_token_cost(self, node: Any, project_path: Optional[str]) -> int:
+    def _node_token_cost(self, node: Any) -> int:
         cost = getattr(node, "cost", None)
         token_estimate = getattr(cost, "token_estimate", None)
-        if isinstance(token_estimate, int) and (token_estimate > 0 or token_estimate == 0 and (getattr(node, "metadata", {}) or {}).get("boundary")):
-            return token_estimate
         metadata = getattr(node, "metadata", {}) or {}
-        file_value = metadata.get("file_path")
-        line_number = metadata.get("line_number")
-        end_line_number = metadata.get("end_line_number")
-        if file_value:
-            file_path = Path(file_value)
-            if not file_path.is_absolute() and project_path:
-                file_path = Path(project_path) / file_path
-            source = self._source_for_line(file_path, line_number, end_line_number)
-            if source:
-                return self._estimate_tokens(source)
+        if isinstance(token_estimate, int) and (token_estimate > 0 or token_estimate == 0 and metadata.get("boundary")):
+            return token_estimate
         fallback = json.dumps(
             {
                 "label": _display_name(node, ""),
@@ -452,45 +365,6 @@ class GraphAnalyzer:
             default=str,
         )
         return self._estimate_tokens(fallback)
-
-    def _source_for_line(self, path: Path, line_number: Any, end_line_number: Any = None) -> str:
-        if path not in self._source_cache:
-            try:
-                self._source_cache[path] = path.read_text(encoding="utf-8")
-            except (OSError, UnicodeError):
-                return ""
-        source = self._source_cache[path]
-        try:
-            line = int(line_number)
-        except (TypeError, ValueError):
-            return source
-        if end_line_number is not None:
-            try:
-                end_line = int(end_line_number)
-            except (TypeError, ValueError):
-                end_line = None
-            if end_line is not None and end_line >= line:
-                lines = source.splitlines()
-                return "\n".join(lines[max(0, line - 1):end_line])
-        tree = self._tree_cache.get(path)
-        if path not in self._tree_cache:
-            try:
-                tree = ast.parse(source)
-            except SyntaxError:
-                tree = None
-            self._tree_cache[path] = tree
-        if tree is None:
-            return source
-        candidates = [
-            item
-            for item in ast.walk(tree)
-            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Assign, ast.AnnAssign, ast.Expr))
-            and getattr(item, "lineno", 0) <= line <= getattr(item, "end_lineno", getattr(item, "lineno", 0))
-        ]
-        if not candidates:
-            return source
-        target = min(candidates, key=lambda item: item.end_lineno - item.lineno)
-        return ast.get_source_segment(source, target) or source
 
     def _estimate_tokens(self, text: str) -> int:
         return estimate_tokens(text, self.config.characters_per_token, self.config.digit_group_size)

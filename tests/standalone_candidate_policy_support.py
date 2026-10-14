@@ -6,17 +6,82 @@ import re
 from collections import Counter, defaultdict
 
 from tests.candidate_policy_metadata_support import without_candidate_policy_metadata
-from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+from tests.candidate_policy_transition_support import _test_node, assert_candidate_policy_transition
 from tests.candidate_group_storage_support import recovered_candidate_evidence
 
-NETWORK_METRICS = {'pagerank', 'hub_score', 'authority_score', 'degree_centrality', 'betweenness_centrality', 'weighted_centrality_cost', 'fan_in', 'fan_out', 'weighted_fan_in', 'weighted_fan_out', 'hop_2_node_count', 'hop_3_node_count', 'hop_2_token_cost', 'hop_3_token_cost'}
-TOP_METRICS = {'top_pagerank': 'pagerank', 'top_hubs': 'hub_score', 'top_betweenness': 'betweenness_centrality', 'top_weighted_cost': 'weighted_centrality_cost', 'top_hop_2_cost': 'hop_2_token_cost', 'top_hop_3_cost': 'hop_3_token_cost'}
+REMOVED_METRICS = {'hub_score', 'authority_score', 'degree_centrality', 'hop_2_node_count', 'hop_3_node_count', 'hop_3_token_cost', 'identifier_file_count', 'identifier_file_count_by_context'}
+NETWORK_METRICS = {'pagerank', 'betweenness_centrality', 'weighted_centrality_cost', 'fan_in', 'fan_out', 'weighted_fan_in', 'weighted_fan_out', 'hop_2_token_cost'}
+REMOVED_TOPS = {'top_hubs', 'top_hop_3_cost'}
+TOP_METRICS = {'top_pagerank': 'pagerank', 'top_betweenness': 'betweenness_centrality', 'top_weighted_cost': 'weighted_centrality_cost', 'top_hop_2_cost': 'hop_2_token_cost'}
+SCHEMA_RENAMES = {'bottlenecks.v4': 'bottlenecks.v6', 'bottlenecks.v5': 'bottlenecks.v7'}
+STRATEGY_RENAMES = {'single_bfs_to_3_hops': 'single_bfs_to_2_hops', 'exact_bitset': 'exact_bitset', 'exact_hybrid': 'exact_hybrid'}
 
 
-def _raw(architecture):
+def _strip(rows):
+    return {ident: {k: v for k, v in row.items() if k not in REMOVED_METRICS} for ident, row in rows.items()}
+
+
+def _clone_key(edge):
+    return json.dumps({k: edge.get(k) for k in ('from_id', 'to_id', 'confidence', 'resolution', 'evidence', 'candidates')}, sort_keys=True)
+
+
+def _assert_tests_edges_are_clones(arch):
+    """F2: TESTS edges are copies of existing test-to-production edges and cover every such (source, target) pair."""
+    nodes = {n['id']: n for n in arch['nodes']}
+    qualifying = defaultdict(dict)
+    for edge in arch['edges']:
+        if edge['relation'] == 'TESTS' or not _test_node(nodes[edge['from_id']]):
+            continue
+        group = {edge['to_id'], *edge.get('candidates', [])} if edge['resolution'] == 'ambiguous' else {edge['to_id']}
+        if any(not _test_node(nodes[target]) for target in group):
+            qualifying[(edge['from_id'], edge['to_id'])][_clone_key(edge)] = edge
+    tests = defaultdict(list)
+    for edge in arch['edges']:
+        if edge['relation'] == 'TESTS':
+            tests[(edge['from_id'], edge['to_id'])].append(edge)
+    assert tests.keys() == qualifying.keys(), ('TESTS pairs differ from test-to-production pairs', len(tests), len(qualifying))
+    for pair, edges in tests.items():
+        for edge in edges:
+            assert _clone_key(edge) in qualifying[pair], ('TESTS edge is not a copy of an existing edge', pair)
+
+
+def _expected_strategy(arch):
+    """Selection rule restated from F5/V4: a component uses the bitset path from 64 nodes with sum(degree^2) >= 64 * nodes."""
+    ids = {n['id'] for n in arch['nodes']}
+    adjacency = {ident: set() for ident in ids}
+    for edge in arch['edges']:
+        targets = {edge['to_id'], *edge.get('candidates', [])} if edge['resolution'] == 'ambiguous' else {edge['to_id']}
+        for target in targets:
+            if edge['from_id'] in ids and target in ids and edge['from_id'] != target:
+                adjacency[edge['from_id']].add(target)
+                adjacency[target].add(edge['from_id'])
+    seen, kinds = set(), []
+    for start in sorted(ids):
+        if start in seen:
+            continue
+        component, pending = {start}, [start]
+        seen.add(start)
+        while pending:
+            for other in adjacency[pending.pop()]:
+                if other not in seen:
+                    seen.add(other)
+                    component.add(other)
+                    pending.append(other)
+        kinds.append(len(component) >= 64 and sum(len(adjacency[i]) ** 2 for i in component) >= 64 * len(component))
+    if kinds and all(kinds):
+        return 'exact_bitset'
+    return 'exact_hybrid' if any(kinds) else 'single_bfs_to_2_hops'
+
+
+def _raw(architecture, edge_filter=None, config_confidence=None):
     result = {key: copy.deepcopy(architecture[key]) for key in ('nodes', 'edges')}
     for node in result['nodes']:
         node.get('metadata', {}).pop('analysis', None)
+    result['edges'] = [e for e in result['edges'] if e['relation'] != 'TESTS']
+    for edge in result['edges']:
+        if config_confidence and edge['relation'] == 'CONFIGURES':
+            assert edge['confidence'] == 'static_certain'
+            edge['confidence'] = config_confidence
     return result
 
 
@@ -100,25 +165,28 @@ def _spread(edges, threshold):
 
 
 def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, report, contents, category_members):
-    assert_candidate_policy_transition(_raw(old_arch), _raw(arch), contents)
+    assert_candidate_policy_transition(_raw(old_arch, config_confidence='static_inferred'), _raw(arch), contents)
+    assert all(e['confidence'] == 'static_inferred' and e['resolution'] == 'exact' for e in arch['edges'] if e['relation'] == 'CONFIGURES')
+    _assert_tests_edges_are_clones(arch)
     clean_arch = without_candidate_policy_metadata(arch, 'architecture')
     clean_report = without_candidate_policy_metadata(recovered_candidate_evidence(report), 'bottlenecks')
     pairs = _pairs(arch['edges'], old_report['edge_weights'])
     old_network = old_report['dependency_network']
+    old_stripped = _strip(old_network['node_metrics'])
     network = clean_report['dependency_network']
     assert network['node_count'] == len(arch['nodes']) == old_network['node_count']
     assert network['edge_count'] == len(pairs)
-    adjusted_costs = _fallback_costs(arch, old_network['node_metrics'])
+    adjusted_costs = _fallback_costs(arch, old_stripped)
     _metric_rows(adjusted_costs, network['node_metrics'], pairs)
     nodes = {n['id']: n for n in arch['nodes']}
-    assert network['rankings'].keys() == old_network['rankings'].keys()
+    assert network['rankings'].keys() == old_network['rankings'].keys() - REMOVED_METRICS == NETWORK_METRICS
     _rankings(network['rankings'], network['node_metrics'], nodes)
     assert network['rankings_by_category'].keys() == old_network['rankings_by_category'].keys()
     assert category_members.keys() == old_network['rankings_by_category'].keys()
     membership = [ident for members in category_members.values() for ident in members]
     assert len(membership) == len(set(membership)) and set(membership) == nodes.keys(), 'frozen categories must partition preserved original nodes'
     for category, ranks in network['rankings_by_category'].items():
-        assert ranks.keys() == old_network['rankings_by_category'][category].keys()
+        assert ranks.keys() == old_network['rankings_by_category'][category].keys() - REMOVED_METRICS == NETWORK_METRICS
         _rankings(old_network['rankings_by_category'][category], old_network['node_metrics'], category_members[category])
         _rankings(ranks, network['node_metrics'], category_members[category])
     assert {k: v for k, v in network.items() if k not in {'node_metrics', 'node_count', 'edge_count', 'rankings', 'rankings_by_category'}} == {k: v for k, v in old_network.items() if k not in {'node_metrics', 'node_count', 'edge_count', 'rankings', 'rankings_by_category'}}
@@ -137,10 +205,11 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
     old_analysis = old_stats.get('analysis')
     if analysis is not None:
         if old_analysis is not None:
-            _metric_rows(old_analysis['node_metrics'], analysis['node_metrics'], pairs)
-            for value in (old_analysis['neighborhood_strategy'], analysis['neighborhood_strategy']):
-                assert value in {'single_bfs_to_3_hops', 'exact_bitset', 'exact_hybrid'}
-            assert {k: v for k, v in analysis.items() if k not in {'node_metrics', 'neighborhood_strategy'} and k not in TOP_METRICS} == {k: v for k, v in old_analysis.items() if k not in {'node_metrics', 'neighborhood_strategy'} and k not in TOP_METRICS}
+            _metric_rows(_strip(old_analysis['node_metrics']), analysis['node_metrics'], pairs)
+            assert old_analysis['neighborhood_strategy'] in STRATEGY_RENAMES
+            assert analysis['neighborhood_strategy'] == _expected_strategy(arch)
+            assert not REMOVED_TOPS & analysis.keys()
+            assert {k: v for k, v in analysis.items() if k not in {'node_metrics', 'neighborhood_strategy'} and k not in TOP_METRICS} == {k: v for k, v in old_analysis.items() if k not in {'node_metrics', 'neighborhood_strategy'} and k not in TOP_METRICS and k not in REMOVED_TOPS}
         else:
             assert analysis == {}, 'previously absent analysis gained undeclared non-marker fields'
         if old_analysis is not None:
@@ -155,7 +224,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
         old_metrics = old_by_id[ident].get('metadata', {}).get('analysis')
         metrics = node.get('metadata', {}).get('analysis')
         if old_metrics is not None:
-            expected = copy.deepcopy(old_metrics)
+            expected = {k: v for k, v in copy.deepcopy(old_metrics).items() if k not in REMOVED_METRICS}
             for field in ('token_cost', 'effective_token_cost'):
                 expected[field] = adjusted_costs[ident][field]
             _metric_rows({ident: expected}, {ident: metrics}, pairs)
@@ -176,4 +245,8 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
         assert candidate['coverage'] == 'static_analyzer_relation' and candidate['status'] == 'static_candidate'
         assert candidate['id'] == 'b:' + hashlib.sha256((target + '|spread').encode()).hexdigest()[:16]
         assert set(candidate) == {'id', 'kind', 'target', 'metrics', 'evidence', 'coverage', 'status'}
-    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == {k: v for k, v in old_report.items() if k not in {'dependency_network', 'candidates'}}
+    expected_top = {k: copy.deepcopy(v) for k, v in old_report.items() if k not in {'dependency_network', 'candidates'}}
+    expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
+    assert expected_top['versions']['analysis'] == '3'
+    expected_top['versions']['analysis'] = '4'
+    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == expected_top

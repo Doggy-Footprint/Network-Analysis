@@ -1,6 +1,5 @@
 import copy
 import json
-import math
 from types import SimpleNamespace
 
 import pytest
@@ -129,17 +128,10 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
         assert row['fan_out'] == int(letter in 'ab')
         assert row['weighted_fan_in'] == int(letter in 'bc')
         assert row['weighted_fan_out'] == int(letter in 'ab')
-        assert row['degree_centrality'] == pytest.approx({'a':1/6,'b':1/3,'c':1/6,'d':0}[letter],abs=1e-9,rel=0)
         assert row['betweenness_centrality'] == pytest.approx(1/6 if letter == 'b' else 0,abs=1e-9,rel=0)
-        assert row['hub_score'] == pytest.approx(1/math.sqrt(2) if letter in 'ab' else 0,abs=1e-9,rel=0)
-        assert row['authority_score'] == pytest.approx(1/math.sqrt(2) if letter in 'bc' else 0,abs=1e-9,rel=0)
-        for hop in (2, 3):
-            neighbors = set('abc') - {letter} if letter != 'd' else set()
-            assert row[f'hop_{hop}_node_count'] == len(neighbors)
-            assert row[f'hop_{hop}_token_cost'] == sum(tokens[n] for n in neighbors)
-        assert 'identifier_file_count' not in row
-        assert 'identifier_file_count_by_context' not in row
-    assert report['schema'] == 'bottlenecks.v5' and report['granularity'] == 'file'
+        neighbors = set('abc') - {letter} if letter != 'd' else set()
+        assert row['hop_2_token_cost'] == sum(tokens[n] for n in neighbors)
+    assert report['schema'] == 'bottlenecks.v7' and report['granularity'] == 'file'
     assert all('analysis' not in n['metadata'] for n in serialize(result)['details']['nodes'])
     unicode_snap,unicode_file=converted({'a.py':'value = "a\u2028b"'},[node('value','a.py','constant')])
     unicode_data=serialize(unicode_file)
@@ -149,7 +141,7 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
     original_span=unicode_data['details']['nodes'][0]['span']
     assert (original_span['file_path'],original_span['start_line'],original_span['end_line'])==('a.py',1,1)
     unicode_report=payload(unicode_snap,unicode_file,tmp_path)
-    assert unicode_report['schema']=='bottlenecks.v5'
+    assert unicode_report['schema']=='bottlenecks.v7'
     assert unicode_report['granularity']=='file'
     assert unicode_report['dependency_network']['node_metrics']['file:a.py']['token_cost']==4
 

@@ -1,5 +1,4 @@
 import copy
-import math
 
 import pytest
 
@@ -49,18 +48,8 @@ def test_VO1_independent_closed_form_star(tmp_path, case, count, alternatives, p
         assert m['weighted_fan_out'] == pytest.approx(total if is_source else 1, abs=TOL, rel=0)
         assert m['weighted_fan_in'] == pytest.approx(count if is_source else total / count, abs=TOL, rel=0)
         assert m['pagerank'] == pytest.approx(source_rank if is_source else target_rank, abs=TOL, rel=0)
-        # W W^T has leading source eigenvalue total^2/count, versus count for targets.
-        if count > 1 or total < 1:
-            assert m['hub_score'] == pytest.approx(0 if is_source else 1 / math.sqrt(count), abs=TOL, rel=0)
-            assert m['authority_score'] == pytest.approx(1 if is_source else 0, abs=TOL, rel=0)
-        else:
-            assert m['hub_score'] == pytest.approx(1 / math.sqrt(2), abs=TOL, rel=0)
-            assert m['authority_score'] == pytest.approx(1 / math.sqrt(2), abs=TOL, rel=0)
-        assert m['degree_centrality'] == pytest.approx(1 if is_source else 1 / count, abs=TOL, rel=0)
         assert m['betweenness_centrality'] == pytest.approx(1 if is_source and count > 1 else 0, abs=TOL, rel=0)
-        for hop in (2, 3):
-            assert m[f'hop_{hop}_node_count'] == count
-            assert m[f'hop_{hop}_token_cost'] == sum(x.cost.token_estimate for x in nodes if x.id != ident)
+        assert m['hop_2_token_cost'] == sum(x.cost.token_estimate for x in nodes if x.id != ident)
 
 
 @pytest.mark.parametrize('transformation', ['representative-swap', 'bijective-rename'])

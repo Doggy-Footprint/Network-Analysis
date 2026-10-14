@@ -38,7 +38,7 @@ ROLE_PRIORITY = {
     'nestjs': ['application', 'module', 'controller', 'endpoint', 'provider'],
 }
 STATE_TERMS = ('완료', '부분 분석', '실패', '건너뜀', '대상 밖', '제외')
-FIXED_TERMS = ('할인', '가중', '배분 몫', '가중 기여도', 'hop', 'PageRank', 'Hub', 'Authority', 'Betweenness', 'Fan-in', 'Fan-out', 'layer')
+FIXED_TERMS = ('할인', '가중', '배분 몫', '가중 기여도', 'hop', 'PageRank', 'Betweenness', 'Fan-in', 'Fan-out', 'layer')
 
 # Effective edge weight is min(confidence weight, resolution weight) (analysis/edge_weights.py). The tiers in
 # test_report_modal.py are chosen so that a product, confidence-only or resolution-only rule changes the top-10 cut.

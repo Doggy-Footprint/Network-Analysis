@@ -10,6 +10,7 @@ import pytest
 from tests.coverage_reporting_support import ADAPTERS, BUILDERS, IDS, adapter, analyze, baseline_runner, coverage_of, dump, own_result, snapshot, without_coverage
 from tests.test_repository_scan import policy, snapshot_of
 from tests.candidate_policy_metadata_support import without_candidate_policy_metadata
+from tests.legacy_metric_transition_support import legacy_to_current
 
 
 def assert_wire_version(coverage):
@@ -178,7 +179,7 @@ def test_V05_characterization_and_V04_cli_stages():
     baseline=json.loads((Path(__file__).parent/'coverage_reporting_evidence'/'characterization-baseline.json').read_text())
     current=baseline_runner().capture()
     normalized = {name: {surface: without_candidate_policy_metadata(payload, surface) for surface, payload in record.items()} for name, record in current.items()}
-    assert without_coverage(normalized)==without_coverage(baseline), 'Characterization: extraction, schema, metrics and candidates changed'
+    assert without_coverage(normalized)==without_coverage(legacy_to_current(baseline)), 'Characterization: extraction, schema, metrics and candidates changed'
     expected={**{key:{key+'-core'} for key in ('python','typescript','kotlin')},'fastapi':{'fastapi','python-core'},'sqlalchemy':{'sqlalchemy','python-core'},'android':{'android','kotlin-core'},'nestjs':{'nestjs','typescript-core'},'fastapi-sqlalchemy':{'fastapi','sqlalchemy','python-core'},'nestjs-typescript':{'nestjs','typescript-core'},'android-kotlin':{'android','kotlin-core'}}
     for name,record in current.items():
         cov=record['architecture']['stats']['analysis_coverage']
@@ -295,7 +296,7 @@ def test_V05_json_exports_and_regeneration(monkeypatch,tmp_path,mode):
     assert inline['architecture']==arch
     assert inline['bottlenecks']==bottlenecks
     assert arch['schema_version']==('6' if mode=='file' else '5')
-    assert bottlenecks['schema']==('bottlenecks.v5' if mode=='file' else 'bottlenecks.v4')
+    assert bottlenecks['schema']==('bottlenecks.v7' if mode=='file' else 'bottlenecks.v6')
     for value in (arch['stats']['analysis_coverage'],bottlenecks['coverage']['analysis_coverage'],inline['architecture']['stats']['analysis_coverage'],inline['bottlenecks']['coverage']['analysis_coverage']):
         assert_wire_version(value)
     assert arch['stats']['analysis_coverage']==bottlenecks['coverage']['analysis_coverage']

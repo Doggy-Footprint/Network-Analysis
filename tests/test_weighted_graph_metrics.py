@@ -1,5 +1,5 @@
-"""V2 (merge slice), V3, V4, V5 for spec 8fd668e309160b58 v1: weighted PageRank / HITS /
-weighted fan in analysis.graph_metrics.
+"""V2 (merge slice), V3, V4, V5 for spec 8fd668e309160b58 v1: weighted PageRank /
+weighted fan in analysis.graph_metrics. The HITS oracle was removed with hub_score/authority_score (spec f7564b09cf80bdd9).
 
 V3: hand-computed oracles on tiny graphs (derivations are written next to the values).
   PageRank assumes the pre-existing damping 0.85 and uniform teleport with total mass 1;
@@ -9,7 +9,6 @@ V5: equivalence -- unweighted metrics do not depend on the weights; weighted fan
 V2 merge: duplicate (source, target) pairs collapse to the maximum weight (F7).
 """
 import copy
-import math
 
 import pytest
 
@@ -75,36 +74,6 @@ def test_V3_C2_analyzer_pagerank_uses_default_yaml_weights():
     metrics = analyze(nodes, edges, load_edge_weights(default_edge_weights_path()), **EXACT_CONFIG)["node_metrics"]
     for node_id, value in expected_star_pagerank().items():
         assert metrics[node_id]["pagerank"] == pytest.approx(value, abs=TOLERANCE, rel=0), node_id
-
-
-def test_V3_hits_branch_weighted_bipartite_graph_matches_closed_form(tmp_path):
-    """Weights: H1->X 1.0, H1->Y 0.3, H2->X 0.5, H2->Y 0.15 (each is min of the two axes in the yaml below).
-    W = [[1, 0.3], [0.5, 0.15]] = u v^T with u = (1, 0.5), v = (1, 0.3), rank 1, so one power step is exact:
-      hub = u / |u|,  authority = v / |v|   (L2 normalization)
-      |u| = sqrt(1.25),  |v| = sqrt(1.09).
-    An unweighted run would give hub = authority = (0.7071, 0.7071) on both sides.
-    """
-    weights = load_weights(
-        tmp_path,
-        weights_data(
-            confidence={"static_inferred": 0.5, "framework_inferred": 0.5, "dynamic_required": 0.5},
-            resolution={"ambiguous": 0.3, "unresolved": 0.15},
-        ),
-    )
-    nodes = symbol_nodes("H1", "H2", "X", "Y")
-    edges = [
-        edge("H1", "X", Confidence.STATIC_CERTAIN, Resolution.EXACT),
-        edge("H1", "Y", Confidence.STATIC_CERTAIN, Resolution.AMBIGUOUS),
-        edge("H2", "X", Confidence.STATIC_INFERRED, Resolution.EXACT),
-        edge("H2", "Y", Confidence.STATIC_INFERRED, Resolution.UNRESOLVED),
-    ]
-    metrics = analyze(nodes, edges, weights)["node_metrics"]
-    hub_norm, authority_norm = math.sqrt(1.25), math.sqrt(1.09)
-    expected_hub = {"H1": 1 / hub_norm, "H2": 0.5 / hub_norm, "X": 0.0, "Y": 0.0}
-    expected_authority = {"H1": 0.0, "H2": 0.0, "X": 1 / authority_norm, "Y": 0.3 / authority_norm}
-    for node_id in expected_hub:
-        assert metrics[node_id]["hub_score"] == pytest.approx(expected_hub[node_id], abs=TOLERANCE, rel=0), node_id
-        assert metrics[node_id]["authority_score"] == pytest.approx(expected_authority[node_id], abs=TOLERANCE, rel=0), node_id
 
 
 def graph_of_python_sources(directory):
@@ -178,12 +147,8 @@ def mixed_fan_graph():
 UNWEIGHTED_KEYS = [
     "fan_in",
     "fan_out",
-    "degree_centrality",
     "betweenness_centrality",
-    "hop_2_node_count",
-    "hop_3_node_count",
     "hop_2_token_cost",
-    "hop_3_token_cost",
     "token_cost",
 ]
 

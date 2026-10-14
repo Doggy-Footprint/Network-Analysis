@@ -25,9 +25,8 @@ from tests.edge_weights_support import edge
 
 CATEGORIES = ("production", "test", "generated", "vendored", "unknown")
 RANKINGS = (
-    "pagerank", "hub_score", "authority_score", "degree_centrality", "betweenness_centrality",
-    "weighted_centrality_cost", "fan_in", "fan_out", "hop_2_token_cost", "hop_3_token_cost",
-    "weighted_fan_in", "weighted_fan_out",
+    "pagerank", "betweenness_centrality", "weighted_centrality_cost", "fan_in", "fan_out",
+    "weighted_fan_in", "weighted_fan_out", "hop_2_token_cost",
 )
 ERROR_PATH = "$.dependency_network.rankings_by_category"
 HEADING = "분류별 순위"
@@ -159,7 +158,7 @@ def test_V3_F1_empty_snapshot_has_all_categories_and_metrics_with_empty_lists():
     categories = by_category(payload)
     assert set(categories) == set(CATEGORIES) and len(categories) == 5
     for name in CATEGORIES:
-        assert set(categories[name]) == set(RANKINGS) and len(categories[name]) == 12
+        assert set(categories[name]) == set(RANKINGS) and len(categories[name]) == 8
         assert all(entries == [] for entries in categories[name].values()), name
 
 
@@ -227,7 +226,7 @@ def test_V4_json_is_byte_identical_for_equal_inputs_and_keeps_schema():
         architecture = replace(architecture, nodes=[make_node(*item) for item in assigned], edges=list(edges))
         outputs.append(bottlenecks_to_json(analyze_bottlenecks(snapshot, architecture, weights())))
     assert outputs[0] == outputs[1]
-    assert json.loads(outputs[0])["schema"] == "bottlenecks.v4"
+    assert json.loads(outputs[0])["schema"] == "bottlenecks.v6"
 
 
 def report_payload():

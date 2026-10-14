@@ -23,8 +23,7 @@ from tests.edge_weights_support import edge, load_weights, weights_data
 TOP_LEVEL_KEYS = {"schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations"}
 EDGE_WEIGHT_KEYS = {"confidence", "resolution", "large_node_line_threshold"}
 V2_RANKINGS = {
-    "pagerank", "hub_score", "authority_score", "degree_centrality", "betweenness_centrality",
-    "weighted_centrality_cost", "fan_in", "fan_out", "hop_2_token_cost", "hop_3_token_cost",
+    "pagerank", "betweenness_centrality", "weighted_centrality_cost", "fan_in", "fan_out", "hop_2_token_cost",
 }
 RANKINGS = V2_RANKINGS | {"weighted_fan_in", "weighted_fan_out"}
 
@@ -71,7 +70,7 @@ def candidates_of(payload, kind):
 def test_V6_top_level_schema_and_key_set():
     snapshot, architecture = network_subject(["a", "b"], [edge("a", "b")])
     payload = payload_of(snapshot, architecture)
-    assert payload["schema"] == "bottlenecks.v4"
+    assert payload["schema"] == "bottlenecks.v6"
     assert set(payload) == TOP_LEVEL_KEYS
 
 
@@ -92,7 +91,7 @@ def test_V6_C10_empty_snapshot_has_v3_report_with_empty_rankings():
     snapshot, architecture = subject({})
     payload = payload_of(snapshot, architecture)
     network = payload["dependency_network"]
-    assert payload["schema"] == "bottlenecks.v4"
+    assert payload["schema"] == "bottlenecks.v6"
     assert set(payload) == TOP_LEVEL_KEYS
     assert network["node_count"] == 0 and network["edge_count"] == 0
     assert network["node_metrics"] == {}

@@ -13,8 +13,6 @@ from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
 
-from .identifier_occurrence import CONTEXTS, identifier_file_counts, node_identifier
-
 
 class BottleneckInputError(ValueError): pass
 
@@ -28,9 +26,8 @@ class BottleneckReport:
 
 
 RANKING_KEYS = (
-    "pagerank", "hub_score", "authority_score", "degree_centrality", "betweenness_centrality",
-    "weighted_centrality_cost", "fan_in", "fan_out", "weighted_fan_in", "weighted_fan_out",
-    "hop_2_token_cost", "hop_3_token_cost",
+    "pagerank", "betweenness_centrality", "weighted_centrality_cost", "fan_in", "fan_out",
+    "weighted_fan_in", "weighted_fan_out", "hop_2_token_cost",
 )
 
 CATEGORY_KEYS = ("production", "test", "generated", "vendored", "unknown")
@@ -233,11 +230,6 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if analysis.get("ambiguity_policy") != AMBIGUITY_POLICY:
             raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
         metrics = analysis["node_metrics"]
-        if not is_file:
-            names = {node.id: node_identifier(getattr(node, "label", None)) for node in nodes}
-            occurrences = identifier_file_counts(snapshot.content_map() or dict(snapshot.contents), names.values())
-            for node_id, name in names.items():
-                if node_id in metrics: metrics[node_id].update(identifier_file_count=occurrences[name]["total"], identifier_file_count_by_context={context: occurrences[name][context] for context in CONTEXTS})
         ranked_ids = [node.id for node in nodes if not is_file or not (getattr(node, "metadata", {}) or {}).get("boundary")]
         rankings = {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted(ranked_ids, key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS}
         categories = {node.id: _category(node) for node in nodes}
@@ -255,7 +247,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             "betweenness_sample_size": analysis["betweenness_sample_size"]}
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
-        return BottleneckReport("bottlenecks.v5" if is_file else "bottlenecks.v4", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "3"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        return BottleneckReport("bottlenecks.v7" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

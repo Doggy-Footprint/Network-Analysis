@@ -64,8 +64,6 @@ def mixed_fixture():
     boundary.update(label='EXTERNAL_BOUNDARY_ORACLE',kind='external',group='external',category='external')
     boundary['cost']={'token_estimate':0,'char_count':0,'line_count':0}
     boundary['metadata']['analysis'].update(token_cost=0,effective_token_cost=0)
-    boundary['metadata']['analysis'].pop('identifier_file_count')
-    boundary['metadata']['analysis'].pop('identifier_file_count_by_context')
     symbols.append(copy.deepcopy(boundary))
     symbols[-1]['metadata'].pop('analysis')
     relations.extend([method_role,edge('top','enum-ref'),edge('top','config-ref'),edge('top','external-boundary',line=777)])

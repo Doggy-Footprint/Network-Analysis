@@ -32,12 +32,12 @@ def glossary_terms(page):
 
 
 def all_glossary_terms(open_report, page):
-    """A05 term set: the file report lists 14 sort metrics, the symbol report adds identifier_file_count (15 in total)."""
+    """A05 term set: file and symbol reports list the same 10 sort metrics (8 ranking keys plus the two token costs)."""
     groups = glossary_terms(page)
     symbol_page = open_report(architecture([node('a')]))
     symbol_groups = glossary_terms(symbol_page)
     metrics = set(groups['metrics']) | set(symbol_groups['metrics'])
-    assert len(metrics) >= 15
+    assert len(metrics) == 10
     return set(CORE_LABELS) | metrics | set(groups['classes']) | set(groups['kinds']) | set(STATE_TERMS) | set(FIXED_TERMS), groups
 
 

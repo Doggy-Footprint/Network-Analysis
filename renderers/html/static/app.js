@@ -21,15 +21,10 @@
         weighted_centrality_cost: ['중심에 있는 큰 코드', 'PageRank × 할인된 코드 토큰 수', '가중 토큰'],
         fan_in: ['들어오는 연결이 많은 곳', '이 대상을 참조하는 직접 연결 대상 수', '대상'],
         fan_out: ['나가는 연결이 많은 곳', '이 대상이 참조하는 직접 연결 대상 수', '대상'],
-        hub_score: ['Hub', '참조하는 쪽의 중심성', '상대값'],
-        authority_score: ['Authority', '참조받는 쪽의 중심성', '상대값'],
-        degree_centrality: ['Degree', '전체 크기로 정규화한 직접 연결 정도', '상대값'],
         weighted_fan_in: ['가중 Fan-in', '들어오는 연결 대상별 유효 가중치 합', '가중 연결'],
         weighted_fan_out: ['가중 Fan-out', '나가는 연결 대상별 유효 가중치 합', '가중 연결'],
-        hop_3_token_cost: ['3-hop 주변 규모', '세 단계 이내 주변 코드의 할인된 토큰 합', '추정 토큰'],
         token_cost: ['코드 규모', '문자 기반 코드 토큰 추정', '추정 토큰'],
-        effective_token_cost: ['할인된 코드 규모', '생성·외부 코드를 할인한 토큰 추정', '추정 토큰'],
-        identifier_file_count: ['식별자 출현 파일', '이름의 마지막 식별자가 등장하는 파일 수', '파일']
+        effective_token_cost: ['할인된 코드 규모', '생성·외부 코드를 할인한 토큰 추정', '추정 토큰']
     };
     const core = Object.keys(definitions).slice(0, 6);
     const kinds = {
@@ -715,7 +710,7 @@
             li.append(...parts.map(p => typeof p === 'string' ? document.createTextNode(p) : p));
             guide.append(li);
         };
-        item(term('PageRank'), ' · ', term('Hub'), ' · ', term('Authority'), ' · ', term('Betweenness'), ' · ', term('Fan-in'), ' · ', term('Fan-out'), ': 연결 구조에서의 위치를 보여줍니다.');
+        item(term('PageRank'), ' · ', term('Betweenness'), ' · ', term('Fan-in'), ' · ', term('Fan-out'), ': 연결 구조에서의 위치를 보여줍니다.');
         item(term('할인'), ' · ', term('가중'), ': 설정값 표의 비율이 합산에 적용됩니다.');
         item(term('배분 몫'), ' · ', term('가중 기여도'), ' · ', term('hop'), ': 모호한 참조와 주변 범위를 읽을 때 쓰입니다.');
         item(term('layer'), ': 그래프 노드 색의 기준입니다.');
@@ -789,7 +784,6 @@
         fileMode = arch?.granularity === 'file' || bottlenecks?.granularity === 'file';
         layers = data.layers || {};
         if (fileMode) {
-            delete definitions.identifier_file_count;
             kinds.large_node[1] = '파일 전체 줄 수가 설정한 임계값을 넘습니다.';
             $('node-search').placeholder = '파일 이름 또는 경로';
         }

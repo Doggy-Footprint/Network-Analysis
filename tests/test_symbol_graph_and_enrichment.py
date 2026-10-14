@@ -103,11 +103,8 @@ class TestCostAndScalePolicy(unittest.TestCase):
         self.assertEqual(metrics["generated"]["effective_token_cost"], 2)
         self.assertEqual(metrics["migration"]["effective_token_cost"], 3)
         self.assertEqual(metrics["ordinary"]["hop_2_token_cost"], 5)
-        self.assertEqual(metrics["ordinary"]["hop_3_token_cost"], 9)
-        self.assertEqual(metrics["ordinary"]["hop_2_node_count"], 2)
-        self.assertEqual(metrics["ordinary"]["hop_3_node_count"], 3)
         self.assertEqual(metrics["generated"]["weighted_centrality_cost"], metrics["generated"]["pagerank"] * 2)
-        self.assertEqual(report["neighborhood_strategy"], "single_bfs_to_3_hops")
+        self.assertEqual(report["neighborhood_strategy"], "single_bfs_to_2_hops")
 
     def test_empty_and_zero_sample_size_metadata(self):
         empty = GraphAnalyzer().analyze([], [])
@@ -142,26 +139,15 @@ class TestCostAndScalePolicy(unittest.TestCase):
         self.assertEqual(values, [values[0]] * 5)
         self.assertEqual(values[0], {"a": 0.0, "b": 0.5, "c": 1 / 3, "d": 1 / 3, "e": 0.0})
 
-    def test_neighborhoods_are_computed_once_per_node(self):
-        class SpyGraphAnalyzer(GraphAnalyzer):
-            def __init__(self):
-                super().__init__()
-                self.neighborhood_calls = []
-
-            def _neighborhoods(self, start, adjacency):
-                self.neighborhood_calls.append(start)
-                return super()._neighborhoods(start, adjacency)
-
+    def test_chain_reports_two_hop_cost_and_bfs_strategy(self):
         nodes = [_node(name, 1) for name in "abcd"]
         edges = [GraphEdge("a", "b", "CALLS"), GraphEdge("b", "c", "CALLS"), GraphEdge("c", "d", "CALLS")]
-        analyzer = SpyGraphAnalyzer()
 
-        report = analyzer.analyze(nodes, edges)
+        report = GraphAnalyzer().analyze(nodes, edges)
 
-        self.assertEqual(analyzer.neighborhood_calls, list("abcd"))
-        self.assertEqual(report["node_metrics"]["a"]["hop_2_node_count"], 2)
-        self.assertEqual(report["node_metrics"]["a"]["hop_3_node_count"], 3)
-        self.assertEqual(report["neighborhood_strategy"], "single_bfs_to_3_hops")
+        self.assertEqual(report["node_metrics"]["a"]["hop_2_token_cost"], 2)
+        self.assertEqual(report["node_metrics"]["b"]["hop_2_token_cost"], 3)
+        self.assertEqual(report["neighborhood_strategy"], "single_bfs_to_2_hops")
 
 
 class TestRepositoryEnrichment(unittest.TestCase):
@@ -350,20 +336,15 @@ class TestRepositoryEnrichment(unittest.TestCase):
             self.assertEqual(len(config_edges), 2)
             self.assertTrue(all(next(node for node in config_nodes if node.id == edge.from_id).label == "API_URL" for edge in config_edges))
 
-    def test_test_naming_fallback(self):
+    def test_test_naming_fallback_creates_no_tests_edge(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "widget.py").write_text("class Widget:\n    pass\n", encoding="utf-8")
             (root / "widget_test.py").write_text("def test_behavior():\n    assert True\n", encoding="utf-8")
 
             architecture = PythonGraphAnalyzer(root).analyze()
-            nodes = {node.id: node for node in architecture.nodes}
-            targets = [
-                nodes[edge.to_id].label for edge in architecture.edges
-                if edge.relation == RelationKind.TESTS
-            ]
 
-            self.assertIn("Widget", targets)
+            self.assertEqual([edge for edge in architecture.edges if edge.relation == RelationKind.TESTS], [])
 
     def test_reference_priority_with_unrelated_filenames_and_edge_contract(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -416,7 +397,7 @@ class TestRepositoryEnrichment(unittest.TestCase):
             self.assertFalse({"value_only", "JSON_VALUE_ONLY", "yaml_value_only", "toml_value_only", "prop_value_only", "gradle_value_only"} & {node.label for node in config_nodes})
             self.assertEqual({nodes[edge.from_id].label for edge in config_edges}, set(keys))
             self.assertTrue(all(nodes[edge.from_id].kind == "configuration" and nodes[edge.to_id].label == "consume" for edge in config_edges))
-            self.assertTrue(all(str(edge.confidence) == "static_certain" and str(edge.resolution) == "exact" for edge in config_edges))
+            self.assertTrue(all(str(edge.confidence) == "static_inferred" and str(edge.resolution) == "exact" for edge in config_edges))
             self.assertTrue(all(edge.evidence and edge.evidence.file_path == "consumer.py" for edge in config_edges))
 
     def test_config_key_matching_is_exact(self):
@@ -536,7 +517,7 @@ class TestNeutralContracts(unittest.TestCase):
             self.assertTrue(edges)
             self.assertTrue(all(nodes[edge.from_id].kind == "configuration" for edge in edges))
             self.assertTrue(any(nodes[edge.to_id].label == "route" or nodes[edge.to_id].label.startswith("GET /") for edge in edges))
-            self.assertTrue(all(str(edge.confidence) == "static_certain" for edge in edges))
+            self.assertTrue(all(str(edge.confidence) == "static_inferred" for edge in edges))
             self.assertTrue(all(str(edge.resolution) == "exact" for edge in edges))
             self.assertTrue(all(edge.evidence and edge.evidence.file_path == "main.py" and edge.evidence.start_line == 5 for edge in edges))
 
@@ -571,7 +552,7 @@ class TestNeutralContracts(unittest.TestCase):
             self.assertTrue(all(str(edge.confidence) == "framework_inferred" for edge in framework_test_edges))
             self.assertTrue(all(str(edge.resolution) == "unique_name" for edge in framework_test_edges))
             self.assertTrue(all(edge.evidence and edge.evidence.file_path == "tests/Checks.kt" for edge in framework_test_edges))
-            self.assertTrue(all(str(edge.confidence) == "static_certain" for edge in config_edges))
+            self.assertTrue(all(str(edge.confidence) == "static_inferred" for edge in config_edges))
             self.assertTrue(all(str(edge.resolution) == "exact" for edge in config_edges))
             self.assertTrue(all(edge.evidence and edge.evidence.file_path == "Prod.kt" and edge.evidence.start_line == 2 for edge in config_edges))
 

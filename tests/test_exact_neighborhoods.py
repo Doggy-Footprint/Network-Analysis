@@ -10,10 +10,9 @@ from analysis import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost
 
 
-BFS = "single_bfs_to_3_hops"
+BFS = "single_bfs_to_2_hops"
 BITSET = "exact_bitset"
 HYBRID = "exact_hybrid"
-HOP_KEYS = ("hop_2_node_count", "hop_2_token_cost", "hop_3_node_count", "hop_3_token_cost")
 
 
 def graph(size, pairs, prefix="n"):
@@ -63,68 +62,69 @@ def oracle_sets(adjacency):
         pending = deque([start])
         while pending:
             current = pending.popleft()
-            if distances[current] == 3:
+            if distances[current] == 2:
                 continue
             for target in adjacency[current]:
                 if target not in distances:
                     distances[target] = distances[current] + 1
                     pending.append(target)
-        result[start] = tuple({node for node, distance in distances.items() if 0 < distance <= limit} for limit in (2, 3))
+        result[start] = {node for node, distance in distances.items() if 0 < distance <= 2}
     return result
 
 
-def oracle_metrics(adjacency, ticks):
-    return {
-        node: (len(h2), sum(ticks[target] for target in h2) / 10,
-               len(h3), sum(ticks[target] for target in h3) / 10)
-        for node, (h2, h3) in oracle_sets(adjacency).items()
-    }
+def oracle_costs(adjacency, ticks):
+    return {node: sum(ticks[target] for target in members) / 10 for node, members in oracle_sets(adjacency).items()}
 
 
-def assert_metrics(actual, expected):
+def assert_costs(actual, expected):
     assert actual.keys() == expected.keys()
     for node in expected:
-        assert actual[node][0] == expected[node][0], (node, 2)
-        assert actual[node][2] == expected[node][2], (node, 3)
-        for index in (1, 3):
-            assert math.isclose(actual[node][index], expected[node][index], rel_tol=1e-12, abs_tol=1e-9), (node, index)
+        assert math.isclose(actual[node], expected[node], rel_tol=1e-12, abs_tol=1e-9), node
 
 
-def node_models(adjacency):
-    return [GraphNode(id=name, label=name, group="symbol", category="symbol", cost=NodeCost(index + 1, (index + 1) * 4, 1)) for index, name in enumerate(adjacency)]
+def node_models(adjacency, costs=None, vendored=()):
+    return [
+        GraphNode(id=name, label=name, group="symbol", category="symbol",
+                  cost=NodeCost(costs[name] if costs else index + 1, (index + 1) * 4, 1),
+                  flags=["vendored"] if name in vendored else [])
+        for index, name in enumerate(adjacency)
+    ]
 
 
 def edge_models(adjacency):
     return [GraphEdge(a, b, "CALLS") for a in adjacency for b in sorted(adjacency[a]) if a < b]
 
 
+def run(adjacency, costs, config=None, vendored=()):
+    report = GraphAnalyzer(config).analyze(node_models(adjacency, costs, vendored), edge_models(adjacency))
+    return {name: row["hop_2_token_cost"] for name, row in report["node_metrics"].items()}, report["neighborhood_strategy"]
+
+
 @pytest.mark.parametrize("variant", ["empty", "isolated", "chain", "cycle", "hub", "dense", "random"])
-def test_V1_all_node_counts_costs_and_marker_membership(variant):
+def test_V1_all_hop_2_costs_and_marker_membership(variant):
     adjacency, strategy = finite_graph(variant)
-    ticks = {name: (i * 37) % 1031 for i, name in enumerate(adjacency)}
-    analyzer = GraphAnalyzer()
-    actual, chosen = analyzer._neighborhood_metrics(adjacency, ticks)
+    costs = {name: (i * 37) % 1031 + 1 for i, name in enumerate(adjacency)}
+    actual, chosen = run(adjacency, costs)
     assert chosen == strategy
-    assert_metrics(actual, oracle_metrics(adjacency, ticks))
+    assert_costs(actual, oracle_costs(adjacency, {name: 10 * cost for name, cost in costs.items()}))
     expected = oracle_sets(adjacency)
-    recovered = {node: (set(), set()) for node in adjacency}
+    recovered = {node: set() for node in adjacency}
     for marker in adjacency:
-        marker_ticks = {node: int(node == marker) * 10 for node in adjacency}
-        observed, chosen = analyzer._neighborhood_metrics(adjacency, marker_ticks)
+        marker_costs = {node: 10 if node == marker else 1 for node in adjacency}
+        observed, chosen = run(adjacency, marker_costs, vendored=[node for node in adjacency if node != marker])
         assert chosen == strategy
         for start in adjacency:
-            for index, hop in ((1, 0), (3, 1)):
-                assert observed[start][index] in (0.0, 1.0)
-                if observed[start][index] == 1.0:
-                    recovered[start][hop].add(marker)
+            assert observed[start] in (0.0, 10.0)
+            if observed[start] == 10.0:
+                recovered[start].add(marker)
     assert recovered == expected
 
 
 def test_V1_explicit_distance_boundaries():
     adjacency = chain(5)
-    actual, strategy = GraphAnalyzer()._neighborhood_metrics(adjacency, {node: 10 for node in adjacency})
-    assert actual["n0"] == (2, 2.0, 3, 3.0)
-    assert oracle_sets(adjacency)["n0"] == ({"n1", "n2"}, {"n1", "n2", "n3"})
+    actual, strategy = run(adjacency, {node: 1 for node in adjacency})
+    assert actual["n0"] == 2.0
+    assert oracle_sets(adjacency)["n0"] == {"n1", "n2"}
     assert strategy == BFS
 
 
@@ -141,22 +141,22 @@ def test_V2_algorithm_boundaries(variant, expected):
         assert sum(len(neighbors) ** 2 for neighbors in adjacency.values()) == 64 * len(adjacency)
     if variant == "work_below":
         assert sum(len(neighbors) ** 2 for neighbors in adjacency.values()) < 64 * len(adjacency)
-    ticks = {node: i + 1 for i, node in enumerate(adjacency)}
-    actual, strategy = GraphAnalyzer()._neighborhood_metrics(adjacency, ticks)
+    costs = {node: i + 1 for i, node in enumerate(adjacency)}
+    actual, strategy = run(adjacency, costs)
     assert strategy == expected
-    assert_metrics(actual, oracle_metrics(adjacency, ticks))
+    assert_costs(actual, oracle_costs(adjacency, {node: 10 * cost for node, cost in costs.items()}))
 
 
 @pytest.mark.parametrize("boundary,expected", [("zero", BFS), ("below", BFS), ("equal", BITSET), ("above", BITSET)])
 def test_V2_budget_boundaries(boundary, expected):
     adjacency = dense(64)
-    ticks = {node: (i + 1) * 10 for i, node in enumerate(adjacency)}
-    analyzer = GraphAnalyzer()
-    estimate = analyzer._estimate_neighborhood_bitset_bytes(64, max(ticks.values()).bit_length())
+    costs = {node: i + 1 for i, node in enumerate(adjacency)}
+    ticks = {node: 10 * cost for node, cost in costs.items()}
+    estimate = GraphAnalyzer()._estimate_neighborhood_bitset_bytes(64, max(ticks.values()).bit_length())
     budget = {"zero": 0, "below": estimate - 1, "equal": estimate, "above": estimate + 1}[boundary]
-    actual, strategy = GraphAnalyzer(GraphAnalysisConfig(neighborhood_memory_budget_bytes=budget))._neighborhood_metrics(adjacency, ticks)
+    actual, strategy = run(adjacency, costs, GraphAnalysisConfig(neighborhood_memory_budget_bytes=budget))
     assert strategy == expected
-    assert_metrics(actual, oracle_metrics(adjacency, ticks))
+    assert_costs(actual, oracle_costs(adjacency, ticks))
 
 
 def test_V2_estimator_accounts_for_live_integer_buffers_and_references():
@@ -194,9 +194,9 @@ def test_V3_cost_policy_zero_cost_bridge_normalization_and_reversal():
     assert GraphAnalyzer().analyze(copy.deepcopy(nodes), noisy) == clean
     reverse = GraphAnalyzer().analyze(copy.deepcopy(nodes), [GraphEdge(b, a, "CALLS") for a, b in pairs])
     for report in (clean, reverse):
-        actual = {name: tuple(metrics[key] for key in HOP_KEYS) for name, metrics in report["node_metrics"].items()}
-        assert_metrics(actual, oracle_metrics(adjacency, ticks))
-        assert actual["ordinary"] == (2, 1.3, 3, 3.0)
+        actual = {name: metrics["hop_2_token_cost"] for name, metrics in report["node_metrics"].items()}
+        assert_costs(actual, oracle_costs(adjacency, ticks))
+        assert actual["ordinary"] == 1.3
         for node in nodes:
             metrics = report["node_metrics"][node.id]
             assert metrics["token_cost"] == node.cost.token_estimate
@@ -217,7 +217,7 @@ def test_V4_report_strategies_compatibility_rankings_and_metadata(variant, expec
     assert baseline["neighborhood_strategy"] == BFS
     assert report.keys() == baseline.keys()
     for key in report:
-        if key not in ("neighborhood_strategy", "node_metrics", "top_hop_2_cost", "top_hop_3_cost"):
+        if key not in ("neighborhood_strategy", "node_metrics", "top_hop_2_cost"):
             assert report[key] == baseline[key], key
     for node in default_nodes:
         metrics = report["node_metrics"][node.id]
@@ -225,31 +225,29 @@ def test_V4_report_strategies_compatibility_rankings_and_metadata(variant, expec
         assert metrics.keys() == baseline["node_metrics"][node.id].keys()
         for key in metrics:
             assert math.isclose(metrics[key], baseline["node_metrics"][node.id][key], rel_tol=1e-12, abs_tol=1e-9), (node.id, key)
-    for hop in (2, 3):
-        ranking = report[f"top_hop_{hop}_cost"]
-        ids = sorted(adjacency, key=lambda name: report["node_metrics"][name][f"hop_{hop}_token_cost"], reverse=True)[:10]
-        assert [item["id"] for item in ranking] == ids
+    ranking = report["top_hop_2_cost"]
+    ids = sorted(adjacency, key=lambda name: report["node_metrics"][name]["hop_2_token_cost"], reverse=True)[:10]
+    assert [item["id"] for item in ranking] == ids
 
 
 def test_V4_characterization_rank_ties_retain_input_order_and_ten_cap():
     adjacency = {f"node{i}": set() for i in (9, 1, 11, 0, 8, 2, 10, 3, 7, 4, 6, 5)}
     report = GraphAnalyzer().analyze(node_models(adjacency), [])
-    for hop in (2, 3):
-        assert [item["id"] for item in report[f"top_hop_{hop}_cost"]] == list(adjacency)[:10]
+    assert [item["id"] for item in report["top_hop_2_cost"]] == list(adjacency)[:10]
 
 
-def test_V5_repeated_helper_and_analysis_do_not_retain_component_state():
+def test_V5_repeated_analysis_does_not_retain_component_state():
     analyzer = GraphAnalyzer()
     original_state = copy.deepcopy(vars(analyzer))
     mixed = dense(64)
     mixed.update(chain(7, "c"))
     for adjacency in (dense(64), chain(7), {}, mixed, dense(64)):
-        ticks = {node: (i + 1) * 10 for i, node in enumerate(adjacency)}
-        expected = oracle_metrics(adjacency, ticks)
-        first = analyzer._neighborhood_metrics(adjacency, ticks)
-        second = analyzer._neighborhood_metrics(adjacency, ticks)
+        costs = {node: i + 1 for i, node in enumerate(adjacency)}
+        expected = oracle_costs(adjacency, {node: 10 * cost for node, cost in costs.items()})
+        first = run(adjacency, costs)
+        second = run(adjacency, costs)
         assert first == second
-        assert_metrics(first[0], expected)
+        assert_costs(first[0], expected)
         nodes, edges = node_models(adjacency), edge_models(adjacency)
         assert analyzer.analyze(copy.deepcopy(nodes), edges) == analyzer.analyze(copy.deepcopy(nodes), edges)
         assert vars(analyzer) == original_state

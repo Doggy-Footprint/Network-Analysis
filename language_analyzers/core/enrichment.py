@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from .cost import cost_for_text
-from .positions import NamePositions
 from .flags import is_test_path
 from .graph_models import (
     Confidence,
@@ -58,7 +57,7 @@ def enrich_repository(
             contents[relative] = reader(root / relative)
         except (OSError, UnicodeError, KeyError):
             continue
-    _add_test_relations(nodes, edges, contents)
+    _add_test_relations(nodes, edges)
     _add_configuration_relations(nodes, edges, contents)
     return architecture
 
@@ -111,12 +110,9 @@ def _is_test_node(node: GraphNode) -> bool:
 def _add_test_relations(
     nodes: Sequence[GraphNode],
     edges: List[GraphEdge],
-    contents: Mapping[str, str],
 ) -> None:
     by_id = {node.id: node for node in nodes}
     existing = {candidate_relation_key(edge.from_id, edge.to_id, edge.relation, edge.resolution, edge.candidates) for edge in edges}
-    test_nodes = [node for node in nodes if _is_test_node(node)]
-    production = [node for node in nodes if not _is_test_node(node)]
 
     for edge in list(edges):
         source = by_id.get(edge.from_id)
@@ -125,67 +121,6 @@ def _add_test_relations(
             continue
         _append_edge(edges, existing, source.id, target.id, RelationKind.TESTS,
                      edge.confidence, edge.resolution, edge.evidence, edge.candidates)
-
-    indexes = {}
-    production_names = {}
-    for target in production:
-        if target.kind in (NodeKind.CLASS, NodeKind.FUNCTION, NodeKind.METHOD, NodeKind.FILE, NodeKind.MODULE) and len(target.label) > 2:
-            production_names.setdefault(target.label, []).append(target)
-    production_order = {name: rank for rank, name in enumerate(production_names)}
-    for test in test_nodes:
-        path = _path_for(test)
-        if not path or Path(path).suffix.lower() not in _CODE_SUFFIXES:
-            continue
-        file_text = contents.get(path, "")
-        if not file_text:
-            continue
-        if path not in indexes:
-            lines = file_text.lines if hasattr(file_text, "lines") else file_text.splitlines()
-            normalized = "\n".join(lines)
-            starts = [0]
-            for line in lines:
-                starts.append(starts[-1] + len(line) + 1)
-            indexes[path] = (lines, starts, NamePositions(normalized))
-        lines, starts, index = indexes[path]
-        start = test.span.start_line if test.span is not None else 1
-        end = test.span.end_line if test.span is not None else len(lines)
-        lo = min(len(lines), max(0, start - 1))
-        hi = min(len(lines), max(lo, end if end >= 0 else len(lines) + end))
-        range_start = starts[lo]
-        range_end = starts[hi] - 1 if hi > lo else range_start
-        referenced_names: Dict[str, List[GraphNode]] = {}
-        first_positions = {}
-        for name in index.candidate_names(production_order, range_start, range_end):
-            targets = production_names[name]
-            matches = index.matches(name, range_start, range_end)
-            if matches:
-                referenced_names[name] = targets
-                first_positions[name] = matches[0][0]
-        for name, matches in referenced_names.items():
-            target = matches[0]
-            line = start + index.line(first_positions[name]) - index.line(range_start)
-            resolution = Resolution.UNIQUE_NAME if len(matches) == 1 else Resolution.AMBIGUOUS
-            _append_edge(
-                edges, existing, test.id, target.id, RelationKind.TESTS,
-                Confidence.STATIC_INFERRED, resolution,
-                SourceSpan(path, line, line), [item.id for item in matches[1:]],
-            )
-        if referenced_names:
-            continue
-        stem = Path(path).stem
-        fallback_name = re.sub(r"(^test_|_test$|Test$|\.(test|spec)$)", "", stem, flags=re.I)
-        matches = [
-            target for target in production
-            if target.label.lower() == fallback_name.lower()
-            and target.kind in (NodeKind.CLASS, NodeKind.FILE, NodeKind.MODULE)
-        ]
-        matches.sort(key=lambda target: (target.kind != NodeKind.CLASS, target.id))
-        if len(matches) == 1:
-            _append_edge(
-                edges, existing, test.id, matches[0].id, RelationKind.TESTS,
-                Confidence.STATIC_INFERRED, Resolution.UNIQUE_NAME,
-                SourceSpan(path, 1, 1), [],
-            )
 
 
 def _add_configuration_relations(
@@ -254,7 +189,7 @@ def _add_configuration_relations(
                         node_id,
                         consumer.id,
                         RelationKind.CONFIGURES,
-                        Confidence.STATIC_CERTAIN,
+                        Confidence.STATIC_INFERRED,
                         Resolution.EXACT,
                         SourceSpan(code_path, ordered_lines[0], ordered_lines[0]),
                         [],

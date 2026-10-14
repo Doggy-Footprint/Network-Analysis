@@ -105,25 +105,17 @@ class TestArchitectureBoundaries(unittest.TestCase):
 
         expected = {
             "pagerank",
-            "hub_score",
-            "authority_score",
-            "degree_centrality",
             "betweenness_centrality",
             "token_cost",
             "weighted_centrality_cost",
             "hop_2_token_cost",
-            "hop_3_token_cost",
         }
         self.assertTrue(expected.issubset(metrics["a"]))
-        self.assertGreater(metrics["a"]["hub_score"], metrics["c"]["hub_score"])
-        self.assertGreater(metrics["c"]["authority_score"], metrics["a"]["authority_score"])
-        self.assertGreater(metrics["b"]["degree_centrality"], metrics["a"]["degree_centrality"])
         self.assertEqual(
             metrics["a"]["weighted_centrality_cost"],
             metrics["a"]["pagerank"] * metrics["a"]["token_cost"],
         )
         self.assertEqual(metrics["a"]["hop_2_token_cost"], metrics["b"]["token_cost"] + metrics["c"]["token_cost"])
-        self.assertEqual(metrics["a"]["hop_3_token_cost"], metrics["a"]["hop_2_token_cost"])
 
     def test_renderer_writes_and_references_sibling_assets(self):
         node = GenericNode("a", "A")

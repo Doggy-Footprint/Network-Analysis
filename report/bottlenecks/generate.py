@@ -10,7 +10,7 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 from report.shared.document import ReportInputError, ReportOutputError
 from report.shared.labels import short_labels
 
-SUPPORTED_SCHEMA = "bottlenecks.v4"
+SUPPORTED_SCHEMA = "bottlenecks.v6"
 
 _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?$")
 
@@ -36,9 +36,7 @@ METRIC_DEFINITIONS = [
     ("weighted_fan_in", "들어오는 병합 edge 가중치의 합입니다."),
     ("weighted_fan_out", "나가는 병합 edge 가중치의 합입니다."),
     ("hop_2_token_cost", "해당 node에서 2단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
-    ("hop_3_token_cost", "해당 node에서 3단계 이내로 도달 가능한 node들의 effective_token_cost 합계입니다."),
     ("betweenness_centrality", "다른 node 사이의 최단 경로에 얼마나 자주 놓이는지를 나타냅니다."),
-    ("degree_centrality", "해당 node에 연결된 edge 수를 전체 node 수 기준 최대 연결 수로 나눈 값입니다."),
 ]
 
 CATEGORY_ORDER = ("production", "test", "generated", "vendored", "unknown")
@@ -210,9 +208,9 @@ def _validate(payload: Any) -> Mapping[str, Any]:
     fields = ("schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations")
     _required(root, "$", fields)
     schema = _string(root["schema"], "$.schema")
-    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v5"):
-        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r} or 'bottlenecks.v5'")
-    if schema == "bottlenecks.v5":
+    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v7"):
+        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r} or 'bottlenecks.v7'")
+    if schema == "bottlenecks.v7":
         _required(root, "$", ("granularity",))
         if _string(root["granularity"], "$.granularity") != "file":
             _error("$.granularity", "must equal 'file'")

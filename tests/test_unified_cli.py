@@ -17,7 +17,7 @@ def test_V4_plain_output_computes_candidates(monkeypatch,project,out):
     assert run_cli(monkeypatch,str(project),'-l','python','-o',str(out/'report.html')) in (0,None)
     payload=inline(out/'report.html')
     assert payload['architecture']['schema_version']=='5'
-    assert payload['bottlenecks']['schema']=='bottlenecks.v4'
+    assert payload['bottlenecks']['schema']=='bottlenecks.v6'
     assert any(c['kind']=='unresolved_boundary' for c in payload['bottlenecks']['candidates'])
     assert list(out.iterdir())==[out/'report.html']
 
@@ -28,7 +28,7 @@ def test_V4_both_json_options_preserve_inline_originals(monkeypatch,project,out)
     assert payload['architecture']==json.loads((out/'report.json').read_text())
     assert payload['bottlenecks']==json.loads((out/'b.json').read_text())
     assert payload['architecture']['schema_version']=='5'
-    assert payload['bottlenecks']['schema']=='bottlenecks.v4'
+    assert payload['bottlenecks']['schema']=='bottlenecks.v6'
 
 
 def test_V4_removed_html_option_is_error_two(monkeypatch,capsys,project,out):

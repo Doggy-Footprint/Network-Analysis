@@ -67,7 +67,7 @@ def read_payload(out):
 def test_V7_C12_success_writes_v3_json_and_html_without_a_harness_profile(monkeypatch, project, out):
     assert run_cli(monkeypatch, *bottleneck_arguments(project, out)) in (0, None)
     payload = read_payload(out)
-    assert payload["schema"] == "bottlenecks.v4"
+    assert payload["schema"] == "bottlenecks.v6"
     assert not (out / "b.html").exists()
     assert (out / "architecture.html").is_file()
 

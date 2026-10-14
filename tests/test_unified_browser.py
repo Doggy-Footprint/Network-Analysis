@@ -37,7 +37,7 @@ def test_V1_six_representatives_category_values_and_sort(open_report):
     assert page.locator('#list-count').inner_text()
     page.locator('#node-search').fill('')
     options = page.locator('#metric-sort option').evaluate_all('(els)=>els.map(e=>e.value)')
-    assert set(METRICS) | {'token_cost','effective_token_cost','identifier_file_count'} <= set(options)
+    assert set(METRICS) | {'token_cost','effective_token_cost'} <= set(options)
     page.locator('#metric-sort').select_option('token_cost')
     assert rows(page) == sorted(n['id'] for n in nodes)
 
