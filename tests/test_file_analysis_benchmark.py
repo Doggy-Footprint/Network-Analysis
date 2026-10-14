@@ -24,6 +24,7 @@ def file_benchmark_evidence():
     return EVIDENCE
 
 
+@pytest.mark.benchmark
 def test_V13_real_snapshot_symbol_equivalence_and_three_processes(file_benchmark_evidence):
     directory=file_benchmark_evidence
     manifest=json.loads((directory/'baseline-manifest.json').read_text())

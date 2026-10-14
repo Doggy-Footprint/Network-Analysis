@@ -106,6 +106,7 @@ def test_V10_file_granularity_lists_and_cards_hold_files_only_and_filters(open_r
     record_browser('V10-transitions', {'boundary_observation':{'excluded_from_all_file_list':True,'excluded_from_all_six_representatives':True},'items': ['file-only-lists','search','category','candidate-filter','modal-opens-for-file']})
 
 
+@pytest.mark.benchmark
 def test_V14_synthetic_five_fresh_contexts(chromium,tmp_path):
     nodes=[node(f'n{i:05}','test' if i%100==99 else 'production',value=10000-i) for i in range(10000)]
     edges=[edge(f'n{i:05}',f'n{(i+delta)%10000:05}',line=delta) for i in range(10000) for delta in (1,2,3)]

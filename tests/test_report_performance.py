@@ -57,6 +57,7 @@ def fresh_page(chromium, html):
     return context, page, requests, errors
 
 
+@pytest.mark.benchmark
 def test_V09_tag_manager_graph_ready_and_modal_open_medians(chromium, tag_manager_html):
     readings = {'Q01_graph_ready_ms': [], 'Q02_modal_via_graph_click_ms': [], 'Q02_modal_via_card_click_ms': []}
     shape = {}
