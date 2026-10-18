@@ -245,7 +245,10 @@ CHAIN_LIMIT = 5.0
 
 
 def test_V11_size_ratio_per_fixture(run):
-    ratio = len(run.output('file')) / run.manifest['file']['bytes']
+    payload = run.payload('file')
+    payload['dependency_network'].pop('package_dependencies', None)
+    size = len(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')) + 1
+    ratio = size / run.manifest['file']['bytes']
     assert ratio <= SIZE_LIMIT, f'{run.name}: v8 is {ratio:.3f}x the base v7 size'
     assert ratio >= 1.0 - 0.05, 'v8 only adds fields; a large shrink means base parts were lost'
 

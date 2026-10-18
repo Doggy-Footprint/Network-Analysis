@@ -226,6 +226,9 @@ def _validate(payload: Any) -> Mapping[str, Any]:
         if _string(root["granularity"], "$.granularity") != "file":
             _error("$.granularity", "must equal 'file'")
         fields = (*fields, "granularity")
+    if schema == "bottlenecks.v8" and "delta" in root:
+        _object(root["delta"], "$.delta")
+        fields = (*fields, "delta")
     if set(root) != set(fields):
         _error("$", "contains unknown fields")
     for field in ("snapshot", "edge_weights", "versions", "coverage", "dependency_network"):

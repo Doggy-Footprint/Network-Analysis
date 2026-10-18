@@ -1,0 +1,59 @@
+{
+  "base_commit": "f5ab529bd2cdd8a084d66e2759d172fc3579cfd5",
+  "fixtures": [
+    {
+      "fixture": "futuramaapi",
+      "rules": null,
+      "base_bytes": 2134318,
+      "bytes": 2170810,
+      "ratio": 1.0171,
+      "package_dependency_count": 310,
+      "stripped_equals_base": true
+    },
+    {
+      "fixture": "fastapi-realworld",
+      "rules": null,
+      "base_bytes": 943448,
+      "bytes": 951189,
+      "ratio": 1.00821,
+      "package_dependency_count": 83,
+      "stripped_equals_base": true
+    },
+    {
+      "fixture": "fastapi-official-template",
+      "rules": null,
+      "base_bytes": 490343,
+      "bytes": 492652,
+      "ratio": 1.00471,
+      "package_dependency_count": 23,
+      "stripped_equals_base": true
+    },
+    {
+      "fixture": "android-nowinandroid",
+      "rules": null,
+      "base_bytes": 7854408,
+      "bytes": 7864604,
+      "ratio": 1.0013,
+      "package_dependency_count": 58,
+      "stripped_equals_base": true
+    },
+    {
+      "fixture": "typescript-nestjs-realworld",
+      "rules": null,
+      "base_bytes": 588166,
+      "bytes": 590590,
+      "ratio": 1.00412,
+      "package_dependency_count": 32,
+      "stripped_equals_base": true
+    },
+    {
+      "fixture": "fastapi-realworld",
+      "rules": "profiles/architecture_rules.example.yaml",
+      "base_bytes": 948864,
+      "bytes": 956687,
+      "ratio": 1.00824,
+      "package_dependency_count": 83,
+      "stripped_equals_base": true
+    }
+  ]
+}

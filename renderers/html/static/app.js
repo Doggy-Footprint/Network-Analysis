@@ -124,7 +124,7 @@
     let data, arch, bottlenecks, network, nodes, nodeMap, metrics, candidates, byTarget, incident, category, page = 0,
         fileMode = false, layers = {}, layerColors = new Map(), projected = [];
     let graphEnabled = false, graphDirty = true, activeTab = 'list', graphNodes = [], graphNodeIds = new Set(), nodeData = null;
-    let lastFocus = null, modalNode = null;
+    let lastFocus = null, modalNode = null, pendingFit = null;
     const categorySelect = $('category-filter').querySelector('select'),
         sortSelect = $('metric-sort').querySelector('select'),
         kindSelect = $('candidate-kind-filter').querySelector('select'),
@@ -482,6 +482,7 @@
             window.ReportGraph = null;
         }
         nodeData = null;
+        pendingFit = null;
         document.body.dataset.graphReady = 'false';
     }
 
@@ -533,7 +534,10 @@
         const finish = () => {
             if (!window.ReportGraph) return;
             window.ReportGraph.setOptions({physics: false});
-            window.ReportGraph.fit();
+            const fitTo = pendingFit;
+            pendingFit = null;
+            if (fitTo) window.ReportGraph.fit({nodes: fitTo});
+            else window.ReportGraph.fit();
             document.body.dataset.graphReady = 'true';
         };
         try {
@@ -728,6 +732,150 @@
         item('지표는 합산하지 않으며, 후보는 구조적 사실일 뿐 품질·변경 위험·작업 난이도의 판정이 아닙니다.');
     }
 
+
+    /* ---------- structure section ---------- */
+    const STRUCTURE_LIMIT = 50;
+    const deltaGroups = [
+        ['new_cycles', '새 순환'],
+        ['grown_cycles', '커진 순환'],
+        ['new_violations', '새 경계 위반'],
+        ['new_package_dependencies', '새 package 의존'],
+        ['instability_changes', 'instability 변화']
+    ];
+    const cycleKindLabels = {dependency_cycle: '의존 순환', package_cycle: 'package 순환'};
+    const filePath = id => id.startsWith('file:') ? id.slice(5) : id;
+    const sortedUnique = ids => [...new Set(ids)].sort(cmp);
+    let candidateById = new Map();
+
+    function filesText(files) {
+        const shown = files.slice(0, 3).map(filePath).join(', ');
+        return files.length > 3 ? `${shown} +${files.length - 3}` : shown;
+    }
+
+    function cycleFiles(kind, members, candidateId) {
+        if (kind === 'dependency_cycle') return sortedUnique(members);
+        const candidate = candidateById.get(candidateId);
+        const files = [];
+        for (const record of Array.isArray(candidate?.evidence) ? candidate.evidence : [])
+            for (const pair of record.file_pairs || []) files.push(...pair);
+        return sortedUnique(files);
+    }
+
+    function violationFiles(candidate) {
+        const files = [candidate.target];
+        const to = candidate.structure?.to_external === undefined ? candidate.evidence?.[0]?.to_id : undefined;
+        if (to) files.push(to);
+        return sortedUnique(files);
+    }
+
+    function cycleReason(c) {
+        const s = c.structure || {};
+        return `${cycleKindLabels[c.kind] || c.kind} · ${s.scheme} · ${tierLabels[s.tier] || s.tier} · ${format(s.members?.length)}개`;
+    }
+
+    function structureItem(kind, text, files) {
+        const clickable = files && files.length;
+        const item = el(clickable ? 'button' : 'div', text, 'structure-item');
+        item.dataset.structureKind = kind;
+        if (clickable) {
+            item.type = 'button';
+            item.addEventListener('click', () => highlightFiles(files));
+        }
+        return item;
+    }
+
+    function fillList(host, items) {
+        host.replaceChildren();
+        if (!items.length) {
+            host.append(el('div', '없음', 'empty'));
+            return;
+        }
+        host.append(...items.slice(0, STRUCTURE_LIMIT));
+        if (items.length > STRUCTURE_LIMIT) host.append(el('div', `외 ${count(items.length - STRUCTURE_LIMIT)}개`, 'structure-more'));
+    }
+
+    function highlightFiles(files) {
+        const ids = sortedUnique(files);
+        if (!ids.length) return;
+        if (graphEnabled) {
+            setTab('graph');
+            if (window.ReportGraph) {
+                const shown = ids.filter(id => graphNodeIds.has(id)), hidden = ids.length - shown.length;
+                window.ReportGraph.selectNodes(shown);
+                if (shown.length) {
+                    if (document.body.dataset.graphReady === 'true') window.ReportGraph.fit({nodes: shown});
+                    else pendingFit = shown;
+                }
+                setGraphStatus(`${count(shown.length)}개 파일 강조` + (hidden > 0 ? ` · ${count(hidden)}개는 현재 코드 분류 밖` : ''));
+                $('review-section').scrollIntoView?.({block: 'start'});
+                return;
+            }
+        }
+        const first = ids.find(id => nodeMap.has(id));
+        if (first) openModal(first);
+    }
+
+    function renderDelta(delta) {
+        const host = $('structure-delta');
+        host.replaceChildren();
+        const counts = delta.counts || {};
+        const summary = el('div', deltaGroups.map(([key, label]) => `${label} ${count(counts[key] ?? (delta[key] || []).length)}`).join(' · '), 'structure-summary');
+        host.append(summary);
+        if (delta.rules_changed) {
+            const warning = el('div', '아키텍처 규칙이 baseline과 다릅니다. 경계 위반 비교는 규칙 변경의 영향을 받을 수 있습니다.');
+            warning.id = 'structure-rules-changed';
+            warning.setAttribute('role', 'alert');
+            host.append(warning);
+        }
+        for (const [key, label] of deltaGroups) {
+            const group = el('div', undefined, 'structure-group');
+            group.dataset.structureGroup = key;
+            group.append(el('h4', label));
+            const list = el('div', undefined, 'structure-list');
+            const items = (delta[key] || []).map(entry => {
+                if (key === 'new_cycles' || key === 'grown_cycles') {
+                    const extra = entry.added_members?.length ? ` · 추가 ${count(entry.added_members.length)}개` : '';
+                    return structureItem(key, `${cycleKindLabels[entry.kind] || entry.kind} · ${entry.scheme} · ${tierLabels[entry.tier] || entry.tier} · ${count(entry.members.length)}개${extra} · ${filesText(entry.members)}`,
+                        cycleFiles(entry.kind, entry.members, entry.candidate_id));
+                }
+                if (key === 'new_violations') {
+                    const candidate = candidateById.get(entry.candidate_id);
+                    const reason = candidate ? candidateReason(candidate) : `${entry.from_layer} → ${entry.to_layer ?? entry.to_external}`;
+                    return structureItem(key, `${filePath(entry.target)} · ${reason}`, candidate ? violationFiles(candidate) : sortedUnique([entry.target, entry.to_id].filter(Boolean)));
+                }
+                if (key === 'new_package_dependencies') return structureItem(key, `${entry.scheme} · ${entry.from_id} → ${entry.to_id} · ${tierLabels[entry.tier] || entry.tier}`);
+                const change = entry.delta;
+                return structureItem(key, `${entry.scheme} · ${entry.package} · ${entry.baseline.toFixed(2)} → ${entry.current.toFixed(2)} (${change > 0 ? '+' : ''}${change.toFixed(2)})`);
+            });
+            fillList(list, items);
+            group.append(list);
+            host.append(group);
+        }
+    }
+
+    function renderStructureLists() {
+        const tier = $('structure-tier').value;
+        const cycles = (bottlenecks.candidates || []).filter(c => ['dependency_cycle', 'package_cycle'].includes(c.kind) && c.structure?.tier === tier)
+            .sort((a, b) => cmp(a.kind, b.kind) || cmp(a.structure.scheme, b.structure.scheme) || (b.structure.members.length - a.structure.members.length) || cmp(a.id, b.id));
+        fillList($('structure-cycles'), cycles.map(c => structureItem(c.kind, `${cycleReason(c)} · ${filesText(c.structure.members)}`, cycleFiles(c.kind, c.structure.members, c.id))));
+        const violations = (bottlenecks.candidates || []).filter(c => c.kind === 'rule_violation').sort((a, b) => cmp(a.id, b.id));
+        fillList($('structure-violations'), violations.map(c => structureItem(c.kind, `${filePath(c.target)} · ${candidateReason(c)}`, violationFiles(c))));
+    }
+
+    function setupStructure() {
+        if (!fileMode || !bottlenecks) return;
+        candidateById = new Map((bottlenecks.candidates || []).map(c => [c.id, c]));
+        $('structure-eyebrow').textContent = '03 / 구조';
+        $('structure-section').hidden = false;
+        if (bottlenecks.delta) {
+            $('structure-delta-block').hidden = false;
+            renderDelta(bottlenecks.delta);
+        }
+        $('structure-tier').value = 'all';
+        $('structure-tier').onchange = renderStructureLists;
+        renderStructureLists();
+    }
+
     function setupTabs() {
         $('tab-graph').onclick = () => setTab('graph');
         $('tab-list').onclick = () => setTab('list');
@@ -828,6 +976,7 @@
         appendix();
         setupTabs();
         setupGraph();
+        setupStructure();
         if (graphEnabled) setTab('graph');
         categorySelect.onchange = () => {
             category = categorySelect.value;

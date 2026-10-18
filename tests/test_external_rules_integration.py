@@ -12,6 +12,7 @@ import pytest
 
 from analysis.structure import analyze_structure
 from fixtures.registry import fixture_root
+from tests.delta_support import base_form_bytes, without_digest
 from tests.architecture_rules_support import (EXAMPLE_SPEC, assert_candidates_equal, cli, mini_project, ref_rule_evaluation,
                                               violations_of, weights, write_rules)
 from tests.external_rules_support import (KOTLIN_PACKAGE, ALLOW_EXT, EXAMPLE_EXT_SPEC, EXTERNAL_COVERAGE_KEYS, FIXTURES, FORBID_EXT,
@@ -107,8 +108,9 @@ def realworld_arch(tmp_path_factory):
 def test_V11_bottleneck_json_byte_equal_to_base(plain):
     name, run, _ = plain
     expected = MANIFEST['fixtures'][name]['file']
-    assert len(run['bn']) == expected['bottleneck_bytes']
-    assert hashlib.sha256(run['bn']).hexdigest() == expected['bottleneck_sha256']
+    base_form = base_form_bytes(run['bn'])
+    assert len(base_form) == expected['bottleneck_bytes']
+    assert hashlib.sha256(base_form).hexdigest() == expected['bottleneck_sha256']
     assert json.loads(run['bn'])['schema'] == 'bottlenecks.v8'
 
 
@@ -170,7 +172,7 @@ def test_V11_C28_determinism_hashseed_with_rules(tmp_path, realworld_rules_run, 
 def test_V11_C30_2a_rules_file_gives_the_2a_result(realworld_2a_rules, realworld_arch, plain_realworld_candidates):
     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
     assert_candidates_equal(violations_of(realworld_2a_rules['candidates']), expected)
-    assert realworld_2a_rules['coverage']['architecture_rules'] == coverage
+    assert without_digest(realworld_2a_rules['coverage']['architecture_rules']) == coverage
     assert set(coverage) == INTERNAL_COVERAGE_KEYS
     assert external_violations(realworld_2a_rules['candidates']) == []
     others = [c for c in realworld_2a_rules['candidates'] if c['kind'] != RULE_KIND]
@@ -197,7 +199,7 @@ def test_V12_C22_realworld_example_violations(realworld_rules, realworld_2a_rule
     assert internal == [c for c in realworld_2a_rules['candidates'] if c['kind'] == RULE_KIND]
     expected, total = ref_external_evaluation(EXAMPLE_EXT_SPEC, realworld_arch)
     assert_external_equal(external, expected)
-    coverage = realworld_rules['coverage']['architecture_rules']
+    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
     assert coverage == ref_coverage(EXAMPLE_EXT_SPEC, realworld_arch, weights())
     assert coverage['external_import_count'] == total and coverage['external_violation_count'] == 3
     assert coverage['violation_count'] == len(internal) + 3
@@ -217,7 +219,7 @@ def test_V12_C22_independent_ast_reading_of_the_fixture_sources(realworld_rules)
 
 
 def test_V12_C22_example_profile_loaded_through_cli_has_the_f15_coverage(realworld_rules):
-    coverage = realworld_rules['coverage']['architecture_rules']
+    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
     assert set(coverage) == INTERNAL_COVERAGE_KEYS | EXTERNAL_COVERAGE_KEYS
     assert realworld_rules['schema'] == 'bottlenecks.v8'
 
@@ -279,7 +281,7 @@ def test_V14_bottleneck_size_ratio_realworld(realworld_rules_run, by_name):
     plain_bytes = by_name('fastapi-realworld')[0]['bn']
     ratio = len(realworld_rules_run['bn']) / len(plain_bytes)
     assert 1.0 <= ratio <= 1.25, ratio
-    assert len(plain_bytes) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
+    assert len(base_form_bytes(plain_bytes)) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
 
 
 MINI_PY = {'app/__init__.py': '', 'app/x.py': 'import os\nfrom app import y\n', 'app/y.py': 'Y = 1\n'}
@@ -337,7 +339,7 @@ def test_V12_cli_external_rule_violation_exits_zero_and_reports(tmp_path):
     payload = json.loads((tmp_path / 'out' / 'b.json').read_text(encoding='utf-8'))
     found = sorted((c['structure']['rule_type'], c['structure']['to_external']) for c in external_violations(payload['candidates']))
     assert found == [(ALLOW_EXT, 'os'), (FORBID_EXT, 'os')]
-    assert payload['coverage']['architecture_rules']['external_violation_count'] == 2
+    assert without_digest(payload['coverage']['architecture_rules'])['external_violation_count'] == 2
 
 
 def test_V05_cli_invalid_tsconfig_exit0_and_coverage_recorded(tmp_path):
@@ -400,8 +402,8 @@ def test_V14_C29_synthetic_time_and_correctness():
     expected, _ = ref_external_evaluation(spec, ext_arch(sample))
     targets = {f'file:{p}' for p in sample}
     assert_external_equal([c for c in actual if c['target'] in targets], expected)
-    assert 1000 < len(actual) <= 40000 and result.coverage['architecture_rules']['external_violation_count'] == len(actual)
-    assert result.coverage['architecture_rules']['external_import_count'] == 20000 * 20
+    assert 1000 < len(actual) <= 40000 and without_digest(result.coverage['architecture_rules'])['external_violation_count'] == len(actual)
+    assert without_digest(result.coverage['architecture_rules'])['external_import_count'] == 20000 * 20
     with_external = median_time(lambda: analyze_structure(arch, weights(), rules))
     without = median_time(lambda: analyze_structure(arch, weights(), plain_rules))
     assert with_external - without <= 5.0, (with_external, without)

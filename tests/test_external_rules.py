@@ -6,6 +6,7 @@ import pytest
 
 from analysis.architecture_rules import external_entry_matches
 from analysis.structure import analyze_structure
+from tests.delta_support import without_digest
 from tests.architecture_rules_support import (EXAMPLE_PROFILE, REPO, assert_candidates_equal, edge_counter, framework_imports,
                                               imported_modules, ref_rule_evaluation, violations_of, weights, write_rules)
 from tests.external_rules_support import (ALLOW_EXT, EXAMPLE_EXT_SPEC, EXTERNAL_COVERAGE_KEYS, FORBID_EXT, INTERNAL_COVERAGE_KEYS,
@@ -335,7 +336,7 @@ def random_case(seed):
 def test_V09_random_cases_match_brute_force_reference(seed):
     spec, files = random_case(seed)
     result, actual, arch = evaluate(spec, files)
-    assert result.coverage['architecture_rules'] == ref_coverage(spec, arch, weights())
+    assert without_digest(result.coverage['architecture_rules']) == ref_coverage(spec, arch, weights())
 
 
 def test_V09_random_family_is_not_vacuous():
@@ -350,7 +351,7 @@ def test_V09_random_family_is_not_vacuous():
 
 def coverage_of(spec, files, edges=()):
     arch = ext_arch(files, edges=edges)
-    return analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules'], arch
+    return without_digest(analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules']), arch
 
 
 def test_V10_with_external_rules_adds_exactly_two_keys():
@@ -362,7 +363,7 @@ def test_V10_counts_records_of_non_boundary_files_and_candidates():
     spec = spec_for(forbid=['fastapi'], allow=['pydantic*'])
     files = {'d/a.py': [rec('fastapi', 1), rec('fastapi', 2), rec('os', 3)], 'd/b.py': None, 'q/c.py': [rec('os', 1)]}
     arch = ext_arch(files, boundary={'d/ext.py': [rec('fastapi', 1), rec('os', 2)]})
-    coverage = analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules']
+    coverage = without_digest(analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules'])
     assert coverage['external_import_count'] == 4
     assert coverage['external_violation_count'] == 3
     assert coverage['violation_count'] == 3
@@ -496,7 +497,7 @@ def test_V13_validator_accepts_external_violations_and_renders():
     assert payload['schema'] == 'bottlenecks.v8'
     assert brief(external_violations(payload['candidates'])) == [
         (ALLOW_EXT, 'domain', 'file:domain/m.py', 'os'), (FORBID_EXT, 'db', 'file:db/d.py', 'fastapi')]
-    coverage = payload['coverage']['architecture_rules']
+    coverage = without_digest(payload['coverage']['architecture_rules'])
     assert coverage['external_import_count'] == 3 and coverage['external_violation_count'] == 2 and coverage['violation_count'] == 2
     assert keys_found(payload, 'external_imports') == []
     for text in render(payload):

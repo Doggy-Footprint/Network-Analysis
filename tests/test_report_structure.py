@@ -25,7 +25,7 @@ def precedes(page, first, second):
     return page.evaluate('([a, b]) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)', [first.element_handle(), second.element_handle()])
 
 
-def assert_structure(page):
+def assert_structure(page, structure_visible=False):
     assert page.locator('#coverage-details').count() == 0 and page.locator('#node-detail').count() == 0
     kpi = page.get_by_text(re.compile('분석 범위')).first
     one = page.get_by_text(re.compile(r'^\s*01\b')).first
@@ -34,7 +34,14 @@ def assert_structure(page):
     expect(one).to_be_visible()
     expect(two).to_be_visible()
     assert precedes(page, kpi, one) and precedes(page, one, two) and precedes(page, two, appendix)
-    assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 0
+    panel = page.locator('#structure-section')
+    if structure_visible:
+        expect(panel).to_be_visible()
+        assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 1
+        assert precedes(page, two, panel) and precedes(page, panel, appendix)
+    else:
+        expect(panel).to_be_hidden()
+        assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 0
     assert page.locator(SEL['card_group']).count() == 6
     narrative = page.evaluate("""() => [...document.querySelectorAll('body *')]
         .filter(el => !el.closest('details, [role=dialog], [role=tooltip], [role=status], output, table, #graph-container, script, style, datalist, select, noscript, #modal-backdrop'))
@@ -42,9 +49,10 @@ def assert_structure(page):
         .filter(text => text.length > 40)""")
     assert narrative == [], 'explanatory text blocks must be gone (F12)'
     sections = page.evaluate("""() => [...document.querySelector('main').children].map(el => ({tag: el.tagName, id: el.id, text: el.innerText.trim().slice(0, 40), details: !!el.querySelector('details#report-appendix') || el.id === 'report-appendix'}))""")
-    assert len(sections) == 4, sections
+    assert len(sections) == 5, sections
+    assert sections[3]['id'] == 'structure-section'
     assert '분석 범위' in page.locator('main').evaluate("m => m.children[0].innerText") and page.locator('main > :nth-child(1) #kpi').count() == 1
-    assert sections[1]['text'].startswith('01') and sections[2]['text'].startswith('02') and sections[3]['details']
+    assert sections[1]['text'].startswith('01') and sections[2]['text'].startswith('02') and sections[4]['details']
     assert page.unhandled_errors == []
 
 
@@ -69,7 +77,7 @@ def test_V06_combined_report_sections_order_and_kpi_values(open_report):
     arch, bn = structure_report()
     assert len(arch['nodes']) == 9 and len(arch['edges']) == 4
     page = open_report(arch, bn)
-    assert_structure(page)
+    assert_structure(page, structure_visible=True)
     assert tab_active(page, '그래프')
     assert pill_numbers(page, '파일') == [9]
     assert pill_numbers(page, '연결') == [4]
@@ -92,7 +100,7 @@ def test_V06_architecture_only_candidate_kpi_dash_and_list_works(open_report):
 def test_V06_bottlenecks_only_graph_disabled_with_working_list(open_report):
     _, bn = structure_report()
     page = open_report(None, bn)
-    assert_structure(page)
+    assert_structure(page, structure_visible=True)
     graph_disabled(page)
     expect(page.get_by_text('아키텍처 데이터가 없어 그래프를 그릴 수 없습니다.')).to_be_visible()
     assert len(row_ids(page)) == 9
@@ -110,7 +118,7 @@ def test_V06_symbol_granularity_graph_disabled_list_only(open_report):
 def test_V06_without_coverage_reports_unavailable_pill(open_report):
     arch, bn = structure_report(coverage=False)
     page = open_report(arch, bn)
-    assert_structure(page)
+    assert_structure(page, structure_visible=True)
     expect(page.get_by_text('분석 범위 정보 없음')).to_be_visible()
     assert tab_active(page, '그래프')
 

@@ -13,6 +13,7 @@ class StructureResult:
     candidates: tuple
     package_metrics: Mapping[str, Mapping[str, Mapping]]
     coverage: Mapping[str, Mapping]
+    package_dependencies: Mapping[str, list]
 
 
 def _field(item: Any, name: str, default: Any = None) -> Any:
@@ -259,7 +260,7 @@ def _external_violations(rules: Any, layers: Mapping[str, str], records_by_file:
 
 
 def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Mapping[str, list[str]]], pairs: Mapping[tuple[str, str], dict], records_by_file: Mapping[str, list] | None = None) -> tuple[list[dict], dict]:
-    from analysis.architecture_rules import RULES_POLICY, layer_assignments
+    from analysis.architecture_rules import RULES_POLICY, layer_assignments, rules_digest
     from bottlenecks.core import _candidate
     layers = layer_assignments(rules, files, assignments)
     candidates = []
@@ -276,7 +277,7 @@ def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Map
     for name in layers.values(): counts[name] += 1
     unassigned = [file_id for file_id in files if file_id not in layers]
     coverage = {"policy": RULES_POLICY, "version": rules.version, "layer_file_counts": dict(sorted(counts.items())), "unassigned_file_count": len(unassigned),
-        "unassigned_files": unassigned, "empty_layers": sorted(name for name, count in counts.items() if not count)}
+        "unassigned_files": unassigned, "empty_layers": sorted(name for name, count in counts.items() if not count), "rules_sha256": rules_digest(rules)}
     if rules.forbid_external or rules.allow_external:
         external = _external_violations(rules, layers, records_by_file or {})
         candidates += external
@@ -290,10 +291,11 @@ def analyze_structure(architecture: Any, weights: Any, rules: Any = None) -> Str
     files, assignments = _assignments(architecture)
     file_pairs = _file_pairs(architecture, weights, set(files))
     candidates = _cycle_candidates("file", file_pairs, files, "dependency_cycle")
-    package_metrics, schemes = {}, {}
+    package_metrics, schemes, package_dependencies = {}, {}, {}
     for scheme, assignment in assignments.items():
         pairs_by_tier = {tier: _package_pairs(file_pairs[tier], assignment) for tier in TIERS}
         packages = {package for packages in assignment.values() for package in packages}
+        package_dependencies[scheme] = [{"from_id": source, "to_id": target, "tier": record["tier"]} for (source, target), record in pairs_by_tier["all"].items()]
         package_metrics[scheme] = _package_metrics(assignment, pairs_by_tier["all"])
         candidates += _cycle_candidates(scheme, pairs_by_tier, packages, "package_cycle")
         candidates += _unstable_candidates(scheme, pairs_by_tier["all"], package_metrics[scheme], file_pairs["all"])
@@ -306,4 +308,4 @@ def analyze_structure(architecture: Any, weights: Any, rules: Any = None) -> Str
                            if not (getattr(node, "metadata", None) or {}).get("boundary") and (getattr(node, "metadata", None) or {}).get("external_imports")}
         violations, coverage["architecture_rules"] = _rule_violations(rules, files, assignments, file_pairs["all"], records_by_file)
         candidates += violations
-    return StructureResult(tuple(sorted(candidates, key=lambda item: (item["kind"], item["id"]))), package_metrics, coverage)
+    return StructureResult(tuple(sorted(candidates, key=lambda item: (item["kind"], item["id"]))), package_metrics, coverage, package_dependencies)

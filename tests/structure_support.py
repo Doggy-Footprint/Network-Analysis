@@ -334,7 +334,10 @@ def without_structure_facts(payload):
     if isinstance(network, dict):
         network.pop('package_metrics', None)
         network.pop('structure_policy', None)
+        network.pop('package_dependencies', None)
     coverage = result.get('coverage')
     if isinstance(coverage, dict):
         coverage.pop('structure', None)
+        if isinstance(coverage.get('architecture_rules'), dict):
+            coverage['architecture_rules'].pop('rules_sha256', None)
     return result

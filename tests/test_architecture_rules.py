@@ -4,6 +4,7 @@ import random
 import pytest
 
 from analysis.structure import analyze_structure
+from tests.delta_support import without_digest
 from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, REPO, RULE_KIND, RULES_POLICY, assert_candidates_equal,
                                               edge_counter, framework_imports, imported_modules, language_imports, package_schemes,
                                               path_of, random_graph, raw_edge, ref_match, ref_rule_evaluation, to_rules,
@@ -580,7 +581,7 @@ def test_V05_random_graphs_match_reference(seed):
     result = analyze_structure(arch, weights(), to_rules(spec))
     _, expected, coverage = ref_rule_evaluation(spec, arch, weights())
     assert_candidates_equal(violations_of(result.candidates), expected)
-    assert result.coverage['architecture_rules'] == coverage
+    assert without_digest(result.coverage['architecture_rules']) == coverage
 
 
 def test_V05_random_graph_family_is_not_vacuous():
@@ -601,7 +602,7 @@ def test_V06_counts_all_layers_and_policy_fields():
             'allow': {'a': []}}
     paths = [AX, 'src/a/x2.py', BY]
     result, _, _ = verdict(spec, paths, [make(AX, BY)])
-    coverage = result.coverage['architecture_rules']
+    coverage = without_digest(result.coverage['architecture_rules'])
     assert coverage['policy'] == RULES_POLICY == 'architecture_rules.v1' and coverage['version'] == 1
     assert coverage['layer_file_counts'] == {'a': 2, 'b': 1, 'zz': 0}
     assert list(coverage['layer_file_counts']) == ['a', 'b', 'zz']
@@ -612,7 +613,7 @@ def test_V06_counts_all_layers_and_policy_fields():
 def test_V06_zero_layer_listed_and_empty_layers_sorted():
     spec = {'version': 1, 'layers': {'qq': {'paths': ['q/**']}, 'pp': {'paths': ['p/**']}, 'a': {'paths': ['src/a/**']}}}
     result, _, _ = verdict(spec, [AX], [])
-    coverage = result.coverage['architecture_rules']
+    coverage = without_digest(result.coverage['architecture_rules'])
     assert coverage['layer_file_counts'] == {'a': 1, 'pp': 0, 'qq': 0}
     assert coverage['empty_layers'] == ['pp', 'qq']
 
@@ -620,7 +621,7 @@ def test_V06_zero_layer_listed_and_empty_layers_sorted():
 def test_V06_unassigned_list_sorted_and_excludes_boundary():
     spec = {'version': 1, 'layers': {'a': {'paths': ['src/a/**']}}}
     result, _, _ = verdict(spec, [AX, 'other/u2.py', 'other/u1.py', 'z.py'], [], boundary=['lib/boundary.py'])
-    coverage = result.coverage['architecture_rules']
+    coverage = without_digest(result.coverage['architecture_rules'])
     assert coverage['unassigned_file_count'] == 3
     assert coverage['unassigned_files'] == [fid('other/u1.py'), fid('other/u2.py'), fid('z.py')]
     assert coverage['empty_layers'] == []
@@ -631,7 +632,7 @@ def test_V06_violation_count_counts_candidates_not_pairs():
     spec = spec3(allow={'a': []}, forbid=[{'from': 'a', 'to': ['b']}])
     result, actual, _ = verdict(spec, [AX, BY, CZ], [make(AX, BY), make(AX, CZ), make(BY, AX)])
     assert len(actual) == 3
-    assert result.coverage['architecture_rules']['violation_count'] == 3
+    assert without_digest(result.coverage['architecture_rules'])['violation_count'] == 3
 
 
 @pytest.mark.parametrize('details', [True, False], ids=['details', 'no-details'])
@@ -640,7 +641,7 @@ def test_V06_empty_graph(details):
     arch = architecture([], [], details=details)
     result = analyze_structure(arch, weights(), to_rules(spec))
     assert result.candidates == ()
-    assert result.coverage['architecture_rules'] == {
+    assert without_digest(result.coverage['architecture_rules']) == {
         'policy': RULES_POLICY, 'version': 1, 'layer_file_counts': {'a': 0, 'b': 0, 'c': 0}, 'unassigned_file_count': 0,
         'unassigned_files': [], 'empty_layers': ['a', 'b', 'c'], 'violation_count': 0}
 
@@ -670,7 +671,7 @@ def test_V13_layer_pattern_matching_nothing_is_not_an_error():
     spec = {'version': 1, 'layers': {'ghost': {'paths': ['no/such/**'], 'packages': ['pkg:dir:no/such']}, 'a': {'paths': ['src/a/**']},
                                      'b': {'paths': ['src/b/**']}}, 'forbid': [{'from': 'a', 'to': ['ghost']}]}
     result, actual, _ = verdict(spec, [AX, BY], [make(AX, BY)])
-    coverage = result.coverage['architecture_rules']
+    coverage = without_digest(result.coverage['architecture_rules'])
     assert actual == [] and coverage['empty_layers'] == ['ghost'] and coverage['layer_file_counts']['ghost'] == 0
 
 
@@ -724,9 +725,9 @@ def test_V09_v8_with_rule_violation_ok_and_label():
 def test_V09_coverage_architecture_rules_accepted_and_matches_reference():
     payload, arch, spec = v8_payload()
     assert 'architecture_rules' in payload['coverage']
-    assert payload['coverage']['architecture_rules']['policy'] == RULES_POLICY
-    assert payload['coverage']['architecture_rules']['violation_count'] == 2
-    assert payload['coverage']['architecture_rules']['layer_file_counts'] == {'a': 1, 'b': 1, 'c': 1}
+    assert without_digest(payload['coverage']['architecture_rules'])['policy'] == RULES_POLICY
+    assert without_digest(payload['coverage']['architecture_rules'])['violation_count'] == 2
+    assert without_digest(payload['coverage']['architecture_rules'])['layer_file_counts'] == {'a': 1, 'b': 1, 'c': 1}
     for text in render(payload):
         assert '<html' in text.lower()
 

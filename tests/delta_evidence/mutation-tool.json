@@ -1,0 +1,312 @@
+{
+  "summary": {
+    "seed": 20261018,
+    "cap": 30,
+    "pool": 159,
+    "executed": 30,
+    "killed": 30,
+    "survived": 0
+  },
+  "mutants": [
+    {
+      "id": "M01",
+      "file": "bottlenecks/delta.py",
+      "line": 28,
+      "operator": "cond",
+      "before": "if not isinstance(value, dict):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[package_dependencies-list]"
+    },
+    {
+      "id": "M02",
+      "file": "bottlenecks/delta.py",
+      "line": 187,
+      "operator": "cond",
+      "before": "if 'to_external' in structure:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V02_new_external_violation - KeyError: 'to_l..."
+    },
+    {
+      "id": "M03",
+      "file": "bottlenecks/delta.py",
+      "line": 219,
+      "operator": "cond",
+      "before": "if (current_rules is None) != (baseline_rules is None):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F06_rules_on_one_side_only_is_an_error[h1-absent]"
+    },
+    {
+      "id": "M04",
+      "file": "bottlenecks/delta.py",
+      "line": 243,
+      "operator": "cond",
+      "before": "if 'cycle' in selected and (delta['new_cycles'] or delta['grown_cycles']):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V09_regressions[cycle-new-only] - AssertionE..."
+    },
+    {
+      "id": "M05",
+      "file": "bottlenecks/delta.py",
+      "line": 28,
+      "operator": "not",
+      "before": "not isinstance(value, dict)",
+      "after": "isinstance(value, dict)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M06",
+      "file": "bottlenecks/delta.py",
+      "line": 48,
+      "operator": "cmp",
+      "before": "root.get('granularity') != 'file'",
+      "after": "root.get('granularity') == 'file'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M07",
+      "file": "bottlenecks/delta.py",
+      "line": 57,
+      "operator": "cond",
+      "before": "if not isinstance(pairs, list):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[package_dependencies-scheme-not-list]"
+    },
+    {
+      "id": "M08",
+      "file": "bottlenecks/delta.py",
+      "line": 80,
+      "operator": "cond",
+      "before": "if candidate['kind'] in _CYCLE_KINDS:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[cycle-structure-missing]"
+    },
+    {
+      "id": "M09",
+      "file": "bottlenecks/delta.py",
+      "line": 83,
+      "operator": "cmp",
+      "before": "coverage is not None",
+      "after": "coverage is None",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[architecture_rules-not-object]"
+    },
+    {
+      "id": "M10",
+      "file": "bottlenecks/delta.py",
+      "line": 99,
+      "operator": "not",
+      "before": "not isinstance(evidence, list)",
+      "after": "isinstance(evidence, list)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[architecture_rules-not-object]"
+    },
+    {
+      "id": "M11",
+      "file": "bottlenecks/delta.py",
+      "line": 243,
+      "operator": "boolop",
+      "before": "'cycle' in selected and (delta['new_cycles'] or delta['grown_cycles'])",
+      "after": "'cycle' in selected or (delta['new_cycles'] or delta['grown_cycles'])",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V09_regressions[cycle-violation-only] - Asse..."
+    },
+    {
+      "id": "M12",
+      "file": "bottlenecks/delta.py",
+      "line": 57,
+      "operator": "not",
+      "before": "not isinstance(pairs, list)",
+      "after": "isinstance(pairs, list)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M13",
+      "file": "bottlenecks/delta.py",
+      "line": 86,
+      "operator": "cmp",
+      "before": "'architecture_rules' in coverage",
+      "after": "'architecture_rules' not in coverage",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_F05_format_violation[architecture_rules-not-object]"
+    },
+    {
+      "id": "M14",
+      "file": "bottlenecks/delta.py",
+      "line": 93,
+      "operator": "arith",
+      "before": "where + '.structure.scheme'",
+      "after": "where - '.structure.scheme'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - TypeError: uns..."
+    },
+    {
+      "id": "M15",
+      "file": "bottlenecks/delta.py",
+      "line": 96,
+      "operator": "not",
+      "before": "not isinstance(members, list)",
+      "after": "isinstance(members, list)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M16",
+      "file": "bottlenecks/delta.py",
+      "line": 112,
+      "operator": "cmp",
+      "before": "'to_external' in structure",
+      "after": "'to_external' not in structure",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M17",
+      "file": "bottlenecks/delta.py",
+      "line": 180,
+      "operator": "cmp",
+      "before": "candidate.get('kind') == 'rule_violation'",
+      "after": "candidate.get('kind') != 'rule_violation'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_F12_delta_object_shape_and_counts - KeyError..."
+    },
+    {
+      "id": "M18",
+      "file": "bottlenecks/delta.py",
+      "line": 208,
+      "operator": "cond",
+      "before": "if abs(now - then) >= INSTABILITY_THRESHOLD - _EPSILON:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V03_reported_boundaries[plus-0.19999999999999996]"
+    },
+    {
+      "id": "M19",
+      "file": "bottlenecks/delta.py",
+      "line": 81,
+      "operator": "cmp",
+      "before": "candidate['kind'] == 'rule_violation'",
+      "after": "candidate['kind'] != 'rule_violation'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M20",
+      "file": "bottlenecks/delta.py",
+      "line": 228,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V04_the_good_baseline_loads - bottlenecks.de..."
+    },
+    {
+      "id": "M21",
+      "file": "bottlenecks/delta.py",
+      "line": 163,
+      "operator": "const",
+      "before": "2",
+      "after": "3",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V01_C06_merged_cycles_grow_without_added_members"
+    },
+    {
+      "id": "M22",
+      "file": "bottlenecks/delta.py",
+      "line": 208,
+      "operator": "arith",
+      "before": "now - then",
+      "after": "now + then",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V01_C06_merged_cycles_grow_without_added_members"
+    },
+    {
+      "id": "M23",
+      "file": "bottlenecks/delta.py",
+      "line": 188,
+      "operator": "const",
+      "before": "0",
+      "after": "1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V01_C06_merged_cycles_grow_without_added_members"
+    },
+    {
+      "id": "M24",
+      "file": "code_analyzer/cli.py",
+      "line": 182,
+      "operator": "cond",
+      "before": "if args.baseline and args.granularity == 'symbol':",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta_cli.py::test_V07_C19_baseline_with_symbol_granularity_is_a_usage_error"
+    },
+    {
+      "id": "M25",
+      "file": "code_analyzer/cli.py",
+      "line": 184,
+      "operator": "cond",
+      "before": "if args.fail_on_new and (not args.baseline):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta_cli.py::test_V07_C19_fail_on_new_without_baseline_is_a_usage_error"
+    },
+    {
+      "id": "M26",
+      "file": "code_analyzer/cli.py",
+      "line": 496,
+      "operator": "boolop",
+      "before": "delta is not None and args.fail_on_new",
+      "after": "delta is not None or args.fail_on_new",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta_cli.py::test_V07_C02_new_cycle[flags3-None-0] - Asser..."
+    },
+    {
+      "id": "M27",
+      "file": "code_analyzer/cli.py",
+      "line": 444,
+      "operator": "cmp",
+      "before": "baseline is not None",
+      "after": "baseline is None",
+      "status": "killed",
+      "first_failure": "ERROR tests/test_delta_cli.py::test_V07_C01_rerun_on_same_commit_reports_nothing"
+    },
+    {
+      "id": "M28",
+      "file": "code_analyzer/cli.py",
+      "line": 406,
+      "operator": "arith",
+      "before": "outputs + ((Path(args.baseline).resolve(),) if args.baseline else ())",
+      "after": "outputs - ((Path(args.baseline).resolve(),) if args.baseline else ())",
+      "status": "killed",
+      "first_failure": "ERROR tests/test_delta_cli.py::test_V07_C01_rerun_on_same_commit_reports_nothing"
+    },
+    {
+      "id": "M29",
+      "file": "code_analyzer/cli.py",
+      "line": 501,
+      "operator": "const",
+      "before": "3",
+      "after": "4",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta_cli.py::test_V07_C02_new_cycle[flags0-cycle-3] - Asse..."
+    },
+    {
+      "id": "M30",
+      "file": "report/bottlenecks/generate.py",
+      "line": 229,
+      "operator": "boolop",
+      "before": "schema == 'bottlenecks.v8' and 'delta' in root",
+      "after": "schema == 'bottlenecks.v8' or 'delta' in root",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_delta.py::test_V10_F15_validator_accepts_delta_on_v8 - KeyE..."
+    }
+  ]
+}

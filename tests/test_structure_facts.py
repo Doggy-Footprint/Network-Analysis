@@ -356,7 +356,7 @@ def test_V03_result_coverage_is_exactly_the_structure_object():
 def test_V03_result_is_frozen_dataclass_with_declared_fields():
     result = run(['a.py'], [])
     assert isinstance(result, StructureResult) and dataclasses.is_dataclass(result)
-    assert [f.name for f in dataclasses.fields(StructureResult)] == ['candidates', 'package_metrics', 'coverage']
+    assert [f.name for f in dataclasses.fields(StructureResult)] == ['candidates', 'package_metrics', 'coverage', 'package_dependencies']
     assert isinstance(result.candidates, tuple)
     with pytest.raises(dataclasses.FrozenInstanceError):
         result.candidates = ()

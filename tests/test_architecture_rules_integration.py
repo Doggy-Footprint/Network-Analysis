@@ -11,6 +11,7 @@ import pytest
 from analysis.architecture_rules import layer_assignments
 from analysis.structure import analyze_structure, package_assignments
 from fixtures.registry import fixture_root
+from tests.delta_support import base_form_bytes, without_digest
 from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, FIXTURES, REPO, RULE_KIND, assert_candidates_equal, cli,
                                               copy_fixture, init_git, load_manifest, mini_project, ref_rule_evaluation, synthetic_input,
                                               to_rules, violations_of, weights, write_rules)
@@ -42,8 +43,9 @@ def plain(request, tmp_path_factory):
 def test_V07_no_rules_byte_equal_to_base(plain):
     name, data = plain
     expected = MANIFEST['fixtures'][name]
-    assert len(data) == expected['bytes']
-    assert hashlib.sha256(data).hexdigest() == expected['sha256']
+    base_form = base_form_bytes(data)
+    assert len(base_form) == expected['bytes']
+    assert hashlib.sha256(base_form).hexdigest() == expected['sha256']
     assert json.loads(data)['schema'] == 'bottlenecks.v8'
 
 
@@ -106,7 +108,7 @@ def test_V08_example_realworld_against_reference(realworld_rules, realworld_arch
     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
     actual = violations_of(internal_only(realworld_rules['candidates']))
     assert_candidates_equal(actual, expected)
-    got = dict(realworld_rules['coverage']['architecture_rules'])
+    got = dict(without_digest(realworld_rules['coverage']['architecture_rules']))
     external_keys = {'external_import_count', 'external_violation_count'}
     assert external_keys <= set(got)
     total = got.pop('violation_count')
@@ -122,7 +124,7 @@ def test_V08_example_realworld_expected_violations_exist(realworld_rules):
     assert ('forbid', 'db', 'api') in found
     assert {rule for rule, source, _ in found if rule == 'allow'} and all(s == 'domain' for r, s, _ in found if r == 'allow')
     assert all((s, t) in {('db', 'api'), ('services', 'api')} for r, s, t in found if r == 'forbid')
-    coverage = realworld_rules['coverage']['architecture_rules']
+    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
     assert coverage['policy'] == 'architecture_rules.v1' and coverage['version'] == 1
     assert set(coverage['layer_file_counts']) == set(EXAMPLE_SPEC['layers'])
     assert coverage['violation_count'] == sum(1 for c in realworld_rules['candidates'] if c['kind'] == RULE_KIND)
@@ -208,7 +210,7 @@ def test_V08_empty_layer_and_violation_keep_exit_0(tmp_path):
     done, out = mini_run(tmp_path, project, rules)
     assert done.returncode == 0, done.stderr
     payload = json.loads((out / 'b.json').read_text(encoding='utf-8'))
-    coverage = payload['coverage']['architecture_rules']
+    coverage = without_digest(payload['coverage']['architecture_rules'])
     assert coverage['empty_layers'] == ['ghost'] and coverage['violation_count'] >= 1
     assert [c['structure']['rule_type'] for c in payload['candidates'] if c['kind'] == RULE_KIND][0] == 'allow'
 
@@ -260,7 +262,7 @@ def test_V11_synthetic_time():
     rules = to_rules(spec)
     result = analyze_structure(arch, weights(), rules)
     _, expected, coverage = ref_rule_evaluation(spec, arch, weights())
-    assert result.coverage['architecture_rules']['violation_count'] == coverage['violation_count'] == len(expected) > 1000
+    assert without_digest(result.coverage['architecture_rules'])['violation_count'] == coverage['violation_count'] == len(expected) > 1000
     ids = [node.id for node in arch.nodes]
     packages = package_assignments(arch)
     assert median_time(lambda: layer_assignments(rules, ids, packages)) <= TIME_LIMIT

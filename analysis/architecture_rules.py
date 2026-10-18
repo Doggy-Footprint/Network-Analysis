@@ -1,3 +1,5 @@
+import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 from fnmatch import translate
@@ -180,6 +182,19 @@ def _parse_forbid(forbid: Any, layers: Mapping[str, Any], groups: Mapping[str, A
             merged_external.setdefault(source, set()).update(_entry_list(item["to_external"], f"{where}.to_external", groups, False))
     return ({name: tuple(sorted(merged[name])) for name in sorted(merged)},
             {name: tuple(sorted(merged_external[name])) for name in sorted(merged_external)})
+
+
+def rules_digest(rules: ArchitectureRules) -> str:
+    canonical = {
+        "version": rules.version,
+        "layers": {name: {"paths": sorted(set(selector.paths)), "packages": sorted(set(selector.packages))} for name, selector in rules.layers.items()},
+        "allow": {name: list(values) for name, values in rules.allow.items()},
+        "forbid": {name: list(values) for name, values in rules.forbid.items()},
+        "external": {name: list(values) for name, values in rules.external.items()},
+        "forbid_external": {name: list(values) for name, values in rules.forbid_external.items()},
+        "allow_external": {name: list(values) for name, values in rules.allow_external.items()},
+    }
+    return hashlib.sha256(json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
 def load_architecture_rules(path: Union[str, Path]) -> ArchitectureRules:
