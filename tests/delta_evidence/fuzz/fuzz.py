@@ -40,7 +40,6 @@ def mutate(doc):
             parent[k] = rng.choice([str(parent[k]), [parent[k]], {"v": parent[k]}])
     return doc
 
-# (a) crash oracle
 valid = json.loads(Path(sys.argv[1]).read_text())
 for key in ("node_metrics", "rankings", "rankings_by_category"): valid["dependency_network"].pop(key, None)
 current = copy.deepcopy(valid)
@@ -66,7 +65,6 @@ for i in range(N):
 out["a"] = {"execs": N, "accepted": accepted, "crashes": len(crashes), "first": crashes[:3]}
 print(json.dumps(out["a"])[:2000], flush=True)
 
-# (b) property oracle
 def payload(rng):
     files = [f"file:f{i}.py" for i in range(rng.randint(2, 30))]
     pkgs = [f"pkg:dir:p{i}" for i in range(rng.randint(1, 8))]

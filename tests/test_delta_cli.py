@@ -254,8 +254,6 @@ def test_V07_C13_reordered_commented_rules_do_not_warn(tmp_path, pristine, basel
     assert error_lines(done) == []
 
 
-# V08 and C16-C18 ------------------------------------------------------------------------------------------------------
-
 def broken_baseline(tmp_path, baselines, kind):
     data = json.loads(baselines['ruled'].read_text(encoding='utf-8'))
     target = tmp_path / 'broken.json'
@@ -359,8 +357,6 @@ def test_V08_incompatibility_does_not_overwrite_an_existing_bottleneck_file(tmp_
     done = go(pristine, tmp_path, baselines['plain'], rules=EXAMPLE_PROFILE)
     assert done.returncode == 1 and (target / 'b.json').read_bytes() == marker
 
-
-# F13 / D8: a baseline inside the analyzed root is not part of the snapshot ---------------------------------------------
 
 def file_count_of(path):
     return json.loads(path.read_text(encoding='utf-8'))['snapshot']['file_count']

@@ -64,8 +64,6 @@ def test_F12_same_input_same_bytes_and_inputs_untouched():
     assert (cur, base) == frozen
 
 
-# V01 decision table ---------------------------------------------------------------------------------------------------
-
 def test_V01_C_new_cycle_when_no_overlap():
     cur = payload(candidates=[cycle([A, B])])
     result = run(cur, baseline_of(cycle([D, E])))
@@ -176,8 +174,6 @@ def test_V01_new_internal_pairs_sorted_by_from_then_to():
     assert item['new_internal_pairs'] == pairs_of((A, C), (B, C), (C, A))
 
 
-# V02 ------------------------------------------------------------------------------------------------------------------
-
 def test_V02_new_internal_violation():
     cur = payload(candidates=[internal_violation('b:v9', A, B, rule_type='allow', from_layer='domain', to_layer='services')])
     result = run(cur, payload())
@@ -268,8 +264,6 @@ def test_V02_new_package_dependencies_sorted_by_scheme_from_to():
     assert keys == [('framework', 'z', 'y'), ('language', 'a', 'b'), ('language', 'a', 'c'), ('language', 'b', 'a')]
 
 
-# V03 ------------------------------------------------------------------------------------------------------------------
-
 def instability(before, after, scheme='language'):
     base = payload(package_metrics={scheme: pmetrics({'pkg:x': before})})
     cur = payload(package_metrics={scheme: pmetrics({'pkg:x': after})})
@@ -326,8 +320,6 @@ def test_V03_scheme_mismatch_is_not_compared():
     cur = payload(package_metrics={'framework': pmetrics({'pkg:x': 1.0})})
     assert run(cur, base)['instability_changes'] == []
 
-
-# V14 error guessing ---------------------------------------------------------------------------------------------------
 
 def test_V14_overlap_is_compared_by_member_not_by_candidate_id():
     base = baseline_of(cycle([A, B], ident='b:same'))
@@ -389,8 +381,6 @@ def test_V14_internal_pairs_compare_direction():
     assert item['new_internal_pairs'] == pairs_of((B, A), (B, C))
 
 
-# F06 / rules_changed --------------------------------------------------------------------------------------------------
-
 @pytest.mark.parametrize('cur_sha, base_sha, expected', [
     ('h1', 'h1', False), ('h1', 'h2', True), (None, 'h1', True), ('h1', None, True), ('absent', 'absent', False),
 ])
@@ -423,8 +413,6 @@ def test_V04_F06_structure_policy_mismatch_is_an_error():
 def test_V04_error_type_is_a_value_error():
     assert issubclass(delta_api().BaselineError, ValueError)
 
-
-# V04 load_baseline ----------------------------------------------------------------------------------------------------
 
 def good():
     return payload(
@@ -668,8 +656,6 @@ def test_V04_null_instability_loads(tmp_path):
     delta_api().load_baseline(write(tmp_path, data))
 
 
-# V09 -------------------------------------------------------------------------------------------------------------------
-
 STATES = {
     'new-only': ({'new_cycles': [{'x': 1}]}, True, False),
     'grown-only': ({'grown_cycles': [{'x': 1}]}, True, False),
@@ -698,8 +684,6 @@ def test_V09_accepts_any_iterable_and_repeats():
     assert delta_api().regressions(delta, iter(['violation', 'cycle', 'cycle'])) == ['cycle', 'violation']
     assert delta_api().regressions(delta, []) == []
 
-
-# V10 -------------------------------------------------------------------------------------------------------------------
 
 def build_report(delta=None):
     from analysis import GraphAnalysisConfig, GraphAnalyzer
@@ -757,8 +741,6 @@ def test_V10_F15_delta_is_still_unknown_on_v6(tmp_path):
     with pytest.raises(ReportInputError):
         render_report(v6)
 
-
-# V05 rules_digest -----------------------------------------------------------------------------------------------------
 
 BASE_RULES = """\
 version: 1

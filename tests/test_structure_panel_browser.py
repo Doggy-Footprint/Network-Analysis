@@ -165,8 +165,6 @@ def sets_of(results):
     return sorted(r[0] for r in results)
 
 
-# display ---------------------------------------------------------------------------------------------------------------
-
 def test_V11_section_shown_for_file_granularity_after_the_review_section(standard):
     page = standard
     expect(page.locator(PANEL['section'])).to_be_visible()
@@ -275,8 +273,6 @@ def test_V11_empty_lists_say_none(open_report):
     assert button(page, 'cycles').count() == 0 and button(page, 'violations').count() == 0
 
 
-# selection -------------------------------------------------------------------------------------------------------------
-
 def test_V11_C24_cycle_click_selects_members_on_the_graph(standard):
     page = standard
     results = clicked(page, button(page, 'cycles', 'dependency_cycle'))
@@ -352,8 +348,6 @@ def test_V11_C23_hostile_file_names_stay_text(open_report):
     assert page.evaluate('window.__xss') is None and dialogs == []
     assert page.unhandled_errors == []
 
-
-# end to end ------------------------------------------------------------------------------------------------------------
 
 @pytest.fixture(scope='module')
 def cli_html(tmp_path_factory):

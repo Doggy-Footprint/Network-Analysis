@@ -150,8 +150,6 @@ def test_V13_Q04_size_ratio(plain_entry, outputs_by_id):
     assert 1.0 <= ratio <= 1.03, ratio
 
 
-# V12 -------------------------------------------------------------------------------------------------------------------
-
 def fastest(call, repeats=3):
     best = None
     for _ in range(repeats):
