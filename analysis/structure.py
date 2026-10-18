@@ -224,7 +224,29 @@ def _unstable_candidates(scheme: str, pairs: Mapping[tuple[str, str], dict], met
     return candidates
 
 
-def analyze_structure(architecture: Any, weights: Any) -> StructureResult:
+def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Mapping[str, list[str]]], pairs: Mapping[tuple[str, str], dict]) -> tuple[list[dict], dict]:
+    from analysis.architecture_rules import RULES_POLICY, layer_assignments
+    from bottlenecks.core import _candidate
+    layers = layer_assignments(rules, files, assignments)
+    candidates = []
+    for (source, target), record in pairs.items():
+        left, right = layers.get(source), layers.get(target)
+        if left is None or right is None or left == right: continue
+        for rule_type, violated in (("allow", left in rules.allow and right not in rules.allow[left]), ("forbid", right in rules.forbid.get(left, ()))):
+            if not violated: continue
+            candidate = _candidate("rule|%s|%s|%s|%s|%s" % (rule_type, left, right, source, target), "rule_violation", source,
+                {"evidence_count": record["evidence_count"], "max_weight": record["max_weight"]}, [record], "static_analyzer_relation")
+            candidate["structure"] = {"rule_type": rule_type, "from_layer": left, "to_layer": right, "tier": record["tier"], "relations": record["relations"]}
+            candidates.append(candidate)
+    counts = {name: 0 for name in rules.layers}
+    for name in layers.values(): counts[name] += 1
+    unassigned = [file_id for file_id in files if file_id not in layers]
+    coverage = {"policy": RULES_POLICY, "version": rules.version, "layer_file_counts": dict(sorted(counts.items())), "unassigned_file_count": len(unassigned),
+        "unassigned_files": unassigned, "empty_layers": sorted(name for name, count in counts.items() if not count), "violation_count": len(candidates)}
+    return candidates, coverage
+
+
+def analyze_structure(architecture: Any, weights: Any, rules: Any = None) -> StructureResult:
     files, assignments = _assignments(architecture)
     file_pairs = _file_pairs(architecture, weights, set(files))
     candidates = _cycle_candidates("file", file_pairs, files, "dependency_cycle")
@@ -238,4 +260,8 @@ def analyze_structure(architecture: Any, weights: Any) -> StructureResult:
         unassigned = [file_id for file_id in files if file_id not in assignment]
         shared = [file_id for file_id in files if len(assignment.get(file_id, ())) > 1]
         schemes[scheme] = {"assigned_file_count": len(files) - len(unassigned), "unassigned_file_count": len(unassigned), "unassigned_files": unassigned, "shared_file_count": len(shared), "shared_files": shared}
-    return StructureResult(tuple(sorted(candidates, key=lambda item: (item["kind"], item["id"]))), package_metrics, {"structure": {"policy": STRUCTURE_POLICY, "schemes": schemes}})
+    coverage = {"structure": {"policy": STRUCTURE_POLICY, "schemes": schemes}}
+    if rules is not None:
+        violations, coverage["architecture_rules"] = _rule_violations(rules, files, assignments, file_pairs["all"])
+        candidates += violations
+    return StructureResult(tuple(sorted(candidates, key=lambda item: (item["kind"], item["id"]))), package_metrics, coverage)

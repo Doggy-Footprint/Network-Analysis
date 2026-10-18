@@ -1,0 +1,312 @@
+{
+  "summary": {
+    "seed": 20261018,
+    "cap": 30,
+    "pool": 128,
+    "executed": 30,
+    "killed": 28,
+    "survived": 2
+  },
+  "mutants": [
+    {
+      "id": "M01",
+      "file": "analysis/architecture_rules.py",
+      "line": 130,
+      "operator": "cond",
+      "before": "if not isinstance(forbid, list):",
+      "after": "if False:",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M02",
+      "file": "analysis/architecture_rules.py",
+      "line": 155,
+      "operator": "cond",
+      "before": "if not isinstance(document, dict):",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_top_level_list - TypeEr..."
+    },
+    {
+      "id": "M03",
+      "file": "analysis/architecture_rules.py",
+      "line": 157,
+      "operator": "cond",
+      "before": "if 'external' in document:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C13_external_top_level[external-top]"
+    },
+    {
+      "id": "M04",
+      "file": "analysis/architecture_rules.py",
+      "line": 160,
+      "operator": "cond",
+      "before": "if unknown:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[unknown-top-key]"
+    },
+    {
+      "id": "M05",
+      "file": "analysis/architecture_rules.py",
+      "line": 60,
+      "operator": "cmp",
+      "before": "_compile_path(pattern).fullmatch(path) is not None",
+      "after": "_compile_path(pattern).fullmatch(path) is None",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V03_C09_table[C09-00] - Asserti..."
+    },
+    {
+      "id": "M06",
+      "file": "analysis/architecture_rules.py",
+      "line": 73,
+      "operator": "boolop",
+      "before": "not isinstance(value, list) or not value",
+      "after": "not isinstance(value, list) and (not value)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[selector-empty-list]"
+    },
+    {
+      "id": "M07",
+      "file": "analysis/architecture_rules.py",
+      "line": 111,
+      "operator": "cond",
+      "before": "if not isinstance(item, str) or item not in layers:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-undefined-layer-value]"
+    },
+    {
+      "id": "M08",
+      "file": "analysis/architecture_rules.py",
+      "line": 135,
+      "operator": "cond",
+      "before": "if isinstance(item, dict) and 'to_external' in item:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C13_to_external - assert ('..."
+    },
+    {
+      "id": "M09",
+      "file": "analysis/architecture_rules.py",
+      "line": 140,
+      "operator": "cond",
+      "before": "if not isinstance(source, str) or source not in layers:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[forbid-from-undefined]"
+    },
+    {
+      "id": "M10",
+      "file": "analysis/architecture_rules.py",
+      "line": 157,
+      "operator": "cmp",
+      "before": "'external' in document",
+      "after": "'external' not in document",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-non-list]"
+    },
+    {
+      "id": "M11",
+      "file": "analysis/architecture_rules.py",
+      "line": 165,
+      "operator": "boolop",
+      "before": "not _is_int(document['version']) or document['version'] != 1",
+      "after": "not _is_int(document['version']) and document['version'] != 1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[version-0] - ..."
+    },
+    {
+      "id": "M12",
+      "file": "analysis/architecture_rules.py",
+      "line": 48,
+      "operator": "cond",
+      "before": "if previous_globstar and (not last):",
+      "after": "if False:",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M13",
+      "file": "analysis/architecture_rules.py",
+      "line": 95,
+      "operator": "boolop",
+      "before": "not isinstance(name, str) or not _LAYER_NAME.fullmatch(name)",
+      "after": "not isinstance(name, str) and (not _LAYER_NAME.fullmatch(name))",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[layer-name-1a]"
+    },
+    {
+      "id": "M14",
+      "file": "analysis/architecture_rules.py",
+      "line": 135,
+      "operator": "boolop",
+      "before": "isinstance(item, dict) and 'to_external' in item",
+      "after": "isinstance(item, dict) or 'to_external' in item",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[forbid-from-undefined]"
+    },
+    {
+      "id": "M15",
+      "file": "analysis/architecture_rules.py",
+      "line": 168,
+      "operator": "cmp",
+      "before": "'allow' in document",
+      "after": "'allow' not in document",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-non-list]"
+    },
+    {
+      "id": "M16",
+      "file": "analysis/architecture_rules.py",
+      "line": 169,
+      "operator": "cmp",
+      "before": "'forbid' in document",
+      "after": "'forbid' not in document",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[forbid-from-undefined]"
+    },
+    {
+      "id": "M17",
+      "file": "analysis/architecture_rules.py",
+      "line": 193,
+      "operator": "cond",
+      "before": "if matched:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V04_package_framework_shared_between_layers_is_multi_match"
+    },
+    {
+      "id": "M18",
+      "file": "analysis/architecture_rules.py",
+      "line": 76,
+      "operator": "not",
+      "before": "not isinstance(item, str)",
+      "after": "isinstance(item, str)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-non-list]"
+    },
+    {
+      "id": "M19",
+      "file": "analysis/architecture_rules.py",
+      "line": 97,
+      "operator": "not",
+      "before": "not isinstance(selector, dict)",
+      "after": "isinstance(selector, dict)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-non-list]"
+    },
+    {
+      "id": "M20",
+      "file": "analysis/architecture_rules.py",
+      "line": 97,
+      "operator": "not",
+      "before": "not set(selector) <= set(_SELECTOR_KEYS)",
+      "after": "set(selector) <= set(_SELECTOR_KEYS)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[allow-non-list]"
+    },
+    {
+      "id": "M21",
+      "file": "analysis/architecture_rules.py",
+      "line": 137,
+      "operator": "cmp",
+      "before": "set(item) != {'from', 'to'}",
+      "after": "set(item) == {'from', 'to'}",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V01_C12_table_row[forbid-item-extra-key]"
+    },
+    {
+      "id": "M22",
+      "file": "analysis/architecture_rules.py",
+      "line": 48,
+      "operator": "not",
+      "before": "not last",
+      "after": "last",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V03_product_agrees_with_reference_on_small_exhaustive_space"
+    },
+    {
+      "id": "M23",
+      "file": "analysis/architecture_rules.py",
+      "line": 97,
+      "operator": "cmp",
+      "before": "set(selector) <= set(_SELECTOR_KEYS)",
+      "after": "set(selector) < set(_SELECTOR_KEYS)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V02_both_selectors_and_layer_order_and_package_order"
+    },
+    {
+      "id": "M24",
+      "file": "analysis/architecture_rules.py",
+      "line": 142,
+      "operator": "const",
+      "before": "False",
+      "after": "True",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V02_both_selectors_and_layer_order_and_package_order"
+    },
+    {
+      "id": "M25",
+      "file": "analysis/architecture_rules.py",
+      "line": 54,
+      "operator": "cmp",
+      "before": "char == '?'",
+      "after": "char != '?'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V03_C09_table[C09-12] - Asserti..."
+    },
+    {
+      "id": "M26",
+      "file": "analysis/structure.py",
+      "line": 264,
+      "operator": "cond",
+      "before": "if rules is not None:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V05_allow_violation_candidate_fields_C01"
+    },
+    {
+      "id": "M27",
+      "file": "analysis/structure.py",
+      "line": 264,
+      "operator": "cmp",
+      "before": "rules is not None",
+      "after": "rules is None",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V05_allow_violation_candidate_fields_C01"
+    },
+    {
+      "id": "M28",
+      "file": "analysis/structure.py",
+      "line": 236,
+      "operator": "cond",
+      "before": "if not violated:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V05_allow_violation_candidate_fields_C01"
+    },
+    {
+      "id": "M29",
+      "file": "analysis/structure.py",
+      "line": 236,
+      "operator": "not",
+      "before": "not violated",
+      "after": "violated",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V05_allow_violation_candidate_fields_C01"
+    },
+    {
+      "id": "M30",
+      "file": "analysis/structure.py",
+      "line": 235,
+      "operator": "boolop",
+      "before": "left in rules.allow and right not in rules.allow[left]",
+      "after": "left in rules.allow or right not in rules.allow[left]",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_architecture_rules.py::test_V05_forbid_only_direction_matters_C02"
+    }
+  ]
+}

@@ -21,6 +21,7 @@ from repository import (ScanPolicyError, build_snapshot, default_scan_policy_pat
 from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
 from language_analyzers.core.serialization import architecture_to_dict
+from analysis.architecture_rules import load_architecture_rules
 from analysis.file_graph import to_file_architecture
 from analysis.candidate_projection import AMBIGUITY_POLICY
 from bottlenecks.core import _snapshot, _validate
@@ -147,6 +148,12 @@ def parse_args():
         metavar="PATH",
         help="Edge weight profile applied to PageRank, HITS and weighted fan metrics.",
     )
+    parser.add_argument(
+        "--architecture-rules",
+        default=None,
+        metavar="PATH",
+        help="Architecture rules YAML (file granularity only); boundary crossings become rule_violation candidates.",
+    )
     args = parser.parse_args()
     if not args.analyzers:
         args.analyzers = [("framework", "fastapi")]
@@ -156,6 +163,8 @@ def parse_args():
         parser.error("the same -f/-l value may not be repeated")
     if args.entrypoint and ("framework", "fastapi") not in args.analyzers:
         parser.error("--entrypoint is only supported with --framework fastapi")
+    if args.architecture_rules and args.granularity == "symbol":
+        parser.error("--architecture-rules is only supported with --granularity file")
     output = Path(args.output).resolve()
     output_paths = [output, output.with_name(f"{output.stem}_assets")]
     if args.bottlenecks:
@@ -359,6 +368,7 @@ def main(
     analysis_config = None
     try:
         edge_weights = load_edge_weights(args.edge_weights)
+        architecture_rules = load_architecture_rules(args.architecture_rules) if args.architecture_rules else None
         analysis_config = GraphAnalysisConfig(edge_weights=edge_weights)
         scan_policy = load_scan_policy(default_scan_policy_path())
         inventory = file_lister(
@@ -409,7 +419,7 @@ def main(
             }
         elif not isinstance(arch.stats["analysis"], Mapping) or arch.stats["analysis"].get("ambiguity_policy") != AMBIGUITY_POLICY:
             raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
-        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis)
+        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis, rules=architecture_rules)
         timing["metrics_candidates"] = time.perf_counter() - stage_started
     except (OSError, UnicodeError, ValueError, BottleneckInputError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)

@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Tuple, Optional
 from types import SimpleNamespace
 
+from analysis.architecture_rules import ArchitectureRulesError
 from analysis.edge_weights import EdgeWeights
 from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection, candidate_targets
 from language_analyzers.core.serialization import edge_to_dict
@@ -220,7 +221,7 @@ def _intern_candidate_groups(candidates):
     return groups
 
 
-def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None) -> BottleneckReport:
+def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None) -> BottleneckReport:
     try:
         _weights(weights)
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
@@ -238,7 +239,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         structure = None
         if is_file:
             from analysis.structure import analyze_structure
-            structure = analyze_structure(architecture, weights)
+            structure = analyze_structure(architecture, weights, rules)
             candidates = sorted(candidates + list(structure.candidates), key=lambda item: (item["kind"], item["id"]))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
@@ -256,7 +257,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
         return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
-    except BottleneckInputError: raise
+    except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 
 

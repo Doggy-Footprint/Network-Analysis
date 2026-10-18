@@ -21,6 +21,7 @@ KIND_LABELS = {
     "dependency_cycle": "의존 순환",
     "package_cycle": "package 순환",
     "unstable_dependency": "불안정 package 의존",
+    "rule_violation": "경계 규칙 위반",
 }
 
 KIND_DESCRIPTIONS = {
@@ -30,6 +31,7 @@ KIND_DESCRIPTIONS = {
     "dependency_cycle": "파일들이 서로 의존해 순환을 이루는 사례입니다. 같은 순환도 연결 확실성 tier(certain, resolved, all)별로 따로 나옵니다.",
     "package_cycle": "package들이 서로 의존해 순환을 이루는 사례입니다.",
     "unstable_dependency": "package가 자신보다 불안정한(instability가 더 큰) package에 의존하는 사례입니다.",
+    "rule_violation": "아키텍처 규칙 file에 선언된 layer 경계(allow 목록 밖 또는 forbid 대상)를 넘는 file 의존 사례입니다.",
 }
 
 METRIC_DEFINITIONS = [
