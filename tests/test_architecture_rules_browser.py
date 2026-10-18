@@ -69,7 +69,7 @@ def test_V10_allow_reason(open_report, standard):
     page = open_report(*standard, initial_script=DIALOG_HOOK)
     text = open_file(page, PATHS['a'])
     assert LABEL in text
-    assert 'domain → services · 허용 목록 밖' in text
+    assert f"domain → services · 허용 목록 밖 · {PATHS['s'].rsplit('/', 1)[-1]}" in text
     assert '금지 규칙' not in text
 
 

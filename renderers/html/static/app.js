@@ -280,7 +280,10 @@
         if (c.kind === 'large_node') return `${format(m.line_count)}줄`;
         if (c.kind === 'evidence_spread') return `${format(m.file_count)}개 파일`;
         if (c.kind === 'dependency_cycle') return `${format(m.member_count)}개 파일 순환 · ${tierLabels[c.structure?.tier] || c.structure?.tier}`;
-        if (c.kind === 'rule_violation') return `${c.structure?.from_layer} → ${c.structure?.to_layer} · ${c.structure?.rule_type === 'allow' ? '허용 목록 밖' : '금지 규칙'}`;
+        if (c.kind === 'rule_violation') {
+            const to = nodeMap.get(c.evidence?.[0]?.to_id);
+            return `${c.structure?.from_layer} → ${c.structure?.to_layer} · ${c.structure?.rule_type === 'allow' ? '허용 목록 밖' : '금지 규칙'}${to ? ` · ${nodeName(to)}` : ''}`;
+        }
         return `미확정 참조 ${format(m.unresolved_count)}건`;
     }
 
