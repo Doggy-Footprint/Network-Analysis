@@ -13,7 +13,7 @@ REMOVED_METRICS = {'hub_score', 'authority_score', 'degree_centrality', 'hop_2_n
 NETWORK_METRICS = {'pagerank', 'betweenness_centrality', 'weighted_centrality_cost', 'fan_in', 'fan_out', 'weighted_fan_in', 'weighted_fan_out', 'hop_2_token_cost'}
 REMOVED_TOPS = {'top_hubs', 'top_hop_3_cost'}
 TOP_METRICS = {'top_pagerank': 'pagerank', 'top_betweenness': 'betweenness_centrality', 'top_weighted_cost': 'weighted_centrality_cost', 'top_hop_2_cost': 'hop_2_token_cost'}
-SCHEMA_RENAMES = {'bottlenecks.v4': 'bottlenecks.v6', 'bottlenecks.v5': 'bottlenecks.v7'}
+SCHEMA_RENAMES = {'bottlenecks.v4': 'bottlenecks.v6', 'bottlenecks.v5': 'bottlenecks.v8'}
 STRATEGY_RENAMES = {'single_bfs_to_3_hops': 'single_bfs_to_2_hops', 'exact_bitset': 'exact_bitset', 'exact_hybrid': 'exact_hybrid'}
 
 

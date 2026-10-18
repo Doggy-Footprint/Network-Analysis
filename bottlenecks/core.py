@@ -235,6 +235,11 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _file_candidates(architecture, weights.large_node_line_threshold) if is_file else _candidates(architecture, weights.large_node_line_threshold)
+        structure = None
+        if is_file:
+            from analysis.structure import analyze_structure
+            structure = analyze_structure(architecture, weights)
+            candidates = sorted(candidates + list(structure.candidates), key=lambda item: (item["kind"], item["id"]))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
@@ -247,7 +252,10 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             "betweenness_sample_size": analysis["betweenness_sample_size"]}
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
-        return BottleneckReport("bottlenecks.v7" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        if structure is not None:
+            from analysis.structure import STRUCTURE_POLICY
+            network.update(package_metrics=structure.package_metrics, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
+        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except BottleneckInputError: raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

@@ -30,8 +30,10 @@
     const kinds = {
         unresolved_boundary: ['정적 분석 미확정 참조', '정적 분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.'],
         evidence_spread: ['근거 분산', '참조 근거가 여러 파일 또는 넓은 줄 범위에 퍼져 있습니다.'],
-        large_node: ['큰 노드', '소스 범위가 설정한 줄 수 임계값을 넘습니다.']
+        large_node: ['큰 노드', '소스 범위가 설정한 줄 수 임계값을 넘습니다.'],
+        dependency_cycle: ['의존 순환', '서로 의존해 한 바퀴 돌아오는 파일 묶음입니다. 같은 순환도 연결 확실성 단계별로 따로 표시됩니다.']
     };
+    const tierLabels = {certain: '확정 연결', resolved: '해석된 연결', all: '불확실 포함'};
     const categoryLabels = {
         all: '전체',
         production: '운영 코드',
@@ -276,6 +278,7 @@
         const m = c.metrics || {};
         if (c.kind === 'large_node') return `${format(m.line_count)}줄`;
         if (c.kind === 'evidence_spread') return `${format(m.file_count)}개 파일`;
+        if (c.kind === 'dependency_cycle') return `${format(m.member_count)}개 파일 순환 · ${tierLabels[c.structure?.tier] || c.structure?.tier}`;
         return `미확정 참조 ${format(m.unresolved_count)}건`;
     }
 
@@ -788,11 +791,13 @@
             $('node-search').placeholder = '파일 이름 또는 경로';
         }
         nodeMap = new Map(nodes.map(n => [n.id, n]));
-        candidates = (bottlenecks?.candidates || []).filter(c => !fileMode || c.target.startsWith('file:'));
+        candidates = (bottlenecks?.candidates || []).filter(c => !fileMode || c.target.startsWith('file:') || c.kind === 'dependency_cycle');
         byTarget = new Map();
         for (const c of candidates) {
-            if (!byTarget.has(c.target)) byTarget.set(c.target, []);
-            byTarget.get(c.target).push(c);
+            for (const target of c.kind === 'dependency_cycle' ? (Array.isArray(c.structure?.members) ? c.structure.members : []) : [c.target]) {
+                if (!byTarget.has(target)) byTarget.set(target, []);
+                byTarget.get(target).push(c);
+            }
         }
         projected = projectedEdges(arch?.edges || []);
         incident = new Map();

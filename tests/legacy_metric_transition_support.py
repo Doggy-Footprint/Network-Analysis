@@ -13,7 +13,7 @@ REMOVED_METRICS = frozenset({
     "identifier_file_count", "identifier_file_count_by_context",
 })
 REMOVED_TOPS = frozenset({"top_hubs", "top_hop_3_cost"})
-SCHEMA_RENAMES = {"bottlenecks.v4": "bottlenecks.v6", "bottlenecks.v5": "bottlenecks.v7"}
+SCHEMA_RENAMES = {"bottlenecks.v4": "bottlenecks.v6", "bottlenecks.v5": "bottlenecks.v8"}
 STRATEGY_RENAMES = {"single_bfs_to_3_hops": "single_bfs_to_2_hops"}
 REMOVED = REMOVED_METRICS | REMOVED_TOPS
 

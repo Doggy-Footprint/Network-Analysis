@@ -18,12 +18,18 @@ KIND_LABELS = {
     "evidence_spread": "근거 분산",
     "large_node": "큰 노드",
     "unresolved_boundary": "정적 분석 미확정 참조",
+    "dependency_cycle": "의존 순환",
+    "package_cycle": "package 순환",
+    "unstable_dependency": "불안정 package 의존",
 }
 
 KIND_DESCRIPTIONS = {
     "evidence_spread": "근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
     "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘는 사례입니다.",
     "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
+    "dependency_cycle": "파일들이 서로 의존해 순환을 이루는 사례입니다. 같은 순환도 연결 확실성 tier(certain, resolved, all)별로 따로 나옵니다.",
+    "package_cycle": "package들이 서로 의존해 순환을 이루는 사례입니다.",
+    "unstable_dependency": "package가 자신보다 불안정한(instability가 더 큰) package에 의존하는 사례입니다.",
 }
 
 METRIC_DEFINITIONS = [
@@ -45,6 +51,9 @@ _KIND_SCORE_FIELDS = {
     "large_node": ("line_count", 0),
     "evidence_spread": ("file_count", 0),
     "unresolved_boundary": ("unresolved_count", 1),
+    "dependency_cycle": ("member_count", 0),
+    "package_cycle": ("member_count", 0),
+    "unstable_dependency": ("instability_delta", 0),
 }
 
 
@@ -208,9 +217,9 @@ def _validate(payload: Any) -> Mapping[str, Any]:
     fields = ("schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations")
     _required(root, "$", fields)
     schema = _string(root["schema"], "$.schema")
-    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v7"):
-        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r} or 'bottlenecks.v7'")
-    if schema == "bottlenecks.v7":
+    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v7", "bottlenecks.v8"):
+        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r}, 'bottlenecks.v7' or 'bottlenecks.v8'")
+    if schema != SUPPORTED_SCHEMA:
         _required(root, "$", ("granularity",))
         if _string(root["granularity"], "$.granularity") != "file":
             _error("$.granularity", "must equal 'file'")

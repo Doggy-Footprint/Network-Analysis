@@ -225,7 +225,7 @@ def test_V08_schemas_and_json(monkeypatch,file_project,tmp_path,granularity):
     if granularity=='file':
         assert calls==[1]
     assert data['architecture']['schema_version']==('6' if granularity=='file' else '5')
-    assert data['bottlenecks']['schema']==('bottlenecks.v7' if granularity=='file' else 'bottlenecks.v6')
+    assert data['bottlenecks']['schema']==('bottlenecks.v8' if granularity=='file' else 'bottlenecks.v6')
     assert data['architecture']==json.loads(path.with_suffix('.json').read_text())
     assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
     if granularity=='symbol':
