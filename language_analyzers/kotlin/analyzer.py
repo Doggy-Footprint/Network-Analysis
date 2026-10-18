@@ -17,6 +17,7 @@ from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
 from language_analyzers.core.positions import NamePositions
 from language_analyzers.core.enrichment import enrich_repository
+from language_analyzers.core.external_imports import kotlin_is_internal, normalize_external_imports
 from language_analyzers.core.graph_models import (
     Confidence,
     GraphEdge,
@@ -101,6 +102,7 @@ class KotlinAnalyzer:
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
         self._imports: Dict[str, List[Tuple[str, int]]] = {}
+        self._import_statements: Dict[str, List[Tuple[str, int]]] = {}
         self._positions = {}
         self._byte_starts = {}
         self._valid_utf8 = {}
@@ -130,6 +132,7 @@ class KotlinAnalyzer:
             self._valid_utf8[key] = source == text.encode("utf-8")
             self._collect_file(key, source, text, root)
 
+        self._record_external_imports()
         self._name_order = {name: index for index, name in enumerate(self._by_name)}
         for symbol in self._symbols.values():
             self._add_symbol_node(symbol)
@@ -140,6 +143,16 @@ class KotlinAnalyzer:
 
         self.analysis_coverage = recorder.coverage()
         return list(self._nodes.values()), list(self._edges.values())
+
+    def _record_external_imports(self) -> None:
+        packages = tuple(sorted(node.symbol_path for node_id, node in self._nodes.items()
+                                if node_id.startswith("kotlin-package:") and node.symbol_path != "<default>"))
+        for key, imports in self._import_statements.items():
+            external = normalize_external_imports(
+                {"name": name, "line": line} for name, line in ((raw[:-2] if raw.endswith(".*") else raw, line) for raw, line in imports)
+                if name and not kotlin_is_internal(name, packages))
+            if external:
+                self._nodes[f"kotlin:{key}"].metadata["external_imports"] = external
 
     def _discover_files(self) -> List[Path]:
         if self.snapshot is not None:
@@ -176,6 +189,10 @@ class KotlinAnalyzer:
         self._imports[key] = [
             (match.group(1), text.count("\n", 0, match.start()) + 1)
             for match in re.finditer(r"^\s*import\s+([\w.*]+)", text, re.M)
+        ]
+        self._import_statements[key] = [
+            (match.group(1), text.count("\n", 0, match.start()) + 1)
+            for match in re.finditer(r"^[^\S\n]*import\s+([\w.*]+)", text, re.M)
         ]
         for declaration in ka.top_level_declarations(root):
             self._collect_declaration(key, source, declaration, None, [])

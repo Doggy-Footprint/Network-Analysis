@@ -1,0 +1,19 @@
+{
+  "seed": 20261018,
+  "loader": {
+    "execs": 20000,
+    "accepted": 1215,
+    "crashes": [],
+    "crash_count": 0
+  },
+  "tsconfig": {
+    "execs": 20000,
+    "violation_count": 0,
+    "violations": []
+  },
+  "package_name": {
+    "execs": 20000,
+    "violation_count": 0,
+    "violations": []
+  }
+}

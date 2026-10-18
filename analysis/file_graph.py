@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from language_analyzers.core.cost import estimate_tokens
+from language_analyzers.core.external_imports import normalize_external_imports
 from language_analyzers.core.flags import path_flags
 from language_analyzers.core.graph_models import GraphNode, GraphEdge, NodeCost, SourceSpan
 from language_analyzers.core.serialization import node_to_dict, edge_to_dict
@@ -103,6 +104,7 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
     for item in details_nodes:
         item["metadata"].pop("analysis", None)
     file_nodes = {}
+    external_records: Dict[str, List[Any]] = {}
     output_nodes = []
     for node in nodes:
         path = files[node.id]
@@ -123,9 +125,14 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
             ))
         file_nodes[file_id].append(node.id)
         file_node = next(item for item in output_nodes if item.id == file_id)
+        external_records.setdefault(file_id, []).extend((getattr(node, "metadata", None) or {}).get("external_imports", ()))
         for flag in getattr(node, "flags", []) or []:
             if flag in {"generated", "migration", "vendored"} and flag not in file_node.flags:
                 file_node.flags.append(flag)
+    for file_node in output_nodes:
+        merged = normalize_external_imports(external_records.get(file_node.id, ()))
+        if merged:
+            file_node.metadata["external_imports"] = merged
     node_files = {node_id: "file:" + path if path is not None else None for node_id, path in files.items()}
     dependency_edges = [(index, edge) for index, edge in enumerate(edges) if not ownership_edge(edge, by_id)]
     boundary_ids = {endpoint for _, edge in dependency_edges for endpoint in (edge.from_id, *candidate_targets(edge)) if node_files[endpoint] is None}
@@ -134,6 +141,7 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
             boundary = deepcopy(node)
             boundary.cost = NodeCost(0, 0, 0)
             boundary.metadata.pop("analysis", None)
+            boundary.metadata.pop("external_imports", None)
             boundary.metadata.update(boundary=True, granularity="file")
             output_nodes.append(boundary)
     grouped = {}

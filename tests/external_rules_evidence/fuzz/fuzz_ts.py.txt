@@ -1,0 +1,43 @@
+import traceback
+
+TSBASE = '{\n  // c\n  "compilerOptions": {\n    /* b */ "baseUrl": "./src",\n    "paths": {"@/*": ["src/*"], "http://x": ["y"],},\n  },\n}'
+CHARS = '{}[]",:/*\\\n ax1'
+INSERTS = ['//', '/*', '*/', '"', ',', '}', ']', '\\', '[', '{"a":1}', 'null', '"*"', '\n']
+
+
+def tsconfig_fuzz(rng, budget, parse):
+    bad = []
+    for i in range(budget):
+        data = list(TSBASE)
+        for _ in range(rng.randint(1, 6)):
+            pos = rng.randrange(len(data) + 1); op = rng.randrange(3)
+            if op == 0 and pos < len(data): del data[pos]
+            elif op == 1 and pos < len(data): data[pos] = rng.choice(CHARS)
+            else: data.insert(pos, rng.choice(INSERTS))
+        text = "".join(data)
+        try:
+            result = parse(text)
+            assert all(isinstance(k, str) for k in result.path_keys) and (result.base_url is None or isinstance(result.base_url, str))
+        except ValueError:
+            pass
+        except Exception:
+            bad.append({"index": i, "input": text, "error": traceback.format_exc(limit=3)})
+    return {"execs": budget, "violation_count": len(bad), "violations": bad[:20]}
+
+
+def package_fuzz(rng, budget, name_of):
+    bad = []
+    alphabet = ["@", "/", "a", "b", ":", "node", "node:", ".", "-", "_"]
+    i = 0
+    while i < budget:
+        s = "".join(rng.choice(alphabet) for _ in range(rng.randint(1, 8)))
+        if s.startswith((".", "/")): continue
+        i += 1
+        name = None
+        try:
+            name = name_of(s)
+            ok = bool(name) and s.startswith(name) and name_of(name) == name
+        except Exception:
+            ok = False
+        if not ok: bad.append({"index": i, "input": s, "output": name})
+    return {"execs": budget, "violation_count": len(bad), "violations": bad[:20]}

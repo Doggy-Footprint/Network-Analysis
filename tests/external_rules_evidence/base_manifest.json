@@ -1,0 +1,77 @@
+{
+  "base_commit": "2627174d8a454a427965b5becee666c295454435",
+  "canonical": "architecture JSON without top-level project_path, json.dumps(sort_keys=True, separators=(',', ':'), ensure_ascii=False), sha256",
+  "command": "python -m code_analyzer <fixture> <args> --granularity <g> --json -o <tmp>/r.html [--bottlenecks <tmp>/b.json]",
+  "fixtures": {
+    "android-nowinandroid": {
+      "args": [
+        "-l",
+        "kotlin"
+      ],
+      "file": {
+        "architecture_bytes": 8853602,
+        "architecture_canonical_sha256": "afed4cbaecbd8f6445e65b097bcc118cc70c687036fe525be7c58116bea344ad",
+        "bottleneck_bytes": 7854408,
+        "bottleneck_sha256": "f40dc91e70f6f44acf60556ea4d4bcfe483527ca2bd488661380a27efd474714"
+      }
+    },
+    "fastapi-official-template": {
+      "args": [
+        "-l",
+        "python"
+      ],
+      "file": {
+        "architecture_bytes": 1475829,
+        "architecture_canonical_sha256": "468c907f996570e8cf7ab27ee1d41023aeb33e9b8f8dfa4c92b0667c53338d9f",
+        "bottleneck_bytes": 490343,
+        "bottleneck_sha256": "ffe347034958b2b5bef403391ffbf3153a6a0f9937a67c755b23bfa1294db52b"
+      }
+    },
+    "fastapi-realworld": {
+      "args": [
+        "-l",
+        "python"
+      ],
+      "file": {
+        "architecture_bytes": 3004550,
+        "architecture_canonical_sha256": "1396b07f3331765a6dbee5fdd10a19259739d4b0e15769ac60f0ca57aa832cbc",
+        "bottleneck_bytes": 943448,
+        "bottleneck_sha256": "4abcf877307acc9abcb23ab9a7e5cfddabf2a2f361c73e2e925ca26ff1c21084"
+      },
+      "symbol": {
+        "architecture_bytes": 2649402,
+        "architecture_canonical_sha256": "b72693e030e39e49bab6cf5228175946bd23e909513c4e84b4e1fc0a6d911de3"
+      }
+    },
+    "futuramaapi": {
+      "args": [
+        "-l",
+        "python"
+      ],
+      "file": {
+        "architecture_bytes": 6794851,
+        "architecture_canonical_sha256": "c5d9febdfb69f7e3eb275a2d0db469f9606670a6bb4038de2b3fea8893bc5105",
+        "bottleneck_bytes": 2134318,
+        "bottleneck_sha256": "4dbc38a642566242bedbb05a7fb6c250ccab42e531d13f1ad0841d274db7fdf1"
+      }
+    },
+    "typescript-nestjs-realworld": {
+      "args": [
+        "-l",
+        "typescript",
+        "-f",
+        "nestjs"
+      ],
+      "file": {
+        "architecture_bytes": 1300683,
+        "architecture_canonical_sha256": "d2926a9111cc77e2e9628c12e94e436850174cff4218cbde9d29d814f2f452d6",
+        "bottleneck_bytes": 645507,
+        "bottleneck_sha256": "778ee6e4068634f9d065e2befddb8284e7f8f52f225b490b2a6e2626f01d6a60"
+      },
+      "symbol": {
+        "architecture_bytes": 1196613,
+        "architecture_canonical_sha256": "11bd36ced6b80c2c281920838741669d050005c675291f20012d093ab538f9c7"
+      }
+    }
+  }
+}

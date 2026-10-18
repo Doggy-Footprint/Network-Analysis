@@ -15,6 +15,13 @@ if TYPE_CHECKING:
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span
 from language_analyzers.core.enrichment import enrich_repository
+from language_analyzers.core.external_imports import (
+    TsconfigAliases,
+    normalize_external_imports,
+    parse_tsconfig_aliases,
+    typescript_alias_matcher,
+    typescript_package_name,
+)
 from language_analyzers.core.graph_models import (
     Confidence,
     GraphEdge,
@@ -120,6 +127,7 @@ class TypeScriptAnalyzer:
         modules = [self._parse(path) for path in paths]
         modules = [module for module in modules if module is not None]
         self._modules: Dict[str, _Module] = {module.file_key: module for module in modules}
+        self._is_alias = typescript_alias_matcher(self._load_tsconfig_aliases(), self._modules)
         self._symbols: Dict[str, _Symbol] = {}
         self._by_simple_name: Dict[str, List[str]] = {}
         self._nodes: Dict[str, GraphNode] = {}
@@ -162,6 +170,36 @@ class TypeScriptAnalyzer:
         self.analysis_coverage = self._coverage_recorder.coverage()
         attach_coverage(architecture, self.snapshot, self.analysis_coverage)
         return architecture
+
+    def _load_tsconfig_aliases(self) -> TsconfigAliases:
+        if self.snapshot is not None:
+            text = self.snapshot.source_map.get("tsconfig.json")
+        else:
+            try:
+                text = (self.project_path / "tsconfig.json").read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                text = None
+        if text is None:
+            return TsconfigAliases()
+        try:
+            return parse_tsconfig_aliases(text)
+        except ValueError as error:
+            self._coverage_recorder.record("tsconfig.json", "partial", [{"code": "tsconfig_invalid", "message": str(error)}])
+            return TsconfigAliases()
+
+    def _external_imports(self, module: _Module) -> List[dict]:
+        records = []
+        for dynamic, specifiers in ((False, module.module_specifiers), (True, module.dynamic_specifiers)):
+            for specifier, line in specifiers:
+                if specifier.startswith((".", "/")) or self._is_alias(specifier):
+                    continue
+                record: Dict[str, Any] = {"name": typescript_package_name(specifier), "line": line}
+                if record["name"] != specifier:
+                    record["specifier"] = specifier
+                if dynamic:
+                    record["dynamic"] = True
+                records.append(record)
+        return normalize_external_imports(records)
 
     def _function_body_ids(self) -> Dict[str, Dict[Tuple[int, int], str]]:
         result: Dict[str, Dict[Tuple[int, int], str]] = {}
@@ -477,6 +515,10 @@ class TypeScriptAnalyzer:
 
     def _module_node(self, module: _Module):
         span = SourceSpan(module.file_key, 1, module.end_line)
+        metadata: Dict[str, Any] = {"file_path": module.file_key}
+        external = self._external_imports(module)
+        if external:
+            metadata["external_imports"] = external
         self._nodes[module.id] = GraphNode(
             id=module.id,
             label=module.file_key,
@@ -489,7 +531,7 @@ class TypeScriptAnalyzer:
             symbol_path=module.file_key,
             flags=list(module.flags),
             provenance=PROVENANCE,
-            metadata={"file_path": module.file_key},
+            metadata=metadata,
         )
 
     def _symbol_node(self, symbol: _Symbol):

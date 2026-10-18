@@ -224,7 +224,41 @@ def _unstable_candidates(scheme: str, pairs: Mapping[tuple[str, str], dict], met
     return candidates
 
 
-def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Mapping[str, list[str]]], pairs: Mapping[tuple[str, str], dict]) -> tuple[list[dict], dict]:
+def _external_violations(rules: Any, layers: Mapping[str, str], records_by_file: Mapping[str, list]) -> list[dict]:
+    from analysis.architecture_rules import external_entries_matcher, external_entry_matches
+    from bottlenecks.core import _candidate
+    matchers = {}
+    decisions: dict[tuple[str, str], tuple[tuple[str, ...], bool]] = {}
+
+    def decide(layer: str, name: str) -> tuple[tuple[str, ...], bool]:
+        found = decisions.get((layer, name))
+        if found is None:
+            if layer not in matchers:
+                matchers[layer] = (external_entries_matcher(rules, rules.forbid_external.get(layer, ())),
+                                   external_entries_matcher(rules, rules.allow_external.get(layer, ())) if layer in rules.allow_external else None)
+            forbidden, allowed = matchers[layer]
+            matched = tuple(entry for entry in rules.forbid_external.get(layer, ()) if external_entry_matches(rules, entry, name)) if forbidden(name) else ()
+            found = decisions[(layer, name)] = (matched, allowed is not None and not allowed(name))
+        return found
+
+    candidates = []
+    for file_id, layer in layers.items():
+        by_name: dict[str, list] = {}
+        for record in records_by_file.get(file_id, ()): by_name.setdefault(record["name"], []).append(record)
+        for name in sorted(by_name):
+            matched, outside = decide(layer, name)
+            records = by_name[name]
+            tier = "certain" if any(not record.get("dynamic") for record in records) else "resolved"
+            for rule_type, violated, entries in (("forbid_external", bool(matched), matched), ("allow_external", outside, ())):
+                if not violated: continue
+                candidate = _candidate("rule|%s|%s|%s|%s" % (rule_type, layer, file_id, name), "rule_violation", file_id,
+                    {"evidence_count": len(records)}, records, "static_analyzer_relation")
+                candidate["structure"] = {"rule_type": rule_type, "from_layer": layer, "to_external": name, "matched": list(entries), "tier": tier, "relations": ["IMPORTS"]}
+                candidates.append(candidate)
+    return candidates
+
+
+def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Mapping[str, list[str]]], pairs: Mapping[tuple[str, str], dict], records_by_file: Mapping[str, list] | None = None) -> tuple[list[dict], dict]:
     from analysis.architecture_rules import RULES_POLICY, layer_assignments
     from bottlenecks.core import _candidate
     layers = layer_assignments(rules, files, assignments)
@@ -242,7 +276,13 @@ def _rule_violations(rules: Any, files: list[str], assignments: Mapping[str, Map
     for name in layers.values(): counts[name] += 1
     unassigned = [file_id for file_id in files if file_id not in layers]
     coverage = {"policy": RULES_POLICY, "version": rules.version, "layer_file_counts": dict(sorted(counts.items())), "unassigned_file_count": len(unassigned),
-        "unassigned_files": unassigned, "empty_layers": sorted(name for name, count in counts.items() if not count), "violation_count": len(candidates)}
+        "unassigned_files": unassigned, "empty_layers": sorted(name for name, count in counts.items() if not count)}
+    if rules.forbid_external or rules.allow_external:
+        external = _external_violations(rules, layers, records_by_file or {})
+        candidates += external
+        coverage["external_import_count"] = sum(len(records) for records in (records_by_file or {}).values())
+        coverage["external_violation_count"] = len(external)
+    coverage["violation_count"] = len(candidates)
     return candidates, coverage
 
 
@@ -262,6 +302,8 @@ def analyze_structure(architecture: Any, weights: Any, rules: Any = None) -> Str
         schemes[scheme] = {"assigned_file_count": len(files) - len(unassigned), "unassigned_file_count": len(unassigned), "unassigned_files": unassigned, "shared_file_count": len(shared), "shared_files": shared}
     coverage = {"structure": {"policy": STRUCTURE_POLICY, "schemes": schemes}}
     if rules is not None:
-        violations, coverage["architecture_rules"] = _rule_violations(rules, files, assignments, file_pairs["all"])
+        records_by_file = {node.id: node.metadata["external_imports"] for node in architecture.nodes
+                           if not (getattr(node, "metadata", None) or {}).get("boundary") and (getattr(node, "metadata", None) or {}).get("external_imports")}
+        violations, coverage["architecture_rules"] = _rule_violations(rules, files, assignments, file_pairs["all"], records_by_file)
         candidates += violations
     return StructureResult(tuple(sorted(candidates, key=lambda item: (item["kind"], item["id"]))), package_metrics, coverage)

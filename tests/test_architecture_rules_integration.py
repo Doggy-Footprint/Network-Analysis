@@ -98,17 +98,26 @@ def test_V07_rules_change_only_the_rule_parts(realworld_plain, realworld_rules):
     assert realworld_rules['schema'] == 'bottlenecks.v8' and 'architecture_rules' not in realworld_plain['coverage']
 
 
+def internal_only(candidates):
+    return [c for c in candidates if c['kind'] == RULE_KIND and c['structure']['rule_type'] in ('allow', 'forbid')]
+
+
 def test_V08_example_realworld_against_reference(realworld_rules, realworld_arch):
     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
-    actual = violations_of(realworld_rules['candidates'])
+    actual = violations_of(internal_only(realworld_rules['candidates']))
     assert_candidates_equal(actual, expected)
-    assert realworld_rules['coverage']['architecture_rules'] == coverage
+    got = dict(realworld_rules['coverage']['architecture_rules'])
+    external_keys = {'external_import_count', 'external_violation_count'}
+    assert external_keys <= set(got)
+    total = got.pop('violation_count')
+    assert {k: v for k, v in got.items() if k not in external_keys} == {k: v for k, v in coverage.items() if k != 'violation_count'}
+    assert total == len(actual) + got['external_violation_count']
     assert coverage['violation_count'] == len(actual) > 0
 
 
 def test_V08_example_realworld_expected_violations_exist(realworld_rules):
     found = {(c['structure']['rule_type'], c['structure']['from_layer'], c['structure']['to_layer'])
-             for c in realworld_rules['candidates'] if c['kind'] == RULE_KIND}
+             for c in internal_only(realworld_rules['candidates'])}
     assert ('allow', 'domain', 'services') in found
     assert ('forbid', 'db', 'api') in found
     assert {rule for rule, source, _ in found if rule == 'allow'} and all(s == 'domain' for r, s, _ in found if r == 'allow')
@@ -146,7 +155,7 @@ def test_V08_positive_control_outputs_exist_without_rules(tmp_path):
 GOOD_LAYERS = 'version: 1\nlayers:\n  la:\n    paths: [src/a.py]\n  lb:\n    paths: [src/b.py]\n'
 BAD_RULES = {
     'unknown-key': ('version: 1\nlayers:\n  la:\n    paths: [src/a.py]\nnonsense_key: 1\n', 'nonsense_key'),
-    'external': (GOOD_LAYERS + 'external: {libs: [requests]}\n', 'not supported'),
+    'external': (GOOD_LAYERS + 'external: [libs]\n', 'external'),
     'syntax': ('version: [1\n', None),
     'missing-file': (None, 'no_such_rules.yaml'),
 }

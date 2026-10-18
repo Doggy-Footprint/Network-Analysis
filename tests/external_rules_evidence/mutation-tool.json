@@ -1,0 +1,312 @@
+{
+  "summary": {
+    "seed": 20261018,
+    "cap": 30,
+    "pool": 209,
+    "executed": 30,
+    "killed": 26,
+    "survived": 4
+  },
+  "mutants": [
+    {
+      "id": "M01",
+      "file": "analysis/architecture_rules.py",
+      "line": 177,
+      "operator": "cond",
+      "before": "if 'to' in item:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V08_C15_loads_with_union_sort_dedup_and_to_plus_to_external"
+    },
+    {
+      "id": "M02",
+      "file": "analysis/architecture_rules.py",
+      "line": 222,
+      "operator": "not",
+      "before": "not patterns",
+      "after": "patterns",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M03",
+      "file": "analysis/architecture_rules.py",
+      "line": 133,
+      "operator": "not",
+      "before": "not external",
+      "after": "external",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M04",
+      "file": "analysis/architecture_rules.py",
+      "line": 144,
+      "operator": "boolop",
+      "before": "not value and (not allow_empty)",
+      "after": "not value or not allow_empty",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V08_2a_not_supported_rejection_is_gone"
+    },
+    {
+      "id": "M05",
+      "file": "analysis/architecture_rules.py",
+      "line": 208,
+      "operator": "cmp",
+      "before": "'allow_external' in document",
+      "after": "'allow_external' not in document",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V08_C14_table_row[allow-external-empty-string-entry]"
+    },
+    {
+      "id": "M06",
+      "file": "analysis/architecture_rules.py",
+      "line": 209,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V08_2a_file_unchanged - AssertionEr..."
+    },
+    {
+      "id": "M07",
+      "file": "analysis/architecture_rules.py",
+      "line": 137,
+      "operator": "not",
+      "before": "not _LAYER_NAME.fullmatch(name)",
+      "after": "_LAYER_NAME.fullmatch(name)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V08_C14_table_row[allow-external-group-empty-name]"
+    },
+    {
+      "id": "M08",
+      "file": "analysis/architecture_rules.py",
+      "line": 178,
+      "operator": "const",
+      "before": "False",
+      "after": "True",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M09",
+      "file": "analysis/structure.py",
+      "line": 280,
+      "operator": "boolop",
+      "before": "rules.forbid_external or rules.allow_external",
+      "after": "rules.forbid_external and rules.allow_external",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_F10_decision_table[forbid-match-allow-absent]"
+    },
+    {
+      "id": "M10",
+      "file": "analysis/structure.py",
+      "line": 236,
+      "operator": "cmp",
+      "before": "layer not in matchers",
+      "after": "layer in matchers",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M11",
+      "file": "analysis/structure.py",
+      "line": 281,
+      "operator": "boolop",
+      "before": "records_by_file or {}",
+      "after": "records_by_file and {}",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M12",
+      "file": "analysis/structure.py",
+      "line": 241,
+      "operator": "not",
+      "before": "not allowed(name)",
+      "after": "allowed(name)",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M13",
+      "file": "analysis/structure.py",
+      "line": 251,
+      "operator": "not",
+      "before": "not record.get('dynamic')",
+      "after": "record.get('dynamic')",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V09_C16_decision_table_hand_expected"
+    },
+    {
+      "id": "M14",
+      "file": "analysis/file_graph.py",
+      "line": 134,
+      "operator": "cond",
+      "before": "if merged:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_rules.py::test_V07_C13_union_of_two_nodes_projected_to_one_file"
+    },
+    {
+      "id": "M15",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 76,
+      "operator": "cmp",
+      "before": "base_url is not None",
+      "after": "base_url is None",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C07_paths_table[C07-@/x] - Ty..."
+    },
+    {
+      "id": "M16",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 92,
+      "operator": "cmp",
+      "before": "'/' in relative",
+      "after": "'/' not in relative",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C08_base_url_table[C08-app/x]"
+    },
+    {
+      "id": "M17",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 49,
+      "operator": "cmp",
+      "before": "char in '}]'",
+      "after": "char not in '}]'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C07_paths_table[C07-@/x] - Va..."
+    },
+    {
+      "id": "M18",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 56,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C07_paths_table[C07-@/x] - Va..."
+    },
+    {
+      "id": "M19",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 129,
+      "operator": "arith",
+      "before": "name + '.'",
+      "after": "name - '.'",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V03_C04_kotlin_analyzer_records"
+    },
+    {
+      "id": "M20",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 39,
+      "operator": "arith",
+      "before": "end + 1",
+      "after": "end - 1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V03_C04_kotlin_analyzer_records"
+    },
+    {
+      "id": "M21",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 43,
+      "operator": "const",
+      "before": "0",
+      "after": "1",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M22",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 92,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M23",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 120,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V01_C01_import_forms - AssertionE..."
+    },
+    {
+      "id": "M24",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 47,
+      "operator": "const",
+      "before": "2",
+      "after": "3",
+      "status": "survived",
+      "first_failure": ""
+    },
+    {
+      "id": "M25",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 52,
+      "operator": "const",
+      "before": "1",
+      "after": "2",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C09_jsonc_syntax[trailing-comma-then-comment]"
+    },
+    {
+      "id": "M26",
+      "file": "language_analyzers/core/external_imports.py",
+      "line": 53,
+      "operator": "const",
+      "before": "0",
+      "after": "1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V05_C09_jsonc_syntax[trailing-comma-then-comment]"
+    },
+    {
+      "id": "M27",
+      "file": "language_analyzers/typescript/analyzer.py",
+      "line": 182,
+      "operator": "cond",
+      "before": "if text is None:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V04_C05_records - AttributeError:..."
+    },
+    {
+      "id": "M28",
+      "file": "language_analyzers/kotlin/analyzer.py",
+      "line": 154,
+      "operator": "cond",
+      "before": "if external:",
+      "after": "if False:",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V03_C04_kotlin_analyzer_records"
+    },
+    {
+      "id": "M29",
+      "file": "language_analyzers/kotlin/analyzer.py",
+      "line": 194,
+      "operator": "arith",
+      "before": "text.count('\\n', 0, match.start()) + 1",
+      "after": "text.count('\\n', 0, match.start()) - 1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V03_C04_kotlin_analyzer_records"
+    },
+    {
+      "id": "M30",
+      "file": "language_analyzers/kotlin/analyzer.py",
+      "line": 194,
+      "operator": "const",
+      "before": "0",
+      "after": "1",
+      "status": "killed",
+      "first_failure": "FAILED tests/test_external_imports.py::test_V03_C04_kotlin_analyzer_records"
+    }
+  ]
+}

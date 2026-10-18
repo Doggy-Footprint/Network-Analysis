@@ -1,18 +1,18 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import translate
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Tuple, Union
 
 import yaml
 
 RULES_POLICY = "architecture_rules.v1"
-_TOP_KEYS = {"version", "layers", "allow", "forbid"}
+_TOP_KEYS = {"version", "layers", "allow", "forbid", "external", "allow_external"}
+_GROUP_PREFIX = "group:"
 _SELECTOR_KEYS = ("paths", "packages")
 _LAYER_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_-]*")
 _REPORT_LIMIT = 10
-_EXTERNAL_MESSAGE = "architecture rules {where}: external library rules are not supported in this version"
 
 
 class ArchitectureRulesError(ValueError):
@@ -31,6 +31,9 @@ class ArchitectureRules:
     layers: Mapping[str, LayerSelector]
     allow: Mapping[str, Tuple[str, ...]]
     forbid: Mapping[str, Tuple[str, ...]]
+    external: Mapping[str, Tuple[str, ...]] = field(default_factory=dict)
+    forbid_external: Mapping[str, Tuple[str, ...]] = field(default_factory=dict)
+    allow_external: Mapping[str, Tuple[str, ...]] = field(default_factory=dict)
 
 
 def _fail(message: str) -> None:
@@ -126,21 +129,57 @@ def _parse_allow(allow: Any, layers: Mapping[str, Any]) -> Dict[str, Tuple[str, 
     return result
 
 
-def _parse_forbid(forbid: Any, layers: Mapping[str, Any]) -> Dict[str, Tuple[str, ...]]:
+def _parse_external(external: Any) -> Dict[str, Tuple[str, ...]]:
+    if not isinstance(external, dict) or not external:
+        _fail(f"external must be a non-empty mapping, got {external!r}")
+    result = {}
+    for name in sorted(external, key=str):
+        if not isinstance(name, str) or not _LAYER_NAME.fullmatch(name):
+            _fail(f"external group name {name!r} must match [A-Za-z][A-Za-z0-9_-]*")
+        result[name] = tuple(sorted(set(_string_list(external[name], f"external group {name!r}"))))
+    return result
+
+
+def _entry_list(value: Any, where: str, groups: Mapping[str, Any], allow_empty: bool) -> Tuple[str, ...]:
+    if not isinstance(value, list) or (not value and not allow_empty):
+        _fail(f"{where} must be a{'' if allow_empty else ' non-empty'} list of external entries, got {value!r}")
+    for entry in value:
+        if not isinstance(entry, str) or not entry:
+            _fail(f"{where} entries must be non-empty strings, got {entry!r}")
+        if entry.startswith(_GROUP_PREFIX) and entry[len(_GROUP_PREFIX):] not in groups:
+            _fail(f"{where} references undefined external group {entry!r}")
+    return tuple(sorted(set(value)))
+
+
+def _parse_allow_external(allow_external: Any, layers: Mapping[str, Any], groups: Mapping[str, Any]) -> Dict[str, Tuple[str, ...]]:
+    if not isinstance(allow_external, dict):
+        _fail(f"allow_external must be a mapping, got {allow_external!r}")
+    result = {}
+    for name in sorted(allow_external, key=str):
+        if not isinstance(name, str) or name not in layers:
+            _fail(f"allow_external references undefined layer {name!r}")
+        result[name] = _entry_list(allow_external[name], f"allow_external.{name}", groups, True)
+    return result
+
+
+def _parse_forbid(forbid: Any, layers: Mapping[str, Any], groups: Mapping[str, Any]) -> Tuple[Dict[str, Tuple[str, ...]], Dict[str, Tuple[str, ...]]]:
     if not isinstance(forbid, list):
         _fail(f"forbid must be a list, got {forbid!r}")
     merged: Dict[str, set] = {}
+    merged_external: Dict[str, set] = {}
     for index, item in enumerate(forbid):
         where = f"forbid[{index}]"
-        if isinstance(item, dict) and "to_external" in item:
-            raise ArchitectureRulesError(_EXTERNAL_MESSAGE.format(where=f"{where} key 'to_external'"))
-        if not isinstance(item, dict) or set(item) != {"from", "to"}:
-            _fail(f"{where} must be a mapping with exactly the keys ['from', 'to'], got {item!r}")
+        if not isinstance(item, dict) or "from" not in item or not set(item) <= {"from", "to", "to_external"} or not set(item) & {"to", "to_external"}:
+            _fail(f"{where} must be a mapping with 'from' and at least one of 'to', 'to_external' and no other keys, got {item!r}")
         source = item["from"]
         if not isinstance(source, str) or source not in layers:
             _fail(f"{where}.from references undefined layer {source!r}")
-        merged.setdefault(source, set()).update(_layer_list(item["to"], source, f"{where}.to", layers, False))
-    return {name: tuple(sorted(merged[name])) for name in sorted(merged)}
+        if "to" in item:
+            merged.setdefault(source, set()).update(_layer_list(item["to"], source, f"{where}.to", layers, False))
+        if "to_external" in item:
+            merged_external.setdefault(source, set()).update(_entry_list(item["to_external"], f"{where}.to_external", groups, False))
+    return ({name: tuple(sorted(merged[name])) for name in sorted(merged)},
+            {name: tuple(sorted(merged_external[name])) for name in sorted(merged_external)})
 
 
 def load_architecture_rules(path: Union[str, Path]) -> ArchitectureRules:
@@ -154,8 +193,6 @@ def load_architecture_rules(path: Union[str, Path]) -> ArchitectureRules:
         raise ArchitectureRulesError(f"architecture rules {path} is not valid YAML: {error}") from error
     if not isinstance(document, dict):
         _fail(f"must be a YAML mapping, got {type(document).__name__}")
-    if "external" in document:
-        raise ArchitectureRulesError(_EXTERNAL_MESSAGE.format(where="key 'external'"))
     unknown = sorted(repr(key) for key in document if key not in _TOP_KEYS)
     if unknown:
         _fail(f"has unknown keys {', '.join(unknown)}; allowed keys are {sorted(_TOP_KEYS)}")
@@ -166,8 +203,26 @@ def load_architecture_rules(path: Union[str, Path]) -> ArchitectureRules:
         _fail(f"version must be the integer 1, got {document['version']!r}")
     layers = _parse_layers(document["layers"])
     allow = _parse_allow(document["allow"], layers) if "allow" in document else {}
-    forbid = _parse_forbid(document["forbid"], layers) if "forbid" in document else {}
-    return ArchitectureRules(1, layers, allow, forbid)
+    external = _parse_external(document["external"]) if "external" in document else {}
+    forbid, forbid_external = _parse_forbid(document["forbid"], layers, external) if "forbid" in document else ({}, {})
+    allow_external = _parse_allow_external(document["allow_external"], layers, external) if "allow_external" in document else {}
+    return ArchitectureRules(1, layers, allow, forbid, external, forbid_external, allow_external)
+
+
+def _entry_patterns(rules: ArchitectureRules, entry: str) -> Tuple[str, ...]:
+    return rules.external.get(entry[len(_GROUP_PREFIX):], ()) if entry.startswith(_GROUP_PREFIX) else (entry,)
+
+
+def external_entry_matches(rules: ArchitectureRules, entry: str, name: str) -> bool:
+    return any(_compile_package(pattern).fullmatch(name) for pattern in _entry_patterns(rules, entry))
+
+
+def external_entries_matcher(rules: ArchitectureRules, entries: Iterable[str]) -> Callable[[str], bool]:
+    patterns = sorted({pattern for entry in entries for pattern in _entry_patterns(rules, entry)})
+    if not patterns:
+        return lambda name: False
+    combined = re.compile("|".join(translate(pattern) for pattern in patterns))
+    return lambda name: combined.fullmatch(name) is not None
 
 
 def layer_assignments(rules: ArchitectureRules, files: Iterable[str], packages: Mapping[str, Mapping[str, List[str]]]) -> Dict[str, str]:

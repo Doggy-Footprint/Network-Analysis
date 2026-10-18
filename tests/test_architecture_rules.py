@@ -129,23 +129,25 @@ def test_V01_C12_valid_base_document_loads(tmp_path):
     assert load(write_rules(tmp_path, BASE)).version == 1
 
 
-@pytest.mark.parametrize('text', [
-    'version: 1\nlayers:\n  alpha:\n    paths: [src/a/**]\nexternal:\n  libs: [requests]\n',
-    'version: 1\nlayers:\n  alpha:\n    paths: [src/a/**]\nexternal: []\n',
-], ids=['external-top', 'external-top-list'])
-def test_V01_C13_external_top_level(tmp_path, text):
-    message = rejected(tmp_path, text)
-    assert 'external' in message and 'not supported' in message
+def test_V01_C13_external_group_definition_loads(tmp_path):
+    rules = load(write_rules(tmp_path, BASE + 'external:\n  libs: [requests]\n'))
+    assert dict(rules.external) == {'libs': ('requests',)}
+
+
+@pytest.mark.parametrize('text', ['external: []\n', 'external: {}\n'], ids=['external-top-list', 'external-top-empty-mapping'])
+def test_V01_C13_external_top_level_must_be_a_non_empty_mapping(tmp_path, text):
+    message = rejected(tmp_path, BASE + text)
+    assert 'external' in message and 'not supported' not in message
 
 
 def test_V01_C13_to_external(tmp_path):
-    message = rejected(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to_external: [requests]\n')
-    assert 'external' in message and 'not supported' in message
+    rules = load(write_rules(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to_external: [requests]\n'))
+    assert dict(rules.forbid_external) == {'alpha': ('requests',)}
 
 
 def test_V01_C13_to_external_next_to_to(tmp_path):
-    message = rejected(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to: [beta]\n    to_external: [requests]\n')
-    assert 'external' in message and 'not supported' in message
+    rules = load(write_rules(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to: [beta]\n    to_external: [requests]\n'))
+    assert dict(rules.forbid)['alpha'] == ('beta',) and dict(rules.forbid_external) == {'alpha': ('requests',)}
 
 
 @pytest.mark.parametrize('where', ['layers-value', 'nested-path', 'top-level-value'])
