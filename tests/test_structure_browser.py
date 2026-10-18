@@ -1,10 +1,5 @@
-"""Playwright evidence for the dependency_cycle display and its XSS safety (V10; C21, C22; Q05, Q07).
-
-Spec f80bb8ba5e7ac1ef v3 F16: dependency_cycle is attached to every member file with the kind label and the reason
-"<member_count>개 파일 순환 · <tier label>"; package_cycle and unstable_dependency are not shown. The exact kind label is
-the implementer's choice, so it is read from report.bottlenecks.generate.KIND_LABELS at runtime (or from the dashboard's
-own kind filter option when it offers one); the reason string is fixed by the spec.
-"""
+"""The kind label is not fixed by the spec, so it is read from report.bottlenecks.generate.KIND_LABELS at runtime
+(or from the dashboard's own kind filter option when it offers one)."""
 import copy
 import json
 import os
@@ -150,8 +145,6 @@ def test_V10_cycle_member_with_only_base_candidates_keeps_them(open_report):
     assert '2417' in text.replace(',', '') and not REASON.search(text)
 
 
-# ---------------------------------------------------------------- real pipeline, futuramaapi (C21)
-
 @pytest.fixture(scope='module')
 def futurama_html(tmp_path_factory):
     directory = tmp_path_factory.mktemp('futurama-html')
@@ -197,8 +190,6 @@ def test_V10_C21_futuramaapi_file_outside_any_cycle_shows_no_cycle(open_report, 
     text = open_file(page, outside[0][len('file:'):], search=True)
     assert not REASON.search(text)
 
-
-# ---------------------------------------------------------------- XSS (C22, Q07)
 
 HOSTILE = '<img src=x onerror=alert(1)>'
 

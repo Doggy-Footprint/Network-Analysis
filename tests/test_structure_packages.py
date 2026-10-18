@@ -1,8 +1,3 @@
-"""Package schemes, package metrics, package_cycle and unstable_dependency.
-
-Obligations V04 (unit part), V05 (unit part), V06, V07 of spec f80bb8ba5e7ac1ef v3. The fixture-backed parts of
-V04/V05 live in tests/test_structure_integration.py. Expected values are hand calculated in the comments.
-"""
 import pytest
 
 from analysis.structure import analyze_structure, package_assignments
@@ -16,9 +11,6 @@ def run(paths, edges, **kwargs):
 
 def language(arch):
     return package_assignments(arch)['language']
-
-
-# ================================================================ V04 language scheme
 
 
 def test_V04_python_packages_C08():
@@ -106,15 +98,11 @@ def test_V04_framework_key_exists_only_with_nestjs_modules():
     assert set(package_assignments(arch)) == {'language'}
 
 
-# ================================================================ V05 framework scheme
-
-
 def nest_node(kind, path, name):
     return dnode(f'nestjs:{kind}:{path}#{name}', kind, 'nestjs')
 
 
 def nest_arch(paths, modules, members, edges=(), extra_dnodes=(), extra_dedges=(), extra_files=None, unmapped=()):
-    """modules: {name: path}; members: [(module name, relation, kind, path, name)]."""
     dnodes, dedges, files = list(extra_dnodes), list(extra_dedges), dict(extra_files or {})
     mod_ids = {}
     for name, path in modules.items():
@@ -252,9 +240,6 @@ def test_V05_C25_framework_package_cycle_with_file_pairs():
     assert top['metrics']['member_count'] == 3 and top['metrics']['internal_pair_count'] == 4
 
 
-# ================================================================ V06 package graph and metrics (boundary value analysis)
-
-
 def by_package(result, scheme='language'):
     return result.package_metrics[scheme]
 
@@ -291,9 +276,6 @@ def test_V06_C14_metrics_hand_calculated():
     assert metrics['pkg:dir:z']['instability'] == 1.0 and metrics['pkg:dir:z']['weighted_ce'] == pytest.approx(0.3)
     assert metrics['pkg:dir:s']['instability'] == 0.0 and metrics['pkg:dir:s']['weighted_ca'] == pytest.approx(1.0)
     assert metrics['pkg:dir:t']['instability'] == 0.0 and metrics['pkg:dir:t']['weighted_ca'] == pytest.approx(0.5)
-
-
-# ================================================================ V07 unstable_dependency / package_cycle
 
 
 def test_V07_candidates_are_sorted_by_kind_then_id():

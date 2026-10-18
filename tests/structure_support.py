@@ -1,9 +1,5 @@
-"""Builders and independent oracles for the structure-facts evidence (spec f80bb8ba5e7ac1ef v3).
-
-Everything here is derived from the spec text (F01-F13), never from analysis/structure.py. The reference
-functions use different algorithms from the product on purpose (mutual reachability instead of Tarjan,
-brute-force pair aggregation) so a shared defect cannot hide.
-"""
+"""Reference functions use different algorithms from the product on purpose (mutual reachability instead of
+Tarjan, brute-force pair aggregation) so a shared defect cannot hide."""
 import hashlib
 import json
 from collections import deque
@@ -32,7 +28,6 @@ def load_manifest():
 
 
 def canonical_sha(value):
-    """Manifest `canonical_json` format."""
     text = json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=False)
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
@@ -40,8 +35,6 @@ def canonical_sha(value):
 def default_weights():
     return load_edge_weights(default_edge_weights_path())
 
-
-# ---------------------------------------------------------------- spec-derived identifiers (F04, F12)
 
 def sha16(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()[:16]
@@ -62,8 +55,6 @@ def cycle_target(scheme, tier, members):
 def unstable_id(scheme, source, target):
     return 'b:' + sha16(f'unstable|{scheme}|{source}|{target}')
 
-
-# ---------------------------------------------------------------- input builders
 
 def fid(path):
     return 'file:' + path
@@ -125,14 +116,11 @@ def python_modules(mapping):
     return dnodes, files
 
 
-# ---------------------------------------------------------------- result lookups
-
 def of_kind(candidates, kind):
     return [item for item in candidates if item['kind'] == kind]
 
 
 def cycles_by_key(candidates, kind='dependency_cycle'):
-    """{(scheme, tier, tuple(members)): candidate}"""
     found = {}
     for item in of_kind(candidates, kind):
         key = (item['structure']['scheme'], item['structure']['tier'], tuple(item['structure']['members']))
@@ -144,8 +132,6 @@ def cycles_by_key(candidates, kind='dependency_cycle'):
 def cycle_view(candidates, kind='dependency_cycle'):
     return sorted(cycles_by_key(candidates, kind))
 
-
-# ---------------------------------------------------------------- independent reference implementation
 
 def reference_sccs(nodes, adjacency):
     """SCCs of size >= 2 by mutual reachability (one BFS per node); shares no code idea with Tarjan."""
@@ -184,7 +170,6 @@ def ref_file_ids(arch):
 
 
 def ref_pairs(arch, weights, tier):
-    """F01/F02: file pair records re-aggregated from tier-t edges only."""
     files = ref_file_ids(arch)
     pairs = {}
     for edge in arch.edges:
@@ -209,7 +194,6 @@ def ref_pairs(arch, weights, tier):
 
 
 def ref_language(arch):
-    """F07 written from the spec text."""
     detail = arch.details or {}
     node_files = detail.get('node_files', {})
     modules, kotlin_files, kotlin_pkg = {}, {}, {}
@@ -303,7 +287,6 @@ def ref_metrics(assignment, all_pairs):
 
 
 def ref_structure(arch, weights):
-    """Everything the spec lets a test predict: cycle views per scheme/tier and package metrics."""
     schemes = {'language': ref_language(arch)}
     framework = ref_framework(arch)
     if framework is not None:
@@ -338,11 +321,8 @@ def ref_structure(arch, weights):
 
 
 def file_pair_view(record):
-    """Spec F02 fields of an evidence/pair record, comparable across implementations."""
     return {key: record[key] for key in ('from_id', 'to_id', 'relations', 'max_weight', 'evidence_count', 'detail_edge_indices', 'tier')}
 
-
-# ---------------------------------------------------------------- CLI / bottleneck payload helpers
 
 def without_structure_facts(payload):
     """Drops everything bottlenecks.v8 adds so legacy comparisons keep their original meaning."""

@@ -1,10 +1,5 @@
-"""CLI integration, fixture-backed package schemes, and size/time limits.
-
-Obligations V08, V11 and the fixture parts of V04/V05 of spec f80bb8ba5e7ac1ef v3. Expected hashes come from
-tests/structure_evidence/base_manifest.json (generated at base_commit before implementation); structure facts of the
-real fixtures are checked against the independent reference in tests/structure_support.py, never against
-analysis/structure.py. V11 is deliberately not benchmark-marked so it runs in the default selection.
-"""
+"""Expected hashes come from tests/structure_evidence/base_manifest.json, generated at the pre-feature commit.
+Size/time checks are deliberately not benchmark-marked so they run in the default selection."""
 import hashlib
 import json
 import os
@@ -30,7 +25,6 @@ def command_args(name):
 
 
 class Run:
-    """Lazily executes the CLI in a subprocess once per (granularity, hash seed) and keeps the output bytes."""
 
     def __init__(self, name, directory):
         self.name, self.directory, self.cache = name, directory, {}
@@ -61,7 +55,6 @@ def run(request, tmp_path_factory):
 
 
 def capture_pipeline(name, directory):
-    """Runs the CLI in-process once and returns the FileArchitecture and weights handed to analyze_bottlenecks."""
     import code_analyzer.cli as cli
     seen = {}
     original = cli.analyze_bottlenecks
@@ -83,9 +76,6 @@ def capture_pipeline(name, directory):
 @pytest.fixture(scope='module')
 def pipeline(run, tmp_path_factory):
     return capture_pipeline(run.name, tmp_path_factory.mktemp('inproc-' + run.name))
-
-
-# ================================================================ V08 scenario testing
 
 
 def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
@@ -211,9 +201,6 @@ def test_V08_C24_determinism_across_hash_seeds(tmp_path_factory):
     assert len(first) > 0
 
 
-# ================================================================ V04/V05 fixture parts
-
-
 def test_V04_fixture_language_packages_match_reference(run, pipeline):
     arch = pipeline['arch']
     actual = package_assignments(arch)
@@ -251,8 +238,6 @@ def test_V08_analyze_structure_is_repeatable_on_real_input(pipeline):
     assert json.dumps([first.candidates, first.package_metrics, first.coverage], sort_keys=True) == \
         json.dumps([second.candidates, second.package_metrics, second.coverage], sort_keys=True)
 
-
-# ================================================================ V11 boundary value analysis: size and time (not benchmark)
 
 SIZE_LIMIT = 1.25
 TIME_LIMIT = 1.0

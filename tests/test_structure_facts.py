@@ -1,8 +1,3 @@
-"""Structure facts: pair aggregation, SCC, dependency_cycle format, validator, import boundary, error guessing.
-
-Obligations V01, V02, V03, V09, V12, V13 of spec f80bb8ba5e7ac1ef v3. Expected values come from the spec text,
-hand calculation, or the mutual-reachability oracle in tests/structure_support.py.
-"""
 import ast
 import dataclasses
 import json
@@ -34,9 +29,6 @@ def view(result, kind='dependency_cycle'):
 
 def key(tier, *paths, scheme='file'):
     return (scheme, tier, tuple(sorted(fid(p) for p in paths)))
-
-
-# ================================================================ V01 equivalence partitioning
 
 
 def test_V01_policy_constants():
@@ -142,9 +134,6 @@ def test_V01_tier_of_pair_is_strictest_edge_tier():
     assert [r['tier'] for r in candidate['evidence']] == ['resolved', 'resolved']
 
 
-# ================================================================ V02 random testing: SCC
-
-
 def sccs(nodes, adjacency):
     return strongly_connected_components(nodes, adjacency)
 
@@ -210,9 +199,6 @@ def test_V02_chain_20000_cycle_has_no_recursion_error():
 def test_V02_chain_20000_acyclic():
     names = [f'n{i:05}' for i in range(20000)]
     assert sccs(names, {names[i]: [names[i + 1]] for i in range(19999)}) == []
-
-
-# ================================================================ V03 decision table: dependency_cycle
 
 
 def cyc_pair(ab, ba):
@@ -384,9 +370,6 @@ def test_V03_F17_repeat_and_input_order_independence():
     assert first == analyze_structure(architecture(paths, edges), default_weights())
 
 
-# ================================================================ V09 equivalence partitioning: report validator
-
-
 def v8_payload(tmp_path):
     """A bottlenecks.v8 payload with all three new kinds, produced by the product pipeline on a hand-made graph."""
     from bottlenecks import analyze_bottlenecks, bottlenecks_to_json
@@ -473,8 +456,6 @@ def test_V09_unknown_schema_version_is_rejected(tmp_path):
     assert '$.schema' in rejected_by_render(payload)
 
 
-# ================================================================ V12 syntax testing: import boundary
-
 STRUCTURE_SOURCE = REPO / 'analysis' / 'structure.py'
 FORBIDDEN_LANGUAGES = ('python', 'kotlin', 'typescript')
 
@@ -536,9 +517,6 @@ def test_V12_no_framework_import_in_structure_module():
 def test_V12_no_language_specific_import_in_structure_module():
     modules = imported_modules(STRUCTURE_SOURCE.read_text(encoding='utf-8'))
     assert [m for m in violations(modules) if m.split('.')[0] == 'language_analyzers'] == []
-
-
-# ================================================================ V13 error guessing
 
 
 def test_V13_empty_graph():
