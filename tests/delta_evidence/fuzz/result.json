@@ -1,0 +1,14 @@
+{
+  "seed": 20261018,
+  "a": {
+    "execs": 20000,
+    "accepted": 13016,
+    "crashes": 0,
+    "first": []
+  },
+  "b": {
+    "execs": 20000,
+    "violations": 0,
+    "first": []
+  }
+}

@@ -1,0 +1,154 @@
+diff --git a/tests/test_analysis_coverage_reporting.py b/tests/test_analysis_coverage_reporting.py
+index 61e5e30..3d31c5d 100644
+--- a/tests/test_analysis_coverage_reporting.py
++++ b/tests/test_analysis_coverage_reporting.py
+@@ -6,6 +6,7 @@ from pathlib import Path
+ from unittest.mock import patch
+ 
+ import pytest
++from tests.external_rules_support import strip_external_imports
+ 
+ from tests.coverage_reporting_support import ADAPTERS, BUILDERS, IDS, adapter, analyze, baseline_runner, coverage_of, dump, own_result, snapshot, without_coverage
+ from tests.test_repository_scan import policy, snapshot_of
+@@ -179,7 +180,7 @@ def test_V04_framework_disabled_language(tmp_path,framework):
+ def test_V05_characterization_and_V04_cli_stages():
+     baseline=json.loads((Path(__file__).parent/'coverage_reporting_evidence'/'characterization-baseline.json').read_text())
+     current=baseline_runner().capture()
+-    normalized = {name: {surface: without_structure_facts(without_candidate_policy_metadata(payload, surface)) for surface, payload in record.items()} for name, record in current.items()}
++    normalized = {name: {surface: without_structure_facts(without_candidate_policy_metadata(strip_external_imports(payload), surface)) for surface, payload in record.items()} for name, record in current.items()}
+     assert without_coverage(normalized)==without_coverage(legacy_to_current(baseline)), 'Characterization: extraction, schema, metrics and candidates changed'
+     expected={**{key:{key+'-core'} for key in ('python','typescript','kotlin')},'fastapi':{'fastapi','python-core'},'sqlalchemy':{'sqlalchemy','python-core'},'android':{'android','kotlin-core'},'nestjs':{'nestjs','typescript-core'},'fastapi-sqlalchemy':{'fastapi','sqlalchemy','python-core'},'nestjs-typescript':{'nestjs','typescript-core'},'android-kotlin':{'android','kotlin-core'}}
+     for name,record in current.items():
+diff --git a/tests/test_architecture_rules.py b/tests/test_architecture_rules.py
+index a4bf7bc..a47ba16 100644
+--- a/tests/test_architecture_rules.py
++++ b/tests/test_architecture_rules.py
+@@ -129,23 +129,25 @@ def test_V01_C12_valid_base_document_loads(tmp_path):
+     assert load(write_rules(tmp_path, BASE)).version == 1
+ 
+ 
+-@pytest.mark.parametrize('text', [
+-    'version: 1\nlayers:\n  alpha:\n    paths: [src/a/**]\nexternal:\n  libs: [requests]\n',
+-    'version: 1\nlayers:\n  alpha:\n    paths: [src/a/**]\nexternal: []\n',
+-], ids=['external-top', 'external-top-list'])
+-def test_V01_C13_external_top_level(tmp_path, text):
+-    message = rejected(tmp_path, text)
+-    assert 'external' in message and 'not supported' in message
++def test_V01_C13_external_group_definition_loads(tmp_path):
++    rules = load(write_rules(tmp_path, BASE + 'external:\n  libs: [requests]\n'))
++    assert dict(rules.external) == {'libs': ('requests',)}
++
++
++@pytest.mark.parametrize('text', ['external: []\n', 'external: {}\n'], ids=['external-top-list', 'external-top-empty-mapping'])
++def test_V01_C13_external_top_level_must_be_a_non_empty_mapping(tmp_path, text):
++    message = rejected(tmp_path, BASE + text)
++    assert 'external' in message and 'not supported' not in message
+ 
+ 
+ def test_V01_C13_to_external(tmp_path):
+-    message = rejected(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to_external: [requests]\n')
+-    assert 'external' in message and 'not supported' in message
++    rules = load(write_rules(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to_external: [requests]\n'))
++    assert dict(rules.forbid_external) == {'alpha': ('requests',)}
+ 
+ 
+ def test_V01_C13_to_external_next_to_to(tmp_path):
+-    message = rejected(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to: [beta]\n    to_external: [requests]\n')
+-    assert 'external' in message and 'not supported' in message
++    rules = load(write_rules(tmp_path, BASE + 'forbid:\n  - from: alpha\n    to: [beta]\n    to_external: [requests]\n'))
++    assert dict(rules.forbid)['alpha'] == ('beta',) and dict(rules.forbid_external) == {'alpha': ('requests',)}
+ 
+ 
+ @pytest.mark.parametrize('where', ['layers-value', 'nested-path', 'top-level-value'])
+diff --git a/tests/test_architecture_rules_integration.py b/tests/test_architecture_rules_integration.py
+index cbf8534..fbedd05 100644
+--- a/tests/test_architecture_rules_integration.py
++++ b/tests/test_architecture_rules_integration.py
+@@ -98,17 +98,26 @@ def test_V07_rules_change_only_the_rule_parts(realworld_plain, realworld_rules):
+     assert realworld_rules['schema'] == 'bottlenecks.v8' and 'architecture_rules' not in realworld_plain['coverage']
+ 
+ 
++def internal_only(candidates):
++    return [c for c in candidates if c['kind'] == RULE_KIND and c['structure']['rule_type'] in ('allow', 'forbid')]
++
++
+ def test_V08_example_realworld_against_reference(realworld_rules, realworld_arch):
+     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
+-    actual = violations_of(realworld_rules['candidates'])
++    actual = violations_of(internal_only(realworld_rules['candidates']))
+     assert_candidates_equal(actual, expected)
+-    assert realworld_rules['coverage']['architecture_rules'] == coverage
++    got = dict(realworld_rules['coverage']['architecture_rules'])
++    external_keys = {'external_import_count', 'external_violation_count'}
++    assert external_keys <= set(got)
++    total = got.pop('violation_count')
++    assert {k: v for k, v in got.items() if k not in external_keys} == {k: v for k, v in coverage.items() if k != 'violation_count'}
++    assert total == len(actual) + got['external_violation_count']
+     assert coverage['violation_count'] == len(actual) > 0
+ 
+ 
+ def test_V08_example_realworld_expected_violations_exist(realworld_rules):
+     found = {(c['structure']['rule_type'], c['structure']['from_layer'], c['structure']['to_layer'])
+-             for c in realworld_rules['candidates'] if c['kind'] == RULE_KIND}
++             for c in internal_only(realworld_rules['candidates'])}
+     assert ('allow', 'domain', 'services') in found
+     assert ('forbid', 'db', 'api') in found
+     assert {rule for rule, source, _ in found if rule == 'allow'} and all(s == 'domain' for r, s, _ in found if r == 'allow')
+@@ -146,7 +155,7 @@ def test_V08_positive_control_outputs_exist_without_rules(tmp_path):
+ GOOD_LAYERS = 'version: 1\nlayers:\n  la:\n    paths: [src/a.py]\n  lb:\n    paths: [src/b.py]\n'
+ BAD_RULES = {
+     'unknown-key': ('version: 1\nlayers:\n  la:\n    paths: [src/a.py]\nnonsense_key: 1\n', 'nonsense_key'),
+-    'external': (GOOD_LAYERS + 'external: {libs: [requests]}\n', 'not supported'),
++    'external': (GOOD_LAYERS + 'external: [libs]\n', 'external'),
+     'syntax': ('version: [1\n', None),
+     'missing-file': (None, 'no_such_rules.yaml'),
+ }
+diff --git a/tests/test_file_analysis_cli.py b/tests/test_file_analysis_cli.py
+index d8a4d88..4e7cca0 100644
+--- a/tests/test_file_analysis_cli.py
++++ b/tests/test_file_analysis_cli.py
+@@ -10,6 +10,7 @@ import pytest
+ 
+ from analysis import GraphAnalyzer
+ from tests.candidate_policy_metadata_support import IDENTITY_TABLES, without_candidate_policy_metadata
++from tests.external_rules_support import strip_external_imports
+ from tests.file_analysis_support import architecture, converted, node, snapshot
+ from tests.edge_weights_support import edge
+ from tests.legacy_metric_transition_support import (
+@@ -114,12 +115,12 @@ def test_V01_direct_builder_defaults_characterization(monkeypatch,file_project,n
+         for root in sorted({str(file_project),str(file_project.resolve())},key=len,reverse=True):
+             encoded=encoded.replace(root,'<PROJECT_ROOT>')
+         return json.loads(encoded.replace('/private<PROJECT_ROOT>','<PROJECT_ROOT>'))
+-    assert normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES))==normalized(legacy_to_current(golden['builder']))
+-    builder_state=serialize(result)
++    assert normalized(without_candidate_policy_metadata(strip_external_imports(serialize(result)), 'architecture', IDENTITY_TABLES))==normalized(legacy_to_current(golden['builder']))
++    builder_state=strip_external_imports(serialize(result))
+     report=analyze_bottlenecks(snapshot(FILES,root=str(file_project.resolve())),result,load_edge_weights(default_edge_weights_path()))
+     current_bottlenecks=normalized(without_candidate_policy_metadata(json.loads(bottlenecks_to_json(report)),'bottlenecks'))
+     expected_rows=assert_bottlenecks_match_legacy_modulo_fallback_costs(normalized(builder_state),current_bottlenecks,normalized(legacy_to_current(golden['bottlenecks'])))
+-    assert_architecture_match_legacy_modulo_fallback_costs(expected_rows,normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES)),normalized(legacy_to_current(golden['after_bottlenecks'])))
++    assert_architecture_match_legacy_modulo_fallback_costs(expected_rows,normalized(without_candidate_policy_metadata(strip_external_imports(serialize(result)), 'architecture', IDENTITY_TABLES)),normalized(legacy_to_current(golden['after_bottlenecks'])))
+ 
+ 
+ @pytest.mark.parametrize('option',['--no-language-graph','--no-models','--no-deps'])
+diff --git a/tests/test_nestjs_quality.py b/tests/test_nestjs_quality.py
+index f25e138..a571477 100644
+--- a/tests/test_nestjs_quality.py
++++ b/tests/test_nestjs_quality.py
+@@ -17,6 +17,7 @@ from repository import RepositorySnapshot
+ from renderers.html import HTMLRenderer
+ 
+ from tests.nestjs_support import analyze, diagnostics, fixture, framework_edges, framework_nodes, write_project
++from tests.external_rules_support import strip_external_imports
+ from tests.standalone_candidate_policy_support import assert_standalone_candidate_policy_transition
+ 
+ 
+@@ -257,7 +258,7 @@ class TestRegression(unittest.TestCase):
+                         content = (json.dumps(payload, sort_keys=True, separators=(",", ":"),
+                                               ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
+                     portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
+-                    current[name] = json.loads(portable)
++                    current[name] = strip_external_imports(json.loads(portable))
+                     archived = original['outputs'][name].encode('utf-8')
+                     self.assertEqual(hashlib.sha256(archived).hexdigest(), case["hashes"][name])
+                     archived_raw = archived.replace(b'<REPO_ROOT>', baseline['captured_root'].encode())

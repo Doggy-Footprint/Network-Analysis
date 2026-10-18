@@ -780,3 +780,14 @@ div.vis-tooltip {
         grid-template-columns: 1fr
     }
 }
+
+#structure-section h3 { margin: 16px 0 8px; font-size: 1rem; }
+.structure-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.structure-list, .structure-group { display: flex; flex-direction: column; gap: 4px; }
+.structure-group { margin: 8px 0 12px; }
+.structure-group h4 { margin: 0 0 4px; font-size: 0.9rem; }
+.structure-item { display: block; width: 100%; padding: 6px 10px; text-align: left; border: 1px solid #d5dde0; background: #fff; overflow-wrap: anywhere; font: inherit; }
+button.structure-item { cursor: pointer; }
+button.structure-item:hover, button.structure-item:focus-visible { border-color: #126d64; }
+.structure-more { color: #5b6b72; padding: 4px 10px; }
+#structure-rules-changed { margin: 8px 0; padding: 8px 10px; border: 1px solid #d9480f; color: #8f2d00; }

@@ -1,0 +1,29 @@
+version: 1
+layers:
+  api:
+    paths: ["app/api/**"]
+  services:
+    paths: ["app/services/**"]
+  db:
+    paths: ["app/db/**"]
+  domain:
+    packages: ["pkg:python:app.models.domain"]
+  schemas:
+    packages: ["pkg:python:app.models.schemas"]
+  core:
+    paths: ["app/core/**", "app/resources/**"]
+external:
+  web: ["fastapi*", "starlette*"]
+  db_driver: ["asyncpg*", "sqlalchemy*", "alembic*", "pypika*", "aiosql*"]
+allow:
+  domain: []
+allow_external:
+  domain: ["pydantic*", "typing", "datetime"]
+forbid:
+  - from: db
+    to: [api]
+    to_external: ["group:web"]
+  - from: api
+    to_external: ["group:db_driver"]
+  - from: services
+    to: [api]

@@ -72,6 +72,7 @@ class ModuleEntry:
     defines: Dict[str, str] = field(default_factory=dict)
     exported_names: Optional[List[str]] = None
     imported_modules: List[Tuple[str, int]] = field(default_factory=list)
+    absolute_imports: List[Tuple[str, int]] = field(default_factory=list)
     flags: List[str] = field(default_factory=list)
 
 
@@ -244,11 +245,14 @@ class _ModuleCollector:
             local = alias.asname or alias.name.split(".")[0]
             self.entry.bindings[local] = ImportBinding(local, alias.name, None, node.lineno)
             self.entry.imported_modules.append((alias.name, node.lineno))
+            self.entry.absolute_imports.append((alias.name, node.lineno))
 
     def _import_from(self, node: ast.ImportFrom):
         module = resolve_relative_module(self.entry.package or "", node.module, node.level)
         if module:
             self.entry.imported_modules.append((module, node.lineno))
+        if node.level == 0 and node.module and node.module != "__future__":
+            self.entry.absolute_imports.append((node.module, node.lineno))
         for alias in node.names:
             if alias.name == "*":
                 continue

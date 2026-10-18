@@ -1,0 +1,67 @@
+{
+  "base_commit": "f5ab529bd2cdd8a084d66e2759d172fc3579cfd5",
+  "command": "python -m code_analyzer <fixture> <args> --granularity file -o <tmp>/r.html --bottlenecks <tmp>/b.json [--architecture-rules profiles/architecture_rules.example.yaml]",
+  "canonical": "sha256 of bottleneck JSON file bytes",
+  "runs": [
+    {
+      "fixture": "futuramaapi",
+      "args": [
+        "-l",
+        "python"
+      ],
+      "rules": null,
+      "bottleneck_bytes": 2134318,
+      "bottleneck_sha256": "4dbc38a642566242bedbb05a7fb6c250ccab42e531d13f1ad0841d274db7fdf1"
+    },
+    {
+      "fixture": "fastapi-realworld",
+      "args": [
+        "-l",
+        "python"
+      ],
+      "rules": null,
+      "bottleneck_bytes": 943448,
+      "bottleneck_sha256": "4abcf877307acc9abcb23ab9a7e5cfddabf2a2f361c73e2e925ca26ff1c21084"
+    },
+    {
+      "fixture": "fastapi-official-template",
+      "args": [
+        "-l",
+        "python"
+      ],
+      "rules": null,
+      "bottleneck_bytes": 490343,
+      "bottleneck_sha256": "ffe347034958b2b5bef403391ffbf3153a6a0f9937a67c755b23bfa1294db52b"
+    },
+    {
+      "fixture": "android-nowinandroid",
+      "args": [
+        "-l",
+        "kotlin"
+      ],
+      "rules": null,
+      "bottleneck_bytes": 7854408,
+      "bottleneck_sha256": "f40dc91e70f6f44acf60556ea4d4bcfe483527ca2bd488661380a27efd474714"
+    },
+    {
+      "fixture": "typescript-nestjs-realworld",
+      "args": [
+        "-l",
+        "typescript"
+      ],
+      "rules": null,
+      "bottleneck_bytes": 588166,
+      "bottleneck_sha256": "7b13ea690e6c79f4f25ae97c976d59465087a716336f6321d9ba56fe563131df"
+    },
+    {
+      "fixture": "fastapi-realworld",
+      "args": [
+        "-l",
+        "python"
+      ],
+      "rules": "profiles/architecture_rules.example.yaml",
+      "bottleneck_bytes": 948864,
+      "bottleneck_sha256": "53f38806a217fc71a99a03c48ee63c5fb0f385419d1b3129a85f5c19269b6571"
+    }
+  ]
+}

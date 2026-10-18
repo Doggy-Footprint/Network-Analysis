@@ -204,7 +204,7 @@ def run_cli(monkeypatch, project, out, granularity):
     return 0
 
 
-@pytest.mark.parametrize("granularity,schema", [("symbol", "bottlenecks.v6"), ("file", "bottlenecks.v7")])
+@pytest.mark.parametrize("granularity,schema", [("symbol", "bottlenecks.v6"), ("file", "bottlenecks.v8")])
 def test_V1_C1_C2_cli_bottlenecks_and_architecture_json(monkeypatch, project, tmp_path, granularity, schema):
     out = tmp_path / "out"
     out.mkdir()

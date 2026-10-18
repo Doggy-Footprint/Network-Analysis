@@ -1,0 +1,145 @@
+[
+  {
+    "id": "H01",
+    "defect": "allow membership inverted",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V05_allow_violation_candidate_fields_C01"
+    ],
+    "tail": [
+      "1 failed, 111 passed in 0.60s"
+    ]
+  },
+  {
+    "id": "H02",
+    "defect": "forbid looked up from the target side",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V05_forbid_only_direction_matters_C02"
+    ],
+    "tail": [
+      "1 failed, 112 passed in 0.91s"
+    ]
+  },
+  {
+    "id": "H03",
+    "defect": "same-layer dependency not excluded",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V05_same_layer_C04 - AssertionE..."
+    ],
+    "tail": [
+      "1 failed, 118 passed in 1.06s"
+    ]
+  },
+  {
+    "id": "H04",
+    "defect": "`*` crosses '/'",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V03_C09_table[C09-05] - Asserti..."
+    ],
+    "tail": [
+      "1 failed, 62 passed in 0.12s"
+    ]
+  },
+  {
+    "id": "H05",
+    "defect": "trailing ** matches zero segments",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V03_C09_table[C09-02] - Asserti..."
+    ],
+    "tail": [
+      "1 failed, 59 passed in 0.12s"
+    ]
+  },
+  {
+    "id": "H06",
+    "defect": "multi-match silently takes the first layer",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V04_package_framework_shared_between_layers_is_multi_match"
+    ],
+    "tail": [
+      "1 failed, 105 passed in 0.56s"
+    ]
+  },
+  {
+    "id": "H07",
+    "defect": "multi-match lists 11 files",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V04_multi_match_error_12 - Asse..."
+    ],
+    "tail": [
+      "1 failed, 108 passed in 0.56s"
+    ]
+  },
+  {
+    "id": "H08",
+    "defect": "unsafe YAML loader",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V01_Q08_python_object_tag_is_rejected_without_side_effect[layers-value]"
+    ],
+    "tail": [
+      "1 failed, 46 passed in 0.11s"
+    ]
+  },
+  {
+    "id": "H09",
+    "defect": "to_external accepted silently",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V01_C13_to_external - assert ('..."
+    ],
+    "tail": [
+      "1 failed, 44 passed in 0.11s"
+    ]
+  },
+  {
+    "id": "H10",
+    "defect": "zero-file layers omitted from coverage counts",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V05_random_graphs_match_reference[0]"
+    ],
+    "tail": [
+      "1 failed, 129 passed in 0.57s"
+    ]
+  },
+  {
+    "id": "H11",
+    "defect": "ArchitectureRulesError wrapped into BottleneckInputError",
+    "file": "bottlenecks/core.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_architecture_rules.py::test_V08_F12_multi_match_error_keeps_its_message_through_analyze_bottlenecks"
+    ],
+    "tail": [
+      "1 failed, 169 passed in 0.69s"
+    ]
+  }
+]

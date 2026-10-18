@@ -1,4 +1,5 @@
 import ast
+import os
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -9,6 +10,7 @@ from language_analyzers.core.analysis_coverage import attach_coverage
 from language_analyzers.core import flags as flag_names
 from language_analyzers.core.cost import cost_for_span, cost_for_text
 from language_analyzers.core.enrichment import enrich_repository
+from language_analyzers.core.external_imports import PythonModuleIndex, normalize_external_imports
 from language_analyzers.core.graph_models import (
     Confidence,
     GraphEdge,
@@ -160,6 +162,7 @@ class PythonGraphAnalyzer:
     def analyze(self) -> PythonProjectArchitecture:
         source_analyzer = PythonSourceAnalyzer(self.project_path, self.snapshot)
         sources = source_analyzer.analyze()
+        self._unparsed_modules = self._discover_unparsed(source_analyzer, sources)
         nodes, edges = self.build(sources)
         architecture = PythonProjectArchitecture(
             project_name=self.project_path.name,
@@ -189,12 +192,29 @@ class PythonGraphAnalyzer:
         architecture.report_collections = [self._symbol_collection(nodes)]
         return architecture
 
+    def _discover_unparsed(self, source_analyzer: PythonSourceAnalyzer, sources: Sequence[PythonSourceFile]) -> List[Tuple[str, bool]]:
+        if self.snapshot is not None:
+            paths = [self.project_path / relative for relative in self.snapshot.source_map if relative.endswith(".py")]
+        else:
+            paths = []
+            for root, directories, filenames in os.walk(self.project_path):
+                directories[:] = [d for d in directories if not d.startswith(".")
+                                  and d not in {"venv", "env", "node_modules", "__pycache__", "build", "dist"}]
+                paths.extend(Path(root) / name for name in filenames if name.endswith(".py"))
+        parsed = {source.file_path for source in sources}
+        return [(source_analyzer._module_name(path), path.name == "__init__.py") for path in paths if path not in parsed]
+
     def build(self, sources: Sequence[PythonSourceFile]) -> Tuple[List[GraphNode], List[GraphEdge]]:
         table = build_symbol_table(sources, self.project_path, resolve_root=self.snapshot is None)
         self._table = table
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
 
+        unparsed = getattr(self, "_unparsed_modules", [])
+        self._module_index = PythonModuleIndex(
+            [name for name in table.modules if name != "__init__"] + [name for name, _ in unparsed if name != "__init__"],
+            [name for name, entry in table.modules.items() if entry.is_package_init and name != "__init__"]
+            + [name for name, is_init in unparsed if is_init and name != "__init__"])
         self._build_package_nodes(table)
         for entry in table.modules.values():
             self._build_module_node(entry)
@@ -229,6 +249,11 @@ class PythonGraphAnalyzer:
 
     def _build_module_node(self, entry: ModuleEntry):
         span = SourceSpan(entry.file_path, 1, entry.end_line)
+        metadata: Dict[str, Any] = {"module": entry.module, "is_package_init": entry.is_package_init}
+        external = normalize_external_imports(
+            {"name": name, "line": line} for name, line in entry.absolute_imports if not self._module_index.is_internal(name))
+        if external:
+            metadata["external_imports"] = external
         self._add_node(GraphNode(
             id=entry.id,
             label=entry.file_path,
@@ -242,7 +267,7 @@ class PythonGraphAnalyzer:
             symbol_path=entry.module,
             flags=list(entry.flags),
             provenance=PROVENANCE,
-            metadata={"module": entry.module, "is_package_init": entry.is_package_init},
+            metadata=metadata,
         ))
 
     def _build_symbol_node(self, symbol: SymbolEntry, table: SymbolTable):

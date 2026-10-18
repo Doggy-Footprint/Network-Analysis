@@ -1,0 +1,40 @@
+{
+  "base_commit": "ef8adb352c32936b102ed06d8dcb3ad2f28e6bdd",
+  "command": "python -m code_analyzer <fixture> <args> --granularity file --bottlenecks <out> -o <tmp>/r.html",
+  "fixtures": {
+    "android-nowinandroid": {
+      "args": [
+        "-l",
+        "kotlin"
+      ],
+      "bytes": 7854408,
+      "sha256": "f40dc91e70f6f44acf60556ea4d4bcfe483527ca2bd488661380a27efd474714"
+    },
+    "fastapi-realworld": {
+      "args": [
+        "-l",
+        "python"
+      ],
+      "bytes": 943448,
+      "sha256": "4abcf877307acc9abcb23ab9a7e5cfddabf2a2f361c73e2e925ca26ff1c21084"
+    },
+    "futuramaapi": {
+      "args": [
+        "-l",
+        "python"
+      ],
+      "bytes": 2134318,
+      "sha256": "4dbc38a642566242bedbb05a7fb6c250ccab42e531d13f1ad0841d274db7fdf1"
+    },
+    "typescript-nestjs-realworld": {
+      "args": [
+        "-l",
+        "typescript",
+        "-f",
+        "nestjs"
+      ],
+      "bytes": 645507,
+      "sha256": "778ee6e4068634f9d065e2befddb8284e7f8f52f225b490b2a6e2626f01d6a60"
+    }
+  }
+}

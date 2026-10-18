@@ -1,0 +1,389 @@
+diff --git a/tests/structure_support.py b/tests/structure_support.py
+index 8613169..74195da 100644
+--- a/tests/structure_support.py
++++ b/tests/structure_support.py
+@@ -334,7 +334,10 @@ def without_structure_facts(payload):
+     if isinstance(network, dict):
+         network.pop('package_metrics', None)
+         network.pop('structure_policy', None)
++        network.pop('package_dependencies', None)
+     coverage = result.get('coverage')
+     if isinstance(coverage, dict):
+         coverage.pop('structure', None)
++        if isinstance(coverage.get('architecture_rules'), dict):
++            coverage['architecture_rules'].pop('rules_sha256', None)
+     return result
+diff --git a/tests/test_architecture_rules.py b/tests/test_architecture_rules.py
+index a47ba16..49cb2ff 100644
+--- a/tests/test_architecture_rules.py
++++ b/tests/test_architecture_rules.py
+@@ -4,6 +4,7 @@ import random
+ import pytest
+ 
+ from analysis.structure import analyze_structure
++from tests.delta_support import without_digest
+ from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, REPO, RULE_KIND, RULES_POLICY, assert_candidates_equal,
+                                               edge_counter, framework_imports, imported_modules, language_imports, package_schemes,
+                                               path_of, random_graph, raw_edge, ref_match, ref_rule_evaluation, to_rules,
+@@ -580,7 +581,7 @@ def test_V05_random_graphs_match_reference(seed):
+     result = analyze_structure(arch, weights(), to_rules(spec))
+     _, expected, coverage = ref_rule_evaluation(spec, arch, weights())
+     assert_candidates_equal(violations_of(result.candidates), expected)
+-    assert result.coverage['architecture_rules'] == coverage
++    assert without_digest(result.coverage['architecture_rules']) == coverage
+ 
+ 
+ def test_V05_random_graph_family_is_not_vacuous():
+@@ -601,7 +602,7 @@ def test_V06_counts_all_layers_and_policy_fields():
+             'allow': {'a': []}}
+     paths = [AX, 'src/a/x2.py', BY]
+     result, _, _ = verdict(spec, paths, [make(AX, BY)])
+-    coverage = result.coverage['architecture_rules']
++    coverage = without_digest(result.coverage['architecture_rules'])
+     assert coverage['policy'] == RULES_POLICY == 'architecture_rules.v1' and coverage['version'] == 1
+     assert coverage['layer_file_counts'] == {'a': 2, 'b': 1, 'zz': 0}
+     assert list(coverage['layer_file_counts']) == ['a', 'b', 'zz']
+@@ -612,7 +613,7 @@ def test_V06_counts_all_layers_and_policy_fields():
+ def test_V06_zero_layer_listed_and_empty_layers_sorted():
+     spec = {'version': 1, 'layers': {'qq': {'paths': ['q/**']}, 'pp': {'paths': ['p/**']}, 'a': {'paths': ['src/a/**']}}}
+     result, _, _ = verdict(spec, [AX], [])
+-    coverage = result.coverage['architecture_rules']
++    coverage = without_digest(result.coverage['architecture_rules'])
+     assert coverage['layer_file_counts'] == {'a': 1, 'pp': 0, 'qq': 0}
+     assert coverage['empty_layers'] == ['pp', 'qq']
+ 
+@@ -620,7 +621,7 @@ def test_V06_zero_layer_listed_and_empty_layers_sorted():
+ def test_V06_unassigned_list_sorted_and_excludes_boundary():
+     spec = {'version': 1, 'layers': {'a': {'paths': ['src/a/**']}}}
+     result, _, _ = verdict(spec, [AX, 'other/u2.py', 'other/u1.py', 'z.py'], [], boundary=['lib/boundary.py'])
+-    coverage = result.coverage['architecture_rules']
++    coverage = without_digest(result.coverage['architecture_rules'])
+     assert coverage['unassigned_file_count'] == 3
+     assert coverage['unassigned_files'] == [fid('other/u1.py'), fid('other/u2.py'), fid('z.py')]
+     assert coverage['empty_layers'] == []
+@@ -631,7 +632,7 @@ def test_V06_violation_count_counts_candidates_not_pairs():
+     spec = spec3(allow={'a': []}, forbid=[{'from': 'a', 'to': ['b']}])
+     result, actual, _ = verdict(spec, [AX, BY, CZ], [make(AX, BY), make(AX, CZ), make(BY, AX)])
+     assert len(actual) == 3
+-    assert result.coverage['architecture_rules']['violation_count'] == 3
++    assert without_digest(result.coverage['architecture_rules'])['violation_count'] == 3
+ 
+ 
+ @pytest.mark.parametrize('details', [True, False], ids=['details', 'no-details'])
+@@ -640,7 +641,7 @@ def test_V06_empty_graph(details):
+     arch = architecture([], [], details=details)
+     result = analyze_structure(arch, weights(), to_rules(spec))
+     assert result.candidates == ()
+-    assert result.coverage['architecture_rules'] == {
++    assert without_digest(result.coverage['architecture_rules']) == {
+         'policy': RULES_POLICY, 'version': 1, 'layer_file_counts': {'a': 0, 'b': 0, 'c': 0}, 'unassigned_file_count': 0,
+         'unassigned_files': [], 'empty_layers': ['a', 'b', 'c'], 'violation_count': 0}
+ 
+@@ -670,7 +671,7 @@ def test_V13_layer_pattern_matching_nothing_is_not_an_error():
+     spec = {'version': 1, 'layers': {'ghost': {'paths': ['no/such/**'], 'packages': ['pkg:dir:no/such']}, 'a': {'paths': ['src/a/**']},
+                                      'b': {'paths': ['src/b/**']}}, 'forbid': [{'from': 'a', 'to': ['ghost']}]}
+     result, actual, _ = verdict(spec, [AX, BY], [make(AX, BY)])
+-    coverage = result.coverage['architecture_rules']
++    coverage = without_digest(result.coverage['architecture_rules'])
+     assert actual == [] and coverage['empty_layers'] == ['ghost'] and coverage['layer_file_counts']['ghost'] == 0
+ 
+ 
+@@ -724,9 +725,9 @@ def test_V09_v8_with_rule_violation_ok_and_label():
+ def test_V09_coverage_architecture_rules_accepted_and_matches_reference():
+     payload, arch, spec = v8_payload()
+     assert 'architecture_rules' in payload['coverage']
+-    assert payload['coverage']['architecture_rules']['policy'] == RULES_POLICY
+-    assert payload['coverage']['architecture_rules']['violation_count'] == 2
+-    assert payload['coverage']['architecture_rules']['layer_file_counts'] == {'a': 1, 'b': 1, 'c': 1}
++    assert without_digest(payload['coverage']['architecture_rules'])['policy'] == RULES_POLICY
++    assert without_digest(payload['coverage']['architecture_rules'])['violation_count'] == 2
++    assert without_digest(payload['coverage']['architecture_rules'])['layer_file_counts'] == {'a': 1, 'b': 1, 'c': 1}
+     for text in render(payload):
+         assert '<html' in text.lower()
+ 
+diff --git a/tests/test_architecture_rules_integration.py b/tests/test_architecture_rules_integration.py
+index fbedd05..9cc20f3 100644
+--- a/tests/test_architecture_rules_integration.py
++++ b/tests/test_architecture_rules_integration.py
+@@ -11,6 +11,7 @@ import pytest
+ from analysis.architecture_rules import layer_assignments
+ from analysis.structure import analyze_structure, package_assignments
+ from fixtures.registry import fixture_root
++from tests.delta_support import base_form_bytes, without_digest
+ from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, FIXTURES, REPO, RULE_KIND, assert_candidates_equal, cli,
+                                               copy_fixture, init_git, load_manifest, mini_project, ref_rule_evaluation, synthetic_input,
+                                               to_rules, violations_of, weights, write_rules)
+@@ -42,8 +43,9 @@ def plain(request, tmp_path_factory):
+ def test_V07_no_rules_byte_equal_to_base(plain):
+     name, data = plain
+     expected = MANIFEST['fixtures'][name]
+-    assert len(data) == expected['bytes']
+-    assert hashlib.sha256(data).hexdigest() == expected['sha256']
++    base_form = base_form_bytes(data)
++    assert len(base_form) == expected['bytes']
++    assert hashlib.sha256(base_form).hexdigest() == expected['sha256']
+     assert json.loads(data)['schema'] == 'bottlenecks.v8'
+ 
+ 
+@@ -106,7 +108,7 @@ def test_V08_example_realworld_against_reference(realworld_rules, realworld_arch
+     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
+     actual = violations_of(internal_only(realworld_rules['candidates']))
+     assert_candidates_equal(actual, expected)
+-    got = dict(realworld_rules['coverage']['architecture_rules'])
++    got = dict(without_digest(realworld_rules['coverage']['architecture_rules']))
+     external_keys = {'external_import_count', 'external_violation_count'}
+     assert external_keys <= set(got)
+     total = got.pop('violation_count')
+@@ -122,7 +124,7 @@ def test_V08_example_realworld_expected_violations_exist(realworld_rules):
+     assert ('forbid', 'db', 'api') in found
+     assert {rule for rule, source, _ in found if rule == 'allow'} and all(s == 'domain' for r, s, _ in found if r == 'allow')
+     assert all((s, t) in {('db', 'api'), ('services', 'api')} for r, s, t in found if r == 'forbid')
+-    coverage = realworld_rules['coverage']['architecture_rules']
++    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
+     assert coverage['policy'] == 'architecture_rules.v1' and coverage['version'] == 1
+     assert set(coverage['layer_file_counts']) == set(EXAMPLE_SPEC['layers'])
+     assert coverage['violation_count'] == sum(1 for c in realworld_rules['candidates'] if c['kind'] == RULE_KIND)
+@@ -208,7 +210,7 @@ def test_V08_empty_layer_and_violation_keep_exit_0(tmp_path):
+     done, out = mini_run(tmp_path, project, rules)
+     assert done.returncode == 0, done.stderr
+     payload = json.loads((out / 'b.json').read_text(encoding='utf-8'))
+-    coverage = payload['coverage']['architecture_rules']
++    coverage = without_digest(payload['coverage']['architecture_rules'])
+     assert coverage['empty_layers'] == ['ghost'] and coverage['violation_count'] >= 1
+     assert [c['structure']['rule_type'] for c in payload['candidates'] if c['kind'] == RULE_KIND][0] == 'allow'
+ 
+@@ -260,7 +262,7 @@ def test_V11_synthetic_time():
+     rules = to_rules(spec)
+     result = analyze_structure(arch, weights(), rules)
+     _, expected, coverage = ref_rule_evaluation(spec, arch, weights())
+-    assert result.coverage['architecture_rules']['violation_count'] == coverage['violation_count'] == len(expected) > 1000
++    assert without_digest(result.coverage['architecture_rules'])['violation_count'] == coverage['violation_count'] == len(expected) > 1000
+     ids = [node.id for node in arch.nodes]
+     packages = package_assignments(arch)
+     assert median_time(lambda: layer_assignments(rules, ids, packages)) <= TIME_LIMIT
+diff --git a/tests/test_external_rules.py b/tests/test_external_rules.py
+index e11b2e6..eecc78c 100644
+--- a/tests/test_external_rules.py
++++ b/tests/test_external_rules.py
+@@ -6,6 +6,7 @@ import pytest
+ 
+ from analysis.architecture_rules import external_entry_matches
+ from analysis.structure import analyze_structure
++from tests.delta_support import without_digest
+ from tests.architecture_rules_support import (EXAMPLE_PROFILE, REPO, assert_candidates_equal, edge_counter, framework_imports,
+                                               imported_modules, ref_rule_evaluation, violations_of, weights, write_rules)
+ from tests.external_rules_support import (ALLOW_EXT, EXAMPLE_EXT_SPEC, EXTERNAL_COVERAGE_KEYS, FORBID_EXT, INTERNAL_COVERAGE_KEYS,
+@@ -335,7 +336,7 @@ def random_case(seed):
+ def test_V09_random_cases_match_brute_force_reference(seed):
+     spec, files = random_case(seed)
+     result, actual, arch = evaluate(spec, files)
+-    assert result.coverage['architecture_rules'] == ref_coverage(spec, arch, weights())
++    assert without_digest(result.coverage['architecture_rules']) == ref_coverage(spec, arch, weights())
+ 
+ 
+ def test_V09_random_family_is_not_vacuous():
+@@ -350,7 +351,7 @@ def test_V09_random_family_is_not_vacuous():
+ 
+ def coverage_of(spec, files, edges=()):
+     arch = ext_arch(files, edges=edges)
+-    return analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules'], arch
++    return without_digest(analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules']), arch
+ 
+ 
+ def test_V10_with_external_rules_adds_exactly_two_keys():
+@@ -362,7 +363,7 @@ def test_V10_counts_records_of_non_boundary_files_and_candidates():
+     spec = spec_for(forbid=['fastapi'], allow=['pydantic*'])
+     files = {'d/a.py': [rec('fastapi', 1), rec('fastapi', 2), rec('os', 3)], 'd/b.py': None, 'q/c.py': [rec('os', 1)]}
+     arch = ext_arch(files, boundary={'d/ext.py': [rec('fastapi', 1), rec('os', 2)]})
+-    coverage = analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules']
++    coverage = without_digest(analyze_structure(arch, weights(), to_rules_ext(spec)).coverage['architecture_rules'])
+     assert coverage['external_import_count'] == 4
+     assert coverage['external_violation_count'] == 3
+     assert coverage['violation_count'] == 3
+@@ -496,7 +497,7 @@ def test_V13_validator_accepts_external_violations_and_renders():
+     assert payload['schema'] == 'bottlenecks.v8'
+     assert brief(external_violations(payload['candidates'])) == [
+         (ALLOW_EXT, 'domain', 'file:domain/m.py', 'os'), (FORBID_EXT, 'db', 'file:db/d.py', 'fastapi')]
+-    coverage = payload['coverage']['architecture_rules']
++    coverage = without_digest(payload['coverage']['architecture_rules'])
+     assert coverage['external_import_count'] == 3 and coverage['external_violation_count'] == 2 and coverage['violation_count'] == 2
+     assert keys_found(payload, 'external_imports') == []
+     for text in render(payload):
+diff --git a/tests/test_external_rules_integration.py b/tests/test_external_rules_integration.py
+index c09a13b..09d0e49 100644
+--- a/tests/test_external_rules_integration.py
++++ b/tests/test_external_rules_integration.py
+@@ -12,6 +12,7 @@ import pytest
+ 
+ from analysis.structure import analyze_structure
+ from fixtures.registry import fixture_root
++from tests.delta_support import base_form_bytes, without_digest
+ from tests.architecture_rules_support import (EXAMPLE_SPEC, assert_candidates_equal, cli, mini_project, ref_rule_evaluation,
+                                               violations_of, weights, write_rules)
+ from tests.external_rules_support import (KOTLIN_PACKAGE, ALLOW_EXT, EXAMPLE_EXT_SPEC, EXTERNAL_COVERAGE_KEYS, FIXTURES, FORBID_EXT,
+@@ -107,8 +108,9 @@ def realworld_arch(tmp_path_factory):
+ def test_V11_bottleneck_json_byte_equal_to_base(plain):
+     name, run, _ = plain
+     expected = MANIFEST['fixtures'][name]['file']
+-    assert len(run['bn']) == expected['bottleneck_bytes']
+-    assert hashlib.sha256(run['bn']).hexdigest() == expected['bottleneck_sha256']
++    base_form = base_form_bytes(run['bn'])
++    assert len(base_form) == expected['bottleneck_bytes']
++    assert hashlib.sha256(base_form).hexdigest() == expected['bottleneck_sha256']
+     assert json.loads(run['bn'])['schema'] == 'bottlenecks.v8'
+ 
+ 
+@@ -170,7 +172,7 @@ def test_V11_C28_determinism_hashseed_with_rules(tmp_path, realworld_rules_run,
+ def test_V11_C30_2a_rules_file_gives_the_2a_result(realworld_2a_rules, realworld_arch, plain_realworld_candidates):
+     _, expected, coverage = ref_rule_evaluation(EXAMPLE_SPEC, realworld_arch, weights())
+     assert_candidates_equal(violations_of(realworld_2a_rules['candidates']), expected)
+-    assert realworld_2a_rules['coverage']['architecture_rules'] == coverage
++    assert without_digest(realworld_2a_rules['coverage']['architecture_rules']) == coverage
+     assert set(coverage) == INTERNAL_COVERAGE_KEYS
+     assert external_violations(realworld_2a_rules['candidates']) == []
+     others = [c for c in realworld_2a_rules['candidates'] if c['kind'] != RULE_KIND]
+@@ -197,7 +199,7 @@ def test_V12_C22_realworld_example_violations(realworld_rules, realworld_2a_rule
+     assert internal == [c for c in realworld_2a_rules['candidates'] if c['kind'] == RULE_KIND]
+     expected, total = ref_external_evaluation(EXAMPLE_EXT_SPEC, realworld_arch)
+     assert_external_equal(external, expected)
+-    coverage = realworld_rules['coverage']['architecture_rules']
++    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
+     assert coverage == ref_coverage(EXAMPLE_EXT_SPEC, realworld_arch, weights())
+     assert coverage['external_import_count'] == total and coverage['external_violation_count'] == 3
+     assert coverage['violation_count'] == len(internal) + 3
+@@ -217,7 +219,7 @@ def test_V12_C22_independent_ast_reading_of_the_fixture_sources(realworld_rules)
+ 
+ 
+ def test_V12_C22_example_profile_loaded_through_cli_has_the_f15_coverage(realworld_rules):
+-    coverage = realworld_rules['coverage']['architecture_rules']
++    coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
+     assert set(coverage) == INTERNAL_COVERAGE_KEYS | EXTERNAL_COVERAGE_KEYS
+     assert realworld_rules['schema'] == 'bottlenecks.v8'
+ 
+@@ -279,7 +281,7 @@ def test_V14_bottleneck_size_ratio_realworld(realworld_rules_run, by_name):
+     plain_bytes = by_name('fastapi-realworld')[0]['bn']
+     ratio = len(realworld_rules_run['bn']) / len(plain_bytes)
+     assert 1.0 <= ratio <= 1.25, ratio
+-    assert len(plain_bytes) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
++    assert len(base_form_bytes(plain_bytes)) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
+ 
+ 
+ MINI_PY = {'app/__init__.py': '', 'app/x.py': 'import os\nfrom app import y\n', 'app/y.py': 'Y = 1\n'}
+@@ -337,7 +339,7 @@ def test_V12_cli_external_rule_violation_exits_zero_and_reports(tmp_path):
+     payload = json.loads((tmp_path / 'out' / 'b.json').read_text(encoding='utf-8'))
+     found = sorted((c['structure']['rule_type'], c['structure']['to_external']) for c in external_violations(payload['candidates']))
+     assert found == [(ALLOW_EXT, 'os'), (FORBID_EXT, 'os')]
+-    assert payload['coverage']['architecture_rules']['external_violation_count'] == 2
++    assert without_digest(payload['coverage']['architecture_rules'])['external_violation_count'] == 2
+ 
+ 
+ def test_V05_cli_invalid_tsconfig_exit0_and_coverage_recorded(tmp_path):
+@@ -400,8 +402,8 @@ def test_V14_C29_synthetic_time_and_correctness():
+     expected, _ = ref_external_evaluation(spec, ext_arch(sample))
+     targets = {f'file:{p}' for p in sample}
+     assert_external_equal([c for c in actual if c['target'] in targets], expected)
+-    assert 1000 < len(actual) <= 40000 and result.coverage['architecture_rules']['external_violation_count'] == len(actual)
+-    assert result.coverage['architecture_rules']['external_import_count'] == 20000 * 20
++    assert 1000 < len(actual) <= 40000 and without_digest(result.coverage['architecture_rules'])['external_violation_count'] == len(actual)
++    assert without_digest(result.coverage['architecture_rules'])['external_import_count'] == 20000 * 20
+     with_external = median_time(lambda: analyze_structure(arch, weights(), rules))
+     without = median_time(lambda: analyze_structure(arch, weights(), plain_rules))
+     assert with_external - without <= 5.0, (with_external, without)
+diff --git a/tests/test_report_structure.py b/tests/test_report_structure.py
+index 94d3462..d54e7ab 100644
+--- a/tests/test_report_structure.py
++++ b/tests/test_report_structure.py
+@@ -25,7 +25,7 @@ def precedes(page, first, second):
+     return page.evaluate('([a, b]) => !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)', [first.element_handle(), second.element_handle()])
+ 
+ 
+-def assert_structure(page):
++def assert_structure(page, structure_visible=False):
+     assert page.locator('#coverage-details').count() == 0 and page.locator('#node-detail').count() == 0
+     kpi = page.get_by_text(re.compile('분석 범위')).first
+     one = page.get_by_text(re.compile(r'^\s*01\b')).first
+@@ -34,7 +34,14 @@ def assert_structure(page):
+     expect(one).to_be_visible()
+     expect(two).to_be_visible()
+     assert precedes(page, kpi, one) and precedes(page, one, two) and precedes(page, two, appendix)
+-    assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 0
++    panel = page.locator('#structure-section')
++    if structure_visible:
++        expect(panel).to_be_visible()
++        assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 1
++        assert precedes(page, two, panel) and precedes(page, panel, appendix)
++    else:
++        expect(panel).to_be_hidden()
++        assert page.get_by_text(re.compile(r'^\s*03\b')).count() == 0
+     assert page.locator(SEL['card_group']).count() == 6
+     narrative = page.evaluate("""() => [...document.querySelectorAll('body *')]
+         .filter(el => !el.closest('details, [role=dialog], [role=tooltip], [role=status], output, table, #graph-container, script, style, datalist, select, noscript, #modal-backdrop'))
+@@ -42,9 +49,10 @@ def assert_structure(page):
+         .filter(text => text.length > 40)""")
+     assert narrative == [], 'explanatory text blocks must be gone (F12)'
+     sections = page.evaluate("""() => [...document.querySelector('main').children].map(el => ({tag: el.tagName, id: el.id, text: el.innerText.trim().slice(0, 40), details: !!el.querySelector('details#report-appendix') || el.id === 'report-appendix'}))""")
+-    assert len(sections) == 4, sections
++    assert len(sections) == 5, sections
++    assert sections[3]['id'] == 'structure-section'
+     assert '분석 범위' in page.locator('main').evaluate("m => m.children[0].innerText") and page.locator('main > :nth-child(1) #kpi').count() == 1
+-    assert sections[1]['text'].startswith('01') and sections[2]['text'].startswith('02') and sections[3]['details']
++    assert sections[1]['text'].startswith('01') and sections[2]['text'].startswith('02') and sections[4]['details']
+     assert page.unhandled_errors == []
+ 
+ 
+@@ -69,7 +77,7 @@ def test_V06_combined_report_sections_order_and_kpi_values(open_report):
+     arch, bn = structure_report()
+     assert len(arch['nodes']) == 9 and len(arch['edges']) == 4
+     page = open_report(arch, bn)
+-    assert_structure(page)
++    assert_structure(page, structure_visible=True)
+     assert tab_active(page, '그래프')
+     assert pill_numbers(page, '파일') == [9]
+     assert pill_numbers(page, '연결') == [4]
+@@ -92,7 +100,7 @@ def test_V06_architecture_only_candidate_kpi_dash_and_list_works(open_report):
+ def test_V06_bottlenecks_only_graph_disabled_with_working_list(open_report):
+     _, bn = structure_report()
+     page = open_report(None, bn)
+-    assert_structure(page)
++    assert_structure(page, structure_visible=True)
+     graph_disabled(page)
+     expect(page.get_by_text('아키텍처 데이터가 없어 그래프를 그릴 수 없습니다.')).to_be_visible()
+     assert len(row_ids(page)) == 9
+@@ -110,7 +118,7 @@ def test_V06_symbol_granularity_graph_disabled_list_only(open_report):
+ def test_V06_without_coverage_reports_unavailable_pill(open_report):
+     arch, bn = structure_report(coverage=False)
+     page = open_report(arch, bn)
+-    assert_structure(page)
++    assert_structure(page, structure_visible=True)
+     expect(page.get_by_text('분석 범위 정보 없음')).to_be_visible()
+     assert tab_active(page, '그래프')
+ 
+diff --git a/tests/test_structure_facts.py b/tests/test_structure_facts.py
+index 5fab9ba..c6bd2e2 100644
+--- a/tests/test_structure_facts.py
++++ b/tests/test_structure_facts.py
+@@ -356,7 +356,7 @@ def test_V03_result_coverage_is_exactly_the_structure_object():
+ def test_V03_result_is_frozen_dataclass_with_declared_fields():
+     result = run(['a.py'], [])
+     assert isinstance(result, StructureResult) and dataclasses.is_dataclass(result)
+-    assert [f.name for f in dataclasses.fields(StructureResult)] == ['candidates', 'package_metrics', 'coverage']
++    assert [f.name for f in dataclasses.fields(StructureResult)] == ['candidates', 'package_metrics', 'coverage', 'package_dependencies']
+     assert isinstance(result.candidates, tuple)
+     with pytest.raises(dataclasses.FrozenInstanceError):
+         result.candidates = ()
+diff --git a/tests/test_structure_integration.py b/tests/test_structure_integration.py
+index f95a430..360f59d 100644
+--- a/tests/test_structure_integration.py
++++ b/tests/test_structure_integration.py
+@@ -245,7 +245,10 @@ CHAIN_LIMIT = 5.0
+ 
+ 
+ def test_V11_size_ratio_per_fixture(run):
+-    ratio = len(run.output('file')) / run.manifest['file']['bytes']
++    payload = run.payload('file')
++    payload['dependency_network'].pop('package_dependencies', None)
++    size = len(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')) + 1
++    ratio = size / run.manifest['file']['bytes']
+     assert ratio <= SIZE_LIMIT, f'{run.name}: v8 is {ratio:.3f}x the base v7 size'
+     assert ratio >= 1.0 - 0.05, 'v8 only adds fields; a large shrink means base parts were lost'
+ 

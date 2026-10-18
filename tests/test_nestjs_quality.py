@@ -17,6 +17,7 @@ from repository import RepositorySnapshot
 from renderers.html import HTMLRenderer
 
 from tests.nestjs_support import analyze, diagnostics, fixture, framework_edges, framework_nodes, write_project
+from tests.external_rules_support import strip_external_imports
 from tests.standalone_candidate_policy_support import assert_standalone_candidate_policy_transition
 
 
@@ -257,7 +258,7 @@ class TestRegression(unittest.TestCase):
                         content = (json.dumps(payload, sort_keys=True, separators=(",", ":"),
                                               ensure_ascii=False, allow_nan=False) + "\n").encode("utf-8")
                     portable = content.replace(str(REPO).encode(), b"<REPO_ROOT>")
-                    current[name] = json.loads(portable)
+                    current[name] = strip_external_imports(json.loads(portable))
                     archived = original['outputs'][name].encode('utf-8')
                     self.assertEqual(hashlib.sha256(archived).hexdigest(), case["hashes"][name])
                     archived_raw = archived.replace(b'<REPO_ROOT>', baseline['captured_root'].encode())

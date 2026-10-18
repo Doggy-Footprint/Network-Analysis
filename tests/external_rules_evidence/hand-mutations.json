@@ -1,0 +1,210 @@
+[
+  {
+    "id": "H01",
+    "defect": "python root rule ignores packages (namespace over-internal)",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V02_C03_table[C03-core] - Asserti..."
+    ],
+    "tail": [
+      "1 failed, 17 passed in 0.78s"
+    ]
+  },
+  {
+    "id": "H02",
+    "defect": "relative from-import recorded",
+    "file": "language_analyzers/python/symbols.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V01_from_relative_never_recorded"
+    ],
+    "tail": [
+      "1 failed, 4 passed in 0.15s"
+    ]
+  },
+  {
+    "id": "H03",
+    "defect": "kotlin prefix without dot boundary",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V03_kotlin_is_internal_equal_package_and_sibling_segment_boundary"
+    ],
+    "tail": [
+      "1 failed, 34 passed in 0.74s"
+    ]
+  },
+  {
+    "id": "H04",
+    "defect": "ts scoped name keeps one segment",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V04_C05_records - AssertionError:..."
+    ],
+    "tail": [
+      "1 failed, 37 passed in 0.28s"
+    ]
+  },
+  {
+    "id": "H05",
+    "defect": "tsconfig '*' key swallows all",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V05_C07_paths_table[C07-@core/x]"
+    ],
+    "tail": [
+      "1 failed, 64 passed in 0.40s"
+    ]
+  },
+  {
+    "id": "H06",
+    "defect": "jsonc stripper ignores strings",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V05_C07_paths_table[C07-@/x] - Va..."
+    ],
+    "tail": [
+      "1 failed, 61 passed in 0.38s"
+    ]
+  },
+  {
+    "id": "H07",
+    "defect": "empty allow_external list allows everything",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V09_external_rules_leave_internal_candidates_unchanged"
+    ],
+    "tail": [
+      "1 failed, 189 passed in 0.51s"
+    ]
+  },
+  {
+    "id": "H08",
+    "defect": "unprefixed entry expanded as group",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V09_F09_entry_matching[fastapi-g-fastapi-True]"
+    ],
+    "tail": [
+      "1 failed, 164 passed in 0.46s"
+    ]
+  },
+  {
+    "id": "H09",
+    "defect": "tier certain only when all static",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V09_C19_static_plus_dynamic_is_one_certain_candidate"
+    ],
+    "tail": [
+      "1 failed, 183 passed in 0.49s"
+    ]
+  },
+  {
+    "id": "H10",
+    "defect": "boundary copy keeps external_imports",
+    "file": "analysis/file_graph.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V07_details_keep_the_key_boundary_copies_do_not"
+    ],
+    "tail": [
+      "1 failed, 245 passed in 0.60s"
+    ]
+  },
+  {
+    "id": "H11",
+    "defect": "external coverage keys always emitted",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V10_without_external_rules_same_keys_as_2a_even_when_files_have_imports"
+    ],
+    "tail": [
+      "1 failed, 234 passed in 0.59s"
+    ]
+  },
+  {
+    "id": "H12",
+    "defect": "details nodes stripped (breaks details == symbol)",
+    "file": "analysis/file_graph.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_rules.py::test_V07_details_keep_the_key_boundary_copies_do_not"
+    ],
+    "tail": [
+      "1 failed, 245 passed in 0.59s"
+    ]
+  },
+  {
+    "id": "H13",
+    "defect": "M24 re-inject: block comment search starts too late",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V05_C09_jsonc_syntax[jsonc-empty-block-comment]"
+    ],
+    "tail": [
+      "1 failed, 81 passed in 0.38s"
+    ]
+  },
+  {
+    "id": "H14",
+    "defect": "alias filter only on static specifiers",
+    "file": "language_analyzers/typescript/analyzer.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V04_F06_alias_exclusion_applies_to_non_static_forms"
+    ],
+    "tail": [
+      "1 failed, 130 passed in 0.45s"
+    ]
+  },
+  {
+    "id": "H15",
+    "defect": "unparseable modules excluded from index",
+    "file": "language_analyzers/python/graph.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V01_F02_unparseable_module_still_counts_as_internal"
+    ],
+    "tail": [
+      "1 failed, 121 passed in 0.45s"
+    ]
+  },
+  {
+    "id": "H16",
+    "defect": "baseUrl compares whole specifier stem",
+    "file": "language_analyzers/core/external_imports.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_external_imports.py::test_V05_C08_base_url_table[C08-app/x]"
+    ],
+    "tail": [
+      "1 failed, 69 passed in 0.35s"
+    ]
+  }
+]

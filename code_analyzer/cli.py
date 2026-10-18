@@ -3,6 +3,7 @@ Command-line interface for the FastAPI Visualizer.
 """
 
 import argparse
+import dataclasses
 import json
 import sys
 import time
@@ -21,6 +22,7 @@ from repository import (ScanPolicyError, build_snapshot, default_scan_policy_pat
 from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
 from language_analyzers.core.serialization import architecture_to_dict
+from analysis.architecture_rules import load_architecture_rules
 from analysis.file_graph import to_file_architecture
 from analysis.candidate_projection import AMBIGUITY_POLICY
 from bottlenecks.core import _snapshot, _validate
@@ -38,7 +40,7 @@ from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
-from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json
+from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json, compute_delta, load_baseline, regressions
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy", "nestjs": "NestJS"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
@@ -147,6 +149,25 @@ def parse_args():
         metavar="PATH",
         help="Edge weight profile applied to PageRank, HITS and weighted fan metrics.",
     )
+    parser.add_argument(
+        "--architecture-rules",
+        default=None,
+        metavar="PATH",
+        help="Architecture rules YAML (file granularity only); boundary crossings become rule_violation candidates.",
+    )
+    parser.add_argument(
+        "--baseline",
+        default=None,
+        metavar="PATH",
+        help="Earlier bottleneck JSON (file granularity); structural changes against it are reported as delta.",
+    )
+    parser.add_argument(
+        "--fail-on-new",
+        choices=("cycle", "violation", "any"),
+        action="append",
+        default=None,
+        help="Exit 3 after writing outputs when the delta has new or grown cycles, new rule violations, or either. Requires --baseline.",
+    )
     args = parser.parse_args()
     if not args.analyzers:
         args.analyzers = [("framework", "fastapi")]
@@ -156,6 +177,12 @@ def parse_args():
         parser.error("the same -f/-l value may not be repeated")
     if args.entrypoint and ("framework", "fastapi") not in args.analyzers:
         parser.error("--entrypoint is only supported with --framework fastapi")
+    if args.architecture_rules and args.granularity == "symbol":
+        parser.error("--architecture-rules is only supported with --granularity file")
+    if args.baseline and args.granularity == "symbol":
+        parser.error("--baseline is only supported with --granularity file")
+    if args.fail_on_new and not args.baseline:
+        parser.error("--fail-on-new requires --baseline")
     output = Path(args.output).resolve()
     output_paths = [output, output.with_name(f"{output.stem}_assets")]
     if args.bottlenecks:
@@ -359,6 +386,8 @@ def main(
     analysis_config = None
     try:
         edge_weights = load_edge_weights(args.edge_weights)
+        architecture_rules = load_architecture_rules(args.architecture_rules) if args.architecture_rules else None
+        baseline = load_baseline(args.baseline) if args.baseline else None
         analysis_config = GraphAnalysisConfig(edge_weights=edge_weights)
         scan_policy = load_scan_policy(default_scan_policy_path())
         inventory = file_lister(
@@ -373,7 +402,8 @@ def main(
         stage_started = overall_started
         repository_snapshot = build_snapshot(
             project_path, paths, policy=scan_policy, reader=file_reader,
-            ignore_source=ignore_source, excluded_paths=outputs,
+            ignore_source=ignore_source,
+            excluded_paths=outputs + ((Path(args.baseline).resolve(),) if args.baseline else ()),
         )
         _snapshot(repository_snapshot)
         timing["snapshot"] = time.perf_counter() - stage_started
@@ -409,7 +439,11 @@ def main(
             }
         elif not isinstance(arch.stats["analysis"], Mapping) or arch.stats["analysis"].get("ambiguity_policy") != AMBIGUITY_POLICY:
             raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
-        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis)
+        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis, rules=architecture_rules)
+        delta = None
+        if baseline is not None:
+            delta = compute_delta(json.loads(bottlenecks_to_json(bottleneck_report)), baseline)
+            bottleneck_report = dataclasses.replace(bottleneck_report, delta=delta)
         timing["metrics_candidates"] = time.perf_counter() - stage_started
     except (OSError, UnicodeError, ValueError, BottleneckInputError) as exc:
         print(f"[!] Error: {exc}", file=sys.stderr)
@@ -425,6 +459,12 @@ def main(
     timing["output"] = time.perf_counter() - stage_started
     timing["total"] = time.perf_counter() - overall_started
     main.last_timing = timing
+    if delta is not None:
+        counts = delta["counts"]
+        print(f"[Δ] Delta vs baseline: new cycles {counts['new_cycles']}, grown cycles {counts['grown_cycles']}, new violations {counts['new_violations']}, "
+              f"new package dependencies {counts['new_package_dependencies']}, instability changes {counts['instability_changes']}")
+        if delta["rules_changed"]:
+            print("[!] Warning: architecture rules differ from the baseline", file=sys.stderr)
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")
 
     if args.json:
@@ -452,6 +492,13 @@ def main(
     top_cost = stats.get("analysis", {}).get("top_weighted_cost", [])
     if top_cost:
         print(f"  • Highest PageRank × effective token cost: {top_cost[0]['label']} ({top_cost[0]['value']:.4f})")
+
+    if delta is not None and args.fail_on_new:
+        failed = regressions(delta, args.fail_on_new)
+        if failed:
+            counts = delta["counts"]
+            print(f"[!] Structural regression (--fail-on-new {','.join(failed)}): new cycles {counts['new_cycles']}, grown cycles {counts['grown_cycles']}, new violations {counts['new_violations']}", file=sys.stderr)
+            raise SystemExit(3)
 
     if args.open:
         print(f"[*] Opening {output_html_path} in default browser...")

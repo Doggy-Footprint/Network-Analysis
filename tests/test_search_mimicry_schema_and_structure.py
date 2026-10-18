@@ -141,7 +141,7 @@ def test_V5_O1_symbol_output_is_v6_without_granularity(tmp_path):
 
 def test_V5_O2_file_output_is_v7_with_granularity_file(tmp_path):
     payload = file_mode_payload(tmp_path)
-    assert payload["schema"] == "bottlenecks.v7"
+    assert payload["schema"] == "bottlenecks.v8"
     assert payload["granularity"] == "file"
 
 

@@ -10,6 +10,7 @@ import pytest
 
 from analysis import GraphAnalyzer
 from tests.candidate_policy_metadata_support import IDENTITY_TABLES, without_candidate_policy_metadata
+from tests.external_rules_support import strip_external_imports
 from tests.file_analysis_support import architecture, converted, node, snapshot
 from tests.edge_weights_support import edge
 from tests.legacy_metric_transition_support import (
@@ -114,12 +115,12 @@ def test_V01_direct_builder_defaults_characterization(monkeypatch,file_project,n
         for root in sorted({str(file_project),str(file_project.resolve())},key=len,reverse=True):
             encoded=encoded.replace(root,'<PROJECT_ROOT>')
         return json.loads(encoded.replace('/private<PROJECT_ROOT>','<PROJECT_ROOT>'))
-    assert normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES))==normalized(legacy_to_current(golden['builder']))
-    builder_state=serialize(result)
+    assert normalized(without_candidate_policy_metadata(strip_external_imports(serialize(result)), 'architecture', IDENTITY_TABLES))==normalized(legacy_to_current(golden['builder']))
+    builder_state=strip_external_imports(serialize(result))
     report=analyze_bottlenecks(snapshot(FILES,root=str(file_project.resolve())),result,load_edge_weights(default_edge_weights_path()))
     current_bottlenecks=normalized(without_candidate_policy_metadata(json.loads(bottlenecks_to_json(report)),'bottlenecks'))
     expected_rows=assert_bottlenecks_match_legacy_modulo_fallback_costs(normalized(builder_state),current_bottlenecks,normalized(legacy_to_current(golden['bottlenecks'])))
-    assert_architecture_match_legacy_modulo_fallback_costs(expected_rows,normalized(without_candidate_policy_metadata(serialize(result), 'architecture', IDENTITY_TABLES)),normalized(legacy_to_current(golden['after_bottlenecks'])))
+    assert_architecture_match_legacy_modulo_fallback_costs(expected_rows,normalized(without_candidate_policy_metadata(strip_external_imports(serialize(result)), 'architecture', IDENTITY_TABLES)),normalized(legacy_to_current(golden['after_bottlenecks'])))
 
 
 @pytest.mark.parametrize('option',['--no-language-graph','--no-models','--no-deps'])
@@ -225,7 +226,7 @@ def test_V08_schemas_and_json(monkeypatch,file_project,tmp_path,granularity):
     if granularity=='file':
         assert calls==[1]
     assert data['architecture']['schema_version']==('6' if granularity=='file' else '5')
-    assert data['bottlenecks']['schema']==('bottlenecks.v7' if granularity=='file' else 'bottlenecks.v6')
+    assert data['bottlenecks']['schema']==('bottlenecks.v8' if granularity=='file' else 'bottlenecks.v6')
     assert data['architecture']==json.loads(path.with_suffix('.json').read_text())
     assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
     if granularity=='symbol':

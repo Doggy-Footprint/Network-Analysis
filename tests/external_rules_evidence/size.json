@@ -1,0 +1,70 @@
+{
+  "base_commit": "2627174d8a454a427965b5becee666c295454435",
+  "fastapi-realworld_rules": {
+    "coverage": {
+      "empty_layers": [],
+      "external_import_count": 180,
+      "external_violation_count": 3,
+      "layer_file_counts": {
+        "api": 21,
+        "core": 12,
+        "db": 15,
+        "domain": 6,
+        "schemas": 8,
+        "services": 6
+      },
+      "policy": "architecture_rules.v1",
+      "unassigned_file_count": 30,
+      "unassigned_files": "<omitted>",
+      "version": 1,
+      "violation_count": 8
+    },
+    "no_rules_bottleneck_bytes": 943448,
+    "ratio": 1.0057,
+    "rules_bottleneck_bytes": 948864,
+    "violation_counts_by_rule": {
+      "allow:domain->services": 2,
+      "forbid:db->api": 3,
+      "forbid_external:api->asyncpg.connection": 1,
+      "forbid_external:api->asyncpg.pool": 1,
+      "forbid_external:db->fastapi": 1
+    }
+  },
+  "fixtures": {
+    "android-nowinandroid": {
+      "architecture_bytes": 8960676,
+      "base_architecture_bytes": 8853602,
+      "external_import_count": 436,
+      "files_with_external_imports": 60,
+      "ratio": 1.0121
+    },
+    "fastapi-official-template": {
+      "architecture_bytes": 1495337,
+      "base_architecture_bytes": 1475829,
+      "external_import_count": 100,
+      "files_with_external_imports": 29,
+      "ratio": 1.0132
+    },
+    "fastapi-realworld": {
+      "architecture_bytes": 3039956,
+      "base_architecture_bytes": 3004550,
+      "external_import_count": 180,
+      "files_with_external_imports": 63,
+      "ratio": 1.0118
+    },
+    "futuramaapi": {
+      "architecture_bytes": 6891253,
+      "base_architecture_bytes": 6794851,
+      "external_import_count": 500,
+      "files_with_external_imports": 122,
+      "ratio": 1.0142
+    },
+    "typescript-nestjs-realworld": {
+      "architecture_bytes": 1316337,
+      "base_architecture_bytes": 1300683,
+      "external_import_count": 70,
+      "files_with_external_imports": 28,
+      "ratio": 1.012
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "android-nowinandroid": {
+    "base_bytes": 7487354,
+    "kind_counts": {
+      "dependency_cycle": 4,
+      "evidence_spread": 47,
+      "package_cycle": 2,
+      "unresolved_boundary": 40,
+      "unstable_dependency": 13
+    },
+    "ratio": 1.049,
+    "structure_median_s": 0.0098,
+    "v8_bytes": 7854408
+  },
+  "fastapi-realworld": {
+    "base_bytes": 851949,
+    "kind_counts": {
+      "dependency_cycle": 5,
+      "evidence_spread": 44,
+      "large_node": 1,
+      "package_cycle": 4,
+      "unresolved_boundary": 49,
+      "unstable_dependency": 17
+    },
+    "ratio": 1.1074,
+    "structure_median_s": 0.0068,
+    "v8_bytes": 943448
+  },
+  "futuramaapi": {
+    "base_bytes": 1726473,
+    "kind_counts": {
+      "dependency_cycle": 6,
+      "evidence_spread": 91,
+      "package_cycle": 6,
+      "unresolved_boundary": 101,
+      "unstable_dependency": 74
+    },
+    "ratio": 1.2362,
+    "structure_median_s": 0.0152,
+    "v8_bytes": 2134318
+  },
+  "typescript-nestjs-realworld": {
+    "base_bytes": 574330,
+    "kind_counts": {
+      "dependency_cycle": 2,
+      "evidence_spread": 32,
+      "package_cycle": 3,
+      "unresolved_boundary": 21,
+      "unstable_dependency": 11
+    },
+    "ratio": 1.1239,
+    "structure_median_s": 0.0025,
+    "v8_bytes": 645507
+  }
+}

@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Tuple, Optional
 from types import SimpleNamespace
 
+from analysis.architecture_rules import ArchitectureRulesError
 from analysis.edge_weights import EdgeWeights
 from analysis.candidate_projection import AMBIGUITY_POLICY, candidate_projection, candidate_targets
 from language_analyzers.core.serialization import edge_to_dict
@@ -23,6 +24,7 @@ class BottleneckReport:
     coverage: Mapping[str, Any]; dependency_network: Mapping[str, Any]
     candidates: Tuple[Mapping[str, Any], ...]; limitations: Tuple[str, ...]
     granularity: Optional[str] = None
+    delta: Optional[Mapping[str, Any]] = None
 
 
 RANKING_KEYS = (
@@ -220,7 +222,7 @@ def _intern_candidate_groups(candidates):
     return groups
 
 
-def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None) -> BottleneckReport:
+def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None) -> BottleneckReport:
     try:
         _weights(weights)
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
@@ -235,6 +237,11 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _file_candidates(architecture, weights.large_node_line_threshold) if is_file else _candidates(architecture, weights.large_node_line_threshold)
+        structure = None
+        if is_file:
+            from analysis.structure import analyze_structure
+            structure = analyze_structure(architecture, weights, rules)
+            candidates = sorted(candidates + list(structure.candidates), key=lambda item: (item["kind"], item["id"]))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
@@ -247,8 +254,11 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             "betweenness_sample_size": analysis["betweenness_sample_size"]}
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
-        return BottleneckReport("bottlenecks.v7" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
-    except BottleneckInputError: raise
+        if structure is not None:
+            from analysis.structure import STRUCTURE_POLICY
+            network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
+        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+    except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 
 
@@ -258,5 +268,7 @@ def bottlenecks_to_json(report: BottleneckReport) -> str:
         payload = asdict(report)
         if report.granularity is None:
             payload.pop("granularity")
+        if report.delta is None:
+            payload.pop("delta")
         return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n"
     except (TypeError, ValueError) as exc: raise BottleneckInputError("report contains non-JSON values") from exc

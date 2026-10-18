@@ -1,0 +1,107 @@
+import copy, json, random, sys, tempfile, traceback
+from pathlib import Path
+
+import yaml
+
+from analysis.architecture_rules import ArchitectureRulesError, load_architecture_rules
+from language_analyzers.core.external_imports import parse_tsconfig_aliases, typescript_package_name
+
+SEED, BUDGET = 20261018, 20000
+
+
+def ref_seg(p, s):
+    if not p: return not s
+    if p[0] == '*': return any(ref_seg(p[1:], s[i:]) for i in range(len(s) + 1))
+    if not s: return False
+    if p[0] == '?': return ref_seg(p[1:], s[1:])
+    return p[0] == s[0] and ref_seg(p[1:], s[1:])
+
+
+def ref_match(pattern, path):
+    ps, ss = [], path.split('/')
+    for seg in pattern.split('/'):
+        if not (seg == '**' and ps and ps[-1] == '**'): ps.append(seg)
+    def go(i, j):
+        if i == len(ps): return j == len(ss)
+        if ps[i] == '**':
+            last = all(seg == '**' for seg in ps[i:])
+            return any(go(i + 1, k) for k in range(j + (1 if last else 0), len(ss) + 1))
+        return j < len(ss) and ref_seg(ps[i], ss[j]) and go(i + 1, j + 1)
+    return go(0, 0)
+
+
+def valid_pattern(p):
+    if p.startswith('/'): return False
+    return all(seg == '**' or '**' not in seg for seg in p.split('/'))
+
+
+BASE = {"version": 1,
+        "layers": {"api": {"paths": ["app/api/**"]}, "domain": {"packages": ["pkg:python:app.domain*"]}, "db": {"paths": ["app/db/**"], "packages": ["pkg:dir:x"]}},
+        "allow": {"domain": ["db"]},
+        "external": {"orm": ["sqlalchemy*"], "web": ["fastapi"]},
+        "forbid": [{"from": "db", "to": ["api"], "to_external": ["group:web"]}, {"from": "api", "to_external": ["group:orm", "x*"]}],
+        "allow_external": {"domain": ["pydantic*"]}}
+WEIRD = [None, True, False, 0, 1, 2, -1, 1.5, "", "a", "1a", "a b", "/abs", "a**", "**", [], [1], ["x"], {}, {"a": 1}, {"paths": []}, {"paths": [""]},
+         "external", "to_external", "group:orm", "group:", "group:zz", "pkg:*", "é", "x" * 300]
+
+
+def mutate_doc(rng):
+    doc = copy.deepcopy(BASE)
+    for _ in range(rng.randint(1, 4)):
+        nodes = [(None, None, doc)]
+        stack = [doc]
+        while stack:
+            cur = stack.pop()
+            items = cur.items() if isinstance(cur, dict) else enumerate(cur) if isinstance(cur, list) else ()
+            for k, v in list(items):
+                nodes.append((cur, k, v))
+                if isinstance(v, (dict, list)): stack.append(v)
+        parent, key, value = rng.choice(nodes)
+        op = rng.randrange(4)
+        if parent is None:
+            if op == 0: doc = copy.deepcopy(rng.choice(WEIRD))
+            else: doc[rng.choice(["version", "layers", "allow", "forbid", "external", "allow_external", "extra"])] = copy.deepcopy(rng.choice(WEIRD))
+            if not isinstance(doc, dict): break
+        elif op == 0 and isinstance(parent, dict): parent.pop(key)
+        elif op == 0 and isinstance(parent, list): parent.pop(key)
+        elif op == 1: parent[key] = copy.deepcopy(rng.choice(WEIRD))
+        elif op == 2 and isinstance(parent, dict): parent[rng.choice(["paths", "packages", "from", "to", "to_external", "zz", "api", "domain", "db", "new", "orm", "web"])] = copy.deepcopy(rng.choice(WEIRD))
+        elif op == 2 and isinstance(parent, list): parent.append(copy.deepcopy(rng.choice(WEIRD)))
+        else: parent[key] = copy.deepcopy(rng.choice([BASE["layers"], BASE["forbid"], BASE["allow"], ["api", "db"], "db"]))
+    return doc
+
+
+def loader_fuzz(rng, tmp):
+    crashes, accepted = [], 0
+    path = Path(tmp) / "r.yaml"
+    for i in range(BUDGET):
+        if rng.random() < 0.8:
+            text = yaml.safe_dump(mutate_doc(rng), allow_unicode=True)
+            data = text.encode()
+        else:
+            data = bytearray(yaml.safe_dump(BASE).encode())
+            for _ in range(rng.randint(1, 6)):
+                pos = rng.randrange(len(data)); choice = rng.randrange(3)
+                if choice == 0: data[pos] = rng.randrange(256)
+                elif choice == 1: del data[pos]
+                else: data.insert(pos, rng.choice(b"{}[]:-*!&\n\t'\"\xff"))
+            data = bytes(data)
+        path.write_bytes(data)
+        try:
+            load_architecture_rules(path); accepted += 1
+        except ArchitectureRulesError:
+            pass
+        except Exception:
+            crashes.append({"index": i, "input": data.decode("utf-8", "replace"), "error": traceback.format_exc(limit=3)})
+    return {"execs": BUDGET, "accepted": accepted, "crashes": crashes[:20], "crash_count": len(crashes)}
+
+
+from fuzz_ts import tsconfig_fuzz, package_fuzz
+
+
+if __name__ == "__main__":
+    rng = random.Random(SEED)
+    with tempfile.TemporaryDirectory() as tmp:
+        result = {"seed": SEED, "loader": loader_fuzz(rng, tmp), "tsconfig": tsconfig_fuzz(random.Random(SEED + 1), BUDGET, parse_tsconfig_aliases), "package_name": package_fuzz(random.Random(SEED + 2), BUDGET, typescript_package_name)}
+    Path(sys.argv[1]).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    print(json.dumps({k: {kk: vv for kk, vv in v.items() if kk not in ("crashes", "violations")} if isinstance(v, dict) else v for k, v in result.items()}))

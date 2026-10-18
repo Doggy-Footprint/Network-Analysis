@@ -1,0 +1,76 @@
+{
+  "fixture": "fastapi-realworld",
+  "command": "python -m code_analyzer .fixtures/fastapi-realworld -l python --granularity file [--architecture-rules profiles/architecture_rules.example.yaml] --bottlenecks <out>",
+  "no_rules_bytes": 943448,
+  "rules_bytes": 947607,
+  "ratio": 1.0044,
+  "violation_counts_by_rule": {
+    "allow:domain->services:certain": 2,
+    "forbid:db->api:all": 2,
+    "forbid:db->api:resolved": 1
+  },
+  "violations": [
+    [
+      "forbid",
+      "file:app/db/repositories/tags.py",
+      "file:app/api/routes/tags.py",
+      "all",
+      [
+        "CALLS"
+      ]
+    ],
+    [
+      "allow",
+      "file:app/models/domain/users.py",
+      "file:app/services/security.py",
+      "certain",
+      [
+        "CALLS",
+        "IMPORTS_SYMBOL"
+      ]
+    ],
+    [
+      "forbid",
+      "file:app/db/repositories/articles.py",
+      "file:app/api/routes/articles/articles_common.py",
+      "all",
+      [
+        "CALLS"
+      ]
+    ],
+    [
+      "allow",
+      "file:app/models/domain/users.py",
+      "file:app/services/__init__.py",
+      "certain",
+      [
+        "IMPORTS"
+      ]
+    ],
+    [
+      "forbid",
+      "file:app/db/repositories/articles.py",
+      "file:app/api/routes/articles/articles_resource.py",
+      "resolved",
+      [
+        "CALLS"
+      ]
+    ]
+  ],
+  "coverage": {
+    "empty_layers": [],
+    "layer_file_counts": {
+      "api": 21,
+      "core": 12,
+      "db": 15,
+      "domain": 6,
+      "schemas": 8,
+      "services": 6
+    },
+    "policy": "architecture_rules.v1",
+    "unassigned_file_count": 30,
+    "unassigned_files": 30,
+    "version": 1,
+    "violation_count": 5
+  }
+}

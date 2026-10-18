@@ -1,0 +1,146 @@
+[
+ {
+  "id": "H01",
+  "mutation": "H01 parent = first SCC of looser tier",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V03_parent_is_the_containing_scc_not_the_first_one"
+  ]
+ },
+ {
+  "id": "H02",
+  "mutation": "H02 stricter tier uses all edges",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V01_pairs_are_reaggregated_from_stricter_edges_only[certain]"
+  ]
+ },
+ {
+  "id": "H03",
+  "mutation": "H03 unstable uses >=",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V06_C15_equal_instability_makes_no_candidate"
+  ]
+ },
+ {
+  "id": "H04",
+  "mutation": "H04 shared file keeps first module only",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V05_C25_file_in_two_modules_is_member_of_both"
+  ]
+ },
+ {
+  "id": "H05",
+  "mutation": "H05 package pair weight summed",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V05_C25_package_pairs_reach_both_modules"
+  ]
+ },
+ {
+  "id": "H06",
+  "mutation": "H06 candidate_share ignored",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V01_C07_pair_aggregation_in_all_tier"
+  ]
+ },
+ {
+  "id": "H07",
+  "mutation": "H07 cut cap 11",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V03_C05_cut_candidates_length_and_order[certain-11-10]"
+  ]
+ },
+ {
+  "id": "H08",
+  "mutation": "H08 cut evidence desc",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V03_C05_cut_candidates_length_and_order[certain-9-9]"
+  ]
+ },
+ {
+  "id": "H09",
+  "mutation": "H09 tarjan lowlink via finished nodes",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V02_fixed_dag - AssertionError: as..."
+  ]
+ },
+ {
+  "id": "H10",
+  "mutation": "H10 __init__ treated as module",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V04_python_packages_C08 - Asser..."
+  ]
+ },
+ {
+  "id": "H11",
+  "mutation": "H11 kotlin package ignored",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V04_kotlin_packages_C09 - Asser..."
+  ]
+ },
+ {
+  "id": "H12",
+  "mutation": "H12 SCC members unsorted",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V01_C04_boundary_free_cycle_beside_boundary_edges_is_kept"
+  ]
+ },
+ {
+  "id": "H13",
+  "mutation": "H13 structure leaks into symbol mode",
+  "file": "bottlenecks/core.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_integration.py::test_V08_symbol_mode_is_byte_identical_to_base[futuramaapi]"
+  ]
+ },
+ {
+  "id": "H14",
+  "mutation": "H14 weighted_from emitted as null",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_packages.py::test_V07_unstable_weighted_from_key_absent_when_from_side_denominator_is_zero"
+  ]
+ },
+ {
+  "id": "H15",
+  "mutation": "H15 HTML cycle on first member only",
+  "file": "renderers/html/static/app.js",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_browser.py::test_V10_cycle_shown_on_each_member_with_tier_labels[b]"
+  ]
+ },
+ {
+  "id": "H16",
+  "mutation": "H16 TESTS edges included",
+  "file": "analysis/structure.py",
+  "status": "killed",
+  "detected_by": [
+   "FAILED tests/test_structure_facts.py::test_V01_C03_tests_relation_never_closes_a_cycle"
+  ]
+ }
+]

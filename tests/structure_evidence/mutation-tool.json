@@ -1,0 +1,212 @@
+[
+ {
+  "id": "M00",
+  "file": "analysis/structure.py",
+  "line": 57,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M01",
+  "file": "analysis/structure.py",
+  "line": 43,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M02",
+  "file": "analysis/structure.py",
+  "line": 204,
+  "kind": "const",
+  "status": "killed"
+ },
+ {
+  "id": "M03",
+  "file": "analysis/structure.py",
+  "line": 57,
+  "kind": "not",
+  "status": "killed"
+ },
+ {
+  "id": "M04",
+  "file": "analysis/structure.py",
+  "line": 130,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M05",
+  "file": "analysis/structure.py",
+  "line": 24,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M06",
+  "file": "analysis/structure.py",
+  "line": 218,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M07",
+  "file": "analysis/structure.py",
+  "line": 85,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M08",
+  "file": "analysis/structure.py",
+  "line": 219,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M09",
+  "file": "analysis/structure.py",
+  "line": 215,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M10",
+  "file": "analysis/structure.py",
+  "line": 61,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M11",
+  "file": "analysis/structure.py",
+  "line": 46,
+  "kind": "const",
+  "status": "killed"
+ },
+ {
+  "id": "M12",
+  "file": "analysis/structure.py",
+  "line": 102,
+  "kind": "bin",
+  "status": "killed"
+ },
+ {
+  "id": "M13",
+  "file": "analysis/structure.py",
+  "line": 123,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M14",
+  "file": "analysis/structure.py",
+  "line": 124,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M15",
+  "file": "analysis/structure.py",
+  "line": 215,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M16",
+  "file": "analysis/structure.py",
+  "line": 89,
+  "kind": "bool",
+  "status": "killed"
+ },
+ {
+  "id": "M17",
+  "file": "analysis/structure.py",
+  "line": 65,
+  "kind": "const",
+  "status": "killed"
+ },
+ {
+  "id": "M18",
+  "file": "analysis/structure.py",
+  "line": 151,
+  "kind": "const",
+  "status": "killed"
+ },
+ {
+  "id": "M19",
+  "file": "bottlenecks/core.py",
+  "line": 255,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M20",
+  "file": "analysis/structure.py",
+  "line": 215,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M21",
+  "file": "analysis/structure.py",
+  "line": 187,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M22",
+  "file": "analysis/structure.py",
+  "line": 24,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M23",
+  "file": "analysis/structure.py",
+  "line": 104,
+  "kind": "ifdel",
+  "status": "killed"
+ },
+ {
+  "id": "M24",
+  "file": "analysis/structure.py",
+  "line": 88,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M25",
+  "file": "report/bottlenecks/generate.py",
+  "line": 220,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M26",
+  "file": "analysis/structure.py",
+  "line": 194,
+  "kind": "bin",
+  "status": "killed"
+ },
+ {
+  "id": "M27",
+  "file": "analysis/structure.py",
+  "line": 125,
+  "kind": "bin",
+  "status": "killed"
+ },
+ {
+  "id": "M28",
+  "file": "analysis/structure.py",
+  "line": 79,
+  "kind": "cmp",
+  "status": "killed"
+ },
+ {
+  "id": "M29",
+  "file": "report/bottlenecks/generate.py",
+  "line": 55,
+  "kind": "const",
+  "status": "survived"
+ }
+]

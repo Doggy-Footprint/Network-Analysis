@@ -74,7 +74,7 @@ def file_bottlenecks(arch, candidate_count=3):
                            'metrics': {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2},
                            'evidence': [{'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29}] if kind == 'evidence_spread' else {'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29},
                            'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'})
-    return {'schema': 'bottlenecks.v7', 'granularity': 'file', 'snapshot': {}, 'versions': {}, 'coverage': {},
+    return {'schema': 'bottlenecks.v8', 'granularity': 'file', 'snapshot': {}, 'versions': {}, 'coverage': {},
             'edge_weights': {'confidence': {'static_certain': 1, 'static_inferred': .3, 'framework_inferred': .3, 'dynamic_required': .3}, 'resolution': {'exact': 1, 'unique_name': 1, 'ambiguous': .3, 'unresolved': .3}, 'large_node_line_threshold': 2000},
             'dependency_network': {'ambiguity_policy': 'equal-symbol-share.v1', 'node_count': len(arch['nodes']), 'edge_count': len(arch['edges']), 'node_metrics': metrics, 'rankings': rankings(metrics), 'rankings_by_category': {key: rankings(ids) for key, ids in categories.items()}, 'betweenness_strategy': 'exact', 'betweenness_sample_size': None},
             'candidates': candidates, 'limitations': []}

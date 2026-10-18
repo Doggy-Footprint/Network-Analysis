@@ -1,0 +1,221 @@
+[
+  {
+    "id": "H01",
+    "defect": "grown cycle with added members suppressed",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_F12_delta_object_shape_and_counts - Assertio..."
+    ],
+    "tail": [
+      "1 failed, 1 passed in 0.09s"
+    ]
+  },
+  {
+    "id": "H02",
+    "defect": "grown classified as new",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_F12_delta_object_shape_and_counts - Assertio..."
+    ],
+    "tail": [
+      "1 failed, 1 passed in 0.08s"
+    ]
+  },
+  {
+    "id": "H03",
+    "defect": "added_members against every baseline member of the key",
+    "file": "bottlenecks/delta.py",
+    "returncode": 0,
+    "killed": false,
+    "first_failure": [],
+    "tail": [
+      "275 passed in 26.59s"
+    ]
+  },
+  {
+    "id": "H04",
+    "defect": "merge of >=2 baseline cycles without added members not reported",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V01_C06_merged_cycles_grow_without_added_members"
+    ],
+    "tail": [
+      "1 failed, 6 passed in 0.08s"
+    ]
+  },
+  {
+    "id": "H05",
+    "defect": "resolved counts baseline cycles that still overlap",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V01_C07_shrunk_cycle_is_not_reported - Asser..."
+    ],
+    "tail": [
+      "1 failed, 5 passed in 0.08s"
+    ]
+  },
+  {
+    "id": "H06",
+    "defect": "instability tolerance removed",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V03_reported_boundaries[plus-0.19999999999999996]"
+    ],
+    "tail": [
+      "1 failed, 28 passed in 0.09s"
+    ]
+  },
+  {
+    "id": "H07",
+    "defect": "negative instability changes dropped",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V03_reported_boundaries[minus-0.19999999999999996]"
+    ],
+    "tail": [
+      "1 failed, 31 passed in 0.10s"
+    ]
+  },
+  {
+    "id": "H08",
+    "defect": "any expands to cycle only",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V09_regressions[any-violation-only] - Assert..."
+    ],
+    "tail": [
+      "1 failed, 144 passed in 0.39s"
+    ]
+  },
+  {
+    "id": "H09",
+    "defect": "rules_changed ignores digest difference",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_F06_rules_changed[h1-h2-True] - AssertionErr..."
+    ],
+    "tail": [
+      "1 failed, 54 passed in 0.10s"
+    ]
+  },
+  {
+    "id": "H10",
+    "defect": "tier dropped from cycle key",
+    "file": "bottlenecks/delta.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V01_C10_tier_is_part_of_the_key - AssertionE..."
+    ],
+    "tail": [
+      "1 failed, 10 passed in 0.09s"
+    ]
+  },
+  {
+    "id": "H11",
+    "defect": "digest keeps layer path order/duplicates",
+    "file": "analysis/architecture_rules.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta.py::test_V05_F03_layer_paths_and_packages_order_and_duplicates_are_irrelevant"
+    ],
+    "tail": [
+      "1 failed, 185 passed in 0.40s"
+    ]
+  },
+  {
+    "id": "H12",
+    "defect": "regression exit code 1",
+    "file": "code_analyzer/cli.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta_cli.py::test_V07_C02_new_cycle[flags0-cycle-3] - Asse..."
+    ],
+    "tail": [
+      "1 failed, 211 passed in 10.64s"
+    ]
+  },
+  {
+    "id": "H13",
+    "defect": "package dependency tier constant",
+    "file": "analysis/structure.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta_cli.py::test_V07_C04_new_package_dependency_never_fails"
+    ],
+    "tail": [
+      "1 failed, 218 passed in 13.50s"
+    ]
+  },
+  {
+    "id": "H14",
+    "defect": "baseline not excluded from snapshot",
+    "file": "code_analyzer/cli.py",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_delta_cli.py::test_V07_D8_baseline_inside_the_project_root_is_excluded_from_the_snapshot"
+    ],
+    "tail": [
+      "1 failed, 241 passed in 18.44s"
+    ]
+  },
+  {
+    "id": "H15",
+    "defect": "tier filter cumulative",
+    "file": "renderers/html/static/app.js",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_structure_panel_browser.py::test_V11_cycles_follow_tier_selection_by_equality"
+    ],
+    "tail": [
+      "1 failed, 194 passed in 2.55s"
+    ]
+  },
+  {
+    "id": "H16",
+    "defect": "no tab switch on click",
+    "file": "renderers/html/static/app.js",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_structure_panel_browser.py::test_V11_C24_click_from_the_list_tab_switches_to_the_graph"
+    ],
+    "tail": [
+      "1 failed, 195 passed in 3.04s"
+    ]
+  },
+  {
+    "id": "H17",
+    "defect": "out-of-filter count hidden for 1 file",
+    "file": "renderers/html/static/app.js",
+    "returncode": 1,
+    "killed": true,
+    "first_failure": [
+      "FAILED tests/test_structure_panel_browser.py::test_V11_C25_files_outside_the_code_filter_are_counted_not_selected"
+    ],
+    "tail": [
+      "1 failed, 203 passed in 5.32s"
+    ]
+  }
+]
