@@ -11,7 +11,7 @@
       ],
       "rules": null,
       "bottleneck_bytes": 2134318,
-      "bottleneck_sha256": "4dbc38a642566242bedbb05a7fb6c250ccab42e531d13f1ad0841d274db7fdf1"
+      "bottleneck_sha256": "38a75f1977781023cad9fd47a2e2160aea520663fc90c7d4f8147ea6ba16984b"
     },
     {
       "fixture": "fastapi-realworld",
@@ -21,7 +21,7 @@
       ],
       "rules": null,
       "bottleneck_bytes": 943448,
-      "bottleneck_sha256": "4abcf877307acc9abcb23ab9a7e5cfddabf2a2f361c73e2e925ca26ff1c21084"
+      "bottleneck_sha256": "714adacce6c3a54bee43735d33388fa86e73c4a6d6def100e0b6911d1ebcc6de"
     },
     {
       "fixture": "fastapi-official-template",
@@ -31,7 +31,7 @@
       ],
       "rules": null,
       "bottleneck_bytes": 490343,
-      "bottleneck_sha256": "ffe347034958b2b5bef403391ffbf3153a6a0f9937a67c755b23bfa1294db52b"
+      "bottleneck_sha256": "8f03c2e189fb0d5097d1eef95ff36fcf5a100fd4dc7475c2b15972513548ce88"
     },
     {
       "fixture": "android-nowinandroid",
@@ -40,8 +40,8 @@
         "kotlin"
       ],
       "rules": null,
-      "bottleneck_bytes": 7854408,
-      "bottleneck_sha256": "f40dc91e70f6f44acf60556ea4d4bcfe483527ca2bd488661380a27efd474714"
+      "bottleneck_bytes": 7803572,
+      "bottleneck_sha256": "932538e4e5ebc260709f2bdbafb11b54311db217fde6c8f9858e2e472e3d2a25"
     },
     {
       "fixture": "typescript-nestjs-realworld",
@@ -50,8 +50,8 @@
         "typescript"
       ],
       "rules": null,
-      "bottleneck_bytes": 588166,
-      "bottleneck_sha256": "7b13ea690e6c79f4f25ae97c976d59465087a716336f6321d9ba56fe563131df"
+      "bottleneck_bytes": 678170,
+      "bottleneck_sha256": "45e0e36f2b2658486e7807f0d2d7e7a1689795791b08f9ed5ae600ef2db628b0"
     },
     {
       "fixture": "fastapi-realworld",
@@ -61,7 +61,7 @@
       ],
       "rules": "profiles/architecture_rules.example.yaml",
       "bottleneck_bytes": 948864,
-      "bottleneck_sha256": "53f38806a217fc71a99a03c48ee63c5fb0f385419d1b3129a85f5c19269b6571"
+      "bottleneck_sha256": "2256a3808c237e10de89b211d28241ba574d109059086ab3d94d1f8fd447f2a3"
     }
   ]
 }

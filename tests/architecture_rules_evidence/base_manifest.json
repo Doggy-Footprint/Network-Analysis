@@ -7,8 +7,8 @@
         "-l",
         "kotlin"
       ],
-      "bytes": 7854408,
-      "sha256": "f40dc91e70f6f44acf60556ea4d4bcfe483527ca2bd488661380a27efd474714"
+      "bytes": 7803572,
+      "sha256": "932538e4e5ebc260709f2bdbafb11b54311db217fde6c8f9858e2e472e3d2a25"
     },
     "fastapi-realworld": {
       "args": [
@@ -16,7 +16,7 @@
         "python"
       ],
       "bytes": 943448,
-      "sha256": "4abcf877307acc9abcb23ab9a7e5cfddabf2a2f361c73e2e925ca26ff1c21084"
+      "sha256": "714adacce6c3a54bee43735d33388fa86e73c4a6d6def100e0b6911d1ebcc6de"
     },
     "futuramaapi": {
       "args": [
@@ -24,7 +24,7 @@
         "python"
       ],
       "bytes": 2134318,
-      "sha256": "4dbc38a642566242bedbb05a7fb6c250ccab42e531d13f1ad0841d274db7fdf1"
+      "sha256": "38a75f1977781023cad9fd47a2e2160aea520663fc90c7d4f8147ea6ba16984b"
     },
     "typescript-nestjs-realworld": {
       "args": [
@@ -33,8 +33,8 @@
         "-f",
         "nestjs"
       ],
-      "bytes": 645507,
-      "sha256": "778ee6e4068634f9d065e2befddb8284e7f8f52f225b490b2a6e2626f01d6a60"
+      "bytes": 725096,
+      "sha256": "2061100027accdbbbdd0d80feea1527e03529752c710e1c650ed4d2994cb771b"
     }
   }
 }

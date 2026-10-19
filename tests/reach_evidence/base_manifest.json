@@ -22,11 +22,11 @@
     ]
   },
   "delta": {
-    "canonical": "0b9e0eb7fc2c6104d11d27ac41a4bd993f63761c5a7891b849c768c36400f776",
+    "canonical": "8a68c034a94884450389090e767bb93ee6e0223b92ceb45cf26543158fa85274",
     "delta": "a6cab1cdd1cd8ab79b38f9df6eefa7adcbc9a46d260b22d1ead11fff47bb0447",
     "fixture": "futuramaapi",
     "sections": {
-      "candidates": "a82c8236ce15e206d802d17b0dee3aa3a66c1def7b31cfc423de63428203eadf",
+      "candidates": "f1e7b081ae965961f6e6d26858ebb5b935873632d5625453cfabbdedea6a8744",
       "coverage": "043d38ac4039ffef0b7d2e7db487b5e07c25524ee0988226bff6cba0d6fde6da",
       "delta": "a6cab1cdd1cd8ab79b38f9df6eefa7adcbc9a46d260b22d1ead11fff47bb0447",
       "dependency_network": "dd9c55ffb32fad4a1fafb2f5dbbcbd87179ff0f926c344298035cbd0603bdf42",
@@ -41,8 +41,8 @@
   "fixtures": {
     "android-nowinandroid": {
       "file": {
-        "bytes": 7864604,
-        "candidate_count": 106,
+        "bytes": 7813747,
+        "candidate_count": 108,
         "candidate_kinds": [
           "dependency_cycle",
           "evidence_spread",
@@ -50,12 +50,12 @@
           "unresolved_boundary",
           "unstable_dependency"
         ],
-        "canonical": "84234505c9fdaaad22e15a2ff0ecdf5a77a7250038b31d6eeac239830fed94be",
+        "canonical": "84788a624c27273474cee98cc65555ed3113cc7b7588018a36db94d3ebd4874d",
         "schema": "bottlenecks.v8",
         "sections": {
-          "candidates": "02d0854db8f1ce6030d805a07ab66892798f9f1f8f7b4d07ff82c68ec6ba0d82",
+          "candidates": "3e45362a5151d6a58094b72dfe12f79bf95a9b0506dd0d6cbef3a9b3bd3172c7",
           "coverage": "70ec48772367a757028cc7454504c07f139e207f07275c9eaa99f9b96fa41b19",
-          "dependency_network": "82dd0ef50b11cc50c34d9741631ae874bc4ab5ff02ecd220244a7fc8de711a9f",
+          "dependency_network": "e600bf529a4532953d843128f8c4c5bb8875e3c95346f0532e4079e36306516b",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
           "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
           "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
@@ -63,28 +63,28 @@
           "snapshot": "c054fd1a21ae368a057fa34311baf62c9f97aedaa32509c4516b3eea42350837",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "57f0061da20a65f7ecb50506b9a6ea26420135d661950dfeff6e32d85815dd75"
+        "sha256": "74d841aec0cbacf9bf080d7317ab4c1e7bfc2c4287ef50db2a529c5f834a05b7"
       },
       "symbol": {
-        "bytes": 6713411,
-        "candidate_count": 490,
+        "bytes": 6641877,
+        "candidate_count": 489,
         "candidate_kinds": [
           "evidence_spread",
           "unresolved_boundary"
         ],
-        "canonical": "143d861645659a16840cdb8e36dec90d8d48ab6769689894c732d7f7dd532133",
+        "canonical": "fda3a91494d69e6d7c22d5de1c56f339e487f885c2d7cb0616ed564c32306419",
         "schema": "bottlenecks.v6",
         "sections": {
-          "candidates": "f37e73058b174459361d25017ef8f742e4bf154776817fe078c127bff5a92739",
+          "candidates": "9761d42c2537fae97d65abeb706c8f19c52c2b0de7d4b6d71c4c9f9f77299423",
           "coverage": "84cd238e6046b015d747e3d8fb9095de30241421df03cad5ab54836fd711af0a",
-          "dependency_network": "ef4f7be91e8c6af08eabaf2b30b8c9fd088cc77343cb8285fd3bb9db74eb45c9",
+          "dependency_network": "dc6db0eefd3baa866119ac0e09d77906d706cb5b8549343e207422dc326a7260",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
           "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
           "schema": "fb8fcfb912f9f8044905b748fc3ec4ed670e2f548e81326b94d001e98eb19075",
           "snapshot": "c054fd1a21ae368a057fa34311baf62c9f97aedaa32509c4516b3eea42350837",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "a2dd0b3534634ea6a0ef2d210c0146c9a0a5b66f02145f86f2963c696a8aae5c"
+        "sha256": "eedb73b51169cbeb8ae26765f151bba6cc54945036e4020e338e4a36d6829f1b"
       }
     },
     "fastapi-realworld": {
@@ -99,10 +99,10 @@
           "unresolved_boundary",
           "unstable_dependency"
         ],
-        "canonical": "a19fda3cd57f642508dc98ca092fe413058c675ddc9812a1188f9f7da028fc49",
+        "canonical": "a3a63341f6b3df389122ff62ff2f62c4401090a8f6b1adfe1d7588845b95c158",
         "schema": "bottlenecks.v8",
         "sections": {
-          "candidates": "58e1364b0d081cdf8a714ab7a558e31d288d09f75e5eba7642e4002121cf67ea",
+          "candidates": "778bc71c7e26e33f0dad22b041ece1e9d06b0725cf31245616cd64351fd6448b",
           "coverage": "0f36b46154a3e78f4638eaa6adef19b87802f735d6a60af8c79a1ed5d99ea916",
           "dependency_network": "33c6b1c148dee0ac908d9fdf0c20bbfb5c126f367db91bdf69bed4bb163df0bb",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
@@ -112,7 +112,7 @@
           "snapshot": "83ab1b8d9795b549bf8a35c88d16ae064ea6558bda0b9301721e7ef593c14a07",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "ae2935e97a58d75c31fa2a65c9e7c0569c4da1e42f51bd0061fa4a9065df9fc5"
+        "sha256": "586dfc19cd9cc866cf9eecf6e152dad7dbd7e278eb2606e3f7cd8f0cd80576a5"
       },
       "symbol": {
         "bytes": 535904,
@@ -147,10 +147,10 @@
           "unresolved_boundary",
           "unstable_dependency"
         ],
-        "canonical": "463015b7da3188d7b3a8a3576ecd532ddb1be1e7f9dcd2b6ef34087e61498339",
+        "canonical": "7ce8aeb1e689809d45706bd3624ff3d22c30f353d5a96b03c887722d606a38cb",
         "schema": "bottlenecks.v8",
         "sections": {
-          "candidates": "a82c8236ce15e206d802d17b0dee3aa3a66c1def7b31cfc423de63428203eadf",
+          "candidates": "f1e7b081ae965961f6e6d26858ebb5b935873632d5625453cfabbdedea6a8744",
           "coverage": "043d38ac4039ffef0b7d2e7db487b5e07c25524ee0988226bff6cba0d6fde6da",
           "dependency_network": "dd9c55ffb32fad4a1fafb2f5dbbcbd87179ff0f926c344298035cbd0603bdf42",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
@@ -160,7 +160,7 @@
           "snapshot": "03fe87ae483240d26842da6043b4fa9213d99267ef9f9464d914bb66693801d8",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "fc94ea406562c0951b1a93d9b70e486cfd5f78202d57110a0fc307cdad7ea2a2"
+        "sha256": "27e9b22abe4510fbb709ccb6efe1d307fd8b23873169fb0bb63de081ed338ad1"
       },
       "symbol": {
         "bytes": 1435879,
@@ -186,8 +186,8 @@
     },
     "typescript-nestjs-realworld": {
       "file": {
-        "bytes": 650051,
-        "candidate_count": 69,
+        "bytes": 729707,
+        "candidate_count": 71,
         "candidate_kinds": [
           "dependency_cycle",
           "evidence_spread",
@@ -195,12 +195,12 @@
           "unresolved_boundary",
           "unstable_dependency"
         ],
-        "canonical": "6a04dcd1e579a2d1f7d8a3b9b2a4b332508c1e957b05bd1b5ca1b74fe3a455b3",
+        "canonical": "2a5bf17024ccebc1fce08033e71522fdafc42e2e46f43c18b690fc0b1d5ae9df",
         "schema": "bottlenecks.v8",
         "sections": {
-          "candidates": "ae42683f6531a3cb269126b0e36179bbe080cb1ef5078abfcb5b1e06881598aa",
+          "candidates": "ffce21a3c319d68833b100ad540ccf5136bc812cee639d7aacb035679dd8f623",
           "coverage": "e36c90319036ba6097423a47669da61ab76517aeddee89781f1b84775e0b2002",
-          "dependency_network": "1ff262383b88f7ec3395e55d41e4cc55c37c79d6288c100e52142b9fa6dc3881",
+          "dependency_network": "cdc270d17a5078c4e12186e410a45547479ea74e71b62220536ae4ab4101dfa8",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
           "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
           "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
@@ -208,28 +208,28 @@
           "snapshot": "92174b288261aaf94e4a405e579743f61924855da8bb7dc3920460eb21471fd4",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "9fadbe029a2d7803304825231c59b370ff3f4aefd1a25913ed0d3f0e7b351f59"
+        "sha256": "fd40ec82861a0302952188e5f159a30f5b0011620a49bff8f7566a62ef26f3ef"
       },
       "symbol": {
-        "bytes": 550191,
-        "candidate_count": 173,
+        "bytes": 568427,
+        "candidate_count": 210,
         "candidate_kinds": [
           "evidence_spread",
           "unresolved_boundary"
         ],
-        "canonical": "d60f302167f4877af89053ee03855a50c864dd03a6bdb642027cb962b4d71728",
+        "canonical": "a7291214d1b9ef8fbf67ac9e75de940d8e12aa62d972e03204b136bee0a0facf",
         "schema": "bottlenecks.v6",
         "sections": {
-          "candidates": "2cfd439a85b815f1a621b7dbe18e514c0944601322c4f9582fd4ca073d0a93de",
+          "candidates": "22d76db5dfc2acedfd43292571635ba7f665829b42305f99d8ffe152be19b1a4",
           "coverage": "9f797bf1a09f21f4172998017877a2159cb550b73d499f68f06c40954a37a271",
-          "dependency_network": "274f5a9fd42faf4f01598aa8370f0beaff455e31dd84266fcd1087ce3ce5063f",
+          "dependency_network": "bc2723a377119efbc7c37d63871db864952b039e0d6be8fc03c0b327e4699d64",
           "edge_weights": "0cda293c04d49b5b322882da9370213a3cecc350ca699357052f7730bd487d96",
           "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
           "schema": "fb8fcfb912f9f8044905b748fc3ec4ed670e2f548e81326b94d001e98eb19075",
           "snapshot": "92174b288261aaf94e4a405e579743f61924855da8bb7dc3920460eb21471fd4",
           "versions": "337077d1abeb566da1e612169f183651dbcaab3945a9f2c716d523b26a1d999b"
         },
-        "sha256": "b1e6defb257e34e1d82285970c6c09dc4ba6d17749f296bc3ca9a0e88d9e9ed2"
+        "sha256": "dd8b94d82cefa89c9d870961af9e7978b31861773feaaf2d033487e88a8288b8"
       }
     }
   }
