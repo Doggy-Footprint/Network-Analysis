@@ -11,6 +11,50 @@ index 5709c94..4ed1264 100644
      rules = obj.get('coverage', {}).get('architecture_rules')
      if isinstance(rules, dict):
          rules.pop('rules_sha256', None)
+diff --git a/tests/report_redesign_evidence/glossary.json b/tests/report_redesign_evidence/glossary.json
+index d1fe929..457b076 100644
+--- a/tests/report_redesign_evidence/glossary.json
++++ b/tests/report_redesign_evidence/glossary.json
+@@ -31,7 +31,7 @@
+     "외부 코드": "저장소에 포함된 외부(vendored) 코드입니다.",
+     "운영 코드": "테스트·생성·외부 코드가 아닌 저장소 자체 코드입니다.",
+     "전체": "모든 코드 분류를 합친 범위입니다.",
+-    "정적 분석 미확정 참조": "정적 분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.",
++    "분석 미확정 참조": "분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.",
+     "제외": "수집 정책상 분석 목록에서 제외된 파일입니다.",
+     "주변 코드가 넓은 곳": "연결 두 단계 이내 주변 코드의 할인된 토큰 합 (추정 토큰)",
+     "중심에 있는 큰 코드": "PageRank × 할인된 코드 토큰 수 (가중 토큰)",
+diff --git a/tests/report_redesign_evidence/tooltip-matrix.json b/tests/report_redesign_evidence/tooltip-matrix.json
+index b0b83c5..76b684e 100644
+--- a/tests/report_redesign_evidence/tooltip-matrix.json
++++ b/tests/report_redesign_evidence/tooltip-matrix.json
+@@ -207,22 +207,22 @@
+    "modal"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "appendix-open",
+    "page"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "graph-tab",
+    "page"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "list-tab",
+    "list"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "list-tab",
+    "page"
+   ],
 diff --git a/tests/standalone_candidate_policy_support.py b/tests/standalone_candidate_policy_support.py
 index ee84de7..e3fda17 100644
 --- a/tests/standalone_candidate_policy_support.py
