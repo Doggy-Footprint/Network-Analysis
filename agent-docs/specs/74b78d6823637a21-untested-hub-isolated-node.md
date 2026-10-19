@@ -147,7 +147,7 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | item | value |
 | --- | --- |
 | correction batches used | 2 |
-| verifier invocations | 1 |
+| verifier invocations | 2 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
@@ -166,7 +166,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 2 | hand mutation 10종(M1 top-N off-by-one, M2 tie 역순, M3 ambiguous를 tested로, M4 test 출발 조건 제거, M5 self 엣지 연결 인정, M6 들어오는 엣지 무시, M7 framework를 static으로, M8 빈 파일 대상, M9 bool 허용, M10 기본값 변경) | 강한 결함 클래스: 순위 경계, 확정 판정, 연결 판정, 대상 자격, 설정 검증 | `seed.py` backup/restore로 하나씩 주입, `tests/test_reach_candidates.py` 실행 | 10/10 killed(각각 의도한 V1·V2·V3·V4·V6·V8 assertion에서 실패) |
 | 3 | mutation tool: AST 연산자(비교 교체, bool 교체, 상수 +1, if 부정, set 원소 제거), base_commit 이후 변경 줄 후보 70개 중 30개 표본, seed 20261019 | — | 같은 실행 명령 | 30/30 killed, 생존율 0%, triage 대상 없음 |
 | 4 | fuzz V11 seed 20261019, 20,000 입력 | — | scratchpad harness | crash 0, property 위반 0 |
-| 5 | verifier 1 RETRY: F1(V2·V3 non-ambiguous candidates, isolation candidates 미관찰), F2(V4 `cost.line_count` 출처 미관찰), F3(V13 후보별 기록 아님), F4(Errors 2 obligation 없음), F5(R10 라벨 문자열 미고정); advisory A1–A5 | F1·F2·F3 evidence gap, F4·F5 spec challenge | v6 수정(F4→V14, F5 문자열 고정), test-implementer에 correction batch 2(F1, F2, F4, F5, A1, A5 diff 재생성), main이 F3 후보별 review·A2 harness 보관 | 해결 대기: tests 보강 완료(약 215 tests 통과), main이 Test command·fuzz·mutation 재실행 |
+| 5 | verifier 1 RETRY: F1(V2·V3 non-ambiguous candidates, isolation candidates 미관찰), F2(V4 `cost.line_count` 출처 미관찰), F3(V13 후보별 기록 아님), F4(Errors 2 obligation 없음), F5(R10 라벨 문자열 미고정); advisory A1–A5 | F1·F2·F3 evidence gap, F4·F5 spec challenge | v6 수정(F4→V14, F5 문자열 고정), test-implementer에 correction batch 2(F1, F2, F4, F5, A1, A5 diff 재생성), main이 F3 후보별 review·A2 harness 보관 | 해결: Test command 2601 passed·coverage 98%, fuzz(non-ambiguous candidates 포함) 20,000 위반 0, hand mutation M1–M10 재실행 10/10 killed, F1·F2 표적 M11(모든 resolution에서 candidates 확장)·M12(span 기준 줄 수)·M13(candidates 무시) killed, mutation tool 30/30 killed |
 
 # Version Log
 ## v7
