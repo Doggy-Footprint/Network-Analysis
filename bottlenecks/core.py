@@ -104,6 +104,8 @@ def _weights(weights):
             raise BottleneckInputError("edge weight value is invalid")
     if not _valid_int(weights.large_node_line_threshold, 1):
         raise BottleneckInputError("edge weight threshold is invalid")
+    if not _valid_int(getattr(weights, "untested_hub_top_n", None), 1):
+        raise BottleneckInputError("edge weight untested_hub_top_n is invalid")
 
 
 def _candidate(identifier: str, kind: str, target: str, metrics: Mapping[str, Any], evidence: Any, coverage: str) -> Mapping[str, Any]:
@@ -241,9 +243,13 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if is_file:
             from analysis.structure import analyze_structure
             structure = analyze_structure(architecture, weights, rules)
-            candidates = sorted(candidates + list(structure.candidates), key=lambda item: (item["kind"], item["id"]))
+            from bottlenecks.reach import reach_candidates
+            reach = reach_candidates(architecture, metrics, weights.untested_hub_top_n)
+            candidates = sorted(candidates + list(structure.candidates) + reach, key=lambda item: (item["kind"], item["id"]))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
+        if is_file:
+            payload["untested_hub_top_n"] = weights.untested_hub_top_n
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
         coverage = {"source_file_count": len(snapshot.contents), "limitations": limitations}
         if (getattr(architecture, "stats", {}) or {}).get("analysis_coverage") is not None:

@@ -230,7 +230,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
             _metric_rows({ident: expected}, {ident: metrics}, pairs)
         else:
             assert metrics is None
-    unchanged = lambda candidates: [c for c in candidates if c['kind'] != 'evidence_spread']
+    unchanged = lambda candidates: [c for c in candidates if c['kind'] not in {'evidence_spread', 'untested_hub', 'isolated_node'}]
     assert unchanged(clean_report['candidates']) == unchanged(old_report['candidates']), 'large/unresolved/unrelated candidate rules changed'
     expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'])
     spread = {c['target']: c for c in clean_report['candidates'] if c['kind'] == 'evidence_spread'}
@@ -249,4 +249,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
     assert expected_top['versions']['analysis'] == '3'
     expected_top['versions']['analysis'] = '4'
-    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == expected_top
+    actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
+    if isinstance(actual_top.get('edge_weights'), dict):
+        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k != 'untested_hub_top_n'}
+    assert actual_top == expected_top

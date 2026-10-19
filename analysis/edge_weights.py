@@ -12,6 +12,8 @@ class EdgeWeightsError(ValueError):
 
 
 _KEYS = {"id", "version", "confidence", "resolution", "large_node_line_threshold"}
+_OPTIONAL_KEYS = {"untested_hub_top_n"}
+DEFAULT_UNTESTED_HUB_TOP_N = 10
 
 
 @dataclass(frozen=True)
@@ -21,6 +23,7 @@ class EdgeWeights:
     confidence: Mapping[str, float]
     resolution: Mapping[str, float]
     large_node_line_threshold: int
+    untested_hub_top_n: int = DEFAULT_UNTESTED_HUB_TOP_N
 
     def weight_for(self, edge: Any) -> float:
         if isinstance(edge, Mapping):
@@ -58,8 +61,8 @@ def load_edge_weights(path: Union[str, Path]) -> EdgeWeights:
         document = yaml.safe_load(raw_bytes.decode("utf-8"))
     except (yaml.YAMLError, UnicodeDecodeError) as error:
         raise EdgeWeightsError(f"edge weights is not valid YAML: {error}") from error
-    if not isinstance(document, dict) or set(document) != _KEYS:
-        raise EdgeWeightsError(f"edge weights must be a mapping with exactly the keys {sorted(_KEYS)}")
+    if not isinstance(document, dict) or not _KEYS <= set(document) <= _KEYS | _OPTIONAL_KEYS:
+        raise EdgeWeightsError(f"edge weights must be a mapping with the keys {sorted(_KEYS)} and optionally {sorted(_OPTIONAL_KEYS)}")
     if not isinstance(document["id"], str) or not document["id"]:
         raise EdgeWeightsError("edge weights id must be a non-empty string")
     if not _is_int(document["version"]) or document["version"] < 1:
@@ -67,10 +70,14 @@ def load_edge_weights(path: Union[str, Path]) -> EdgeWeights:
     threshold = document["large_node_line_threshold"]
     if not _is_int(threshold) or threshold < 1:
         raise EdgeWeightsError("edge weights large_node_line_threshold must be an int >= 1")
+    top_n = document.get("untested_hub_top_n", DEFAULT_UNTESTED_HUB_TOP_N)
+    if not _is_int(top_n) or top_n < 1:
+        raise EdgeWeightsError("edge weights untested_hub_top_n must be an int >= 1")
     return EdgeWeights(
         id=document["id"],
         version=document["version"],
         confidence=_weight_table(document, "confidence", Confidence),
         resolution=_weight_table(document, "resolution", Resolution),
         large_node_line_threshold=threshold,
+        untested_hub_top_n=top_n,
     )

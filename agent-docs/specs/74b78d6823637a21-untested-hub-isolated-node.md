@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 run_id: 74b78d6823637a21
 status: active
 base_commit: 6444895451a89f4450b9123b7beb17b11506e534
@@ -36,13 +36,13 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
 | R1 | 허브 후보군은 production category이고 boundary가 아닌 file 노드다. PageRank 내림차순, 같으면 node id 오름차순으로 정렬한 상위 `untested_hub_top_n`개다. | must | user answer (상위 N, PageRank) |
-| R2 | 허브 중 확정 TESTS 엣지가 들어오지 않는 파일마다 `untested_hub` 후보를 하나 낸다. 확정 TESTS 엣지는 test category file에서 오고, resolution이 `exact` 또는 `unique_name`이며, `to_id`가 그 파일인 `TESTS` 엣지다. | must | I1 |
+| R2 | 허브 중 확정 TESTS 엣지가 들어오지 않는 파일마다 `untested_hub` 후보를 하나 낸다. 확정 TESTS 엣지는 test category file에서 오고, resolution이 `exact` 또는 `unique_name`이며, `to_id`가 그 파일인 `TESTS` 엣지다. confidence는 따지지 않는다. | must | I1 |
 | R3 | `untested_hub` metrics의 `uncertain_test_edge_count`는 그 파일을 `to_id` 또는 ambiguous candidates로 가리키는 비확정 TESTS 엣지(resolution `ambiguous`/`unresolved`) 수다. evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선, 불확실 관계 유지) |
 | R4 | `isolated_node` 대상은 production category, boundary 아님, 확장자 ∈ {py, ts, tsx, js, jsx, mjs, cjs, kt}, line_count ≥ 1인 file 노드다. | must | D4, D5 |
 | R5 | 대상 파일과 다른 production file 노드 사이의 엣지 중, 방향 무관, 자기 자신 제외, confidence ∈ {static_certain, static_inferred}, resolution ∈ {exact, unique_name}인 엣지(정적 연결)가 0개이면 `isolated_node` 후보를 낸다. test/generated/vendored 파일, boundary(외부) 노드와의 엣지는 세지 않는다. | must | user answer (고립 기준 세 항목) |
-| R6 | `isolated_node` metrics는 production 파일과의 엣지 중 framework_inferred 수, dynamic_required 수, 정적이지만 ambiguous/unresolved인 수를 센다. evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선) |
+| R6 | `isolated_node` metrics는 production 파일과의 엣지 중 framework_inferred 수, dynamic_required 수, 정적(`static_*`)이지만 ambiguous/unresolved인 수를 센다. 분류는 confidence가 먼저다: framework_inferred·dynamic_required 엣지는 resolution과 관계없이 각자의 수로 센다. evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선) |
 | R7 | 후보 id는 기존 `_candidate` 규칙(`"b:" + sha256(identifier)[:16]`)을 따르고 identifier는 `<file id>|untested_hub`, `<file id>|isolated_node`다. 후보 목록 정렬은 기존과 같이 (kind, id)다. | must | 기존 후보 규칙 |
-| R8 | `untested_hub_top_n`은 선택 키다. 없으면 10이다. 있으면 int ≥ 1이어야 한다. 출력 JSON의 `edge_weights`에 항상 포함한다. | must | I3, D2 |
+| R8 | `untested_hub_top_n`은 선택 키다. 없으면 10이다. 있으면 int ≥ 1이어야 한다. file granularity 출력 JSON의 `edge_weights`에 항상 포함한다(symbol 출력은 R9에 따라 바뀌지 않는다). | must | I3, D2 |
 | R9 | 기존 후보 종류의 출력, `schema`(`bottlenecks.v8`), delta 결과는 바뀌지 않는다. symbol granularity 출력은 바뀌지 않는다. | must | I3, user answer (v8 유지) |
 | R10 | 보고서(report/bottlenecks/generate.py, HTML app.js)는 두 kind의 한국어 라벨과 설명을 보여주고, 대표 수치는 `untested_hub`은 `pagerank_rank`, `isolated_node`은 `line_count`다. | must | Scope |
 
@@ -158,5 +158,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | --- | --- | --- | --- | --- |
 
 # Version Log
+## v2
+- [contract] implementer challenge 반영: R8은 file granularity 출력에만 적용(R9와의 충돌 해소), R6 분류는 confidence 우선, R2는 confidence 무관. brief 항목 변경 없음.
 ## v1
 - 초안. 사용자 답변(PageRank 상위 N, v8 유지, 고립 기준 세 항목)을 반영하고, mutation 단계는 후속 workflow로 분리.

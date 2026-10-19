@@ -22,6 +22,8 @@ KIND_LABELS = {
     "package_cycle": "package 순환",
     "unstable_dependency": "불안정 package 의존",
     "rule_violation": "경계 규칙 위반",
+    "untested_hub": "테스트 미도달 허브",
+    "isolated_node": "고립 파일",
 }
 
 KIND_DESCRIPTIONS = {
@@ -32,6 +34,8 @@ KIND_DESCRIPTIONS = {
     "package_cycle": "package들이 서로 의존해 순환을 이루는 사례입니다.",
     "unstable_dependency": "package가 자신보다 불안정한(instability가 더 큰) package에 의존하는 사례입니다.",
     "rule_violation": "아키텍처 규칙 file에 선언된 layer 경계(allow 목록 밖 또는 forbid 대상)를 넘는 file 의존 사례입니다.",
+    "untested_hub": "PageRank 상위 production 파일 중 테스트 파일에서 직접 확정 연결(TESTS)이 닿지 않는 사례입니다.",
+    "isolated_node": "다른 production 파일과 확정된 정적 연결이 없는 소스 파일 사례입니다. 프레임워크·동적·불확실 연결은 근거로 함께 보입니다.",
 }
 
 METRIC_DEFINITIONS = [
@@ -56,6 +60,8 @@ _KIND_SCORE_FIELDS = {
     "dependency_cycle": ("member_count", 0),
     "package_cycle": ("member_count", 0),
     "unstable_dependency": ("instability_delta", 0),
+    "untested_hub": ("pagerank_rank", 0),
+    "isolated_node": ("line_count", 0),
 }
 
 

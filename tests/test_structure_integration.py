@@ -93,7 +93,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     assert canonical_sha(base) == manifest['candidates']
     assert network['structure_policy'] == 'structure.v1'
     assert 'language' in network['package_metrics']
-    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS)
+    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS) | {'untested_hub', 'isolated_node'}
 
 
 def test_V08_candidates_are_sorted_by_kind_then_id(run):
