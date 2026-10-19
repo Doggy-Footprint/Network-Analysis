@@ -145,3 +145,57 @@ in size and content.
   candidate_groups, candidates changed; candidate_count 87 unchanged), symbol bytes 6713411 -> 6641877;
   typescript-nestjs-realworld file bytes 574330 -> 645354, candidate_count 53 -> 54 (all network sections changed),
   symbol bytes 550191 -> 568427; futuramaapi and fastapi-realworld file: `candidates` and sha256 only.
+
+## Standalone originals archive (test_nestjs_quality O11)
+
+Files: `tests/ambiguous_candidates_evidence/standalone-originals.json.gz` (`base_commit`
+5737113df15f6ed1705c1adadcf6b9c86bf9523e, asserted by the test, unchanged) and the `hashes` / `raw_hashes` of
+`tests/nestjs_evidence/baselines.json` (all other fields, including `base_commit`, `captured_root` and case flags,
+unchanged).
+
+Patched worktree: fresh `git worktree add --detach` of 5737113, then `git apply -3` of the patch. Five files applied
+cleanly; `kotlin/analyzer.py` conflicted in `build()` because `self._import_statements` does not exist at 5737113. The
+conflict was resolved by keeping only the two added fields (`self._file_package`, `self._exact_imports`) and dropping
+the `_import_statements` context line. Afterwards the `+`/`-` lines of `git diff --cached HEAD` equal the patch's.
+
+Generator (session scratchpad, not in the repo):
+- `standalone_driver.py <project> <out> <flags>` runs inside the worktree (cwd, `PYTHONHASHSEED=0`). It invokes
+  `code_analyzer.cli.main` with the same arguments as `cli_bytes` in the test
+  (`--granularity symbol -o <tmp>/report.html --json --bottlenecks <tmp>/bottlenecks.json`). It also wraps
+  `cli.analyze_bottlenecks` to capture the `RepositorySnapshot` and the architecture, and records
+  `bottlenecks.core._category(node)` for every node in `arch.nodes` order.
+- `gen_standalone.py <worktree> <out_dir>` runs the driver for each `baselines.json` case on
+  `REPO/<relative_project>` and builds each archived case:
+  - `outputs`: the test's normalization. For json, pop `stats.analysis_coverage` and dump with `indent=2`. For
+    bottlenecks, pop `coverage.analysis_coverage` and dump `sort_keys`, compact, plus `"\n"`. In both, replace
+    `/home/user/Network-Analysis` with `<REPO_ROOT>`.
+  - `snapshot_contents`: the files named by every node `span.file_path` and every edge `evidence.file_path` in the
+    raw json, keyed as the output names them (absolute paths rewritten from the current root to `captured_root`),
+    with their snapshot text, sorted by path.
+  - `category_members`: in the `CATEGORY_KEYS` order of 5737113, `('production', 'test', 'generated', 'vendored', 'unknown')`.
+  - The archive is dumped as `json.dumps(separators=(',', ':'), ensure_ascii=False)` and written with
+    `gzip.compress(level 9, mtime 0)`. Header bytes 8-9 (XFL, OS) are copied from the committed file.
+  - `hashes` = sha256 of each portable output. `raw_hashes` = sha256 after replacing `<REPO_ROOT>` with
+    `captured_root`.
+- Reproduction check on clean 5737113: decompressed archive bytes, `.gz` bytes and `baselines.json` bytes are all
+  identical to the committed files; every case matches in `outputs`, `snapshot_contents` and `category_members`.
+
+Changes (old archive -> regenerated):
+- `snapshot_contents` and `category_members`: unchanged in all 8 cases.
+- Python cases (fastapi-futuramaapi, fastapi-realworld, fastapi-template, python, sqlalchemy): the bottlenecks output
+  is unchanged. In the architecture json, node and edge counts and edge keys are unchanged; 154 / 71 / 29 / 71 / 71
+  nodes changed (line counts and spans, F8/F9).
+- android / kotlin: all nodes changed. Edges 4505 -> 4510 / 4384 -> 4389 (806 edge keys removed, 811 added, F11).
+  Bottleneck candidates 413 -> 414 / 411 -> 412.
+- typescript: all nodes changed. Edges 491 -> 637 (82 edge keys removed, 228 added, F7). Bottleneck candidates
+  125 -> 162.
+
+Test outcome after regeneration: `tests/test_nestjs_quality.py` gives `2 failed, 12 passed, 10 subtests passed`. The
+failing subtests are `case='android'` and `case='kotlin'`, which fail in `tests/candidate_policy_transition_support.py`
+with 'unrelated edge removed' or 'split changed unrelated edge fields'. The message depends on set iteration order.
+At 5737113, Kotlin edges are deduplicated by `(from_id, to_id, relation)`. With F11 applied, the first record of a
+merged pair can be `exact`/`static_certain`. One example is `DefaultSearchContentsRepository.kt` -> `PopulatedNewsResource.kt`
+IMPORTS, line 25, exact, weight 2.0. HEAD splits that record into an exact piece (line 25, weight 1) and an ambiguous
+piece (line 27, weight 1). The comparator accepts a split only when the merged original is `ambiguous`/`unique_name`,
+every piece keeps the original confidence, and each piece is `ambiguous` or `unique_name`. It has no class for an
+exact piece. The archive hashes and every other O11 check pass for these cases.
