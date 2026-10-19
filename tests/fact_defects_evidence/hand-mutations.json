@@ -137,5 +137,17 @@
   "failing_tests": [
    "tests/test_fact_defects.py::test_V12_configures_target_by_smallest_covering_node[module-span-equals-single-function-span]"
   ]
+ },
+ {
+  "id": "M13",
+  "defect": "VF1-1 empty file gets span (1,1) at file granularity",
+  "file": "analysis/file_graph.py",
+  "killed": true,
+  "summary": "3 failed, 27 passed, 107 deselected",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V2_file_granularity_empty_file_has_line_count_zero[kotlin]",
+   "[python]",
+   "[typescript]"
+  ]
  }
 ]
