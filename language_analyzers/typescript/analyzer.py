@@ -865,6 +865,8 @@ class TypeScriptAnalyzer:
         base = Path(os.path.normpath(joined)) if self.snapshot is not None else joined.resolve()
         candidates = [base] if base.suffix in SOURCE_EXTENSIONS else []
         candidates += [Path(str(base) + extension) for extension in SOURCE_EXTENSIONS]
+        if base.suffix in SOURCE_EXTENSIONS:
+            candidates += [base.with_suffix(extension) for extension in SOURCE_EXTENSIONS]
         candidates += [base / f"index{extension}" for extension in SOURCE_EXTENSIONS]
         for candidate in candidates:
             if self.snapshot is None and not candidate.is_file():
