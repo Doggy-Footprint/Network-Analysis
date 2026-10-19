@@ -28,7 +28,7 @@
     };
     const core = Object.keys(definitions).slice(0, 6);
     const kinds = {
-        unresolved_boundary: ['정적 분석 미확정 참조', '정적 분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.'],
+        unresolved_boundary: ['분석 미확정 참조', '분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.'],
         evidence_spread: ['근거 분산', '참조 근거가 여러 파일 또는 넓은 줄 범위에 퍼져 있습니다.'],
         large_node: ['큰 노드', '소스 범위가 설정한 줄 수 임계값을 넘습니다.'],
         dependency_cycle: ['의존 순환', '서로 의존해 한 바퀴 돌아오는 파일 묶음입니다. 같은 순환도 연결 확실성 단계별로 따로 표시됩니다.'],
@@ -691,7 +691,7 @@
             coveragePill.append(detail);
         }
         host.append(filesPill, edgesPill, candidatePill, coveragePill);
-        $('scope').textContent = `${arch?.project_path||'JSON 병목 보고서'} · ${data.framework_label||'정적 분석'}`;
+        $('scope').textContent = `${arch?.project_path||'JSON 병목 보고서'} · ${data.framework_label||'분석'}`;
     }
 
     function appendix() {

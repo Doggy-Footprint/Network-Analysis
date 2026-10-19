@@ -17,7 +17,7 @@ _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?
 KIND_LABELS = {
     "evidence_spread": "근거 분산",
     "large_node": "큰 노드",
-    "unresolved_boundary": "정적 분석 미확정 참조",
+    "unresolved_boundary": "분석 미확정 참조",
     "dependency_cycle": "의존 순환",
     "package_cycle": "package 순환",
     "unstable_dependency": "불안정 package 의존",
