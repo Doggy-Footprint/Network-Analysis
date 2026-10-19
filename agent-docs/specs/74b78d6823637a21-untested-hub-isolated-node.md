@@ -145,18 +145,22 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | item | value |
 | --- | --- |
 | correction batches used | 1 |
-| verifier invocations | 0 |
+| verifier invocations | 1 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1–V13 | 1 | none | pending | — | — |
+| V1–V9 | 5 | tests/test_reach_candidates.py @ 2854600, Test command 2567 passed | pending | verifier 대기 | tests/reach_support.py 공유 helper |
+| V10 | 5 | tests/reach_evidence/benchmark.md (ratio 0.950, 0.965) | pending | verifier 대기 | — |
+| V11 | 5 | scratchpad fuzz harness seed 20261019, 20,000 execs, 0 crash, 0 violation | pending | verifier 대기 | — |
+| V12 | 5 | Test command coverage 98% branch | pending | verifier 대기 | — |
+| V13 | 5 | tests/reach_evidence/review.md (위반 0, 상위 결함 F11 기록) | pending | verifier 대기 | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
-| 1 | Test command 실패: 기존 byte-equal 테스트 15건(test_delta_integration V06_C27, test_external_rules_integration V11·V14, test_architecture_rules_integration V07), V9 필터 테스트 2건, browser 테스트 error 다수 | byte-equal은 새 kind 추가로 예상된 test 조정 누락(test defect). V9 필터는 v3에서 요구 제외(test defect). browser error는 chrome channel 부재(환경). 그 외 5건(test_analysis_coverage_reporting V05·V07, test_analyzer fastapi smoke, test_file_analysis_cli V01 ×2)은 d58de53에서도 동일 실패(이 변경과 무관) | test-implementer에 correction batch 1 전달: 필터 테스트 제거, characterization 비교에서 새 kind 제외, chromium fallback, 라벨 문자열 기대값 갱신 | 진행 중 |
+| 1 | Test command 실패: 기존 byte-equal 테스트 15건(test_delta_integration V06_C27, test_external_rules_integration V11·V14, test_architecture_rules_integration V07), V9 필터 테스트 2건, browser 테스트 error 다수 | byte-equal은 새 kind 추가로 예상된 test 조정 누락(test defect). V9 필터는 v3에서 요구 제외(test defect). browser error는 chrome channel 부재(환경). 그 외 5건(test_analysis_coverage_reporting V05·V07, test_analyzer fastapi smoke, test_file_analysis_cli V01 ×2)은 d58de53에서도 동일 실패(이 변경과 무관) | test-implementer에 correction batch 1 전달: 필터 테스트 제거, characterization 비교에서 새 kind 제외, chromium fallback, 라벨 문자열 기대값 갱신 | 해결: Test command 통과(2567 passed, coverage 98%) |
 
 # Version Log
 ## v5
