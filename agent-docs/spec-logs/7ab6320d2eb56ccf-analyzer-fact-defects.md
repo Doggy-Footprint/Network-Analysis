@@ -1,7 +1,7 @@
 ---
 version: 4
 run_id: 7ab6320d2eb56ccf
-status: active
+status: complete
 base_commit: b590d5461c59d93db7800f9be451392f367b8db0
 max_verifier_invocations: 2
 handoff: none
@@ -186,19 +186,19 @@ Mutation tool:
 | --- | --- |
 | correction batches used | 4 |
 | verifier invocations | 2 |
-| open finding ids | VF1-1, VF1-2 |
+| open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
 | V1 | 4 | tests/test_fact_defects.py::test_V1_* (HEAD) | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
-| V2 | 4 | test_V2_* (+ empty-file span is None ×3) | pending | VF1-1 addressed; M13 killed | test_fact_defects.py changed (batch 4) |
+| V2 | 4 | test_V2_* (+ empty-file span is None ×3) | accepted | VF1-1 addressed; M13 killed | test_fact_defects.py changed (batch 4) |
 | V3 | 4 | test_V3_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V4 | 4 | test_V4_* (7 rules, 4 paths) | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V5 | 4 | test_V5_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V6 | 4 | test_V6_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V7 | 4 | test_V7_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
-| V8 | 4 | test_V8_*, review.md Results + VF1-2 follow-up, review-output/sample-check.txt | pending | VF1-2 addressed | — |
+| V8 | 4 | test_V8_*, review.md Results + VF1-2 follow-up, review-output/sample-check.txt | accepted | VF1-2 addressed | — |
 | V9 | 4 | benchmark.md, benchmark-result.json | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V10 | 4 | fuzz_fact.py: (a) 20,000 / (b) 500, 위반 0; old-bug 감지 31/50 | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 | V11 | 4 | Test command diff coverage 71/71 = 100% | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
@@ -207,6 +207,7 @@ Audit state (one entry per obligation; retain prior decisions in the execution l
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 7 | verifier 2 PASS; advisories: equivalent survivors are classified, not killed; review_diff sample printer prints None:None (sample_check.py replaces it) | — | — | complete |
 | 6 | — | — | batch 4 applied; Test command 2738 passed, diff coverage 100%; M13 (empty-file span) killed by V2 tests | 재검증 |
 | 5 | verifier 1 RETRY: VF1-1 (V2), VF1-2 (V8); advisories A1–A4 | evidence gaps | VF1-1 → test-implementer; VF1-2 → main completes the review record; A1/A2 tests added; A3 fuzz log committed. Hand mutations 10/10 killed; mutation tool 27 killed, 2 survived (equivalent: `rsplit(".", 1)`→`2`, rechecked by main) | 진행 중 |
 | 4 | — | — | 비교기 일반화(원본 해석 등급과 관계없이 exact 조각 1개 허용) 후 Test command 2735 passed, diff coverage 100% | 통과 |
