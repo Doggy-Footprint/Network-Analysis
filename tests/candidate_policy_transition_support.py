@@ -12,6 +12,10 @@ def _group(edge):
     return frozenset([edge['to_id'], *edge.get('candidates', [])])
 
 
+def _exact_piece(edge):
+    return edge['resolution'] == 'exact' and edge['confidence'] == 'static_certain' and not edge.get('candidates')
+
+
 def _test_node(node):
     path = (node.get('span') or {}).get('file_path', '').replace('\\', '/')
     pieces = path.lower().split('/')
@@ -55,9 +59,11 @@ def assert_candidate_policy_transition(baseline, optimized, snapshot_contents=No
         assert len(after) > 1, 'removed relation has no distinct-group split'
         if not exact_original:
             assert any(e['resolution'] == 'ambiguous' for e in after), 'split has no ambiguous candidate group'
+        exact_pieces = [e for e in after if _exact_piece(e)]
+        assert len(exact_pieces) <= 1, 'split has several exact pieces'
         assert len({_group(e) for e in after}) == len(after), 'split duplicated a candidate group'
         assert math.fsum(e['weight'] for e in after) == original['weight'], 'split changed discovery multiplicity'
-        ignored = {'weight', 'candidates', 'resolution', 'evidence'} | ({'confidence'} if exact_original else set())
+        ignored = {'weight', 'candidates', 'resolution', 'evidence'}
         stable = {k: v for k, v in original.items() if k not in ignored}
         retained_exact = [e for e in after if exact_original and _group(e) == _group(original)]
         if exact_original:
@@ -65,13 +71,21 @@ def assert_candidate_policy_transition(baseline, optimized, snapshot_contents=No
             kept = retained_exact[0]
             assert {k: v for k, v in kept.items() if k != 'weight'} == {k: v for k, v in original.items() if k != 'weight'}, 'split changed unrelated edge fields'
         for e in after:
-            assert {k: v for k, v in e.items() if k not in ignored} == stable, 'split changed unrelated edge fields'
+            is_exact_piece = bool(exact_pieces) and e is exact_pieces[0]
+            relaxed = ignored | ({'confidence'} if exact_original or is_exact_piece else set())
+            assert {k: v for k, v in e.items() if k not in relaxed} == {k: v for k, v in original.items() if k not in relaxed}, 'split changed unrelated edge fields'
             assert type(e['weight']) in {int, float} and e['weight'] >= 1 and float(e['weight']).is_integer()
             assert _group(e) <= nodes.keys()
             if exact_original and e is retained_exact[0]:
                 continue
             if exact_original:
                 assert e['confidence'] == 'static_inferred', 'split changed unrelated edge fields'
+            if is_exact_piece and not exact_original:
+                assert _group(e) != _group(original), 'exact piece replaced the retained group'
+                assert e['evidence']['file_path'] == original['evidence']['file_path']
+                assert e['evidence']['start_line'] >= original['evidence']['start_line']
+                assert e['evidence']['end_line'] >= e['evidence']['start_line']
+                continue
             assert e['resolution'] == ('ambiguous' if len(_group(e)) > 1 else 'unique_name')
             assert e['evidence']['file_path'] == original['evidence']['file_path']
             assert e['evidence']['start_line'] >= original['evidence']['start_line']

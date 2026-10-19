@@ -668,3 +668,51 @@ def test_VO7_F7_exact_original_split_rejections(label):
         kept['resolution'] = 'ambiguous'
     with pytest.raises(AssertionError):
         assert_candidate_policy_transition(before, after, {})
+
+
+def _ambiguous_original_split():
+    import copy as _copy
+    from tests.test_candidate_policy_transition import transition_edge, transition_node
+    nodes = [transition_node('s'), transition_node('a'), transition_node('b'), transition_node('c')]
+    original = transition_edge('s', 'a', candidates=['b'], resolution='ambiguous', weight=2, line=1)
+    kept = dict(_copy.deepcopy(original), weight=1)
+    exact = transition_edge('s', 'a', resolution='exact', weight=1, line=2)
+    exact['confidence'] = 'static_certain'
+    return {'nodes': nodes, 'edges': [original]}, {'nodes': _copy.deepcopy(nodes), 'edges': [kept, exact]}
+
+
+def test_VO7_F7_ambiguous_original_with_one_exact_piece_is_accepted():
+    from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+    before, after = _ambiguous_original_split()
+    assert_candidate_policy_transition(before, after, {})
+
+
+@pytest.mark.parametrize('label', ['two-exact-pieces', 'exact-piece-with-candidates', 'exact-piece-static-inferred',
+                                   'exact-piece-before-original-line', 'retained-confidence-changed', 'exact-piece-other-file'])
+def test_VO7_F7_ambiguous_original_exact_piece_rejections(label):
+    import copy as _copy
+    from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+    before, after = _ambiguous_original_split()
+    before['edges'][0]['evidence'].update(start_line=3, end_line=3)
+    kept, exact = after['edges']
+    kept['evidence'].update(start_line=3, end_line=3)
+    exact['evidence'].update(start_line=4, end_line=4)
+    assert_candidate_policy_transition(before, after, {})  # baseline of the mutations below is accepted
+    if label == 'two-exact-pieces':
+        second = _copy.deepcopy(exact)
+        second['to_id'] = 'a'
+        second['evidence'].update(start_line=5, end_line=5)
+        before['edges'][0]['weight'] = 3
+        after['edges'].append(second)
+    elif label == 'exact-piece-with-candidates':
+        exact['candidates'] = ['c']
+    elif label == 'exact-piece-static-inferred':
+        exact['confidence'] = 'static_inferred'
+    elif label == 'exact-piece-before-original-line':
+        exact['evidence'].update(start_line=2, end_line=2)
+    elif label == 'retained-confidence-changed':
+        kept['confidence'] = 'static_certain'
+    elif label == 'exact-piece-other-file':
+        exact['evidence']['file_path'] = 'other.py'
+    with pytest.raises(AssertionError):
+        assert_candidate_policy_transition(before, after, {})

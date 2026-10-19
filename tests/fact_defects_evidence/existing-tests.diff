@@ -30,13 +30,23 @@ index b5d6f35..2e30fb1 100644
      def test_ambiguous_call_records_candidates_and_flags_the_symbols(self):
          self.write("a.ts", "export function shared(): number {\n  return 1;\n}\n")
 
-# F7 (R8/R10): Kotlin originals can now be exact/static_certain; after F7 the merged base record splits into a retained
-# exact piece plus ambiguous/unique_name pieces. Rule added to the comparator only for exact+static_certain+no-candidate originals.
+# F7 (R8/R10): Kotlin originals can now be exact/static_certain, and a base ambiguous record can split off an exact piece. Comparator rules: exact-original split (retained exact piece + non-exact pieces) and ambiguous-original split with at most one exact piece. Follow-up: split may contain one exact/static_certain/no-candidate piece for ambiguous/unique_name originals too (comparator generalized).
 diff --git a/tests/candidate_policy_transition_support.py b/tests/candidate_policy_transition_support.py
-index 7b62612..48272af 100644
+index 7b62612..91f3635 100644
 --- a/tests/candidate_policy_transition_support.py
 +++ b/tests/candidate_policy_transition_support.py
-@@ -48,17 +48,30 @@ def assert_candidate_policy_transition(baseline, optimized, snapshot_contents=No
+@@ -12,6 +12,10 @@ def _group(edge):
+     return frozenset([edge['to_id'], *edge.get('candidates', [])])
+ 
+ 
++def _exact_piece(edge):
++    return edge['resolution'] == 'exact' and edge['confidence'] == 'static_certain' and not edge.get('candidates')
++
++
+ def _test_node(node):
+     path = (node.get('span') or {}).get('file_path', '').replace('\\', '/')
+     pieces = path.lower().split('/')
+@@ -48,17 +52,40 @@ def assert_candidate_policy_transition(baseline, optimized, snapshot_contents=No
      for key in split_keys:
          before = [e for e in removed if (e['from_id'], e['to_id'], e['relation']) == key]
          after = [e for e in added if (e['from_id'], e['to_id'], e['relation']) == key]
@@ -49,10 +59,12 @@ index 7b62612..48272af 100644
 -        assert any(e['resolution'] == 'ambiguous' for e in after), 'split has no ambiguous candidate group'
 +        if not exact_original:
 +            assert any(e['resolution'] == 'ambiguous' for e in after), 'split has no ambiguous candidate group'
++        exact_pieces = [e for e in after if _exact_piece(e)]
++        assert len(exact_pieces) <= 1, 'split has several exact pieces'
          assert len({_group(e) for e in after}) == len(after), 'split duplicated a candidate group'
          assert math.fsum(e['weight'] for e in after) == original['weight'], 'split changed discovery multiplicity'
 -        stable = {k: v for k, v in original.items() if k not in {'weight', 'candidates', 'resolution', 'evidence'}}
-+        ignored = {'weight', 'candidates', 'resolution', 'evidence'} | ({'confidence'} if exact_original else set())
++        ignored = {'weight', 'candidates', 'resolution', 'evidence'}
 +        stable = {k: v for k, v in original.items() if k not in ignored}
 +        retained_exact = [e for e in after if exact_original and _group(e) == _group(original)]
 +        if exact_original:
@@ -61,13 +73,21 @@ index 7b62612..48272af 100644
 +            assert {k: v for k, v in kept.items() if k != 'weight'} == {k: v for k, v in original.items() if k != 'weight'}, 'split changed unrelated edge fields'
          for e in after:
 -            assert {k: v for k, v in e.items() if k not in {'weight', 'candidates', 'resolution', 'evidence'}} == stable, 'split changed unrelated edge fields'
-+            assert {k: v for k, v in e.items() if k not in ignored} == stable, 'split changed unrelated edge fields'
++            is_exact_piece = bool(exact_pieces) and e is exact_pieces[0]
++            relaxed = ignored | ({'confidence'} if exact_original or is_exact_piece else set())
++            assert {k: v for k, v in e.items() if k not in relaxed} == {k: v for k, v in original.items() if k not in relaxed}, 'split changed unrelated edge fields'
              assert type(e['weight']) in {int, float} and e['weight'] >= 1 and float(e['weight']).is_integer()
              assert _group(e) <= nodes.keys()
 +            if exact_original and e is retained_exact[0]:
 +                continue
 +            if exact_original:
 +                assert e['confidence'] == 'static_inferred', 'split changed unrelated edge fields'
++            if is_exact_piece and not exact_original:
++                assert _group(e) != _group(original), 'exact piece replaced the retained group'
++                assert e['evidence']['file_path'] == original['evidence']['file_path']
++                assert e['evidence']['start_line'] >= original['evidence']['start_line']
++                assert e['evidence']['end_line'] >= e['evidence']['start_line']
++                continue
              assert e['resolution'] == ('ambiguous' if len(_group(e)) > 1 else 'unique_name')
              assert e['evidence']['file_path'] == original['evidence']['file_path']
              assert e['evidence']['start_line'] >= original['evidence']['start_line']
