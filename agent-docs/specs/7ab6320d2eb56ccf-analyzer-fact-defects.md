@@ -1,5 +1,5 @@
 ---
-version: 3
+version: 4
 run_id: 7ab6320d2eb56ccf
 status: active
 base_commit: b590d5461c59d93db7800f9be451392f367b8db0
@@ -36,7 +36,7 @@ Tests: tests/test_fact_defects.py (new), tests/fact_defects_support.py (new), te
 - 모든 변경은 `tests/fact_defects_evidence/existing-tests.diff`에 F id와 함께 기록한다.
 - 이전 run의 `tests/*_evidence/base_manifest.json`(architecture_rules, delta, external_rules, reach, structure)은 main이 다시 만든다.
   - 각 manifest의 `base_commit` worktree에 이번 run의 Implementation diff(base_commit b590d54..HEAD, Implementation paths)를 적용한다.
-  - 그 worktree에서 원래 형식 그대로 생성하고, `base_commit` 필드에는 `<원래 commit>+fact-defects-7ab6320d2eb56ccf`를 기록한다.
+  - 그 worktree에서 원래 형식 그대로 생성한다. `base_commit` 필드는 기존 테스트가 값을 검사하므로 바꾸지 않고, 출처는 `tests/fact_defects_evidence/manifest-regeneration.md`에 기록한다.
   - 적용이 충돌하면 그 manifest는 finding으로 남긴다.
   - test role은 이 diff를 보지 않는다.
 
@@ -211,3 +211,5 @@ Execution ledger (append attempts; preserve failed approaches):
 ## v3
 - R13 추가와 Implementation에 `language_analyzers/core/enrichment.py` 추가: R3 적용 후 설정 귀속 회귀(R12 위반)를 막는다. 계약 보완.
 - Tests에 이전 run base manifest 재생성 절차 추가: 원래 base commit에 이번 Implementation diff를 적용해 각 기능 테스트의 의미를 보존한다.
+## v4
+- manifest `base_commit` 필드 유지로 변경: `test_V7_manifest_is_for_the_declared_base_commit`가 값을 검사함. 출처는 manifest-regeneration.md. 계약만 변경.
