@@ -1,7 +1,7 @@
 ---
 version: 1
 run_id: 74b78d6823637a21
-status: draft
+status: active
 base_commit: 6444895451a89f4450b9123b7beb17b11506e534
 max_verifier_invocations: 2
 handoff: none
@@ -113,15 +113,15 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 # Assumptions and Defaults
 | id | decision | evidence and uncertainty | brief v<n> — approved / vetoed → <answer> / user answer |
 | --- | --- | --- | --- |
-| D1 | file granularity에서만 생성한다 | 기본 granularity이고 structure 후보도 file 전용. symbol은 노드 종류가 많아 의미가 다르다 | pending |
-| D2 | `untested_hub_top_n`은 선택 키, 기본 10 | loader가 정확한 키 집합을 요구하므로 필수 키로 만들면 기존 사용자 YAML이 깨진다. 10은 기존 rankings 상위 10과 같다 | pending |
-| D3 | 허브 후보군은 production category만 | test/generated/vendored 파일이 테스트되지 않는 것은 검토 대상이 아니다 | pending |
-| D4 | 고립 대상은 분석 언어 소스 확장자만 | 설정·문서 파일은 원래 코드 엣지가 없어 모두 후보가 된다 | pending |
-| D5 | line_count 0 파일은 고립 대상에서 제외 | 빈 `__init__.py` 등이 대량 후보가 된다 | pending |
-| D6 | 직접 TESTS 엣지만 본다(전이 도달 없음) | 정적 직접 관계가 가장 확실한 사실. 전이 도달은 후속 mutation 단계가 다룬다 | pending |
-| D7 | 성능 임계 1.10배 | 후보 계산은 엣지 1회 순회. 기존 benchmark marker 사용 | pending |
-| D8 | fuzz 20,000 입력, seed 20261019 | 이전 workflow와 같은 예산 | pending |
-| D9 | 새 로직은 `bottlenecks/reach.py`, branch coverage ≥ 90% | 이전 workflow 기준과 같다 | pending |
+| D1 | file granularity에서만 생성한다 | 기본 granularity이고 structure 후보도 file 전용. symbol은 노드 종류가 많아 의미가 다르다 | brief v1 — approved |
+| D2 | `untested_hub_top_n`은 선택 키, 기본 10 | loader가 정확한 키 집합을 요구하므로 필수 키로 만들면 기존 사용자 YAML이 깨진다. 10은 기존 rankings 상위 10과 같다 | brief v1 — approved |
+| D3 | 허브 후보군은 production category만 | test/generated/vendored 파일이 테스트되지 않는 것은 검토 대상이 아니다 | brief v1 — approved |
+| D4 | 고립 대상은 분석 언어 소스 확장자만 | 설정·문서 파일은 원래 코드 엣지가 없어 모두 후보가 된다 | brief v1 — approved |
+| D5 | line_count 0 파일은 고립 대상에서 제외 | 빈 `__init__.py` 등이 대량 후보가 된다 | brief v1 — approved |
+| D6 | 직접 TESTS 엣지만 본다(전이 도달 없음) | 정적 직접 관계가 가장 확실한 사실. 전이 도달은 후속 mutation 단계가 다룬다 | brief v1 — approved |
+| D7 | 성능 임계 1.10배 | 후보 계산은 엣지 1회 순회. 기존 benchmark marker 사용 | brief v1 — approved |
+| D8 | fuzz 20,000 입력, seed 20261019 | 이전 workflow와 같은 예산 | brief v1 — approved |
+| D9 | 새 로직은 `bottlenecks/reach.py`, branch coverage ≥ 90% | 이전 workflow 기준과 같다 | brief v1 — approved |
 | D10 | 고립 판정에서 test 파일, 외부 라이브러리, generated/vendored 파일과의 엣지는 세지 않는다 | — | user answer |
 | D11 | 허브 기준은 PageRank 상위 N개 | — | user answer |
 | D12 | schema `bottlenecks.v8` 유지 | delta는 kind를 순환·위반만 비교 | user answer |
