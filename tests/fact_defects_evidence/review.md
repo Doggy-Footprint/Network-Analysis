@@ -112,3 +112,24 @@ endpoints instead; record that substitution in the table.
 - wrong sampled edges: ___ (expected 0)
 - schema / key-set differences between base and head: ___ (expected none; script section "bottleneck payload")
 - cleanup: `git -C $REPO worktree remove --force $BASE`
+
+## Results (spec v4, run by main)
+
+Commands: `review-output/run.sh` (the same steps as sections 1–2, using local python3). Raw outputs are in `review-output/review-<fixture>-<granularity>.txt`. The review_diff sample-location printer printed `None:None` for every sample, so main opened the source lines by hand.
+
+| # | project / granularity | change group | F id | evidence | verdict |
+| --- | --- | --- | --- | --- | --- |
+| 1 | nestjs file | IMPORTS exact +65, IMPORTS_SYMBOL exact +69, RE_EXPORTS exact +4 | F11 | samples [2][4][7][8][9][10]: `user.controller.ts:5` `from './dto'`, `profile.controller.ts:5` `'../user/user.decorator'`, `article.module.ts:2`, `dto/index.ts:1` `export { CreateUserDto } from './create-user.dto'`, `main.ts:2`, `comment.entity.ts:2` | explained |
+| 2 | nestjs file | TYPE_USES / INSTANTIATES / READS unique_name·ambiguous → exact (−45 / +45) | F11 | sample [1]: `user.controller.ts:27` `UpdateUserDto`, imported at line 5. Sample [3]: `user.service.ts:8` `UserRO` from `./user.interface` | explained |
+| 3 | nestjs file | TESTS exact +3; `src/tag/tag.entity.ts` untested_hub removed | F11 | follows from the spec→production IMPORTS edges | explained |
+| 4 | nestjs file | dependency_cycle +1, package_cycle +1, unstable_dependency −1, evidence_spread +1 | F11 | structural results of the newly resolved import edges | explained |
+| 5 | nestjs symbol | 18 module nodes with end_line −1 | F8 | each `(end_line, line_count)` goes from (n+1, n) to (n, n) | explained |
+| 6 | nestjs symbol | evidence_spread +37, −1 | F11 (+ the existing F5 definition) | evidence_spread counts files that reference the target; the newly resolved cross-file references raise the counts. The F5 definition is fixed in run 3. | explained |
+| 7 | android file | IMPORTS / IMPORTS_SYMBOL unique_name 102 → exact 103; ambiguous 52 → 38 | F7 (R8) | sample [1]: `TopicDaoTest.kt:19` `import ...core.database.model.TopicEntity`. Sample [4]: `NewsResource.kt:19` `import ...model.NewsResourceEntity`, and the target's `package` matches | explained |
+| 8 | android file | READS / TYPE_USES / INSTANTIATES / CALLS / WRITES / IMPLEMENTS / INHERITS / TESTS unique_name → exact | F7 (R10) | samples [2][3][5]–[10] are references from files that import the target | explained |
+| 9 | android file | package_cycle +2 (certain) | F7 (R11) | package dependencies are now promoted to the certain tier | explained |
+| 10 | android symbol | module end_line −1 (all files) | F8 | as in #5 | explained |
+| 11 | android symbol | evidence_spread −1 | F7 | a reference was retargeted to the imported symbol | explained |
+| — | both / both | schema and key set | — | no change | explained |
+
+Unexplained changes: 0. Wrong edges among the 10+10 samples: 0.
