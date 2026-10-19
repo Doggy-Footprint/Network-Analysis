@@ -1,7 +1,7 @@
 ---
 version: 1
 run_id: 7ab6320d2eb56ccf
-status: draft
+status: active
 base_commit: b590d5461c59d93db7800f9be451392f367b8db0
 max_verifier_invocations: 2
 handoff: none
@@ -151,11 +151,11 @@ Mutation tool:
 # Assumptions and Defaults
 | id | decision | evidence and uncertainty | brief v<n> — approved / vetoed → <answer> / user answer |
 | --- | --- | --- | --- |
-| D1 | F11 원인은 익명 함수 미스캔이 아니라 `_resolve_import`의 `with_suffix`가 `tag.entity`를 `tag.ts`로 바꾸는 것이다. 수정 범위를 상대 import 해석으로 바꾼다. | 실행 확인: 수정 시뮬레이션에서 nestjs fixture IMPORTS 6→71, TYPE_USES exact 1→65, TESTS 0→6. 모듈 최상위 코드 스캔은 범위 밖으로 둔다. | pending |
-| D2 | 줄 구분은 `\n`만 쓰고 CRLF는 1개로 센다. 단독 `\r`은 구분자가 아니다. | tree-sitter는 `\n`으로 행을 센다. Python ast는 단독 `\r`도 개행으로 보므로, 단독 `\r`만 쓰는 Python 파일에서는 span이 어긋날 수 있다(드묾). | pending |
-| D3 | Kotlin import된 이름은 그 파일 안에서 import 대상이 우선이다(R10). | Kotlin 언어 규칙. alias·wildcard는 범위 밖이다. | pending |
-| D4 | 기존 golden/characterization 기대값은 F id로 설명되는 경우에만 갱신한다. | 해석 엣지가 많이 바뀌어 nestjs 관련 기대값이 바뀔 것으로 예상한다. | pending |
-| D5 | 성능 임계 1.25, 변경 줄 branch coverage 90%, fuzz 예산 (a) 20,000·(b) 500 | 직전 run의 관행을 따른다 | pending |
+| D1 | F11 원인은 익명 함수 미스캔이 아니라 `_resolve_import`의 `with_suffix`가 `tag.entity`를 `tag.ts`로 바꾸는 것이다. 수정 범위를 상대 import 해석으로 바꾼다. | 실행 확인: 수정 시뮬레이션에서 nestjs fixture IMPORTS 6→71, TYPE_USES exact 1→65, TESTS 0→6. 모듈 최상위 코드 스캔은 범위 밖으로 둔다. | brief v1 — approved |
+| D2 | 줄 구분은 `\n`만 쓰고 CRLF는 1개로 센다. 단독 `\r`은 구분자가 아니다. | tree-sitter는 `\n`으로 행을 센다. Python ast는 단독 `\r`도 개행으로 보므로, 단독 `\r`만 쓰는 Python 파일에서는 span이 어긋날 수 있다(드묾). | brief v1 — approved |
+| D3 | Kotlin import된 이름은 그 파일 안에서 import 대상이 우선이다(R10). | Kotlin 언어 규칙. alias·wildcard는 범위 밖이다. | brief v1 — approved |
+| D4 | 기존 golden/characterization 기대값은 F id로 설명되는 경우에만 갱신한다. | 해석 엣지가 많이 바뀌어 nestjs 관련 기대값이 바뀔 것으로 예상한다. | brief v1 — approved |
+| D5 | 성능 임계 1.25, 변경 줄 branch coverage 90%, fuzz 예산 (a) 20,000·(b) 500 | 직전 run의 관행을 따른다 | brief v1 — approved |
 
 # Traceability
 | requirement id | Case ids | obligation ids | evidence procedure |
