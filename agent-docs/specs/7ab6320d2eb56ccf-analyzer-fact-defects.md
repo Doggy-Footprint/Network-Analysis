@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 run_id: 7ab6320d2eb56ccf
 status: active
 base_commit: b590d5461c59d93db7800f9be451392f367b8db0
@@ -71,15 +71,15 @@ Mutation tool:
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
 | R1 | 줄 수 L(text)은 `\n` 문자 수에 1을 더한 값이다. 단 text가 비어 있지 않고 `\n`으로 끝나지 않을 때만 1을 더한다. 빈 text는 0이다. `\r\n`은 줄 구분 1개로 센다. 그 밖의 문자(`\r` 단독, `\x0b`, `\x0c`, `\x1c`–`\x1e`, `\x85`, ` `, ` `)는 줄 구분이 아니다. | must | F9 |
-| R2 | `SourceText.lines`의 길이는 L(text)이다. 각 줄은 `\n`으로 나눈 조각이다. 조각이 `\r`로 끝나고 그 `\r`이 `\n` 바로 앞에 있었다면 그 `\r`만 제거한다. file granularity 노드의 `cost.line_count`와 span `end_line`은 이 길이를 따른다. | must | F9 |
+| R2 | `SourceText.lines`의 길이는 L(text)이다. 각 줄은 `\n`으로 나눈 조각이다. 조각이 `\r`로 끝나고 그 `\r`이 `\n` 바로 앞에 있었다면 그 `\r`만 제거한다. file granularity 노드의 `cost.line_count`와 (span이 있을 때) span `end_line`은 이 길이를 따른다. 빈 파일의 file 노드 span은 기존대로 없음. | must | F9 |
 | R3 | Python·TypeScript·Kotlin의 module(file) 노드 span `end_line`은 `max(1, L(text))`이다. | must | F8 |
 | R4 | symbol granularity `large_node`의 `line_count`는 R3을 따른 module 노드에서 `end_line - start_line + 1`이다. 따라서 L=5인 파일은 임계 5에서 후보가 아니다. | must | F8 |
-| R5 | TypeScript 상대 specifier `S`(`.`으로 시작)는 아래 순서로 해석한다. B는 `normpath(dir(importer)/S)`이다. 프로젝트 안의 분석 대상 모듈과 처음 일치하는 것이 해석 대상이다. ① B 자체(B의 마지막 확장자가 SOURCE_EXTENSIONS에 있을 때) ② B 문자열 뒤에 각 SOURCE_EXTENSIONS를 덧붙인 경로(기존 확장자를 교체하지 않는다) ③ `B/index<ext>`. 확장자 순서는 기존 SOURCE_EXTENSIONS 순서를 유지한다. | must | F11 |
+| R5 | TypeScript 상대 specifier `S`(`.`으로 시작)는 아래 순서로 해석한다. B는 `normpath(dir(importer)/S)`이다. 프로젝트 안의 분석 대상 모듈과 처음 일치하는 것이 해석 대상이다. ① B 자체(B의 마지막 확장자가 SOURCE_EXTENSIONS에 있을 때) ② B 문자열 뒤에 각 SOURCE_EXTENSIONS를 덧붙인 경로(기존 확장자를 교체하지 않는다) ③ B의 마지막 확장자가 SOURCE_EXTENSIONS에 있을 때만, 그 확장자를 각 SOURCE_EXTENSIONS로 교체한 경로(예: `./foo.js` → `foo.ts`; 기존 동작 유지) ④ `B/index<ext>`. 확장자 순서는 기존 SOURCE_EXTENSIONS 순서를 유지한다. | must | F11 |
 | R6 | R5는 정적 import, re-export, dynamic import, import binding 해석(IMPORTS_SYMBOL 및 import 기반 참조 해석) 등 상대 specifier를 해석하는 모든 경로에 적용된다. | must | F11 |
 | R7 | 결과: 테스트 파일이 production 파일을 상대 import하면 file granularity에 test→production `TESTS` 엣지가 생긴다(기존 `_add_test_relations` 규칙). typescript-nestjs-realworld에서 `src/tag/tag.controller.spec.ts`→`src/tag/tag.entity.ts` TESTS 엣지가 있고, `src/tag/tag.entity.ts`는 `untested_hub` 후보가 아니다. | must | F11 |
 | R8 | Kotlin 심볼의 FQN은 `<package>.<qualname>`이다(package 선언이 없으면 `<qualname>`). wildcard가 아닌 import `X`에 대해 FQN이 `X`와 같은 심볼이 정확히 1개이면, 그 import의 IMPORTS_SYMBOL·IMPORTS 엣지는 그 심볼과 그 파일을 가리킨다. 이때 `resolution=exact`, `confidence=static_certain`, candidates는 비어 있다. | must | F7 |
 | R9 | FQN 일치가 2개 이상이면 resolution은 `ambiguous`, confidence는 `static_inferred`이다. 대상은 FQN 일치 심볼 중 symbol id 정렬 첫 번째이고, 나머지가 candidates가 된다. FQN 일치가 0개면 기존 단순 이름 해석을 그대로 쓴다. | must | F7 |
-| R10 | Kotlin 파일 F가 R8로 심볼 T를 import했다면, F 안의 단순 이름 참조 중 T의 이름(import 경로 마지막 조각)과 같은 참조는 T로 해석한다. 이때 exact, static_certain이다. 단 기존 `this`/소속 클래스 멤버 해석이 먼저 성공하면 그 결과를 유지한다. | must | F7 |
+| R10 | Kotlin 파일 F가 R8로 심볼 T를 import했다면, F 안의 단순 이름 참조 중 T의 이름(import 경로 마지막 조각)과 같은 참조는 T로 해석한다. 이때 exact, static_certain이다.  | must | F7 |
 | R11 | R10의 결과로 package 의존(`analysis/structure.py`)은 handoff 재현에서 `com.c -> com.a`이고 tier는 certain이다. `com.c -> com.b`는 어떤 tier에도 없다. | must | F7 |
 | R12 | R1–R11로 설명되지 않는 기존 출력은 바뀌지 않는다. | must | I2 |
 
@@ -104,7 +104,7 @@ Mutation tool:
 | C5 | boundary | 5줄+끝 개행 Python/TS/Kotlin 파일, symbol granularity, 임계 5 / 6줄 파일 임계 5 | module end_line=5, large_node 없음 / 6줄은 후보(line_count 6) |
 | C6 | normal | 한 줄 168KB 파일(`\x0c` 포함 없음), file granularity | line_count=1 |
 | C7 | normal | TS `a/b.spec.ts`가 `import {X} from './x.entity'`, `a/x.entity.ts`에 `export class X` | IMPORTS(exact) b.spec→x.entity, file granularity TESTS 엣지, `x.entity.ts`는 untested_hub 아님 |
-| C8 | boundary | specifier `./x.entity.ts`(확장자 명시) / `./dir`(index.ts) / `./x`와 `./x.ts`·`./x/index.ts` 동시 존재 | 각각 x.entity.ts / dir/index.ts / x.ts |
+| C8 | boundary | specifier `./x.entity.ts`(확장자 명시) / `./dir`(index.ts) / `./x`와 `./x.ts`·`./x/index.ts` 동시 존재 / `./foo.js`이고 `foo.ts`만 존재 | 각각 x.entity.ts / dir/index.ts / x.ts / foo.ts |
 | C9 | error | specifier `./missing.entity`, `../../outside` | 엣지 없음, 예외 없음 |
 | C10 | normal | TS re-export `export * from './a.dto'`, dynamic `import('./b.service')` | RE_EXPORTS·dynamic IMPORTS 엣지 생성 |
 | C11 | normal | `com/a/Foo.kt`(package com.a, class Foo), `com/b/Foo.kt`(package com.b, class Foo), `com/c/Use.kt`(import com.a.Foo, Foo 사용) | Use→com.a Foo IMPORTS_SYMBOL exact/certain, 참조 엣지 exact, package 의존 com.c→com.a certain, com.c→com.b 없음 |
@@ -139,10 +139,10 @@ Mutation tool:
 | V1 | R1,R2,C1–C4 | `repository.models.SourceText.lines` | unit | equivalence partitioning + boundary value (2-value) | EP: 빈 / `\n` 종료 / 비종료 / CRLF / 비구분 제어문자 7종; BVA: 길이 0,1 및 마지막 개행 유무 | 100% | lines 길이·내용이 독립 참조 구현과 일치 | pytest |
 | V2 | R2,R3,C5,C6 | file granularity 노드 `cost.line_count`·span end_line, Python·TS·Kotlin module 노드 end_line | integration (임시 프로젝트 → 각 analyzer, CLI 아님) | equivalence partitioning | 3 언어 × {끝 개행 있음, 없음, 빈 파일} | 100% | end_line = max(1,L), file line_count = L | pytest |
 | V3 | R4,C5 | `analyze_bottlenecks` symbol granularity large_node | integration | boundary value (3-value) | L ∈ {임계-1, 임계, 임계+1}, Python 1언어 + TS·Kotlin은 임계값만 | 100% | 후보 유무와 line_count | pytest |
-| V4 | R5,R6,C7–C10 | TypeScriptAnalyzer 엣지 | integration | decision table | 규칙: ①확장자 명시 ②점 포함 이름+ext 덧붙임 ③index ④②·③ 동시 존재 시 ② 우선 ⑤미존재 ⑥프로젝트 밖; 경로: 정적 import, re-export, dynamic import, import binding(IMPORTS_SYMBOL) | 규칙 6개 100%, 경로 4개 각 1회 이상 | 엣지 대상 파일·relation | pytest |
+| V4 | R5,R6,C7–C10 | TypeScriptAnalyzer 엣지 | integration | decision table | 규칙: ①확장자 명시 ②점 포함 이름+ext 덧붙임 ③JS 확장자 specifier(`./foo.js`)가 TS 파일로 교체 해석 ④index ⑤②·④ 동시 존재 시 ② 우선 ⑥미존재 ⑦프로젝트 밖; 경로: 정적 import, re-export, dynamic import, import binding(IMPORTS_SYMBOL) | 규칙 7개 100%, 경로 4개 각 1회 이상 | 엣지 대상 파일·relation | pytest |
 | V5 | R7,C7 | file granularity TESTS 엣지와 untested_hub | integration + fixture | scenario | 합성 프로젝트 1, typescript-nestjs-realworld | 100% | TESTS 엣지 존재, 해당 파일 untested_hub 아님 | pytest |
 | V6 | R8,R9,C11–C13 | KotlinAnalyzer import 엣지 | integration | decision table | FQN 일치 1 / ≥2 / 0(단순 이름 fallback) / default package / nested | 100% | target·resolution·confidence·candidates | pytest |
-| V7 | R10,R11,C11 | Kotlin 참조 엣지와 package 의존 | integration | scenario | C11 시나리오, 멤버 해석 우선 변형 1 | 100% | 참조 exact, package 의존 tier | pytest |
+| V7 | R10,R11,C11 | Kotlin 참조 엣지와 package 의존 | integration | scenario | C11 시나리오, import 없는 파일 변형 1 | 100% | 참조 exact, package 의존 tier | pytest |
 | V8 | R12,C14,Q2 | 실제 fixture 출력 | integration | error guessing | 설명 안 되는 변화, schema key 변화 | none — experience-based | review.md 집계와 key 비교 | review + pytest |
 | V9 | Q1 | CLI 시간 | system | random(반복 측정) | fixture 4개 | 100% | 비율 ≤1.25 | benchmark.md |
 | V10 | Q3 | fuzz 표면 (a)(b) | unit/integration | random | seed 20261019, 예산 전량 | 100% | 위반 0 | main fuzz |
@@ -175,7 +175,7 @@ Mutation tool:
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 0 |
+| correction batches used | 1 |
 | verifier invocations | 0 |
 | open finding ids | none |
 
@@ -187,8 +187,14 @@ Audit state (one entry per obligation; retain prior decisions in the execution l
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 1 | test-implementer challenge: `./foo.js`→`foo.ts` 해석이 v1 R5에서 사라짐(기존 동작 회귀, R12 충돌); R10 멤버 우선 조항은 Kotlin analyzer에 해당 메커니즘이 없어 검증 불가 | spec gap | v2: R5 ③ 교체 규칙 추가, R10 조항 삭제, V7 변형 교체 | 재dispatch |
 | 0 | handoff F11 가설: 모듈 최상위 익명 함수 미스캔 | hypothesis | `_resolve_import` 실행 추적: `./tag.entity` → None | 가설 기각. D1로 범위 변경 |
 
 # Version Log
 ## v1
 - 초안 작성.
+## v2
+- R5에 ③(SOURCE_EXTENSIONS 확장자 교체) 추가: v1이 `./foo.js`→`foo.ts` 기존 동작을 없애 R12와 충돌. 계약 보완, 승인된 R12 범위 안.
+- R10의 멤버 해석 우선 조항 삭제: Kotlin analyzer에 그런 해석이 없음(implementer 보고). V7 변형을 import 없는 파일로 교체.
+- R2: 빈 파일 file 노드 span 없음 명시(기존 동작).
+- Python 단독 `\r` 파일의 span 불일치는 D2의 알려진 한계로 테스트하지 않음.
