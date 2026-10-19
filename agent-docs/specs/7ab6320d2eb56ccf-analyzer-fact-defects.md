@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 run_id: 7ab6320d2eb56ccf
 status: active
 base_commit: b590d5461c59d93db7800f9be451392f367b8db0
@@ -28,14 +28,19 @@ Out of scope:
 - schema 버전 변경(`bottlenecks.v8` 유지).
 
 # Paths
-Implementation: language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/symbols.py, repository/models.py, language_analyzers/core/cost.py, bottlenecks/core.py
+Implementation: language_analyzers/core/enrichment.py, language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/symbols.py, repository/models.py, language_analyzers/core/cost.py, bottlenecks/core.py
 Tests: tests/test_fact_defects.py (new), tests/fact_defects_support.py (new), tests/fact_defects_evidence/ (new; 단 `tests/fact_defects_evidence/diff_coverage.py`는 main이 작성). 기존 tests/ 파일 조정도 허용한다. 허용 범위는 다음과 같다.
 - 실제 fixture 분석 결과의 golden, characterization, count, hash 기대값만 갱신한다.
 - 각 변경은 F11·F7·F8·F9 중 하나로 설명할 수 있어야 한다.
 - 약화는 금지한다.
 - 모든 변경은 `tests/fact_defects_evidence/existing-tests.diff`에 F id와 함께 기록한다.
+- 이전 run의 `tests/*_evidence/base_manifest.json`(architecture_rules, delta, external_rules, reach, structure)은 main이 다시 만든다.
+  - 각 manifest의 `base_commit` worktree에 이번 run의 Implementation diff(base_commit b590d54..HEAD, Implementation paths)를 적용한다.
+  - 그 worktree에서 원래 형식 그대로 생성하고, `base_commit` 필드에는 `<원래 commit>+fact-defects-7ab6320d2eb56ccf`를 기록한다.
+  - 적용이 충돌하면 그 manifest는 finding으로 남긴다.
+  - test role은 이 diff를 보지 않는다.
 
-Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with coverage python -m coverage run --branch --include=language_analyzers/typescript/analyzer.py,language_analyzers/kotlin/analyzer.py,language_analyzers/python/symbols.py,repository/models.py,language_analyzers/core/cost.py,bottlenecks/core.py -m pytest -q -p no:cacheprovider --deselect tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages --deselect tests/test_analysis_coverage_reporting.py::test_V07_read_parse_counts_match_immutable_characterization --deselect tests/test_analyzer.py::FastAPIRealFixtureSmokeTests::test_fastapi_realworld_fixture_analyzes_without_crashing --deselect tests/test_file_analysis_cli.py::test_V01_direct_builder_defaults_characterization && uv run -q --with coverage python -m coverage json -o .coverage-fact.json && python3 tests/fact_defects_evidence/diff_coverage.py --base b590d5461c59d93db7800f9be451392f367b8db0 --coverage .coverage-fact.json --fail-under 90
+Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with coverage python -m coverage run --branch --include=language_analyzers/core/enrichment.py,language_analyzers/typescript/analyzer.py,language_analyzers/kotlin/analyzer.py,language_analyzers/python/symbols.py,repository/models.py,language_analyzers/core/cost.py,bottlenecks/core.py -m pytest -q -p no:cacheprovider --deselect tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages --deselect tests/test_analysis_coverage_reporting.py::test_V07_read_parse_counts_match_immutable_characterization --deselect tests/test_analyzer.py::FastAPIRealFixtureSmokeTests::test_fastapi_realworld_fixture_analyzes_without_crashing --deselect tests/test_file_analysis_cli.py::test_V01_direct_builder_defaults_characterization && uv run -q --with coverage python -m coverage json -o .coverage-fact.json && python3 tests/fact_defects_evidence/diff_coverage.py --base b590d5461c59d93db7800f9be451392f367b8db0 --coverage .coverage-fact.json --fail-under 90
 
 Review evidence:
 - 산출물: `tests/fact_defects_evidence/review.md`.
@@ -81,6 +86,7 @@ Mutation tool:
 | R9 | FQN 일치가 2개 이상이면 resolution은 `ambiguous`, confidence는 `static_inferred`이다. 대상은 FQN 일치 심볼 중 symbol id 정렬 첫 번째이고, 나머지가 candidates가 된다. FQN 일치가 0개면 기존 단순 이름 해석을 그대로 쓴다. | must | F7 |
 | R10 | Kotlin 파일 F가 R8로 심볼 T를 import했다면, F 안의 단순 이름 참조 중 T의 이름(import 경로 마지막 조각)과 같은 참조는 T로 해석한다. 이때 exact, static_certain이다.  | must | F7 |
 | R11 | R10의 결과로 package 의존(`analysis/structure.py`)은 handoff 재현에서 `com.c -> com.a`이고 tier는 certain이다. `com.c -> com.b`는 어떤 tier에도 없다. | must | F7 |
+| R13 | `smallest_node_at_line`(설정값 사용처 등 줄→노드 귀속)에서 span 길이가 같은 후보가 여럿이면 kind가 file·module이 아닌 노드를 우선한다. 그 밖의 동률은 기존 순서를 유지한다. R3 때문에 파일 전체를 덮는 symbol과 module span이 같아져도 귀속이 바뀌지 않게 하기 위함이다. | must | R12, F8 부작용 |
 | R12 | R1–R11로 설명되지 않는 기존 출력은 바뀌지 않는다. | must | I2 |
 
 # Errors
@@ -110,6 +116,7 @@ Mutation tool:
 | C11 | normal | `com/a/Foo.kt`(package com.a, class Foo), `com/b/Foo.kt`(package com.b, class Foo), `com/c/Use.kt`(import com.a.Foo, Foo 사용) | Use→com.a Foo IMPORTS_SYMBOL exact/certain, 참조 엣지 exact, package 의존 com.c→com.a certain, com.c→com.b 없음 |
 | C12 | edge | 같은 FQN을 두 파일이 선언 / import FQN 미존재(외부 라이브러리) / default package 심볼 import | ambiguous(R9) / 기존 단순 이름 해석 / qualname FQN 일치 |
 | C13 | edge | nested class `import com.a.Outer.Inner` | Inner 심볼로 exact |
+| C15 | edge | `consumer.py`가 함수 `consume` 하나(파일 전체 2줄)이고 설정 key 문자열 사용 | CONFIGURES 엣지 대상은 `consume` |
 | C14 | normal | 실제 fixture 4개 base vs HEAD | 변화가 모두 F id로 설명됨(R12) |
 
 # Quality Applicability
@@ -143,6 +150,7 @@ Mutation tool:
 | V5 | R7,C7 | file granularity TESTS 엣지와 untested_hub | integration + fixture | scenario | 합성 프로젝트 1, typescript-nestjs-realworld | 100% | TESTS 엣지 존재, 해당 파일 untested_hub 아님 | pytest |
 | V6 | R8,R9,C11–C13 | KotlinAnalyzer import 엣지 | integration | decision table | FQN 일치 1 / ≥2 / 0(단순 이름 fallback) / default package / nested | 100% | target·resolution·confidence·candidates | pytest |
 | V7 | R10,R11,C11 | Kotlin 참조 엣지와 package 의존 | integration | scenario | C11 시나리오, import 없는 파일 변형 1 | 100% | 참조 exact, package 의존 tier | pytest |
+| V12 | R13,C15 | 설정 귀속(Python analyzer enrichment) | integration | equivalence partitioning | {module=symbol span 동률, symbol이 더 작음, 줄을 덮는 symbol 없음} | 100% | CONFIGURES 대상 | pytest |
 | V8 | R12,C14,Q2 | 실제 fixture 출력 | integration | error guessing | 설명 안 되는 변화, schema key 변화 | none — experience-based | review.md 집계와 key 비교 | review + pytest |
 | V9 | Q1 | CLI 시간 | system | random(반복 측정) | fixture 4개 | 100% | 비율 ≤1.25 | benchmark.md |
 | V10 | Q3 | fuzz 표면 (a)(b) | unit/integration | random | seed 20261019, 예산 전량 | 100% | 위반 0 | main fuzz |
@@ -166,6 +174,7 @@ Mutation tool:
 | R7 | C7 | V5 | pytest |
 | R8,R9 | C11–C13 | V6 | pytest |
 | R10,R11 | C11 | V7 | pytest |
+| R13 | C15 | V12 | pytest |
 | R12 | C14 | V8 | review, pytest |
 | Q1 | — | V9 | benchmark |
 | Q2 | C14 | V8 | pytest |
@@ -175,18 +184,19 @@ Mutation tool:
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 1 |
+| correction batches used | 2 |
 | verifier invocations | 0 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1–V11 | 1 | — | pending | — | — |
+| V1–V12 | 3 | — | pending | — | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 2 | 전체 suite 50 failed: `test_all_config_formats_direction_and_value_not_key`(CONFIGURES가 함수 대신 module로), unicode line_count 2→1(F9), TS file span end 3→2(F8), 이전 run의 base manifest byte-equal·size ratio 47건 | 설정 귀속은 R3로 module·symbol span 동률이 생겨 `smallest_node_at_line`이 module을 고름(verified: min은 첫 원소 선택). 나머지는 F id로 설명되는 기대값 변화 | v3: R13, enrichment.py 추가, manifest 재생성 절차 | 재dispatch |
 | 1 | test-implementer challenge: `./foo.js`→`foo.ts` 해석이 v1 R5에서 사라짐(기존 동작 회귀, R12 충돌); R10 멤버 우선 조항은 Kotlin analyzer에 해당 메커니즘이 없어 검증 불가 | spec gap | v2: R5 ③ 교체 규칙 추가, R10 조항 삭제, V7 변형 교체 | 재dispatch |
 | 0 | handoff F11 가설: 모듈 최상위 익명 함수 미스캔 | hypothesis | `_resolve_import` 실행 추적: `./tag.entity` → None | 가설 기각. D1로 범위 변경 |
 
@@ -198,3 +208,6 @@ Execution ledger (append attempts; preserve failed approaches):
 - R10의 멤버 해석 우선 조항 삭제: Kotlin analyzer에 그런 해석이 없음(implementer 보고). V7 변형을 import 없는 파일로 교체.
 - R2: 빈 파일 file 노드 span 없음 명시(기존 동작).
 - Python 단독 `\r` 파일의 span 불일치는 D2의 알려진 한계로 테스트하지 않음.
+## v3
+- R13 추가와 Implementation에 `language_analyzers/core/enrichment.py` 추가: R3 적용 후 설정 귀속 회귀(R12 위반)를 막는다. 계약 보완.
+- Tests에 이전 run base manifest 재생성 절차 추가: 원래 base commit에 이번 Implementation diff를 적용해 각 기능 테스트의 의미를 보존한다.
