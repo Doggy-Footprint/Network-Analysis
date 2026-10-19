@@ -13,3 +13,8 @@ File: fa00b92fe9819b57-agent-context-candidates.md
 Summary: AI agent 친화 코드 조사에서 도출한 후보 C(시그니처 기준 맥락 비용)와 D(문서→코드 참조, dangling 참조)를 인계
 Related Files: analysis/graph_metrics.py, language_analyzers/core/cost.py, repository/scan.py, repository/policy.py, language_analyzers/core/graph_models.py
 Related Symbols: hop_2_token_cost, GraphNode.signature, RelationKind
+---
+File: dad85e4830f21190-existing-signal-defects.md
+Summary: 기존 후보 신호(dynamic 플래그, unresolved_boundary, evidence_spread, ambiguous_name, Kotlin import, large_node, PageRank 가중치) 검수에서 나온 결함 F1–F10 수정 인계
+Related Files: language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/graph.py, bottlenecks/core.py, analysis/graph_metrics.py, analysis/file_graph.py
+Related Symbols: unresolved_boundary, evidence_spread, large_node, ambiguous_name, pagerank
