@@ -172,25 +172,22 @@ def ref_hubs(model, pagerank, top_n):
     return [(ident, position + 1) for position, ident in enumerate(ordered)][:top_n]
 
 
-def ref_global_ranks(model, pagerank, file_id):
-    """{rank among file nodes, rank among every scored node incl. boundary} by (-pagerank, id); the spec does not say
-    which population pagerank_rank counts, so callers assert rank only where all readings agree."""
-    def rank(population):
-        return sorted(population, key=lambda ident: (-pagerank[ident], ident)).index(file_id) + 1
-    return {rank(list(model.files)), rank(list(pagerank))}
+def edge_targets(edge):
+    """candidate_targets rule of spec v3: only an ambiguous edge expands to its candidates."""
+    _source, target, _relation, _conf, resolution, candidates = edge
+    return {target, *candidates} if resolution == AMBIGUOUS else {target}
 
 
-def ref_incoming_tests(model, file_id, any_origin=False):
-    """(confirmed count, indices of uncertain TESTS edges). Confirmed edges must come from test-category files; R3 does
-    not say whether uncertain edges from other categories count, so any_origin exposes the other reading."""
+def ref_incoming_tests(model, file_id):
+    """(confirmed count, indices of uncertain TESTS edges), TESTS edges from test-category files only."""
     confirmed, uncertain = 0, []
-    for index, (source, target, relation, _conf, resolution, candidates) in enumerate(model.edges):
-        from_test = model.files.get(source, ('', 0))[0] == 'test'
-        if relation != 'TESTS':
+    for index, edge in enumerate(model.edges):
+        source, _target, relation, _conf, resolution, _cands = edge
+        if relation != 'TESTS' or model.files.get(source, ('', 0))[0] != 'test':
             continue
-        if from_test and target == file_id and resolution in CERTAIN_RESOLUTIONS:
+        if resolution in CERTAIN_RESOLUTIONS and file_id in edge_targets(edge):
             confirmed += 1
-        elif (from_test or any_origin) and resolution in (AMBIGUOUS, UNRESOLVED) and (target == file_id or (resolution == AMBIGUOUS and file_id in candidates)):
+        elif resolution in (AMBIGUOUS, UNRESOLVED) and file_id in edge_targets(edge):
             uncertain.append(index)
     return confirmed, uncertain
 
@@ -219,11 +216,16 @@ def ref_isolated(model):
         if not isolation_eligible(me, category, lines):
             continue
         connections, framework, dynamic, uncertain, indices = 0, 0, 0, 0, []
-        for index, (source, target, _rel, confidence, resolution, _cands) in enumerate(model.edges):
-            if me not in (source, target) or source == target:
+        for index, edge in enumerate(model.edges):
+            source, _target, _rel, confidence, resolution, _cands = edge
+            targets = edge_targets(edge)
+            if source == me:
+                others = targets - {me}
+            elif me in targets:
+                others = {source}
+            else:
                 continue
-            other = target if source == me else source
-            if other not in model.files or model.files[other][0] != 'production':
+            if not any(o in model.files and model.files[o][0] == 'production' for o in others):
                 continue
             if confidence in STATIC and resolution in CERTAIN_RESOLUTIONS:
                 connections += 1

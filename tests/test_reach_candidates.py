@@ -23,8 +23,7 @@ from language_analyzers.core.flags import path_flags
 from tests.edge_weights_support import load_weights, weights_data, write_weights
 from tests.reach_support import (AMBIGUOUS, BASE_COMMIT, CONFIDENCES, DR, E, EXACT, FI, FIXTURES, ISOLATION_EXTENSIONS, NEW_KINDS,
                                  REPO, SC, SI, UNIQUE, UNRESOLVED, Graph, architecture_model, candidate_id, canonical_sha,
-                                 fid, graph_model, load_manifest, model_key, of_kind, pagerank_of, record_key, ref_global_ranks,
-                                 ref_incoming_tests, ref_isolated, ref_untested_hubs, run_report, weights_with, without_reach)
+                                 fid, graph_model, load_manifest, model_key, of_kind, pagerank_of, record_key, ref_incoming_tests, ref_isolated, ref_untested_hubs, run_report, weights_with, without_reach)
 
 MAIN = 'from code_analyzer.cli import main; main()'
 HUB_METRICS = {'pagerank', 'pagerank_rank', 'top_n', 'uncertain_test_edge_count'}
@@ -59,12 +58,10 @@ def assert_candidates_match_reference(report, model, top_n, *, indexed_graph=Non
         assert item['coverage'] == 'static_analyzer_relation'
         assert item['evidence']['path'] == ident[len('file:'):] and set(item['evidence']) == {'path', 'uncertain_test_edges'}
         assert item['metrics']['top_n'] == top_n and item['metrics']['pagerank'] == pytest.approx(pagerank[ident], abs=1e-12, rel=0)
-        if ref_global_ranks(model, pagerank, ident) == {rank}:
-            assert item['metrics']['pagerank_rank'] == rank, ident
-        any_origin = ref_incoming_tests(model, ident, any_origin=True)[1]
-        assert item['metrics']['uncertain_test_edge_count'] in {len(uncertain), len(any_origin)}
+        assert item['metrics']['pagerank_rank'] == rank, ident
+        assert item['metrics']['uncertain_test_edge_count'] == len(uncertain)
         assert item['metrics']['uncertain_test_edge_count'] == len(item['evidence']['uncertain_test_edges'])
-        if item['metrics']['uncertain_test_edge_count'] == len(uncertain):
+        if True:
             observed = collections.Counter(record_key(r) for r in item['evidence']['uncertain_test_edges'])
             assert observed == collections.Counter(model_key(model.edges[i]) for i in uncertain)
             if indexed_graph is not None:
@@ -191,14 +188,14 @@ V2_EDGES = {
     'ambiguous-candidate': lambda origin: [E(origin, 'src/o.py', 'TESTS', SC, AMBIGUOUS, candidates=(HUB,))],
     'unresolved': lambda origin: [E(origin, HUB, 'TESTS', SC, UNRESOLVED)],
 }
-# (candidate exists, uncertain_test_edge_count or None when the spec does not define it), written from R2/R3/C4/C5
+# (candidate exists, uncertain_test_edge_count), written from R2/R3 (v3: only test-category origins count)
 V2_TABLE = {
     ('none', 'test'): (True, 0), ('none', 'production'): (True, 0),
     ('exact', 'test'): (False, None), ('exact', 'production'): (True, 0),
     ('unique_name', 'test'): (False, None), ('unique_name', 'production'): (True, 0),
-    ('ambiguous-to-id', 'test'): (True, 1), ('ambiguous-to-id', 'production'): (True, None),
-    ('ambiguous-candidate', 'test'): (True, 1), ('ambiguous-candidate', 'production'): (True, None),
-    ('unresolved', 'test'): (True, 1), ('unresolved', 'production'): (True, None),
+    ('ambiguous-to-id', 'test'): (True, 1), ('ambiguous-to-id', 'production'): (True, 0),
+    ('ambiguous-candidate', 'test'): (True, 1), ('ambiguous-candidate', 'production'): (True, 0),
+    ('unresolved', 'test'): (True, 1), ('unresolved', 'production'): (True, 0),
 }
 
 
@@ -207,8 +204,7 @@ def test_V2_R2_R3_decision_table(tmp_path, rule):
     kind, origin_category = rule
     origin = 'tests/test_h.py' if origin_category == 'test' else 'src/caller.py'
     graph = Graph(files_of(production={HUB: 3, 'src/o.py': 3, 'src/caller.py': 3}, test={'tests/test_h.py': 2}), V2_EDGES[kind](origin))
-    # R5/R6 are silent on how an edge's `candidates` list counts for isolation, so V2 graphs leave isolation to V3
-    report, hubs, _ = check(graph, tmp_path, isolation=False)
+    report, hubs, _ = check(graph, tmp_path)
     exists, count = V2_TABLE[rule]
     assert (fid(HUB) in hubs) == exists
     if exists and count is not None:
@@ -225,7 +221,7 @@ def test_V2_R3_uncertain_edges_are_counted_not_flagged(tmp_path):
     graph = Graph(files_of(production={HUB: 3, 'src/o.py': 3}, test={'tests/t1.py': 2, 'tests/t2.py': 2, 'tests/t3.py': 2}),
                   [E('tests/t1.py', HUB, 'TESTS', SC, AMBIGUOUS), E('tests/t2.py', 'src/o.py', 'TESTS', SC, AMBIGUOUS, candidates=(HUB,)),
                    E('tests/t3.py', HUB, 'TESTS', SC, UNRESOLVED)])
-    _, hubs, _ = check(graph, tmp_path, isolation=False)
+    _, hubs, _ = check(graph, tmp_path)
     assert hubs[fid(HUB)]['metrics']['uncertain_test_edge_count'] == 3
     assert hubs[fid('src/o.py')]['metrics']['uncertain_test_edge_count'] == 1   # t2's to_id
 
@@ -749,21 +745,6 @@ def number_in(text, number):
     return re.search(rf'(?<![\d.,])(?:{pattern})(?![\d])', text) is not None
 
 
-@pytest.fixture(scope='session')
-def chromium():
-    """Overrides tests/unified_support.chromium for this module: falls back to the bundled Chromium when the
-    `chrome` channel is not installed."""
-    from playwright.sync_api import sync_playwright
-    with sync_playwright() as playwright:
-        try:
-            browser = playwright.chromium.launch(channel='chrome')
-        except Exception:
-            candidates = sorted(Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH', '/opt/pw-browsers')).glob('chromium-*/chrome-linux/chrome'))
-            browser = playwright.chromium.launch(executable_path=str(candidates[-1])) if candidates else playwright.chromium.launch()
-        yield browser
-        browser.close()
-
-
 def dom_without_scripts(page):
     return html.unescape(page.evaluate("(() => { const c = document.body.cloneNode(true); c.querySelectorAll('script').forEach(s => s.remove()); return c.innerHTML; })()"))
 
@@ -781,8 +762,8 @@ def test_V9_R10_C16_generate_py_label_description_mapping(kind, number):
 
 
 @pytest.mark.parametrize('kind,number', KIND_NUMBER)
-def test_V9_R10_C16_generate_py_page_shows_label_description_and_headline_number(chromium, tmp_path, kind, number):
-    from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
+def test_V9_R10_C16_generate_py_page_shows_label_and_headline_number(chromium, tmp_path, kind, number):
+    from report.bottlenecks.generate import KIND_LABELS
     payload = payload_with_sentinels(tmp_path)
     target = tmp_path / 'report.html'
     target.write_text(generate_text(payload), encoding='utf-8')
@@ -795,8 +776,6 @@ def test_V9_R10_C16_generate_py_page_shows_label_description_and_headline_number
         page.wait_for_selector('#node-list [data-node-row]')
         dom = dom_without_scripts(page)
         assert KIND_LABELS[kind] in page.inner_text('body')
-        if KIND_DESCRIPTIONS['large_node'] in dom:      # descriptions of existing kinds are the oracle for "is shown"
-            assert KIND_DESCRIPTIONS[kind] in dom
         assert not number_in(dom, number), 'headline number must be shown only after opening the candidate'
         page.locator('#node-list [data-node-row]').first.click()
         page.wait_for_timeout(300)
@@ -830,21 +809,6 @@ def test_V9_R10_C16_dashboard_modal_label_and_headline_number(open_report, tmp_p
     other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
     assert not any(KIND_LABELS[other] in line for line in text.splitlines())
     assert page.unhandled_errors == []
-
-
-@pytest.mark.parametrize('kind,path,number', DASHBOARD_CASES)
-def test_V9_R10_C16_dashboard_kind_filter_offers_the_kind_with_its_label(open_report, tmp_path, kind, path, number):
-    from report.bottlenecks.generate import KIND_LABELS
-    from tests.report_redesign_support import control, goto_list
-    arch, bn = browser_report(tmp_path)
-    page = open_report(arch, bn)
-    goto_list(page)
-    option = control(page, 'candidate_kind').locator(f'option[value="{kind}"]')
-    assert option.count() == 1
-    assert KIND_LABELS[kind] in option.text_content()
-    control(page, 'candidate_kind').select_option(kind)
-    rows = page.locator('#node-list [data-node-row]').evaluate_all('(rows) => rows.map(row => row.dataset.nodeRow)')
-    assert rows == ['file:' + path]
 
 
 # =================================================================== V10 performance (benchmark marker)

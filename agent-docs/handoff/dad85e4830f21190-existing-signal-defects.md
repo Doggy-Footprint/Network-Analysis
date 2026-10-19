@@ -31,6 +31,7 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 | F8 | `large_node`(symbol) | 개행으로 끝나는 파일의 module end_line이 1 크다. | 5줄 파일, 임계 5 → `line_count=6` 후보 / 없음 | `python/symbols.py:368`, `typescript/analyzer.py:251`, `kotlin/analyzer.py:172`, `bottlenecks/core.py:70` |
 | F9 | `large_node`(file) | `str.splitlines()`가 `\x0c` 등도 줄바꿈으로 센다. 토큰 비용은 후보를 만들지 않아, 한 줄짜리 168KB 파일(token_cost 66502)이 후보가 되지 않는다. | 위 입력 → 후보 없음 | `repository/models.py:9-10`, `bottlenecks/core.py:181-185` |
 | F10 | PageRank 가중치 | 출발 노드의 나가는 가중치 합으로 정규화해서, 나가는 엣지가 하나뿐이면 가중치가 반영되지 않는다. fan_in/fan_out, betweenness, `hop_2_token_cost`는 가중치를 쓰지 않는다. | `pagerank({'a':{'b':1.0}})` == `pagerank({'a':{'b':0.3}})` | `analysis/graph_metrics.py:47, 59, 110, 119` |
+| F11 | TS 테스트 파일 엣지 | TypeScript analyzer는 IMPORTS 엣지를 만들지 않고, 선언된 심볼 안의 사용(TYPE_USES, CALLS)만 엣지로 만든다. jest `describe`/`it` 콜백처럼 모듈 최상위 익명 함수 안의 사용은 엣지가 되지 않는다. 그래서 `*.spec.ts`에서 `TESTS` 엣지가 하나도 나오지 않고, `untested_hub`가 TS 저장소에서 과다 발생한다. | typescript-nestjs-realworld `src/tag/tag.controller.spec.ts`가 `./tag.entity`를 import하고 `TagEntity`를 사용 → spec 파일의 엣지는 CONFIGURES 2개뿐, `tag.entity.ts`가 `untested_hub` / spec→entity TESTS 엣지 | `language_analyzers/typescript/analyzer.py` |
 
 ## Failed Attempts
 
@@ -41,7 +42,7 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 ## Next Step
 
 1. 결함별로 의도된 동작인지 먼저 확인한다. F10과 F3 일부는 "recall 우선" 정책에서 나온 설계일 수 있다.
-2. 우선순위 제안: F1 → F3·F4 → F5 → F6 → F7 → F8·F9 → F10. 앞의 것일수록 후보가 거꾸로 나오거나 대부분 파일에 나와 신호 가치를 잃는다.
+2. 우선순위 제안: F11 → F1 → F3·F4 → F5 → F6 → F7 → F8·F9 → F10. 앞의 것일수록 후보가 거꾸로 나오거나 대부분 파일에 나와 신호 가치를 잃는다.
 3. 각 수정은 `workflow-approach`로 진행한다. 재현 입력은 검수 agent가 만든 scratchpad fixture(세션 종료 시 사라짐) 대신 테스트 fixture로 다시 만든다.
 
 ## Open Questions

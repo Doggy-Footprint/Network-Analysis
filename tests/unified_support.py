@@ -1,3 +1,4 @@
+import os
 import copy
 from pathlib import Path
 
@@ -33,7 +34,13 @@ def document(arch, bottlenecks=None, **kwargs):
 @pytest.fixture(scope='session')
 def chromium():
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel="chrome")
+        try:
+            browser = playwright.chromium.launch(channel="chrome")
+        except Exception:
+            bundled = sorted(Path(os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/opt/pw-browsers")).glob("chromium-*/chrome-linux/chrome"))
+            if not bundled:
+                raise
+            browser = playwright.chromium.launch(executable_path=str(bundled[-1]))
         yield browser
         browser.close()
 
