@@ -63,7 +63,7 @@ class E:
 
 @dataclass
 class Graph:
-    """files: {path: (category, line_count)}; boundary: ids of external nodes (no 'file:' prefix)."""
+    """files: {path: (category, content/span lines[, cost.line_count])}; boundary: ids of external nodes (no 'file:' prefix)."""
     files: dict
     edges: list = field(default_factory=list)
     boundary: tuple = ()
@@ -75,15 +75,17 @@ class Graph:
         return 'boundary' if name in self.boundary else self.files[name][0]
 
     def snapshot_and_architecture(self):
-        contents = {path: 'x\n' * lines for path, (_, lines) in self.files.items()}
+        contents = {path: 'x\n' * entry[1] for path, entry in self.files.items()}
         snap = snapshot(contents)
         flags_of = {'production': [], 'test': ['test'], 'generated': ['generated'], 'vendored': ['vendored']}
         nodes = []
-        for path, (category, lines) in self.files.items():
+        for path, entry in self.files.items():
+            category, lines = entry[0], entry[1]
+            cost_lines = entry[2] if len(entry) > 2 else lines
             meta = {'file_path': path, 'granularity': 'file'}
             nodes.append(GraphNode(fid(path), path, 'file', 'file', kind='file', language=path.rsplit('.', 1)[-1],
                                    span=SourceSpan(path, 1, lines) if lines else None, symbol_path=path,
-                                   cost=NodeCost(lines, 2 * lines, lines),
+                                   cost=NodeCost(lines, 2 * lines, cost_lines),
                                    flags=list(flags_of[category]), provenance='file-aggregation', metadata=meta))
         for name in self.boundary:
             nodes.append(GraphNode(name, name, 'module', 'module', kind='module', provenance='python-core', cost=NodeCost(0, 0, 0),
@@ -127,7 +129,7 @@ class Model:
 
 
 def graph_model(graph):
-    files = {fid(path): (category, lines) for path, (category, lines) in graph.files.items()}
+    files = {fid(path): (entry[0], entry[2] if len(entry) > 2 else entry[1]) for path, entry in graph.files.items()}
     edges = [(graph.ident(e.source), graph.ident(e.target), e.relation, e.confidence, e.resolution,
               tuple(graph.ident(c) for c in e.candidates)) for e in graph.edges]
     return Model(files, edges)

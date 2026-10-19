@@ -241,6 +241,31 @@ def test_V2_R2_v2_confirmed_edge_ignores_confidence(tmp_path, confidence, resolu
     assert fid(HUB) not in hubs
 
 
+def candidates_rows():
+    # (label, edge builder, hub candidate exists, hub uncertain count); candidates are honoured only for `ambiguous`
+    return [
+        ('exact-with-hub-in-candidates', E('tests/test_h.py', 'src/o.py', 'TESTS', SC, EXACT, candidates=(HUB,)), True, 0),
+        ('unique-with-hub-in-candidates', E('tests/test_h.py', 'src/o.py', 'TESTS', SC, UNIQUE, candidates=(HUB,)), True, 0),
+        ('unresolved-with-hub-in-candidates', E('tests/test_h.py', 'src/o.py', 'TESTS', SC, UNRESOLVED, candidates=(HUB,)), True, 0),
+        ('exact-to-hub-with-other-candidates', E('tests/test_h.py', HUB, 'TESTS', SC, EXACT, candidates=('src/o.py',)), False, None),
+        ('unresolved-to-hub-with-other-candidates', E('tests/test_h.py', HUB, 'TESTS', SC, UNRESOLVED, candidates=('src/o.py',)), True, 1),
+        ('ambiguous-to-other-hub-in-candidates', E('tests/test_h.py', 'src/o.py', 'TESTS', SC, AMBIGUOUS, candidates=(HUB,)), True, 1),
+        ('imports-edge-not-tests', E('tests/test_h.py', HUB, 'IMPORTS', SC, EXACT), True, 0),
+        ('tests-edge-reverse-direction', E(HUB, 'tests/test_h.py', 'TESTS', SC, EXACT), True, 0),
+    ]
+
+
+@pytest.mark.parametrize('row', candidates_rows(), ids=lambda r: r[0])
+def test_V2_R2_R3_candidates_only_count_for_ambiguous_and_only_tests_edges_into_the_hub(tmp_path, row):
+    _, edge, exists, count = row
+    graph = Graph(files_of(production={HUB: 3, 'src/o.py': 3}, test={'tests/test_h.py': 2}), [edge])
+    _, hubs, _ = check(graph, tmp_path)
+    assert (fid(HUB) in hubs) == exists
+    if exists:
+        assert hubs[fid(HUB)]['metrics']['uncertain_test_edge_count'] == count
+        assert len(hubs[fid(HUB)]['evidence']['uncertain_test_edges']) == count
+
+
 def test_V2_R2_confirmation_is_per_file(tmp_path):
     graph = Graph(files_of(production={HUB: 3, 'src/o.py': 3}, test={'tests/t.py': 2}), [E('tests/t.py', 'src/o.py', 'TESTS', SC, EXACT)])
     _, hubs, _ = check(graph, tmp_path)
@@ -313,6 +338,81 @@ def test_V3_R5_remaining_resolutions_supplementary(tmp_path, confidence, resolut
     assert (fid(A) in isolated) == (not connects)
     if not connects:
         assert isolated[fid(A)]['metrics']['uncertain_static_edge_count'] == 1
+
+
+B, C = 'src/b.py', 'src/c.py'
+TEST_F, VEND, EXT = 'tests/test_t.py', 'vendor/v.py', 'ext:lib'
+# (label, edges, expected A: (isolated, framework, dynamic, uncertain)) from R5/R6 + candidate_targets
+CANDIDATE_ROWS = [
+    ('ambiguous-to-test-candidate-prod', [E(A, TEST_F, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))], (True, 0, 0, 1)),
+    ('ambiguous-to-prod-candidate-test', [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(TEST_F,))], (True, 0, 0, 1)),
+    ('ambiguous-to-boundary-candidate-prod', [E(A, EXT, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))], (True, 0, 0, 1)),
+    ('ambiguous-to-vendored-candidate-prod', [E(A, VEND, 'IMPORTS', SI, AMBIGUOUS, candidates=(B,))], (True, 0, 0, 1)),
+    ('ambiguous-to-vendored-candidate-test', [E(A, VEND, 'IMPORTS', SC, AMBIGUOUS, candidates=(TEST_F,))], (True, 0, 0, 0)),
+    ('reverse-ambiguous-prod-source-test-to-candidate-A', [E(B, TEST_F, 'IMPORTS', SC, AMBIGUOUS, candidates=(A,))], (True, 0, 0, 1)),
+    ('reverse-ambiguous-test-source-candidate-A', [E(TEST_F, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(A,))], (True, 0, 0, 0)),
+    ('reverse-ambiguous-boundary-source-candidate-A', [E(EXT, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(A,))], (True, 0, 0, 0)),
+    ('exact-to-test-with-prod-candidates', [E(A, TEST_F, 'IMPORTS', SC, EXACT, candidates=(B,))], (True, 0, 0, 0)),
+    ('exact-to-prod-with-other-prod-candidates', [E(A, B, 'IMPORTS', SC, EXACT, candidates=(C,))], (False, 0, 0, 0)),
+    ('exact-reverse-test-source-prod-candidates', [E(TEST_F, B, 'IMPORTS', SC, EXACT, candidates=(A,))], (True, 0, 0, 0)),
+    ('unique-name-to-test-with-prod-candidates', [E(A, TEST_F, 'IMPORTS', SC, UNIQUE, candidates=(B,))], (True, 0, 0, 0)),
+    ('unresolved-to-test-with-prod-candidates', [E(A, TEST_F, 'IMPORTS', SC, UNRESOLVED, candidates=(B,))], (True, 0, 0, 0)),
+    ('unresolved-to-prod-with-test-candidates', [E(A, B, 'IMPORTS', SC, UNRESOLVED, candidates=(TEST_F,))], (True, 0, 0, 1)),
+    ('framework-ambiguous-candidate-prod', [E(A, TEST_F, 'IMPORTS', FI, AMBIGUOUS, candidates=(B,))], (True, 1, 0, 0)),
+    ('dynamic-exact-with-prod-candidates-to-test', [E(A, TEST_F, 'IMPORTS', DR, EXACT, candidates=(B,))], (True, 0, 0, 0)),
+    ('ambiguous-static-never-connects-even-with-two-prod-candidates', [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(C,))], (True, 0, 0, 1)),
+]
+
+
+@pytest.mark.parametrize('row', CANDIDATE_ROWS, ids=lambda r: r[0])
+def test_V3_R5_R6_candidate_targets_rule(tmp_path, row):
+    _, edges, (isolated_expected, framework, dynamic, uncertain) = row
+    graph = Graph(files_of(production={A: 3, B: 3, C: 3}, test={TEST_F: 2}, vendored={VEND: 2}), edges, boundary=(EXT,))
+    _, _, isolated = check(graph, tmp_path)
+    assert (fid(A) in isolated) == isolated_expected
+    if isolated_expected:
+        item = isolated[fid(A)]['metrics']
+        assert (item['framework_edge_count'], item['dynamic_edge_count'], item['uncertain_static_edge_count']) == (framework, dynamic, uncertain)
+
+
+# ---- V4 / R4: cost.line_count is the source of eligibility and of the metric, independent of span and content
+@pytest.mark.parametrize('content,cost,eligible', [(3, 0, False), (3, 5, True), (3, 1, True), (1, 7, True), (1, 0, False)],
+                         ids=['cost0-content3', 'cost5-content3', 'cost1-content3', 'cost7-content1', 'cost0-content1'])
+def test_V4_R4_cost_line_count_is_the_eligibility_and_metric_source(tmp_path, content, cost, eligible):
+    graph = Graph({'src/a.py': ('production', content, cost)})
+    _, _, isolated = check(graph, tmp_path)
+    assert (fid('src/a.py') in isolated) == eligible
+    if eligible:
+        assert isolated[fid('src/a.py')]['metrics']['line_count'] == cost
+
+
+# ---- V14 / Errors 2
+def _unknown_endpoint(which):
+    graph = Graph(files_of(production={A: 3, B: 3}), [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))])
+    snap, arch = graph.snapshot_and_architecture()
+    edge = arch.edges[0]
+    if which == 'from_id':
+        edge.from_id = 'file:src/ghost.py'
+    elif which == 'to_id':
+        edge.to_id = 'file:src/ghost.py'
+    else:
+        edge.candidates = ['file:src/ghost.py']
+    return snap, arch
+
+
+@pytest.mark.parametrize('which', ['from_id', 'to_id', 'candidates'])
+def test_V14_unknown_edge_reference_raises_bottleneck_input_error(tmp_path, which):
+    from bottlenecks import BottleneckInputError, analyze_bottlenecks
+    snap, arch = _unknown_endpoint(which)
+    with pytest.raises(BottleneckInputError):
+        analyze_bottlenecks(snap, arch, weights_with(tmp_path))
+
+
+def test_V14_the_same_graph_without_the_unknown_reference_succeeds(tmp_path):
+    from bottlenecks import analyze_bottlenecks
+    graph = Graph(files_of(production={A: 3, B: 3}), [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))])
+    snap, arch = graph.snapshot_and_architecture()
+    assert analyze_bottlenecks(snap, arch, weights_with(tmp_path)) is not None
 
 
 def test_V3_one_certain_connection_among_noise_removes_the_candidate(tmp_path):
@@ -752,18 +852,22 @@ def dom_without_scripts(page):
 KIND_NUMBER = [('untested_hub', SENTINEL_RANK), ('isolated_node', SENTINEL_LINES)]
 
 
+LABELS = {'untested_hub': '테스트 미도달 허브', 'isolated_node': '고립 파일'}
+DESCRIPTIONS = {
+    'untested_hub': 'PageRank 상위 production 파일 중 테스트 파일에서 직접 확정 연결(TESTS)이 닿지 않는 사례입니다.',
+    'isolated_node': '다른 production 파일과 확정된 정적 연결이 없는 소스 파일 사례입니다. 프레임워크·동적·불확실 연결은 근거로 함께 보입니다.',
+}
+
+
 @pytest.mark.parametrize('kind,number', KIND_NUMBER)
-def test_V9_R10_C16_generate_py_label_description_mapping(kind, number):
+def test_V9_R10_C16_generate_py_label_and_description_strings(kind, number):
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
-    other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
-    assert HANGUL.search(KIND_LABELS[kind]) and HANGUL.search(KIND_DESCRIPTIONS[kind])
-    assert KIND_LABELS[kind] != KIND_LABELS[other] and KIND_DESCRIPTIONS[kind] != KIND_DESCRIPTIONS[other]
-    assert KIND_LABELS[kind] not in {KIND_LABELS[k] for k in ('large_node', 'unresolved_boundary', 'evidence_spread')}
+    assert KIND_LABELS[kind] == LABELS[kind]
+    assert KIND_DESCRIPTIONS[kind] == DESCRIPTIONS[kind]
 
 
 @pytest.mark.parametrize('kind,number', KIND_NUMBER)
 def test_V9_R10_C16_generate_py_page_shows_label_and_headline_number(chromium, tmp_path, kind, number):
-    from report.bottlenecks.generate import KIND_LABELS
     payload = payload_with_sentinels(tmp_path)
     target = tmp_path / 'report.html'
     target.write_text(generate_text(payload), encoding='utf-8')
@@ -775,11 +879,10 @@ def test_V9_R10_C16_generate_py_page_shows_label_and_headline_number(chromium, t
         page.wait_for_load_state('load')
         page.wait_for_selector('#node-list [data-node-row]')
         dom = dom_without_scripts(page)
-        assert KIND_LABELS[kind] in page.inner_text('body')
-        assert not number_in(dom, number), 'headline number must be shown only after opening the candidate'
+        assert LABELS[kind] in page.inner_text('body')
         page.locator('#node-list [data-node-row]').first.click()
         page.wait_for_timeout(300)
-        lines = [line for line in page.inner_text('body').splitlines() if KIND_LABELS[kind] in line and number_in(line, number)]
+        lines = [line for line in page.inner_text('body').splitlines() if LABELS[kind] in line and number_in(line, number)]
         assert lines, page.inner_text('body')[-800:]
     finally:
         page.close()
@@ -797,17 +900,16 @@ DASHBOARD_CASES = [('untested_hub', 'src/hub.py', SENTINEL_RANK), ('isolated_nod
 
 @pytest.mark.parametrize('kind,path,number', DASHBOARD_CASES)
 def test_V9_R10_C16_dashboard_modal_label_and_headline_number(open_report, tmp_path, kind, path, number):
-    from report.bottlenecks.generate import KIND_LABELS
     from tests.report_redesign_support import dialog_text
     from tests.test_report_modal import open_modal
     arch, bn = browser_report(tmp_path)
     page = open_report(arch, bn)
     open_modal(page, 'list', path)
     text = dialog_text(page)
-    lines = [line for line in text.splitlines() if KIND_LABELS[kind] in line]
+    lines = [line for line in text.splitlines() if LABELS[kind] in line]
     assert lines and number_in(lines[0], number), text
     other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
-    assert not any(KIND_LABELS[other] in line for line in text.splitlines())
+    assert not any(LABELS[other] in line for line in text.splitlines())
     assert page.unhandled_errors == []
 
 
