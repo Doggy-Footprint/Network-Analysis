@@ -1,0 +1,31 @@
+# F9: source without trailing newline has L=1 (R1); the file node line_count and span end_line follow it.
+# F8: module span end_line = max(1, L) (R3); 'export const a..;\nexport const b..;\n' has L=2.
+diff --git a/tests/test_file_analysis_core.py b/tests/test_file_analysis_core.py
+index 686e0a5..44fd43a 100644
+--- a/tests/test_file_analysis_core.py
++++ b/tests/test_file_analysis_core.py
+@@ -135,9 +135,9 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
+     assert all('analysis' not in n['metadata'] for n in serialize(result)['details']['nodes'])
+     unicode_snap,unicode_file=converted({'a.py':'value = "a\u2028b"'},[node('value','a.py','constant')])
+     unicode_data=serialize(unicode_file)
+-    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':2}
++    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':1}
+     file_span=unicode_data['nodes'][0]['span']
+-    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,2)
++    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,1)
+     original_span=unicode_data['details']['nodes'][0]['span']
+     assert (original_span['file_path'],original_span['start_line'],original_span['end_line'])==('a.py',1,1)
+     unicode_report=payload(unicode_snap,unicode_file,tmp_path)
+diff --git a/tests/test_typescript_graph.py b/tests/test_typescript_graph.py
+index b5d6f35..2e30fb1 100644
+--- a/tests/test_typescript_graph.py
++++ b/tests/test_typescript_graph.py
+@@ -319,7 +319,7 @@ class TestTypedFields(TypeScriptFixture):
+         nodes, _, _ = self.graph()
+ 
+         self.assertEqual(nodes["ts:mod.ts"].span.start_line, 1)
+-        self.assertEqual(nodes["ts:mod.ts"].span.end_line, 3)
++        self.assertEqual(nodes["ts:mod.ts"].span.end_line, 2)
+ 
+     def test_ambiguous_call_records_candidates_and_flags_the_symbols(self):
+         self.write("a.ts", "export function shared(): number {\n  return 1;\n}\n")

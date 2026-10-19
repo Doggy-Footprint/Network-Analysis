@@ -54,7 +54,7 @@ def write_tree(root, files):
 
 
 def ref_resolve_relative(importer, specifier, project_files):
-    """R5. project_files: posix paths of analysed modules. Returns the first match or None."""
+    """R5 (v3, four candidate groups in order). project_files: posix paths of analysed modules. Returns the first match or None."""
     base = posixpath.normpath(posixpath.join(posixpath.dirname(importer), specifier))
     if base == '..' or base.startswith('../'):
         return None
@@ -62,6 +62,9 @@ def ref_resolve_relative(importer, specifier, project_files):
     if posixpath.splitext(base)[1] in TS_EXTENSIONS:
         candidates.append(base)
     candidates.extend(base + ext for ext in TS_EXTENSIONS)
+    suffix = posixpath.splitext(base)[1]
+    if suffix in TS_EXTENSIONS:
+        candidates.extend(base[:-len(suffix)] + ext for ext in TS_EXTENSIONS)
     candidates.extend(f'{base}/index{ext}' for ext in TS_EXTENSIONS)
     for candidate in candidates:
         if candidate in project_files:

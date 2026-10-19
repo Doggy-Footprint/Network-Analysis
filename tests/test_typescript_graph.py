@@ -319,7 +319,7 @@ class TestTypedFields(TypeScriptFixture):
         nodes, _, _ = self.graph()
 
         self.assertEqual(nodes["ts:mod.ts"].span.start_line, 1)
-        self.assertEqual(nodes["ts:mod.ts"].span.end_line, 3)
+        self.assertEqual(nodes["ts:mod.ts"].span.end_line, 2)
 
     def test_ambiguous_call_records_candidates_and_flags_the_symbols(self):
         self.write("a.ts", "export function shared(): number {\n  return 1;\n}\n")

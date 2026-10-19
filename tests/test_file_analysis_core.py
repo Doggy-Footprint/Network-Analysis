@@ -135,9 +135,9 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
     assert all('analysis' not in n['metadata'] for n in serialize(result)['details']['nodes'])
     unicode_snap,unicode_file=converted({'a.py':'value = "a\u2028b"'},[node('value','a.py','constant')])
     unicode_data=serialize(unicode_file)
-    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':2}
+    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':1}
     file_span=unicode_data['nodes'][0]['span']
-    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,2)
+    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,1)
     original_span=unicode_data['details']['nodes'][0]['span']
     assert (original_span['file_path'],original_span['start_line'],original_span['end_line'])==('a.py',1,1)
     unicode_report=payload(unicode_snap,unicode_file,tmp_path)

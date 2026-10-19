@@ -235,18 +235,24 @@ RULE_CASES = {
     'rule2-later-extension-when-ts-absent': ('a/b.ts', './view.model',
                                              {'a/view.model.tsx': 'export const V = 1;\n', 'a/view.ts': 'export {}\n'},
                                              'a/view.model.tsx'),
-    'rule3-directory-index': ('a/b.ts', './dir',
+    'rule3-js-specifier-replaced-by-ts': ('a/b.ts', './foo.js', {'a/foo.ts': 'export const F = 1;\n'}, 'a/foo.ts'),
+    'rule3-js-specifier-later-extension': ('a/b.ts', './foo.js', {'a/foo.tsx': 'export const F = 1;\n'}, 'a/foo.tsx'),
+    'rule3-dotted-js-specifier': ('a/b.ts', './foo.bar.js', {'a/foo.bar.ts': 'export const F = 1;\n', 'a/foo.ts': 'export {}\n'},
+                                  'a/foo.bar.ts'),
+    'rule1-js-file-itself-wins-over-ts': ('a/b.ts', './foo.js', {'a/foo.js': 'export const F = 1;\n', 'a/foo.ts': 'export {}\n'},
+                                          'a/foo.js'),
+    'rule4-directory-index': ('a/b.ts', './dir',
                               {'a/dir/index.ts': 'export class I {}\n'}, 'a/dir/index.ts'),
-    'rule3-dotted-directory-index': ('a/b.ts', './my.dir',
+    'rule4-dotted-directory-index': ('a/b.ts', './my.dir',
                                      {'a/my.dir/index.ts': 'export class I {}\n', 'a/my.ts': 'export {}\n'}, 'a/my.dir/index.ts'),
-    'rule4-extension-wins-over-index': ('a/b.ts', './x',
+    'rule5-extension-wins-over-index': ('a/b.ts', './x',
                                         {'a/x.ts': 'export class P {}\n', 'a/x/index.ts': 'export class Q {}\n'}, 'a/x.ts'),
-    'rule4-dotted-extension-wins-over-index': ('a/b.ts', './y.entity',
+    'rule5-dotted-extension-wins-over-index': ('a/b.ts', './y.entity',
                                                {'a/y.entity.ts': 'export class P {}\n', 'a/y.entity/index.ts': 'export class Q {}\n'},
                                                'a/y.entity.ts'),
-    'rule5-missing-dotted': ('a/b.ts', './missing.entity', {'a/other.ts': 'export {}\n'}, None),
-    'rule5-missing-plain': ('a/b.ts', './missing', {'a/other.ts': 'export {}\n'}, None),
-    'rule6-outside-project': ('a/b.ts', '../../outside', {'a/other.ts': 'export {}\n'}, None),
+    'rule6-missing-dotted': ('a/b.ts', './missing.entity', {'a/other.ts': 'export {}\n'}, None),
+    'rule6-missing-plain': ('a/b.ts', './missing', {'a/other.ts': 'export {}\n'}, None),
+    'rule7-outside-project': ('a/b.ts', '../../outside', {'a/other.ts': 'export {}\n'}, None),
 }
 
 
@@ -596,3 +602,21 @@ def test_V8_C14_synthetic_unrelated_edges_unchanged_characterization(tmp_path):
     rows = [r for r in edge_rows(ts_analyze(root)) if r[0] == 'ts:a/b.ts' and r[1] == 'IMPORTS']
     assert sorted((r[2], r[3], r[4]) for r in rows) == [('ts:a/dir/index.ts', 'static_certain', 'exact'),
                                                          ('ts:a/p.ts', 'static_certain', 'exact')]
+
+
+# ---------------------------------------------------------------- V12: configuration attribution (R13, C15)
+
+CONFIG_CASES = {
+    'module-span-equals-single-function-span': ("def consume():\n    return 'KEY'\n", 'py:consumer#consume'),
+    'function-strictly-smaller-than-module': ("import os\n\n\ndef consume():\n    return 'KEY'\n", 'py:consumer#consume'),
+    'line-covered-by-no-symbol': ("print('KEY')\n\n\ndef other():\n    return 1\n", 'py:consumer'),
+}
+
+
+@pytest.mark.parametrize('label', sorted(CONFIG_CASES))
+def test_V12_configures_target_by_smallest_covering_node(tmp_path, label):
+    source, expected_target = CONFIG_CASES[label]
+    write_tree(tmp_path, {'.env': 'KEY=value\n', 'consumer.py': source})
+    rows = edge_rows(python_analyze(tmp_path))
+    configures = [r for r in rows if r[1] == 'CONFIGURES']
+    assert configures == [('config:.env:KEY', 'CONFIGURES', expected_target, 'static_inferred', 'exact', ())]
