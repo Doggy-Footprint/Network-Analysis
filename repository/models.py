@@ -4,10 +4,25 @@ from functools import cached_property
 from types import MappingProxyType
 
 
+def split_source_lines(text):
+    if not text:
+        return ()
+    pieces = text.split("\n")
+    if pieces[-1] == "":
+        pieces.pop()
+        last = len(pieces)
+    else:
+        last = len(pieces) - 1
+    return tuple(
+        piece[:-1] if index < last and piece.endswith("\r") else piece
+        for index, piece in enumerate(pieces)
+    )
+
+
 class SourceText(str):
     @cached_property
     def lines(self):
-        return tuple(self.splitlines())
+        return split_source_lines(self)
 
     @cached_property
     def ranges(self):

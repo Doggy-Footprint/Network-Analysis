@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
 from language_analyzers.core import flags as flag_names
-from language_analyzers.core.cost import cost_for_span
+from language_analyzers.core.cost import cost_for_span, module_end_line
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.external_imports import (
     TsconfigAliases,
@@ -248,7 +248,7 @@ class TypeScriptAnalyzer:
             source=source,
             text=text,
             tree=tree,
-            end_line=max(1, text.count("\n") + 1),
+            end_line=module_end_line(text),
             flags=flag_names.path_flags(file_key),
         )
 
@@ -864,7 +864,7 @@ class TypeScriptAnalyzer:
         joined = file_path.parent / specifier
         base = Path(os.path.normpath(joined)) if self.snapshot is not None else joined.resolve()
         candidates = [base] if base.suffix in SOURCE_EXTENSIONS else []
-        candidates += [base.with_suffix(extension) for extension in SOURCE_EXTENSIONS]
+        candidates += [Path(str(base) + extension) for extension in SOURCE_EXTENSIONS]
         candidates += [base / f"index{extension}" for extension in SOURCE_EXTENSIONS]
         for candidate in candidates:
             if self.snapshot is None and not candidate.is_file():
