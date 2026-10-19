@@ -92,6 +92,12 @@ class _Import:
     is_namespace: bool = False
 
 
+_KEYED_ATTR_CALLS = {
+    "Reflect.get", "Reflect.set", "Reflect.has", "Reflect.defineProperty",
+    "Reflect.deleteProperty", "Object.defineProperty",
+}
+
+
 @dataclass
 class _Module:
     id: str
@@ -105,6 +111,7 @@ class _Module:
     module_specifiers: List[Tuple[str, int]] = field(default_factory=list)
     reexport_specifiers: List[Tuple[Optional[str], str, int]] = field(default_factory=list)
     dynamic_specifiers: List[Tuple[str, int]] = field(default_factory=list)
+    dynamic_flags: Set[str] = field(default_factory=set)
     defines: Dict[str, str] = field(default_factory=dict)
     flags: List[str] = field(default_factory=list)
 
@@ -276,13 +283,26 @@ class TypeScriptAnalyzer:
         if self._is_barrel(module):
             module.flags.append(flag_names.REEXPORT)
         for node in ts.descendants(module.tree.root_node):
+            if node.type == "new_expression":
+                constructor = node.child_by_field_name("constructor")
+                if constructor is not None and constructor.type == "identifier" \
+                        and ts.node_text(module.source, constructor) == "Function":
+                    module.dynamic_flags.add(flag_names.DYNAMIC_EVAL)
+                continue
             if node.type != "call_expression":
                 continue
             function = node.child_by_field_name("function")
             if function is None:
                 continue
             head = ts.node_text(module.source, function)
+            if function.type == "identifier" and head in ("eval", "Function"):
+                module.dynamic_flags.add(flag_names.DYNAMIC_EVAL)
+            elif head == "Reflect.apply" or (
+                head in _KEYED_ATTR_CALLS and not ts.is_literal_key(ts.call_argument(node, 1))
+            ):
+                module.dynamic_flags.add(flag_names.DYNAMIC_ATTR)
             if head in ("import", "require"):
+                module.dynamic_flags.add(flag_names.DYNAMIC_IMPORT)
                 arguments = node.child_by_field_name("arguments")
                 literal = ts.child_of_type(arguments, "string", "template_string") if arguments else None
                 value = ts.string_literal_value(module.source, literal) if literal is not None else None
@@ -649,10 +669,10 @@ class TypeScriptAnalyzer:
                     Confidence.DYNAMIC_REQUIRED, Resolution.EXACT,
                     SourceSpan(module.file_key, line, line),
                 )
-        if module.dynamic_specifiers:
-            node = self._nodes[module.id]
-            if flag_names.DYNAMIC_IMPORT not in node.flags:
-                node.flags.append(flag_names.DYNAMIC_IMPORT)
+        node = self._nodes[module.id]
+        for flag in (flag_names.DYNAMIC_IMPORT, flag_names.DYNAMIC_ATTR, flag_names.DYNAMIC_EVAL):
+            if flag in module.dynamic_flags and flag not in node.flags:
+                node.flags.append(flag)
 
     def _symbol_edges(self, symbol: _Symbol):
         module = self._modules[symbol.file_key]

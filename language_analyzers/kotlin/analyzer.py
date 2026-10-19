@@ -344,6 +344,9 @@ class KotlinAnalyzer:
             if target and self._symbols[target].kind in (NodeKind.CLASS, NodeKind.INTERFACE):
                 self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
                                SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
+        for flag in sorted(ka.dynamic_call_flags(symbol.node, source)):
+            if flag not in self._nodes[symbol.id].flags:
+                self._nodes[symbol.id].flags.append(flag)
         unresolved: List[Dict[str, Any]] = []
         for call in ka.call_expressions(symbol.node, source):
             name = call["name"]

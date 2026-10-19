@@ -90,6 +90,22 @@ def descendants_excluding_definitions(node) -> Iterator[Any]:
         stack.extend(current.named_children)
 
 
+def call_argument(node, index: int) -> Optional[Any]:
+    arguments = node.child_by_field_name("arguments")
+    if arguments is None:
+        return None
+    values = [child for child in arguments.named_children if child.type != "comment"]
+    return values[index] if index < len(values) else None
+
+
+def is_literal_key(node) -> bool:
+    if node is None:
+        return False
+    if node.type == "template_string":
+        return child_of_type(node, "template_substitution") is None
+    return node.type in ("string", "number")
+
+
 def string_literal_value(source: bytes, node) -> Optional[str]:
     if node is None or node.type not in ("string", "template_string"):
         return None

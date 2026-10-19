@@ -7,7 +7,11 @@ since Kotlin wildcard imports make exact resolution impossible from syntax alone
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
+
+from language_analyzers.core import flags as flag_names
+
+_MEMBER_LOOKUPS = {"getMethod", "getDeclaredMethod", "getField", "getDeclaredField"}
 
 _PARSER = None
 
@@ -315,3 +319,51 @@ def call_expressions(node, source: bytes) -> List[Dict[str, Any]]:
 
     walk(node)
     return results
+
+
+def dynamic_call_flags(node, source: bytes) -> Set[str]:
+    """Reflective class loading and member lookups in a subtree. Only calls with a
+    receiver count: a bare `forName(n)` is a user-defined function, not java.lang.Class."""
+    found: Set[str] = set()
+
+    def walk(n):
+        if n.type == "call_expression":
+            navigation = n.children[0] if n.children and n.children[0].type == "navigation_expression" else None
+            suffixes = [c for c in navigation.children if c.type == "navigation_suffix"] if navigation else []
+            names = [c for c in suffixes[-1].children if c.type == "simple_identifier"] if suffixes else []
+            if names:
+                method = node_text(source, names[-1])
+                receiver = source[navigation.start_byte:suffixes[-1].start_byte].decode("utf-8", "replace")
+                owner = receiver.strip().rstrip("?!").strip().rsplit(".", 1)[-1].strip()
+                if (method == "forName" and owner == "Class") or (method == "load" and owner == "ServiceLoader") \
+                        or method == "loadClass":
+                    found.add(flag_names.DYNAMIC_IMPORT)
+                elif method in _MEMBER_LOOKUPS and not _is_literal_name(_first_value_argument(n)):
+                    found.add(flag_names.DYNAMIC_ATTR)
+        for c in n.children:
+            walk(c)
+
+    walk(node)
+    return found
+
+
+def _first_value_argument(call):
+    for suffix in call.children:
+        if suffix.type != "call_suffix":
+            continue
+        for arguments in suffix.children:
+            if arguments.type == "value_arguments":
+                for argument in arguments.children:
+                    if argument.type == "value_argument":
+                        values = argument.named_children
+                        return values[-1] if values else None
+                return None
+    return None
+
+
+def _is_literal_name(expression) -> bool:
+    return (
+        expression is not None
+        and expression.type == "string_literal"
+        and not any(c.type.startswith("interpolat") for c in expression.children)
+    )

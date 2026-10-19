@@ -37,6 +37,11 @@ PROVENANCE = "python-core"
 _DYNAMIC_IMPORT_NAMES = {"import_module", "__import__", "importlib.import_module"}
 _DYNAMIC_ATTR_NAMES = {"getattr", "setattr", "hasattr", "delattr"}
 _DYNAMIC_EVAL_NAMES = {"eval", "exec", "globals", "locals", "vars", "compile"}
+_ALIASED_MODULES = {"importlib", "builtins"}
+_ATTRIBUTE_HOOKS = {"__getattr__", "__getattribute__", "__setattr__", "__delattr__"}
+
+# alias -> (module, imported name); the name is None when the alias is the module itself
+_Aliases = Dict[str, Tuple[str, Optional[str]]]
 
 
 @dataclass
@@ -82,12 +87,45 @@ def _receiver_and_name(func: ast.AST) -> Tuple[Optional[str], str]:
     return None, ""
 
 
+def _import_aliases(statements: Sequence[ast.AST]) -> _Aliases:
+    aliases: _Aliases = {}
+    for node in _walk_excluding_defs([
+        statement for statement in statements
+        if not isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))
+    ]):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.asname and alias.name in _ALIASED_MODULES:
+                    aliases[alias.asname] = (alias.name, None)
+        elif isinstance(node, ast.ImportFrom) and node.module in _ALIASED_MODULES and not node.level:
+            for alias in node.names:
+                if alias.asname:
+                    aliases[alias.asname] = (node.module, alias.name)
+    return aliases
+
+
+def _defines_hook(statements: Sequence[ast.AST], names: Set[str]) -> bool:
+    return any(
+        isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef)) and statement.name in names
+        for statement in statements
+    )
+
+
 class _BodyScanner:
     """Collects references and dynamic markers from one symbol's own statements,
     stopping at nested definitions because those are separate symbols."""
 
-    def __init__(self, statements: Sequence[ast.AST], parameters: Sequence[str] = ()):
+    def __init__(
+        self,
+        statements: Sequence[ast.AST],
+        parameters: Sequence[str] = (),
+        module_aliases: Optional[_Aliases] = None,
+    ):
         self.locals: Set[str] = set(parameters)
+        # Names bound by something other than an import; they shadow an import alias.
+        self.rebound: Set[str] = set(parameters)
+        self.aliases: _Aliases = dict(module_aliases or {})
+        self.aliases.update(_import_aliases(statements))
         self.references: List[_Reference] = []
         self.stores: List[Tuple[str, int]] = []
         self.dynamic: Set[str] = set()
@@ -107,13 +145,16 @@ class _BodyScanner:
         for node in nodes:
             if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
                 self.locals.add(node.id)
+                self.rebound.add(node.id)
                 self.stores.append((node.id, node.lineno))
             elif isinstance(node, (ast.comprehension,)):
                 for item in ast.walk(node.target):
                     if isinstance(item, ast.Name):
                         self.locals.add(item.id)
+                        self.rebound.add(item.id)
             elif isinstance(node, ast.ExceptHandler) and node.name:
                 self.locals.add(node.name)
+                self.rebound.add(node.name)
             elif isinstance(node, (ast.Import, ast.ImportFrom)):
                 for alias in node.names:
                     self.locals.add(alias.asname or alias.name.split(".")[0])
@@ -123,17 +164,50 @@ class _BodyScanner:
                 receiver, name = _receiver_and_name(node.func)
                 if name:
                     self.references.append(_Reference(name, receiver, node.lineno, True))
-                self._mark_dynamic(node, receiver, name)
+                self._mark_call(node, receiver, name)
             elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
                 self.references.append(_Reference(node.id, None, node.lineno, False))
+            elif isinstance(node, ast.Subscript):
+                self._mark_dict_subscript(node)
 
-    def _mark_dynamic(self, node: ast.Call, receiver: Optional[str], name: str):
+    def _mark_dict_subscript(self, node: ast.Subscript):
+        if not (isinstance(node.value, ast.Attribute) and node.value.attr == "__dict__"):
+            return
+        key = node.slice
+        if not (isinstance(key, ast.Constant) and isinstance(key.value, str)):
+            self.dynamic.add(flag_names.DYNAMIC_ATTR)
+
+    def _mark_call(self, node: ast.Call, receiver: Optional[str], name: str):
+        func = node.func
+        imports_before = len(self.dynamic_imports)
+        self._mark_dynamic(node, receiver, name)
+        # Aliases and `builtins.` receivers only add judgments; the name-only judgment above
+        # must keep firing so `foo.import_module(x)` is flagged exactly as before.
+        resolved: List[Tuple[Optional[str], str, bool]] = []
+        if isinstance(func, ast.Name):
+            alias = self.aliases.get(func.id)
+            if alias is not None and alias[1] is not None and func.id not in self.rebound:
+                resolved.append((None, alias[1], False))
+        elif isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            alias = self.aliases.get(func.value.id)
+            if alias is not None and alias[1] is None and func.value.id not in self.rebound:
+                resolved.append((alias[0], func.attr, alias[0] == "builtins"))
+            elif func.value.id == "builtins":
+                resolved.append((receiver, name, True))
+        for resolved_receiver, resolved_name, via_builtins in resolved:
+            self._mark_dynamic(node, resolved_receiver, resolved_name, via_builtins)
+        # Every judgment of one call yields the same literal target; keep one edge.
+        del self.dynamic_imports[imports_before + 1:]
+
+    def _mark_dynamic(
+        self, node: ast.Call, receiver: Optional[str], name: str, via_builtins: bool = False,
+    ):
         qualified = f"{receiver}.{name}" if receiver else name
         if name in _DYNAMIC_IMPORT_NAMES or qualified in _DYNAMIC_IMPORT_NAMES:
             self.dynamic.add(flag_names.DYNAMIC_IMPORT)
             if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
                 self.dynamic_imports.append((node.args[0].value, node.lineno))
-        elif name in _DYNAMIC_ATTR_NAMES and receiver is None:
+        elif name in _DYNAMIC_ATTR_NAMES and (receiver is None or via_builtins):
             constant_attribute = (
                 len(node.args) >= 2
                 and isinstance(node.args[1], ast.Constant)
@@ -141,7 +215,7 @@ class _BodyScanner:
             )
             if not constant_attribute:
                 self.dynamic.add(flag_names.DYNAMIC_ATTR)
-        elif name in _DYNAMIC_EVAL_NAMES and receiver is None:
+        elif name in _DYNAMIC_EVAL_NAMES and (receiver is None or via_builtins):
             self.dynamic.add(flag_names.DYNAMIC_EVAL)
 
 
@@ -395,6 +469,9 @@ class PythonGraphAnalyzer:
                 )
 
     def _scan_bodies(self, table: SymbolTable):
+        module_aliases = {
+            name: _import_aliases(entry.tree.body) for name, entry in table.modules.items()
+        }
         for symbol in list(table.by_id.values()):
             node = symbol.node
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -406,15 +483,19 @@ class PythonGraphAnalyzer:
                 for extra in (arguments.vararg, arguments.kwarg):
                     if extra is not None:
                         parameters.append(extra.arg)
-                scanner = _BodyScanner(node.body, parameters)
+                scanner = _BodyScanner(node.body, parameters, module_aliases.get(symbol.module))
             elif isinstance(node, ast.ClassDef):
-                scanner = _BodyScanner(node.body)
+                scanner = _BodyScanner(node.body, module_aliases=module_aliases.get(symbol.module))
+                if _defines_hook(node.body, _ATTRIBUTE_HOOKS):
+                    scanner.dynamic.add(flag_names.DYNAMIC_ATTR)
             else:
                 continue
             self._apply_scan(symbol.id, symbol, scanner, table)
 
         for entry in table.modules.values():
             scanner = _BodyScanner(entry.tree.body)
+            if _defines_hook(entry.tree.body, {"__getattr__"}):
+                scanner.dynamic.add(flag_names.DYNAMIC_ATTR)
             self._apply_scan(entry.id, None, scanner, table)
 
     def _apply_scan(
