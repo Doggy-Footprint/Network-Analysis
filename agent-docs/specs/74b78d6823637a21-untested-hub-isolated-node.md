@@ -1,5 +1,5 @@
 ---
-version: 5
+version: 6
 run_id: 74b78d6823637a21
 status: active
 base_commit: 6444895451a89f4450b9123b7beb17b11506e534
@@ -44,11 +44,11 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | R7 | 후보 id는 기존 `_candidate` 규칙(`"b:" + sha256(identifier)[:16]`)을 따르고 identifier는 `<file id>|untested_hub`, `<file id>|isolated_node`다. 후보 목록 정렬은 기존과 같이 (kind, id)다. | must | 기존 후보 규칙 |
 | R8 | `untested_hub_top_n`은 선택 키다. 없으면 10이다. 있으면 int ≥ 1이어야 한다. file granularity 출력 JSON의 `edge_weights`에 항상 포함한다(symbol 출력은 R9에 따라 바뀌지 않는다). | must | I3, D2 |
 | R9 | 기존 후보 종류의 출력, `schema`(`bottlenecks.v8`), delta 결과는 바뀌지 않는다. symbol granularity 출력은 바뀌지 않는다. | must | I3, user answer (v8 유지) |
-| R10 | 보고서(report/bottlenecks/generate.py, HTML app.js)는 두 kind의 한국어 라벨과 대표 수치를 보여준다. 대표 수치는 `untested_hub`은 `pagerank_rank`, `isolated_node`은 `line_count`다. generate.py `KIND_DESCRIPTIONS`에 한국어 설명을 둔다(기존 kind와 같이 화면 표시는 요구하지 않는다). 대시보드 후보 종류 필터 옵션은 요구하지 않는다(기존 순환·위반 kind도 없음). | must | Scope |
+| R10 | 보고서(report/bottlenecks/generate.py, HTML app.js)는 두 kind의 한국어 라벨과 대표 수치를 보여준다. 대표 수치는 `untested_hub`은 `pagerank_rank`, `isolated_node`은 `line_count`다. 라벨은 generate.py `KIND_LABELS`와 app.js 모두 `untested_hub` = "테스트 미도달 허브", `isolated_node` = "고립 파일"이다. generate.py `KIND_DESCRIPTIONS`는 `untested_hub` = "PageRank 상위 production 파일 중 테스트 파일에서 직접 확정 연결(TESTS)이 닿지 않는 사례입니다.", `isolated_node` = "다른 production 파일과 확정된 정적 연결이 없는 소스 파일 사례입니다. 프레임워크·동적·불확실 연결은 근거로 함께 보입니다."이다(기존 kind와 같이 화면 표시는 요구하지 않는다). 대시보드 후보 종류 필터 옵션은 요구하지 않는다(기존 순환·위반 kind도 없음). | must | Scope |
 
 # Errors
 - `untested_hub_top_n`이 int가 아니거나(bool 포함) 1 미만 — `EdgeWeightsError`(메시지에 키 이름 포함), CLI는 기존 설정 오류와 같은 종료 코드 — 출력 파일을 쓰지 않는다.
-- 엣지가 없는 file 노드를 가리키는 등 입력 구조 오류 — 기존과 같이 `BottleneckInputError` — 보고서를 만들지 않는다.
+- 존재하지 않는 노드를 가리키는 엣지 등 입력 구조 오류 — 기존과 같이 `BottleneckInputError` — 보고서 객체를 반환하지 않는다(V14).
 
 # Cases
 | id | level | input / state | expected result |
@@ -108,6 +108,7 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | V10 | Q2 | 2 fixture | integration (benchmark marker) | none — measurement | 2 fixture | 100% | 비율 ≤ 1.10 | `pytest -m benchmark` 결과를 `tests/reach_evidence/benchmark.md`에 기록 |
 | V11 | Q5 | `analyze_bottlenecks` | fuzz | random testing | property (a)–(d) | 20,000 입력 | 위반 0 | main 실행, 결과를 ledger에 기록 |
 | V12 | Q6 | `bottlenecks/reach.py` | unit | branch testing | coverage.py branch | ≥ 90% | Test command 통과 | Test command |
+| V14 | Errors 2 | `analyze_bottlenecks` file granularity, 합성 FileArchitecture | unit | equivalence partitioning | {from_id 없음, to_id 없음, candidates에 없는 id} | 100% | 각각 `BottleneckInputError` | pytest |
 | V13 | R1–R7 | 실제 fixture 후보 | review | none — experience-based | 후보마다 정의 위반 여부 | none — experience-based | 위반 0 | `tests/reach_evidence/review.md` |
 
 # Assumptions and Defaults
@@ -139,12 +140,13 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | R8 | C12, C13 | V6, V7 | pytest |
 | R9 | C14, C15 | V7 | pytest |
 | R10 | C16 | V9 | pytest |
+| Errors 2 | — | V14 | pytest |
 | Q1–Q6 | — | V8, V10, V7, V9, V11, V12 | 위 표 |
 
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 1 |
+| correction batches used | 2 |
 | verifier invocations | 1 |
 | open finding ids | none |
 
@@ -164,8 +166,11 @@ Execution ledger (append attempts; preserve failed approaches):
 | 2 | hand mutation 10종(M1 top-N off-by-one, M2 tie 역순, M3 ambiguous를 tested로, M4 test 출발 조건 제거, M5 self 엣지 연결 인정, M6 들어오는 엣지 무시, M7 framework를 static으로, M8 빈 파일 대상, M9 bool 허용, M10 기본값 변경) | 강한 결함 클래스: 순위 경계, 확정 판정, 연결 판정, 대상 자격, 설정 검증 | `seed.py` backup/restore로 하나씩 주입, `tests/test_reach_candidates.py` 실행 | 10/10 killed(각각 의도한 V1·V2·V3·V4·V6·V8 assertion에서 실패) |
 | 3 | mutation tool: AST 연산자(비교 교체, bool 교체, 상수 +1, if 부정, set 원소 제거), base_commit 이후 변경 줄 후보 70개 중 30개 표본, seed 20261019 | — | 같은 실행 명령 | 30/30 killed, 생존율 0%, triage 대상 없음 |
 | 4 | fuzz V11 seed 20261019, 20,000 입력 | — | scratchpad harness | crash 0, property 위반 0 |
+| 5 | verifier 1 RETRY: F1(V2·V3 non-ambiguous candidates, isolation candidates 미관찰), F2(V4 `cost.line_count` 출처 미관찰), F3(V13 후보별 기록 아님), F4(Errors 2 obligation 없음), F5(R10 라벨 문자열 미고정); advisory A1–A5 | F1·F2·F3 evidence gap, F4·F5 spec challenge | v6 수정(F4→V14, F5 문자열 고정), test-implementer에 correction batch 2(F1, F2, F4, F5, A1, A5 diff 재생성), main이 F3 후보별 review·A2 harness 보관 | 진행 중 |
 
 # Version Log
+## v6
+- [contract] verifier 1 finding 반영: F5 라벨·설명 문자열을 R10에 고정, F4 Errors 2를 새 obligation V14로 연결. F1·F2·F3은 evidence gap(spec 변경 없음). brief 항목 변경 없음.
 ## v5
 - [contract] Test command에서 base 커밋 d58de53에서도 동일하게 실패하는 기존 테스트 4개(파라미터 포함 5건)를 deselect. 이 변경과 무관함을 ledger attempt 1에 기록. brief 항목 변경 없음.
 ## v4
