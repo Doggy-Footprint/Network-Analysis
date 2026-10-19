@@ -161,6 +161,9 @@ Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
 | 1 | Test command 실패: 기존 byte-equal 테스트 15건(test_delta_integration V06_C27, test_external_rules_integration V11·V14, test_architecture_rules_integration V07), V9 필터 테스트 2건, browser 테스트 error 다수 | byte-equal은 새 kind 추가로 예상된 test 조정 누락(test defect). V9 필터는 v3에서 요구 제외(test defect). browser error는 chrome channel 부재(환경). 그 외 5건(test_analysis_coverage_reporting V05·V07, test_analyzer fastapi smoke, test_file_analysis_cli V01 ×2)은 d58de53에서도 동일 실패(이 변경과 무관) | test-implementer에 correction batch 1 전달: 필터 테스트 제거, characterization 비교에서 새 kind 제외, chromium fallback, 라벨 문자열 기대값 갱신 | 해결: Test command 통과(2567 passed, coverage 98%) |
+| 2 | hand mutation 10종(M1 top-N off-by-one, M2 tie 역순, M3 ambiguous를 tested로, M4 test 출발 조건 제거, M5 self 엣지 연결 인정, M6 들어오는 엣지 무시, M7 framework를 static으로, M8 빈 파일 대상, M9 bool 허용, M10 기본값 변경) | 강한 결함 클래스: 순위 경계, 확정 판정, 연결 판정, 대상 자격, 설정 검증 | `seed.py` backup/restore로 하나씩 주입, `tests/test_reach_candidates.py` 실행 | 10/10 killed(각각 의도한 V1·V2·V3·V4·V6·V8 assertion에서 실패) |
+| 3 | mutation tool: AST 연산자(비교 교체, bool 교체, 상수 +1, if 부정, set 원소 제거), base_commit 이후 변경 줄 후보 70개 중 30개 표본, seed 20261019 | — | 같은 실행 명령 | 30/30 killed, 생존율 0%, triage 대상 없음 |
+| 4 | fuzz V11 seed 20261019, 20,000 입력 | — | scratchpad harness | crash 0, property 위반 0 |
 
 # Version Log
 ## v5
