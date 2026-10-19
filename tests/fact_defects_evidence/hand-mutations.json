@@ -1,0 +1,141 @@
+[
+ {
+  "id": "M1",
+  "defect": "F9 splitlines",
+  "file": "repository/models.py",
+  "killed": true,
+  "summary": "18 failed, 116 passed in 3.89s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[BVA-only-cr]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[C3-formfeed]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[C3-lone-cr]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[EP-cr-before-lf-only-once]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[EP-lone-cr-at-end]",
+   "tests/test_fact_defects.py::test_V1_C3_non_separator_characters_do_not_split_and_are_preserved[U+000B]",
+   "tests/test_fact_defects.py::test_V1_C3_non_separator_characters_do_not_split_and_are_preserved[U+000C]",
+   "tests/test_fact_defects.py::test_V1_C3_non_separator_characters_do_not_split_and_are_preserved[U+001C]"
+  ]
+ },
+ {
+  "id": "M2",
+  "defect": "F8 trailing +1",
+  "file": "language_analyzers/core/cost.py",
+  "killed": true,
+  "summary": "7 failed, 127 passed in 3.40s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V2_module_end_line_follows_reference_line_count[trailing-lf-kotlin]",
+   "tests/test_fact_defects.py::test_V2_module_end_line_follows_reference_line_count[trailing-lf-python]",
+   "tests/test_fact_defects.py::test_V2_module_end_line_follows_reference_line_count[trailing-lf-typescript]",
+   "tests/test_fact_defects.py::test_V3_python_symbol_granularity_large_node_boundary[5-False]",
+   "tests/test_fact_defects.py::test_V3_python_symbol_granularity_large_node_boundary[6-True]",
+   "tests/test_fact_defects.py::test_V3_threshold_value_file_is_not_a_candidate[typescript]",
+   "tests/test_fact_defects.py::test_V3_threshold_value_file_is_not_a_candidate[kotlin]"
+  ]
+ },
+ {
+  "id": "M3",
+  "defect": "CRLF \\r kept",
+  "file": "repository/models.py",
+  "killed": true,
+  "summary": "7 failed, 127 passed in 6.23s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[BVA-only-crlf]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[C4-crlf-trailing]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[EP-cr-before-lf-only-once]",
+   "tests/test_fact_defects.py::test_V1_lines_length_matches_reference_for_partitions[EP-crlf-no-trailing]",
+   "tests/test_fact_defects.py::test_V1_C4_crlf_lines_content",
+   "tests/test_fact_defects.py::test_V1_only_cr_before_lf_is_removed_and_only_once",
+   "tests/test_fact_defects.py::test_V1_seeded_random_agrees_with_reference"
+  ]
+ },
+ {
+  "id": "M5",
+  "defect": "F11 with_suffix",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "killed": true,
+  "summary": "20 failed, 114 passed in 4.91s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule2-dotted-name-gets-extension-appended]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule2-later-extension-when-ts-absent]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule2-parent-dir-and-two-dots]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule4-dotted-directory-index]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule5-dotted-extension-wins-over-index]",
+   "tests/test_fact_defects.py::test_V4_rule1_to_rule4_edges_are_exact_static_certain",
+   "tests/test_fact_defects.py::test_V4_failed_specifier_does_not_stop_later_imports",
+   "tests/test_fact_defects.py::test_V4_path_static_import_with_symbol_binding"
+  ]
+ },
+ {
+  "id": "M6",
+  "defect": "R5 rule3 dropped",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "killed": true,
+  "summary": "3 failed, 131 passed in 4.76s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule3-dotted-js-specifier]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule3-js-specifier-later-extension]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule3-js-specifier-replaced-by-ts]"
+  ]
+ },
+ {
+  "id": "M7",
+  "defect": "R5 index first",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "killed": true,
+  "summary": "2 failed, 132 passed in 4.58s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule5-dotted-extension-wins-over-index]",
+   "tests/test_fact_defects.py::test_V4_static_import_rule_decision_table[rule5-extension-wins-over-index]"
+  ]
+ },
+ {
+  "id": "M8",
+  "defect": "R8 FQN exact off",
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "killed": true,
+  "summary": "7 failed, 127 passed in 3.50s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V6_C11_single_fqn_match_is_exact_certain_without_candidates",
+   "tests/test_fact_defects.py::test_V6_C11_no_edge_leaks_to_the_other_package",
+   "tests/test_fact_defects.py::test_V6_C12_default_package_symbol_matches_by_qualname",
+   "tests/test_fact_defects.py::test_V6_C13_nested_class_import_resolves_to_inner_symbol",
+   "tests/test_fact_defects.py::test_V7_C11_usage_edges_resolve_to_imported_symbol_exactly",
+   "tests/test_fact_defects.py::test_V7_C11_instantiation_and_type_edges_come_from_the_expected_symbols",
+   "tests/test_fact_defects.py::test_V7_C11_package_dependency_com_c_to_com_a_certain_and_none_to_com_b"
+  ]
+ },
+ {
+  "id": "M9",
+  "defect": "R9 wrong ambiguous pick",
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "killed": true,
+  "summary": "2 failed, 132 passed in 3.41s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V6_C12_two_declarations_of_same_fqn_are_ambiguous_first_symbol_id_is_target",
+   "tests/test_fact_defects.py::test_V6_C12_three_declarations_candidates_are_the_remaining_ones_in_order"
+  ]
+ },
+ {
+  "id": "M10",
+  "defect": "R10 import scope off",
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "killed": true,
+  "summary": "4 failed, 130 passed in 3.67s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V6_C11_no_edge_leaks_to_the_other_package",
+   "tests/test_fact_defects.py::test_V7_C11_usage_edges_resolve_to_imported_symbol_exactly",
+   "tests/test_fact_defects.py::test_V7_C11_instantiation_and_type_edges_come_from_the_expected_symbols",
+   "tests/test_fact_defects.py::test_V7_C11_package_dependency_com_c_to_com_a_certain_and_none_to_com_b"
+  ]
+ },
+ {
+  "id": "M12",
+  "defect": "R13 tie-break off",
+  "file": "language_analyzers/core/enrichment.py",
+  "killed": true,
+  "summary": "1 failed, 133 passed in 3.42s",
+  "failing_tests": [
+   "tests/test_fact_defects.py::test_V12_configures_target_by_smallest_covering_node[module-span-equals-single-function-span]"
+  ]
+ }
+]

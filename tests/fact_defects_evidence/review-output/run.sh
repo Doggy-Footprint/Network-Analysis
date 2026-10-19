@@ -18,5 +18,6 @@ for name in nestjs android; do for g in file symbol; do
   echo "######## $name $g"
   python3 $REPO/tests/fact_defects_evidence/review_diff.py $OUT/base-$name-$g.json $OUT/head-$name-$g.json --root $( [ $name = nestjs ] && echo $NEST || echo $ANDROID ) --base-bottlenecks $OUT/base-$name-$g.bottlenecks.json --head-bottlenecks $OUT/head-$name-$g.bottlenecks.json --seed 20261019 --sample 10 > $OUT/review-$name-$g.txt 2>&1 || echo "review_diff rc=$?"
 done; done
+python3 $REPO/tests/fact_defects_evidence/review-output/sample_check.py $OUT $NEST $ANDROID 20261019 > $OUT/sample-check.txt
 git -C $REPO worktree remove --force $BASE
 echo DONE

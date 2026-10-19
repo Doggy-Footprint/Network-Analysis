@@ -148,7 +148,9 @@ def test_V2_file_granularity_empty_file_has_line_count_zero(tmp_path, language):
     suffix = LANGUAGES[language][0]
     write_tree(tmp_path / 'proj', {'empty' + suffix: '', 'other' + suffix: LANGUAGES[language][3]})
     _, _, arch = run_pipeline(tmp_path / 'proj', tmp_path, 'file', '-l', language)
-    assert arch_node(arch, 'file:empty' + suffix).cost.line_count == ref_line_count('') == 0
+    node = arch_node(arch, 'file:empty' + suffix)
+    assert node.cost.line_count == ref_line_count('') == 0
+    assert node.span is None
 
 
 @pytest.mark.parametrize('language', sorted(LANGUAGES))
@@ -241,6 +243,8 @@ RULE_CASES = {
                                   'a/foo.bar.ts'),
     'rule1-js-file-itself-wins-over-ts': ('a/b.ts', './foo.js', {'a/foo.js': 'export const F = 1;\n', 'a/foo.ts': 'export {}\n'},
                                           'a/foo.js'),
+    'rule2-before-rule3-js-dot-ts': ('a/b.ts', './foo.js', {'a/foo.js.ts': 'export {}\n', 'a/foo.ts': 'export {}\n'}, 'a/foo.js.ts'),
+    'rule3-before-rule4-index': ('a/b.ts', './foo.js', {'a/foo.ts': 'export {}\n', 'a/foo.js/index.ts': 'export {}\n'}, 'a/foo.ts'),
     'rule4-directory-index': ('a/b.ts', './dir',
                               {'a/dir/index.ts': 'export class I {}\n'}, 'a/dir/index.ts'),
     'rule4-dotted-directory-index': ('a/b.ts', './my.dir',
@@ -716,3 +720,15 @@ def test_VO7_F7_ambiguous_original_exact_piece_rejections(label):
         exact['evidence']['file_path'] = 'other.py'
     with pytest.raises(AssertionError):
         assert_candidate_policy_transition(before, after, {})
+
+
+def test_V6_A2_ambiguous_target_is_sorted_first_id_and_candidates_keep_sorted_order(tmp_path):
+    files = {}
+    for directory in ('z', 'm', 'a'):  # creation order is the reverse of symbol-id order
+        files[f'{directory}/Foo.kt'] = 'package com.a\n\nclass Foo\n'
+    files['com/c/Use.kt'] = USE_TEMPLATE.format(imp='com.a.Foo', name='Foo')
+    rows = import_rows(kotlin_rows(tmp_path, files), 'IMPORTS_SYMBOL')
+    assert len(rows) == 1
+    assert rows[0][2] == 'kotlin:a/Foo.kt#Foo'
+    assert list(rows[0][5]) == ['kotlin:m/Foo.kt#Foo', 'kotlin:z/Foo.kt#Foo']
+    assert (rows[0][3], rows[0][4]) == ('static_inferred', 'ambiguous')

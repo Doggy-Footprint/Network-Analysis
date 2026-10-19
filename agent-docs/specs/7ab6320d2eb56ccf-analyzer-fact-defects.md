@@ -184,29 +184,30 @@ Mutation tool:
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 3 |
+| correction batches used | 4 |
 | verifier invocations | 1 |
-| open finding ids | none |
+| open finding ids | VF1-1, VF1-2 |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 4 | tests/test_fact_defects.py::test_V1_* (HEAD) | pending | — | — |
-| V2 | 4 | test_V2_* | pending | — | — |
-| V3 | 4 | test_V3_* | pending | — | — |
-| V4 | 4 | test_V4_* (7 rules, 4 paths) | pending | — | — |
-| V5 | 4 | test_V5_* | pending | — | — |
-| V6 | 4 | test_V6_* | pending | — | — |
-| V7 | 4 | test_V7_* | pending | — | — |
-| V8 | 4 | test_V8_*, review.md Results, review-output/ | pending | — | — |
-| V9 | 4 | benchmark.md, benchmark-result.json | pending | — | — |
-| V10 | 4 | fuzz_fact.py: (a) 20,000 / (b) 500, 위반 0; old-bug 감지 31/50 | pending | — | — |
-| V11 | 4 | Test command diff coverage 71/71 = 100% | pending | — | — |
-| V12 | 4 | test_V12_* | pending | — | — |
+| V1 | 4 | tests/test_fact_defects.py::test_V1_* (HEAD) | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V2 | 4 | test_V2_* | open | VF1-1: empty-file file-granularity span (absent) not observed | — |
+| V3 | 4 | test_V3_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V4 | 4 | test_V4_* (7 rules, 4 paths) | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V5 | 4 | test_V5_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V6 | 4 | test_V6_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V7 | 4 | test_V7_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V8 | 4 | test_V8_*, review.md Results, review-output/ | open | VF1-2: review record incomplete (symbol edge groups unattributed, F5 cited, sample source check not recorded, removed-edge counterpart check not recorded, F7/F11 labels swapped in manifest-regeneration.md) | — |
+| V9 | 4 | benchmark.md, benchmark-result.json | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V10 | 4 | fuzz_fact.py: (a) 20,000 / (b) 500, 위반 0; old-bug 감지 31/50 | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V11 | 4 | Test command diff coverage 71/71 = 100% | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
+| V12 | 4 | test_V12_* | accepted | verifier 1 accept; hand mutations M1–M12 killed (hand-mutations.json) | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 5 | verifier 1 RETRY: VF1-1 (V2), VF1-2 (V8); advisories A1–A4 | evidence gaps | VF1-1 → test-implementer; VF1-2 → main completes the review record; A1/A2 tests added; A3 fuzz log committed. Hand mutations 10/10 killed; mutation tool 27 killed, 2 survived (equivalent: `rsplit(".", 1)`→`2`, rechecked by main) | 진행 중 |
 | 4 | — | — | 비교기 일반화(원본 해석 등급과 관계없이 exact 조각 1개 허용) 후 Test command 2735 passed, diff coverage 100% | 통과 |
 | 3 | 전체 Test command 8 failed: nestjs O11 standalone archive 비교(8 subtests). archive 재생성 후 android·kotlin 2건이 `assert_candidate_policy_transition`에서 실패 | test/evidence defect: base는 Kotlin에서 (from,to,relation)가 같은 엣지를 하나로 합쳤다. F7 이후 합쳐진 엣지가 exact일 수 있는데, 비교기는 ambiguous/unique_name 원본의 분할만 허용한다 (verified: `diffk.py`, DefaultSearchContentsRepository→PopulatedNewsResource IMPORTS) | archive·baselines를 patched 5737113에서 재생성. 비교기에 exact 원본 분할 규칙 추가를 test-implementer에 지시 | 진행 중 |
 | 2 | 전체 suite 50 failed: `test_all_config_formats_direction_and_value_not_key`(CONFIGURES가 함수 대신 module로), unicode line_count 2→1(F9), TS file span end 3→2(F8), 이전 run의 base manifest byte-equal·size ratio 47건 | 설정 귀속은 R3로 module·symbol span 동률이 생겨 `smallest_node_at_line`이 module을 고름(verified: min은 첫 원소 선택). 나머지는 F id로 설명되는 기대값 변화 | v3: R13, enrichment.py 추가, manifest 재생성 절차 | 재dispatch |

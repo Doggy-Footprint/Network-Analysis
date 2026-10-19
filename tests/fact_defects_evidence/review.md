@@ -124,7 +124,7 @@ Commands: `review-output/run.sh` (the same steps as sections 1–2, using local 
 | 3 | nestjs file | TESTS exact +3; `src/tag/tag.entity.ts` untested_hub removed | F11 | follows from the spec→production IMPORTS edges | explained |
 | 4 | nestjs file | dependency_cycle +1, package_cycle +1, unstable_dependency −1, evidence_spread +1 | F11 | structural results of the newly resolved import edges | explained |
 | 5 | nestjs symbol | 18 module nodes with end_line −1 | F8 | each `(end_line, line_count)` goes from (n+1, n) to (n, n) | explained |
-| 6 | nestjs symbol | evidence_spread +37, −1 | F11 (+ the existing F5 definition) | evidence_spread counts files that reference the target; the newly resolved cross-file references raise the counts. The F5 definition is fixed in run 3. | explained |
+| 6 | nestjs symbol | evidence_spread +37, −1 | F11 | evidence_spread counts the evidence sites of references to the target. The newly resolved cross-file references (rows 5a, 5b) add evidence sites, so this follows from the F11 edges alone. The signal definition itself is unchanged. | explained |
 | 7 | android file | IMPORTS / IMPORTS_SYMBOL unique_name 102 → exact 103; ambiguous 52 → 38 | F7 (R8) | sample [1]: `TopicDaoTest.kt:19` `import ...core.database.model.TopicEntity`. Sample [4]: `NewsResource.kt:19` `import ...model.NewsResourceEntity`, and the target's `package` matches | explained |
 | 8 | android file | READS / TYPE_USES / INSTANTIATES / CALLS / WRITES / IMPLEMENTS / INHERITS / TESTS unique_name → exact | F7 (R10) | samples [2][3][5]–[10] are references from files that import the target | explained |
 | 9 | android file | package_cycle +2 (certain) | F7 (R11) | package dependencies are now promoted to the certain tier | explained |
@@ -133,3 +133,36 @@ Commands: `review-output/run.sh` (the same steps as sections 1–2, using local 
 | — | both / both | schema and key set | — | no change | explained |
 
 Unexplained changes: 0. Wrong edges among the 10+10 samples: 0.
+
+### Verifier 1 follow-up (VF1-2): edge groups at symbol granularity, sampled source lines, removed-edge counterparts
+
+The full output is `review-output/sample-check.txt`, written by `review-output/sample_check.py` (seed 20261019; `run.sh` runs it last).
+- File-granularity edges carry `evidence: null`, so the helper takes the first `details.edges` entry from `metadata.detail_edge_indices`.
+- An edge is "plausible" when one of these holds:
+  - An import or export line names the target file or symbol.
+  - A reference line names the target symbol, or a symbol defined in the target file.
+  - The edge is TESTS, which is derived from an underlying edge.
+
+| # | project / granularity | change group | F id | evidence | verdict |
+| --- | --- | --- | --- | --- | --- |
+| 5a | nestjs symbol | IMPORTS exact +65, IMPORTS_SYMBOL exact +74, RE_EXPORTS exact +4 | F11 | samples [2], [4]–[9] are import lines that name the target (`profile.service.ts:7` `from "./follows.entity"`, etc.) | explained |
+| 5b | nestjs symbol | TYPE_USES / INSTANTIATES / READS exact +79, unique_name·ambiguous −79; TESTS exact +6 | F11 | samples [1] `author: UserEntity;`, [3] `Repository<TagEntity>`, [10] `tagService: TagService`. Removed edges without a counterpart at the same (source, relation, line): 0 | explained |
+| 10a | android symbol | IMPORTS / IMPORTS_SYMBOL exact +215; unique_name −211 | F7 (R8) | sample [4][5] import lines name the target FQN | explained |
+| 10b | android symbol | IMPORTS / IMPORTS_SYMBOL / TESTS ambiguous +20, −30 | F7 (R9) | when several symbols share the FQN (`core.data.model.asExternalModel` is defined in several files of one package), the candidates narrow to the FQN matches, and the old candidates in other packages disappear | explained |
+| 10c | android symbol | READS / TYPE_USES / INSTANTIATES / CALLS / WRITES / IMPLEMENTS / INHERITS / TESTS exact +583, unique_name·ambiguous −583 | F7 (R10) | samples [1][2][6][7][8] name the imported symbol | explained |
+| 10d | android symbol | 2 removed IMPORTS unique_name edges without an added edge at the same line | F7 (R8) + existing merge by key | `OfflineFirstNewsRepository.kt:22-23` imports `topicCrossReferences` and `topicEntityShells`, both defined in `core/data/model/NewsResource.kt`. Both now resolve exact to the same file and merge into one edge, `exact, line 22, weight 2` (base: ambiguous line 22 + unique_name line 23). The same holds for `OfflineFirstNewsRepositoryTest.kt` | explained |
+| 7a | android file | 33 removed projected IMPORTS / IMPORTS_SYMBOL edges without an added edge at the same line | F7 (R9) | e.g. `DefaultRecentSearchRepository.kt:20` `import ...core.data.model.asExternalModel`. The base candidates spanned `core/database/model/*`; now only the FQN matches in `core.data.model` remain, so the file-level projections to the other files disappear | explained |
+| 7b | nestjs file | 47 removed edges | F11 | every removed edge has an added counterpart at the same (source, relation, line) | explained |
+
+Sample source-line check (40 sampled added edges):
+
+| set | sampled | plausible | not plausible | cause of "not plausible" | wrong edge |
+| --- | --- | --- | --- | --- | --- |
+| nestjs file | 10 | 10 | 0 | — | 0 |
+| nestjs symbol | 10 | 10 | 0 | — | 0 |
+| android file | 10 | 6 | 4 | [3][10] TYPE_USES with the evidence at the class start line `@Database(`, whose `entities = [...]` names the targets; base uses the same line for the same edge. [4] `import ...model.topicCrossReferences` names a function defined in the target `NewsResource.kt:53` (helper heuristic matches file stems only). [9] the evidence line is the blank line before `import ...model.TopicEntity` (line 19). base records the same line 18 (pre-existing Kotlin import line defect, out of scope; recorded for handoff) | 0 |
+| android symbol | 10 | 9 | 1 | [9] TYPE_USES with the evidence at the function start line `@Binds`; the next line names the parameter type `CompositeUserNewsResourceRepository`; base has the same edge on line 29 as unique_name | 0 |
+
+Removed-edge counterpart check: every removed edge has an added edge at the same (source, relation, evidence line), except for 10d and 7a, which the rows above explain.
+
+Unexplained changes: 0. Wrong edges: 0. One pre-existing defect is out of scope for this run: Kotlin import evidence lines are one too small when a blank line precedes the import, because `^\s*import` matches across newlines.

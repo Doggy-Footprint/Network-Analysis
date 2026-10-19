@@ -1,0 +1,234 @@
+[
+ {
+  "id": 0,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 299,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 1,
+  "file": "language_analyzers/core/cost.py",
+  "line": 30,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 2,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 305,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 3,
+  "file": "repository/models.py",
+  "line": 15,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 4,
+  "file": "repository/models.py",
+  "line": 17,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 5,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 383,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 6,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 175,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 7,
+  "file": "language_analyzers/core/cost.py",
+  "line": 30,
+  "kind": "bool",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 8,
+  "file": "language_analyzers/core/cost.py",
+  "line": 31,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 9,
+  "file": "repository/models.py",
+  "line": 8,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 10,
+  "file": "language_analyzers/core/cost.py",
+  "line": 30,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 11,
+  "file": "repository/models.py",
+  "line": 11,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 12,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 303,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 13,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 300,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 14,
+  "file": "repository/models.py",
+  "line": 17,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 15,
+  "file": "language_analyzers/typescript/analyzer.py",
+  "line": 868,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 16,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 302,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 17,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 299,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 18,
+  "file": "repository/models.py",
+  "line": 17,
+  "kind": "bool",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 19,
+  "file": "repository/models.py",
+  "line": 11,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 20,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 305,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 21,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 331,
+  "kind": "const",
+  "pos": 0,
+  "result": "survived"
+ },
+ {
+  "id": 22,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 184,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 23,
+  "file": "repository/models.py",
+  "line": 11,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 24,
+  "file": "language_analyzers/typescript/analyzer.py",
+  "line": 868,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 25,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 331,
+  "kind": "const",
+  "pos": 0,
+  "result": "survived"
+ },
+ {
+  "id": 26,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 299,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 27,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 283,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 28,
+  "file": "language_analyzers/core/enrichment.py",
+  "line": 268,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ }
+]

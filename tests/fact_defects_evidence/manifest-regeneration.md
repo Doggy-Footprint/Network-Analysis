@@ -1,7 +1,7 @@
 # Base manifest regeneration (spec 7ab6320d2eb56ccf v3, Paths)
 
 The characterization manifests of earlier runs pin CLI outputs of their own base commit. This run changes analyzer
-facts (F7 TS relative import resolution, F8/F9 line counting, F11 Kotlin FQN imports), so each manifest was rebuilt from
+facts (F11 TS relative import resolution, F8/F9 line counting, F7 Kotlin FQN imports), so each manifest was rebuilt from
 its base commit with this run's Implementation diff applied.
 
 ## Common procedure
@@ -185,15 +185,15 @@ Changes (old archive -> regenerated):
 - Python cases (fastapi-futuramaapi, fastapi-realworld, fastapi-template, python, sqlalchemy): the bottlenecks output
   is unchanged. In the architecture json, node and edge counts and edge keys are unchanged; 154 / 71 / 29 / 71 / 71
   nodes changed (line counts and spans, F8/F9).
-- android / kotlin: all nodes changed. Edges 4505 -> 4510 / 4384 -> 4389 (806 edge keys removed, 811 added, F11).
+- android / kotlin: all nodes changed. Edges 4505 -> 4510 / 4384 -> 4389 (806 edge keys removed, 811 added, F7).
   Bottleneck candidates 413 -> 414 / 411 -> 412.
-- typescript: all nodes changed. Edges 491 -> 637 (82 edge keys removed, 228 added, F7). Bottleneck candidates
+- typescript: all nodes changed. Edges 491 -> 637 (82 edge keys removed, 228 added, F11). Bottleneck candidates
   125 -> 162.
 
 Test outcome after regeneration: `tests/test_nestjs_quality.py` gives `2 failed, 12 passed, 10 subtests passed`. The
 failing subtests are `case='android'` and `case='kotlin'`, which fail in `tests/candidate_policy_transition_support.py`
 with 'unrelated edge removed' or 'split changed unrelated edge fields'. The message depends on set iteration order.
-At 5737113, Kotlin edges are deduplicated by `(from_id, to_id, relation)`. With F11 applied, the first record of a
+At 5737113, Kotlin edges are deduplicated by `(from_id, to_id, relation)`. With F7 applied, the first record of a
 merged pair can be `exact`/`static_certain`. One example is `DefaultSearchContentsRepository.kt` -> `PopulatedNewsResource.kt`
 IMPORTS, line 25, exact, weight 2.0. HEAD splits that record into an exact piece (line 25, weight 1) and an ambiguous
 piece (line 27, weight 1). The comparator accepts a split only when the merged original is `ambiguous`/`unique_name`,
