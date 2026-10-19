@@ -25,13 +25,15 @@ working directory, base and HEAD runs interleaved per repetition (drift affects 
 
 | fixture | base median (s) | HEAD median (s) | ratio | <= 1.25 |
 | --- | --- | --- | --- | --- |
-| futuramaapi | | | | |
-| fastapi-realworld | | | | |
-| android-nowinandroid | | | | |
-| typescript-nestjs-realworld | | | | |
+| futuramaapi | 1.350 | 1.420 | 1.052 | yes |
+| fastapi-realworld | 0.626 | 0.603 | 0.963 | yes |
+| android-nowinandroid | 1.800 | 1.653 | 0.918 | yes |
+| typescript-nestjs-realworld | 0.799 | 0.634 | 0.794 | yes |
 
 Raw run times are in the JSON output (`base`/`head` arrays). If a ratio is above 1.25, repeat the whole benchmark once
 to rule out noise; report both runs and fail the requirement if the second also exceeds the threshold. Do not raise the
 threshold, reduce the run count or drop a fixture.
 
 Cleanup: `git -C $REPO worktree remove --force $BASE`.
+
+Run by main on spec v4 HEAD (raw: `benchmark-result.json`). All ratios ≤ 1.25.
