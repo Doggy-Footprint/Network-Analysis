@@ -227,12 +227,20 @@ def test_V2_R3_uncertain_edges_are_counted_not_flagged(tmp_path):
                    E('tests/t3.py', HUB, 'TESTS', SC, UNRESOLVED)])
     _, hubs, _ = check(graph, tmp_path, isolation=False)
     assert hubs[fid(HUB)]['metrics']['uncertain_test_edge_count'] == 3
-    assert hubs[fid('src/o.py')]['metrics']['uncertain_test_edge_count'] == 0
+    assert hubs[fid('src/o.py')]['metrics']['uncertain_test_edge_count'] == 1   # t2's to_id
 
 
 def test_V2_R2_confirmed_edge_wins_over_uncertain_edges(tmp_path):
     graph = Graph(files_of(production={HUB: 3}, test={'tests/t1.py': 2, 'tests/t2.py': 2}),
                   [E('tests/t1.py', HUB, 'TESTS', SC, AMBIGUOUS), E('tests/t2.py', HUB, 'TESTS', SC, UNIQUE)])
+    _, hubs, _ = check(graph, tmp_path)
+    assert fid(HUB) not in hubs
+
+
+@pytest.mark.parametrize('confidence', [SC, SI, FI, DR])
+@pytest.mark.parametrize('resolution', [EXACT, UNIQUE])
+def test_V2_R2_v2_confirmed_edge_ignores_confidence(tmp_path, confidence, resolution):
+    graph = Graph(files_of(production={HUB: 3}, test={'tests/t.py': 2}), [E('tests/t.py', HUB, 'TESTS', confidence, resolution)])
     _, hubs, _ = check(graph, tmp_path)
     assert fid(HUB) not in hubs
 
@@ -661,21 +669,33 @@ def test_V8_M2_removing_test_files_never_shrinks_the_untested_set(pipe, tmp_path
     assert {c['evidence']['path'] for c in of_kind(full['candidates'], 'untested_hub')} == before, 'copy without .git must not change the analyzed set'
 
 
+def with_probe(inputs):
+    """Fixture architecture plus one unconnected production file, so the relation never starts from an empty set."""
+    from language_analyzers.core.graph_models import GraphNode, NodeCost, SourceSpan
+    arch = copy.deepcopy(inputs['arch'])
+    path = 'reach_probe_unconnected.py'
+    arch.nodes.append(GraphNode(fid(path), path, 'file', 'file', kind='file', language='py', symbol_path=path,
+                                span=SourceSpan(path, 1, 2), cost=NodeCost(2, 4, 2), flags=[], provenance='file-aggregation',
+                                metadata={'file_path': path, 'granularity': 'file'}))
+    snapshot = dataclasses.replace(inputs['snapshot'], contents=tuple(inputs['snapshot'].contents) + ((path, 'x\nx\n'),))
+    return arch, snapshot, fid(path)
+
+
 def test_V8_M3_adding_a_certain_exact_edge_removes_the_isolated_candidate(inputs, tmp_path):
     from language_analyzers.core.graph_models import GraphEdge
-    baseline = analyze_again(inputs, tmp_path, 10)
+    arch, snapshot, probe = with_probe(inputs)
+    baseline = analyze_again(inputs, tmp_path, 10, arch=arch, snapshot=snapshot)
     isolated = sorted(c['target'] for c in of_kind(baseline['candidates'], 'isolated_node'))
-    assert isolated, 'the relation needs an isolated file to start from'
-    model = architecture_model(inputs['arch'])
+    assert probe in isolated
+    model = architecture_model(arch)
     partners = [ident for ident, (category, _) in sorted(model.files.items()) if category == 'production' and ident not in isolated]
     assert partners, 'a production file outside the isolated set is needed as the partner'
-    chosen = isolated[:3]
-    arch = copy.deepcopy(inputs['arch'])
+    chosen = [probe] + [i for i in isolated if i != probe][:2]
     for index, target in enumerate(chosen):
         partner = partners[index % len(partners)]
-        arch.edges.append(GraphEdge(partner, target, 'IMPORTS', confidence=SC, resolution=EXACT,
+        arch.edges.append(GraphEdge(partner if index % 2 == 0 else target, target if index % 2 == 0 else partner, 'IMPORTS', confidence=SC, resolution=EXACT,
                                     metadata={'detail_edge_indices': [], 'evidence_count': 1, 'candidate_share': 1}))
-    changed = analyze_again(inputs, tmp_path, 10, arch=arch)
+    changed = analyze_again(inputs, tmp_path, 10, arch=arch, snapshot=snapshot)
     remaining = {c['target'] for c in of_kind(changed['candidates'], 'isolated_node')}
     assert not remaining & set(chosen)
     assert remaining == set(isolated) - set(chosen)
@@ -706,6 +726,8 @@ def payload_with_sentinels(tmp_path):
     assert {c['kind'] for c in payload['candidates']} == set(NEW_KINDS)
     payload['candidates'] = [c for c in payload['candidates'] if c['kind'] not in NEW_KINDS]
     hub, iso = sentinel_candidates()
+    hub['target'], iso['target'] = 'file:src/solo.py', 'file:src/solo.py'
+    hub['evidence']['path'] = iso['evidence']['path'] = 'src/solo.py'
     payload['candidates'] += [hub, iso]
     payload['candidates'].sort(key=lambda c: (c['kind'], c['id']))
     return payload
@@ -723,31 +745,65 @@ HANGUL = re.compile('[가-힣]')
 
 
 def number_in(text, number):
-    return re.search(rf'(?<![\d.]){number}(?![\d])', text) is not None
+    pattern = '|'.join(re.escape(form) for form in (str(number), f'{number:,}'))
+    return re.search(rf'(?<![\d.,])(?:{pattern})(?![\d])', text) is not None
 
 
-@pytest.mark.parametrize('kind,number', [('untested_hub', SENTINEL_RANK), ('isolated_node', SENTINEL_LINES)])
-def test_V9_R10_C16_generate_py_label_description_and_headline_number(tmp_path, kind, number):
+@pytest.fixture(scope='session')
+def chromium():
+    """Overrides tests/unified_support.chromium for this module: falls back to the bundled Chromium when the
+    `chrome` channel is not installed."""
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as playwright:
+        try:
+            browser = playwright.chromium.launch(channel='chrome')
+        except Exception:
+            candidates = sorted(Path(os.environ.get('PLAYWRIGHT_BROWSERS_PATH', '/opt/pw-browsers')).glob('chromium-*/chrome-linux/chrome'))
+            browser = playwright.chromium.launch(executable_path=str(candidates[-1])) if candidates else playwright.chromium.launch()
+        yield browser
+        browser.close()
+
+
+def dom_without_scripts(page):
+    return html.unescape(page.evaluate("(() => { const c = document.body.cloneNode(true); c.querySelectorAll('script').forEach(s => s.remove()); return c.innerHTML; })()"))
+
+
+KIND_NUMBER = [('untested_hub', SENTINEL_RANK), ('isolated_node', SENTINEL_LINES)]
+
+
+@pytest.mark.parametrize('kind,number', KIND_NUMBER)
+def test_V9_R10_C16_generate_py_label_description_mapping(kind, number):
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
     other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
     assert HANGUL.search(KIND_LABELS[kind]) and HANGUL.search(KIND_DESCRIPTIONS[kind])
     assert KIND_LABELS[kind] != KIND_LABELS[other] and KIND_DESCRIPTIONS[kind] != KIND_DESCRIPTIONS[other]
-    assert KIND_LABELS[kind] not in {KIND_LABELS['large_node'], KIND_LABELS['unresolved_boundary'], KIND_LABELS['evidence_spread']}
+    assert KIND_LABELS[kind] not in {KIND_LABELS[k] for k in ('large_node', 'unresolved_boundary', 'evidence_spread')}
+
+
+@pytest.mark.parametrize('kind,number', KIND_NUMBER)
+def test_V9_R10_C16_generate_py_page_shows_label_description_and_headline_number(chromium, tmp_path, kind, number):
+    from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
     payload = payload_with_sentinels(tmp_path)
-    text = html.unescape(generate_text(payload))
-    assert KIND_LABELS[kind] in text and KIND_DESCRIPTIONS[kind] in text
-    assert number_in(text, number)
-    without = copy.deepcopy(payload)
-    without['candidates'] = [c for c in without['candidates'] if c['kind'] != kind]
-    assert not number_in(html.unescape(generate_text(without)), number), 'the headline number must come from the candidate'
-
-
-@pytest.mark.parametrize('kind,number', [('untested_hub', SENTINEL_RANK), ('isolated_node', SENTINEL_LINES)])
-def test_V9_R10_render_report_matches_generate_for_label_and_number(tmp_path, kind, number):
-    from report.bottlenecks import render_report
-    from report.bottlenecks.generate import KIND_LABELS
-    text = html.unescape(render_report(payload_with_sentinels(tmp_path)))
-    assert KIND_LABELS[kind] in text and number_in(text, number)
+    target = tmp_path / 'report.html'
+    target.write_text(generate_text(payload), encoding='utf-8')
+    page = chromium.new_page()
+    try:
+        page.route('http://**/*', lambda route: route.abort())
+        page.route('https://**/*', lambda route: route.abort())
+        page.goto(target.as_uri())
+        page.wait_for_load_state('load')
+        page.wait_for_selector('#node-list [data-node-row]')
+        dom = dom_without_scripts(page)
+        assert KIND_LABELS[kind] in page.inner_text('body')
+        if KIND_DESCRIPTIONS['large_node'] in dom:      # descriptions of existing kinds are the oracle for "is shown"
+            assert KIND_DESCRIPTIONS[kind] in dom
+        assert not number_in(dom, number), 'headline number must be shown only after opening the candidate'
+        page.locator('#node-list [data-node-row]').first.click()
+        page.wait_for_timeout(300)
+        lines = [line for line in page.inner_text('body').splitlines() if KIND_LABELS[kind] in line and number_in(line, number)]
+        assert lines, page.inner_text('body')[-800:]
+    finally:
+        page.close()
 
 
 def browser_report(tmp_path):
@@ -757,21 +813,35 @@ def browser_report(tmp_path):
     return build_report(files, candidates=[hub, iso])
 
 
-@pytest.mark.parametrize('kind,path,number', [('untested_hub', 'src/hub.py', SENTINEL_RANK), ('isolated_node', 'src/lonely.py', SENTINEL_LINES)])
-def test_V9_R10_C16_dashboard_label_and_headline_number(open_report, tmp_path, kind, path, number):
-    from tests.report_redesign_support import control, dialog_text, goto_list
-    from tests.test_report_modal import kind_label, open_modal
+DASHBOARD_CASES = [('untested_hub', 'src/hub.py', SENTINEL_RANK), ('isolated_node', 'src/lonely.py', SENTINEL_LINES)]
+
+
+@pytest.mark.parametrize('kind,path,number', DASHBOARD_CASES)
+def test_V9_R10_C16_dashboard_modal_label_and_headline_number(open_report, tmp_path, kind, path, number):
+    from report.bottlenecks.generate import KIND_LABELS
+    from tests.report_redesign_support import dialog_text
+    from tests.test_report_modal import open_modal
     arch, bn = browser_report(tmp_path)
     page = open_report(arch, bn)
-    label = kind_label(page, kind)
-    assert label and HANGUL.search(label)
-    other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
-    assert label != kind_label(page, other)
     open_modal(page, 'list', path)
-    lines = [line for line in dialog_text(page).splitlines() if label in line]
-    assert lines and number_in(lines[0], number), dialog_text(page)
+    text = dialog_text(page)
+    lines = [line for line in text.splitlines() if KIND_LABELS[kind] in line]
+    assert lines and number_in(lines[0], number), text
+    other = 'isolated_node' if kind == 'untested_hub' else 'untested_hub'
+    assert not any(KIND_LABELS[other] in line for line in text.splitlines())
     assert page.unhandled_errors == []
+
+
+@pytest.mark.parametrize('kind,path,number', DASHBOARD_CASES)
+def test_V9_R10_C16_dashboard_kind_filter_offers_the_kind_with_its_label(open_report, tmp_path, kind, path, number):
+    from report.bottlenecks.generate import KIND_LABELS
+    from tests.report_redesign_support import control, goto_list
+    arch, bn = browser_report(tmp_path)
+    page = open_report(arch, bn)
     goto_list(page)
+    option = control(page, 'candidate_kind').locator(f'option[value="{kind}"]')
+    assert option.count() == 1
+    assert KIND_LABELS[kind] in option.text_content()
     control(page, 'candidate_kind').select_option(kind)
     rows = page.locator('#node-list [data-node-row]').evaluate_all('(rows) => rows.map(row => row.dataset.nodeRow)')
     assert rows == ['file:' + path]

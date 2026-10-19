@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 run_id: 74b78d6823637a21
 status: active
 base_commit: 6444895451a89f4450b9123b7beb17b11506e534
@@ -20,7 +20,7 @@ Out of scope: symbol granularity 후보. 전이적(간접) 테스트 도달 계�
 
 # Paths
 Implementation: bottlenecks/reach.py (new), bottlenecks/core.py, analysis/edge_weights.py, profiles/edge_weights.v1.yaml, report/bottlenecks/generate.py, renderers/html/static/app.js
-Tests: tests/test_reach_candidates.py (new), tests/reach_support.py (new), tests/reach_evidence/ (new), 그리고 기존 tests/ 파일 조정(허용 범위: edge_weights key 집합 assertion에 `untested_hub_top_n` 추가, 후보 kind 목록·개수·golden·hash 비교에서 `untested_hub`·`isolated_node` 후보를 제외하고 비교, 보고서 kind 라벨 목록 assertion에 두 kind 추가. 약화 금지. 모든 변경은 `tests/reach_evidence/existing-tests.diff`에 기록)
+Tests: tests/test_reach_candidates.py (new), tests/reach_support.py (new), tests/reach_evidence/ (new), 그리고 기존 tests/ 파일 조정(허용 범위: `tests/unified_support.py`의 chromium fixture에 `/opt/pw-browsers` 실행 파일 fallback 추가(chrome channel이 없을 때만), edge_weights key 집합 assertion에 `untested_hub_top_n` 추가, 후보 kind 목록·개수·golden·hash 비교에서 `untested_hub`·`isolated_node` 후보를 제외하고 비교, 보고서 kind 라벨 목록 assertion에 두 kind 추가. 약화 금지. 모든 변경은 `tests/reach_evidence/existing-tests.diff`에 기록)
 Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with coverage python -m coverage run --branch --include=bottlenecks/reach.py -m pytest -q -p no:cacheprovider && uv run -q --with coverage python -m coverage report --fail-under=90
 Review evidence: tests/reach_evidence/review.md — main이 4개 실제 fixture(futuramaapi, fastapi-realworld, android-nowinandroid, typescript-nestjs-realworld)의 두 후보 목록을 출력하고, 후보마다 경로와 근거 엣지를 열어 정의와 맞는지 확인한 기록. 기대 결과: 정의 위반 0건.
 Fuzzing: main이 scratchpad에 작성한 stdlib harness, seed 20261019. 표면: `analyze_bottlenecks`(file granularity)에 무작위 합성 FileArchitecture(파일 1–60개, 무작위 경로 category, 무작위 relation·confidence·resolution·ambiguous candidates, 무작위 `untested_hub_top_n` 1–20). oracle property — (a) BottleneckInputError 외 예외 0, (b) `untested_hub` 수 ≤ N, (c) 모든 `isolated_node` 대상에 대해 C-B 정의의 static production 연결 수가 0, (d) 두 kind 외의 후보 목록이 기능 추가 전 참조 함수 결과와 같다. 예산 20,000 입력.
@@ -35,16 +35,16 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 # Functional Requirements
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
-| R1 | 허브 후보군은 production category이고 boundary가 아닌 file 노드다. PageRank 내림차순, 같으면 node id 오름차순으로 정렬한 상위 `untested_hub_top_n`개다. | must | user answer (상위 N, PageRank) |
+| R1 | `pagerank_rank`는 허브 후보군 안에서 1부터 시작하는 순위다. 허브 후보군은 production category이고 boundary가 아닌 file 노드다. PageRank 내림차순, 같으면 node id 오름차순으로 정렬한 상위 `untested_hub_top_n`개다. | must | user answer (상위 N, PageRank) |
 | R2 | 허브 중 확정 TESTS 엣지가 들어오지 않는 파일마다 `untested_hub` 후보를 하나 낸다. 확정 TESTS 엣지는 test category file에서 오고, resolution이 `exact` 또는 `unique_name`이며, `to_id`가 그 파일인 `TESTS` 엣지다. confidence는 따지지 않는다. | must | I1 |
-| R3 | `untested_hub` metrics의 `uncertain_test_edge_count`는 그 파일을 `to_id` 또는 ambiguous candidates로 가리키는 비확정 TESTS 엣지(resolution `ambiguous`/`unresolved`) 수다. evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선, 불확실 관계 유지) |
-| R4 | `isolated_node` 대상은 production category, boundary 아님, 확장자 ∈ {py, ts, tsx, js, jsx, mjs, cjs, kt}, line_count ≥ 1인 file 노드다. | must | D4, D5 |
-| R5 | 대상 파일과 다른 production file 노드 사이의 엣지 중, 방향 무관, 자기 자신 제외, confidence ∈ {static_certain, static_inferred}, resolution ∈ {exact, unique_name}인 엣지(정적 연결)가 0개이면 `isolated_node` 후보를 낸다. test/generated/vendored 파일, boundary(외부) 노드와의 엣지는 세지 않는다. | must | user answer (고립 기준 세 항목) |
+| R3 | `untested_hub` metrics의 `uncertain_test_edge_count`는 그 파일을 `to_id` 또는 ambiguous candidates로 가리키는 비확정 TESTS 엣지(resolution `ambiguous`/`unresolved`) 수다. test category file에서 오는 TESTS 엣지만 센다. 엣지가 가리키는 대상은 `candidate_targets` 규칙을 따른다(ambiguous만 `candidates` 포함). evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선, 불확실 관계 유지) |
+| R4 | `isolated_node` 대상은 production category, boundary 아님, 확장자 ∈ {py, ts, tsx, js, jsx, mjs, cjs, kt}, `cost.line_count` ≥ 1인 file 노드다. metrics `line_count`도 `cost.line_count`다. | must | D4, D5 |
+| R5 | 대상 파일과 다른 production file 노드 사이의 엣지 중, 방향 무관, 자기 자신 제외, confidence ∈ {static_certain, static_inferred}, resolution ∈ {exact, unique_name}인 엣지(정적 연결)가 0개이면 `isolated_node` 후보를 낸다. 엣지의 상대 파일 집합은 `candidate_targets` 규칙을 따른다. test/generated/vendored 파일, boundary(외부) 노드와의 엣지는 세지 않는다. | must | user answer (고립 기준 세 항목) |
 | R6 | `isolated_node` metrics는 production 파일과의 엣지 중 framework_inferred 수, dynamic_required 수, 정적(`static_*`)이지만 ambiguous/unresolved인 수를 센다. 분류는 confidence가 먼저다: framework_inferred·dynamic_required 엣지는 resolution과 관계없이 각자의 수로 센다. evidence에 그 엣지들을 담는다. | must | 프로젝트 정의 (recall 우선) |
 | R7 | 후보 id는 기존 `_candidate` 규칙(`"b:" + sha256(identifier)[:16]`)을 따르고 identifier는 `<file id>|untested_hub`, `<file id>|isolated_node`다. 후보 목록 정렬은 기존과 같이 (kind, id)다. | must | 기존 후보 규칙 |
 | R8 | `untested_hub_top_n`은 선택 키다. 없으면 10이다. 있으면 int ≥ 1이어야 한다. file granularity 출력 JSON의 `edge_weights`에 항상 포함한다(symbol 출력은 R9에 따라 바뀌지 않는다). | must | I3, D2 |
 | R9 | 기존 후보 종류의 출력, `schema`(`bottlenecks.v8`), delta 결과는 바뀌지 않는다. symbol granularity 출력은 바뀌지 않는다. | must | I3, user answer (v8 유지) |
-| R10 | 보고서(report/bottlenecks/generate.py, HTML app.js)는 두 kind의 한국어 라벨과 설명을 보여주고, 대표 수치는 `untested_hub`은 `pagerank_rank`, `isolated_node`은 `line_count`다. | must | Scope |
+| R10 | 보고서(report/bottlenecks/generate.py, HTML app.js)는 두 kind의 한국어 라벨과 대표 수치를 보여준다. 대표 수치는 `untested_hub`은 `pagerank_rank`, `isolated_node`은 `line_count`다. generate.py `KIND_DESCRIPTIONS`에 한국어 설명을 둔다(기존 kind와 같이 화면 표시는 요구하지 않는다). 대시보드 후보 종류 필터 옵션은 요구하지 않는다(기존 순환·위반 kind도 없음). | must | Scope |
 
 # Errors
 - `untested_hub_top_n`이 int가 아니거나(bool 포함) 1 미만 — `EdgeWeightsError`(메시지에 키 이름 포함), CLI는 기존 설정 오류와 같은 종료 코드 — 출력 파일을 쓰지 않는다.
@@ -103,7 +103,7 @@ candidate kind "isolated_node": metrics {"line_count": int, "framework_edge_coun
 | V5 | R7 | 후보 id·정렬 | unit | equivalence partitioning | {id 형식, (kind,id) 정렬, 두 kind 동시 발생} | 100% | 참조 계산 id와 같다 | pytest |
 | V6 | R8, C12, C13, Errors | `load_edge_weights` | unit | boundary value analysis (3-value) + equivalence partitioning | 값 {0, 1, 2, -1, true, "3", 1.0, 키 없음} | 100% | 0/-1/true/"3"/1.0 → EdgeWeightsError(키 이름 포함), 1/2 → 그 값, 없음 → 10 | pytest |
 | V7 | R8, R9, C14, C15, Q3 | 4개 실제 fixture, CLI file·symbol | integration | equivalence partitioning | fixture 4개 × granularity 2 + delta(baseline=자기 자신) 1 | 100% | 두 kind 제외 시 base_commit 결과와 동일, schema v8, `edge_weights.untested_hub_top_n` 존재(file) | pytest, base_commit 결과는 `tests/reach_evidence/base_manifest.json` |
-| V8 | Q1 | 4개 실제 fixture | integration | metamorphic testing | 관계: (M1) N을 늘리면 `untested_hub` 집합은 부분집합 관계를 유지(단조 증가), (M2) test 파일을 snapshot에서 제거하면 `untested_hub` 집합은 커지거나 같다, (M3) 고립 파일과 production 파일 사이에 static_certain exact 엣지를 추가하면 그 파일의 `isolated_node`가 사라진다 | 100% (3관계 × 4 fixture) | 관계 성립 | pytest |
+| V8 | Q1 | 4개 실제 fixture | integration | metamorphic testing | 관계: (M1) N을 늘리면 `untested_hub` 집합은 부분집합 관계를 유지(단조 증가), (M2) N ≥ 후보군 크기일 때 test 파일을 snapshot에서 제거하면 `untested_hub` 집합은 커지거나 같다, (M3) 고립 파일과 production 파일 사이에 static_certain exact 엣지를 추가하면 그 파일의 `isolated_node`가 사라진다 | 100% (3관계 × 4 fixture) | 관계 성립 | pytest |
 | V9 | R10, C16, Q4 | 보고서 생성, HTML | integration | equivalence partitioning | {generate.py 라벨, 설명, 대표 수치, app.js 라벨, 대표 수치} × 2 kind | 100% | 문자열 존재와 값 표시 | pytest (기존 browser 테스트 방식) |
 | V10 | Q2 | 2 fixture | integration (benchmark marker) | none — measurement | 2 fixture | 100% | 비율 ≤ 1.10 | `pytest -m benchmark` 결과를 `tests/reach_evidence/benchmark.md`에 기록 |
 | V11 | Q5 | `analyze_bottlenecks` | fuzz | random testing | property (a)–(d) | 20,000 입력 | 위반 0 | main 실행, 결과를 ledger에 기록 |
@@ -158,6 +158,8 @@ Execution ledger (append attempts; preserve failed approaches):
 | --- | --- | --- | --- | --- |
 
 # Version Log
+## v3
+- [contract] test-implementer challenge 반영: R1 `pagerank_rank`는 후보군 내 순위, R3·R5는 `candidate_targets` 규칙(ambiguous만 candidates 포함)과 test category 출발만, R4 line_count 출처는 `cost.line_count`, V8 M2는 N ≥ 후보군 크기, R10 설명 화면 표시·필터 옵션 불요구, Tests paths에 chromium fallback 허용. brief 항목 변경 없음.
 ## v2
 - [contract] implementer challenge 반영: R8은 file granularity 출력에만 적용(R9와의 충돌 해소), R6 분류는 confidence 우선, R2는 confidence 무관. brief 항목 변경 없음.
 ## v1

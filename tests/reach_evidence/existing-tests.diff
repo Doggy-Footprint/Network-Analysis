@@ -1,0 +1,48 @@
+diff --git a/tests/standalone_candidate_policy_support.py b/tests/standalone_candidate_policy_support.py
+index ee84de7..e3fda17 100644
+--- a/tests/standalone_candidate_policy_support.py
++++ b/tests/standalone_candidate_policy_support.py
+@@ -230,7 +230,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
+             _metric_rows({ident: expected}, {ident: metrics}, pairs)
+         else:
+             assert metrics is None
+-    unchanged = lambda candidates: [c for c in candidates if c['kind'] != 'evidence_spread']
++    unchanged = lambda candidates: [c for c in candidates if c['kind'] not in {'evidence_spread', 'untested_hub', 'isolated_node'}]
+     assert unchanged(clean_report['candidates']) == unchanged(old_report['candidates']), 'large/unresolved/unrelated candidate rules changed'
+     expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'])
+     spread = {c['target']: c for c in clean_report['candidates'] if c['kind'] == 'evidence_spread'}
+@@ -249,4 +249,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
+     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
+     assert expected_top['versions']['analysis'] == '3'
+     expected_top['versions']['analysis'] = '4'
+-    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == expected_top
++    actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
++    if isinstance(actual_top.get('edge_weights'), dict):
++        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k != 'untested_hub_top_n'}
++    assert actual_top == expected_top
+diff --git a/tests/test_structure_facts.py b/tests/test_structure_facts.py
+index c6bd2e2..1b45909 100644
+--- a/tests/test_structure_facts.py
++++ b/tests/test_structure_facts.py
+@@ -409,7 +409,7 @@ def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):
+     from report.bottlenecks import render_report
+     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
+     payload = v8_payload(tmp_path)
+-    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency'):
++    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency', 'untested_hub', 'isolated_node'):
+         assert isinstance(KIND_LABELS[kind], str) and KIND_LABELS[kind].strip()
+         assert isinstance(KIND_DESCRIPTIONS[kind], str) and KIND_DESCRIPTIONS[kind].strip()
+     for kind in ('large_node', 'unresolved_boundary', 'evidence_spread'):
+diff --git a/tests/test_structure_integration.py b/tests/test_structure_integration.py
+index 360f59d..eaf2644 100644
+--- a/tests/test_structure_integration.py
++++ b/tests/test_structure_integration.py
+@@ -93,7 +93,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
+     assert canonical_sha(base) == manifest['candidates']
+     assert network['structure_policy'] == 'structure.v1'
+     assert 'language' in network['package_metrics']
+-    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS)
++    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS) | {'untested_hub', 'isolated_node'}
+ 
+ 
+ def test_V08_candidates_are_sorted_by_kind_then_id(run):
