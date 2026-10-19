@@ -620,3 +620,51 @@ def test_V12_configures_target_by_smallest_covering_node(tmp_path, label):
     rows = edge_rows(python_analyze(tmp_path))
     configures = [r for r in rows if r[1] == 'CONFIGURES']
     assert configures == [('config:.env:KEY', 'CONFIGURES', expected_target, 'static_inferred', 'exact', ())]
+
+
+# ---------------------------------------------------------------- comparator rule for F7 exact originals (spec v4)
+
+def _exact_split(retained_line=1):
+    from tests.test_candidate_policy_transition import transition_edge, transition_node
+    nodes = [transition_node('s'), transition_node('a'), transition_node('b'), transition_node('c')]
+    original = transition_edge('s', 'a', resolution='exact', weight=2, line=1)
+    original['confidence'] = 'static_certain'
+    kept = dict(original, weight=1, evidence=dict(original['evidence'], start_line=retained_line, end_line=retained_line))
+    other = transition_edge('s', 'a', candidates=['b'], resolution='ambiguous', weight=1, line=2)
+    import copy as _copy
+    return {'nodes': nodes, 'edges': [original]}, {'nodes': _copy.deepcopy(nodes), 'edges': [kept, other]}, transition_edge, original
+
+
+def test_VO7_F7_exact_original_split_is_accepted():
+    from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+    before, after, _, _ = _exact_split()
+    assert_candidate_policy_transition(before, after, {})
+
+
+@pytest.mark.parametrize('label', ['retained-evidence-changed', 'retained-confidence-changed', 'other-static-certain',
+                                   'other-exact-resolution', 'weight-mismatch', 'no-other-piece', 'retained-missing'])
+def test_VO7_F7_exact_original_split_rejections(label):
+    from tests.candidate_policy_transition_support import assert_candidate_policy_transition
+    before, after, _, _ = _exact_split()
+    kept, other = after['edges']
+    if label == 'retained-evidence-changed':
+        kept['evidence']['start_line'] = kept['evidence']['end_line'] = 2
+    elif label == 'retained-confidence-changed':
+        kept['confidence'] = 'static_inferred'
+    elif label == 'other-static-certain':
+        other['confidence'] = 'static_certain'
+    elif label == 'other-exact-resolution':
+        other['resolution'] = 'exact'
+    elif label == 'weight-mismatch':
+        other['weight'] = 2
+    elif label == 'no-other-piece':
+        kept['weight'] = 2
+        after['edges'] = [kept]
+        after['edges'][0]['evidence']['start_line'] = after['edges'][0]['evidence']['end_line'] = 2
+    elif label == 'retained-missing':
+        other['candidates'] = ['b']
+        kept['to_id'] = 'a'
+        kept['candidates'] = ['c']
+        kept['resolution'] = 'ambiguous'
+    with pytest.raises(AssertionError):
+        assert_candidate_policy_transition(before, after, {})
