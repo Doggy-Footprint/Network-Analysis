@@ -456,3 +456,86 @@ def test_V10_Q1_json_key_sets_and_schema_version_unchanged(tmp_path_factory, fix
     allowed = CANDIDATE_BASE | ({'structure'} if granularity == 'file' else set())
     for candidate in payload['candidates']:
         assert CANDIDATE_BASE <= set(candidate) <= allowed, candidate['kind']
+
+
+# ------------------------------------------------------------------ spec v2 additions (Errors 1, R10 duplicates, R6 module call, R7 negatives)
+
+def test_V1_Errors1_syntax_error_ts_files_do_not_raise_and_well_formed_file_keeps_flags(tmp_path):
+    files = {
+        'bad1.ts': 'require(n);\nconst = ;\n',
+        'bad2.ts': 'Reflect.get(o, ;\n',
+        'good.ts': 'export function f(n) {\n  return eval(n);\n}\nReflect.get(o, k);\nrequire("./b");\n',
+        'b.ts': 'export const b = 1;\n',
+    }
+    arch = build_ts(tmp_path, files)
+    assert dyn_of(arch, 'ts:good.ts') == sorted([FLAG_EVAL, FLAG_ATTR, FLAG_IMPORT])
+    assert dyn_of(arch, 'ts:b.ts') == []
+    assert dynamic_edges(arch) == [('ts:good.ts', 'ts:b.ts')]
+
+
+def test_V1_Errors1_well_formed_file_without_triggers_stays_clean_next_to_error_files(tmp_path):
+    files = {'bad1.ts': 'require(n); const = ;\n', 'bad2.ts': 'Reflect.get(o, ;\n', 'good.ts': 'export const ok = 1;\n'}
+    assert dyn_of(build_ts(tmp_path, files), 'ts:good.ts') == []
+
+
+def test_V4_Errors1_trailing_lambda_only_calls(tmp_path):
+    source = ('package a\n\nfun load(x: Loader) {\n    x.loadClass { }\n}\n\nfun member(cls: Class<*>) {\n    cls.getMethod { }\n}\n\n'
+              'fun calm() {}\n')
+    arch = build_kotlin(tmp_path, {KT_FILE: source})
+    assert dyn_of(arch, 'kotlin:a/X.kt#load') == IMP
+    assert dyn_of(arch, 'kotlin:a/X.kt#member') == ATT
+    assert dyn_of(arch, 'kotlin:a/X.kt#calm') == []
+
+
+def test_V4_Errors1_call_inside_error_region_does_not_raise(tmp_path):
+    files = {'a/X.kt': 'package a\n\nfun broken( {\n    Class.forName(n)\n    cls.getMethod(n\n}\n\nfun ok(n: String) {\n    Class.forName(n)\n}\n',
+             'a/Y.kt': 'package a\n\nfun y(n: String) {\n    Class.forName(n)\n}\n'}
+    arch = build_kotlin(tmp_path, files)
+    assert dyn_of(arch, 'kotlin:a/Y.kt#y') == IMP
+
+
+def flag_list(arch, node_id):
+    for n in arch.nodes:
+        if n.id == node_id:
+            return [f for f in n.flags if f.startswith('dynamic_')]
+    raise AssertionError(node_id)
+
+
+def test_V4_R10_two_identical_calls_in_one_symbol_flag_once(tmp_path):
+    arch = kt_top(tmp_path, 'Class.forName(n); Class.forName(n)')
+    assert flag_list(arch, KT_TOP) == [FLAG_IMPORT]
+
+
+def test_V4_R10_class_with_two_flagged_methods_has_each_flag_once(tmp_path):
+    source = ('package a\n\nclass X {\n    fun m1(n: String) {\n        Class.forName(n)\n    }\n\n'
+              '    fun m2(n: String) {\n        Class.forName(n)\n    }\n}\n')
+    arch = build_kotlin(tmp_path, {KT_FILE: source})
+    assert flag_list(arch, 'kotlin:a/X.kt#X') == [FLAG_IMPORT]
+    assert flag_list(arch, 'kotlin:a/X.kt#X.m1') == [FLAG_IMPORT]
+    assert flag_list(arch, 'kotlin:a/X.kt#X.m2') == [FLAG_IMPORT]
+
+
+def test_V4_R10_import_and_attr_calls_in_one_symbol_each_appear_once(tmp_path):
+    arch = kt_top(tmp_path, 'Class.forName(n); cls.getMethod(n); cls.getField(n); loader.loadClass(n)')
+    assert sorted(flag_list(arch, KT_TOP)) == sorted([FLAG_IMPORT, FLAG_ATTR])
+    assert len(flag_list(arch, KT_TOP)) == 2
+
+
+def test_V6_module_level_call_through_module_level_alias_flags_module_node(tmp_path):
+    arch = py_arch(tmp_path, 'from builtins import eval as e\n\ne(c)\n\ndef quiet():\n    pass\n')
+    assert dyn_of(arch, PY_MOD) == EVA
+    assert dyn_of(arch, 'py:mod#quiet') == []
+
+
+def test_V6_Errors1_python_syntax_error_file_does_not_raise_and_well_formed_file_keeps_flags(tmp_path):
+    files = {'bad.py': 'def f(:\n    eval(x)\n',
+             'good.py': 'from builtins import eval as e\n\ndef run(c):\n    return e(c)\n\ndef calm():\n    pass\n'}
+    arch = build_python(tmp_path, files)
+    assert dyn_of(arch, 'py:good#run') == EVA
+    assert dyn_of(arch, 'py:good#calm') == []
+
+
+@pytest.mark.parametrize('call,flag', [('o.eval(c)', FLAG_EVAL), ('o.getattr(x, n)', FLAG_ATTR)])
+def test_V7_non_builtins_receiver_is_not_flagged(tmp_path, call, flag):
+    source = f'def run(o, c, x, n):\n    return {call}\n'
+    assert flag not in dyn_of(py_arch(tmp_path, source), PY_RUN)

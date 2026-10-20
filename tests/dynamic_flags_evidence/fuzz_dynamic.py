@@ -1,6 +1,6 @@
 """Property fuzz for spec f3972ebd2386454f (R1-R9): random temp projects per language; the expected
 dynamic_* flag set of every target node is computed from the snippet catalogue below, independently of
-the analyzers. Usage: fuzz_dynamic.py [--seed 20261019] [--budget 1000] [--lang python,typescript,kotlin]
+the analyzers; a repeated flag on one node is a violation. Each project gets a syntactically broken extra file with probability 0.1 (Errors 1). Usage: fuzz_dynamic.py [--seed 20261019] [--budget 1000] [--lang python,typescript,kotlin]
 """
 import argparse
 import os
@@ -70,7 +70,9 @@ KT_SNIPPETS = [
 
 
 def dyn(node):
-    return {f for f in node.flags if f.startswith("dynamic_")}
+    values = [f for f in node.flags if f.startswith("dynamic_")]
+    # A repeated flag makes the set differ from every expectation (R10: flags change only by value).
+    return set(values) | ({"DUPLICATE"} if len(values) != len(set(values)) else set())
 
 
 def py_case(rng):
@@ -117,7 +119,7 @@ def py_case(rng):
 def py_check(root, files, expected, module_flags):
     arch = PythonGraphAnalyzer(str(root)).analyze()
     problems = []
-    modules = [n for n in arch.nodes if n.kind == "module"]
+    modules = [n for n in arch.nodes if n.kind == "module" and n.label == "m.py"]
     if len(modules) != 1 or dyn(modules[0]) != module_flags:
         problems.append(("module", module_flags, [dyn(m) for m in modules]))
     for name, flags in expected.items():
@@ -190,6 +192,12 @@ def kt_check(root, files, expected, _):
     return problems
 
 
+BROKEN = {
+    "python": ("broken.py", "def (:\n    eval(c\n"),
+    "typescript": ("zz.ts", "require(n); const = ;\nReflect.get(o, ;\n"),
+    "kotlin": ("p/B.kt", "package p\nfun ( {\n    Class.forName(n)\n    x.loadClass { }\n"),
+}
+
 LANGS = {"python": (py_case, py_check), "typescript": (ts_case, ts_check), "kotlin": (kt_case, kt_check)}
 
 
@@ -206,6 +214,9 @@ def main():
         crashes = violations = 0
         for run in range(args.budget):
             files, expected, extra = make(rng)
+            if rng.random() < 0.1:
+                broken_path, broken_text = BROKEN[lang]
+                files[broken_path] = broken_text
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 for rel, text in files.items():

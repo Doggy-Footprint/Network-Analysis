@@ -5,7 +5,7 @@
   "file": "language_analyzers/typescript/analyzer.py",
   "selector": "test_V1",
   "killed": true,
-  "summary": "14 failed, 6 passed, 125 deselected in 5.16s",
+  "summary": "15 failed, 7 passed, 134 deselected in 4.80s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[empty-string-import]",
    "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[empty-string-require]",
@@ -21,7 +21,7 @@
   "file": "language_analyzers/typescript/analyzer.py",
   "selector": "test_V3",
   "killed": true,
-  "summary": "9 failed, 15 passed, 121 deselected in 4.58s",
+  "summary": "9 failed, 15 passed, 132 deselected in 0.56s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.get-string]",
    "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.set-string]",
@@ -37,7 +37,7 @@
   "file": "language_analyzers/typescript/ast.py",
   "selector": "test_V3",
   "killed": true,
-  "summary": "1 failed, 23 passed, 121 deselected in 4.50s",
+  "summary": "1 failed, 23 passed, 132 deselected in 0.43s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.get-substituted-template]"
   ]
@@ -48,7 +48,7 @@
   "file": "language_analyzers/typescript/analyzer.py",
   "selector": "test_V2",
   "killed": true,
-  "summary": "1 failed, 7 passed, 137 deselected in 0.27s",
+  "summary": "1 failed, 7 passed, 148 deselected in 0.17s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V2_eval_partitions[new-Function]"
   ]
@@ -59,7 +59,7 @@
   "file": "language_analyzers/kotlin/ast.py",
   "selector": "test_V5",
   "killed": true,
-  "summary": "1 failed, 12 passed, 132 deselected in 0.27s",
+  "summary": "1 failed, 12 passed, 143 deselected in 0.20s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V5_member_lookup_argument_partitions[getMethod-interpolated]"
   ]
@@ -70,9 +70,10 @@
   "file": "language_analyzers/kotlin/analyzer.py",
   "selector": "test_V4",
   "killed": true,
-  "summary": "1 failed, 9 passed, 135 deselected in 0.25s",
+  "summary": "2 failed, 13 passed, 141 deselected in 0.24s",
   "failed_tests": [
-   "tests/test_dynamic_flags.py::test_V4_attribution_method_and_enclosing_class_both_flagged"
+   "tests/test_dynamic_flags.py::test_V4_attribution_method_and_enclosing_class_both_flagged",
+   "tests/test_dynamic_flags.py::test_V4_R10_class_with_two_flagged_methods_has_each_flag_once"
   ]
  },
  {
@@ -81,7 +82,7 @@
   "file": "language_analyzers/python/graph.py",
   "selector": "test_V6",
   "killed": true,
-  "summary": "2 failed, 40 passed, 103 deselected in 0.66s",
+  "summary": "2 failed, 42 passed, 112 deselected in 0.52s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V6_C14_alias_name_reassigned_locally_is_not_an_alias[import-alias]",
    "tests/test_dynamic_flags.py::test_V6_C14_alias_name_reassigned_locally_is_not_an_alias[eval-alias]"
@@ -93,7 +94,7 @@
   "file": "language_analyzers/python/graph.py",
   "selector": "test_V6",
   "killed": true,
-  "summary": "12 failed, 30 passed, 103 deselected in 0.57s",
+  "summary": "12 failed, 32 passed, 112 deselected in 0.60s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-builtins-as-if]",
    "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-builtins-as-try]",
@@ -109,7 +110,7 @@
   "file": "language_analyzers/python/graph.py",
   "selector": "test_V8",
   "killed": true,
-  "summary": "4 failed, 8 passed, 133 deselected in 0.32s",
+  "summary": "4 failed, 8 passed, 144 deselected in 0.22s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[del-fstring]",
    "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[del-name]",
@@ -119,14 +120,66 @@
  },
  {
   "id": "M10",
-  "defect": "R9 module hook set includes __setattr__",
+  "defect": "R9 module hook set widened to all class hooks plus __dir__ (module __setattr__/__dir__ flagged)",
   "file": "language_analyzers/python/graph.py",
   "selector": "test_V9",
   "killed": true,
-  "summary": "2 failed, 8 passed, 135 deselected in 0.22s",
+  "summary": "2 failed, 8 passed, 146 deselected in 0.21s",
   "failed_tests": [
    "tests/test_dynamic_flags.py::test_V9_module_level_setattr_and_dir_do_not_flag[__setattr__]",
    "tests/test_dynamic_flags.py::test_V9_module_level_setattr_and_dir_do_not_flag[__dir__]"
+  ]
+ },
+ {
+  "id": "M11",
+  "defect": "R10 Kotlin flag appended without dedupe",
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "selector": "test_V4",
+  "killed": true,
+  "summary": "11 failed, 4 passed, 141 deselected in 0.42s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V4_class_loading_decision_table[Class.forName]",
+   "tests/test_dynamic_flags.py::test_V4_class_loading_decision_table[ServiceLoader.load]",
+   "tests/test_dynamic_flags.py::test_V4_class_loading_decision_table[loader.loadClass]",
+   "tests/test_dynamic_flags.py::test_V4_class_loading_decision_table[qualified-Class.forName-literal]",
+   "tests/test_dynamic_flags.py::test_V4_attribution_method_and_enclosing_class_both_flagged",
+   "tests/test_dynamic_flags.py::test_V4_C15_syntax_error_file_does_not_raise_and_other_files_still_analyzed"
+  ]
+ },
+ {
+  "id": "M12",
+  "defect": "Errors 1 exception on missing TS argument node",
+  "file": "language_analyzers/typescript/ast.py",
+  "selector": "test_V1 or test_V3",
+  "killed": true,
+  "summary": "3 failed, 43 passed, 110 deselected in 4.79s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.get-absent]",
+   "tests/test_dynamic_flags.py::test_V1_Errors1_syntax_error_ts_files_do_not_raise_and_well_formed_file_keeps_flags",
+   "tests/test_dynamic_flags.py::test_V1_Errors1_well_formed_file_without_triggers_stays_clean_next_to_error_files"
+  ]
+ },
+ {
+  "id": "M13",
+  "defect": "R7 any receiver treated like builtins",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V7",
+  "killed": true,
+  "summary": "2 failed, 6 passed, 148 deselected in 0.17s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V7_non_builtins_receiver_is_not_flagged[o.eval(c)-dynamic_eval]",
+   "tests/test_dynamic_flags.py::test_V7_non_builtins_receiver_is_not_flagged[o.getattr(x,"
+  ]
+ },
+ {
+  "id": "M14",
+  "defect": "R6 module-level aliases ignored for module-level calls",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V6",
+  "killed": true,
+  "summary": "1 failed, 43 passed, 112 deselected in 0.42s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V6_module_level_call_through_module_level_alias_flags_module_node"
   ]
  }
 ]

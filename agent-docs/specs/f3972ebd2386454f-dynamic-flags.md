@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 run_id: f3972ebd2386454f
 status: active
 base_commit: 963d70018442629e55c0b7415882357e77e152ae
@@ -48,6 +48,7 @@ Review evidence:
 Fuzzing:
 - 도구: main이 작성하는 stdlib harness `tests/dynamic_flags_evidence/fuzz_dynamic.py`, seed 20261019.
 - 표면: 언어별 생성기가 함수/클래스 1–3개짜리 임시 프로젝트를 만들고, 각 심볼 본문에 R1–R9 구문(양성·음성 변형, 리터럴/비리터럴 인자, 별칭, 인자 개수 0–3)을 무작위로 0–3개 넣는다. Python·TS·Kotlin analyzer에 snapshot 없이 넣는다.
+- 각 프로젝트에 10% 확률로 구문 오류 파일 1개를 추가한다(Errors 1).
 - oracle (property): ① 예외 0 ② 생성기가 계산한 기대 플래그 집합과 각 노드의 `dynamic_*` 플래그 집합이 같다(R1–R9 규칙의 독립 구현).
 - 예산: 언어별 1,000 프로젝트.
 
@@ -133,13 +134,13 @@ Mutation tool:
 # Verification Obligations
 | id | parent requirement/Case ids | variant and target surface | test layer and selection policy | ISO/IEC/IEEE 29119-4 technique | coverage items | coverage target | observation and expected result | evidence procedure |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| V1 | R1,C1,C2,C15 | TypeScriptAnalyzer module 노드 flags, IMPORTS 엣지, external_imports | integration (임시 프로젝트 → analyzer) | equivalence partitioning | 호출 `import`/`require` × 인자 {식별자, 비어 있지 않은 리터럴(내부 파일), 외부 패키지 리터럴, 빈 문자열, 인자 없음, 치환 template}; 음성 {`require.resolve(x)`, `x.require(y)`} | 100% | 플래그 유무, 엣지는 비어 있지 않은 내부 리터럴만 | pytest |
+| V1 | R1,C1,C2,C15 | TypeScriptAnalyzer module 노드 flags, IMPORTS 엣지, external_imports | integration (임시 프로젝트 → analyzer) | equivalence partitioning | 호출 `import`/`require` × 인자 {식별자, 비어 있지 않은 리터럴(내부 파일), 외부 패키지 리터럴, 빈 문자열, 인자 없음, 치환 template}; 음성 {`require.resolve(x)`, `x.require(y)`}; Errors 1: 구문 오류 TS 파일(`require(n); const = ;`, `Reflect.get(o, ;`) + 정상 파일 1 → 예외 없음, 정상 파일 결과 유지 | 100% | 플래그 유무, 엣지는 비어 있지 않은 내부 리터럴만 | pytest |
 | V2 | R2,C3,C4 | TS module 노드 flags | integration | equivalence partitioning | 양성 {`eval(x)`, `Function(x)`, `new Function(x)`}; 음성 {`window.eval(x)`, `o.Function()`, `new o.Function()`, `evaluate(x)`} | 100% | `dynamic_eval` 유무 | pytest |
 | V3 | R3,C5,C6 | TS module 노드 flags | integration | decision table | 함수 6종(Reflect.get/set/has/defineProperty/deleteProperty, Object.defineProperty) × 두 번째 인자 {식별자, string, number, 무치환 template, 치환 template, 없음} 중 각 함수는 {식별자, string} 2개, `Reflect.get`은 6개 전부; `Reflect.apply` {리터럴 인자, 식별자 인자}; 음성 {`obj[name]`, `Reflect.ownKeys(o)`, `Object.keys(o)`} | 100% | `dynamic_attr` 유무 | pytest |
-| V4 | R4,C7,C9,C15 | KotlinAnalyzer 심볼 노드 flags | integration | decision table | {Class.forName 단순/정규화 receiver, ServiceLoader.load, x.loadClass}; 음성 {receiver 없는 forName·loadClass, `Foo.forName`, `x.load()`}; 귀속 {top-level fun, class 안 method → method와 class 노드 둘 다}; 구문 오류 파일 1 | 100% | `dynamic_import` 유무·위치, 새 엣지 없음 | pytest |
+| V4 | R4,C7,C9,C15 | KotlinAnalyzer 심볼 노드 flags | integration | decision table | {Class.forName 단순/정규화 receiver, ServiceLoader.load, x.loadClass}; 음성 {receiver 없는 forName·loadClass, `Foo.forName`, `x.load()`}; 귀속 {top-level fun, class 안 method → method와 class 노드 둘 다}; 구문 오류 파일 1; Errors 1 호출 형태 {trailing-lambda만 있는 호출 `x.loadClass { }`·`cls.getMethod { }`, 오류 구간 안 호출} → 예외 없음; 중복 {한 심볼에 같은 판정 호출 2개, 한 class에 플래그 method 2개, 한 심볼에 import+attr} → flags 리스트에 같은 값 1회(R10) | 100% | `dynamic_import` 유무·위치, 새 엣지 없음, 중복 없음 | pytest |
 | V5 | R5,C8,C9 | Kotlin 심볼 flags | integration | boundary value (2-value) + equivalence partitioning | 메서드 4종 × {리터럴 이름} 중 `getMethod`는 {식별자, 리터럴, 치환 문자열, 인자 없음, 리터럴 + 추가 인자} 전부, 나머지 3종은 {식별자, 리터럴}; 음성 {receiver 없는 getMethod} | 100% | `dynamic_attr` 유무 | pytest |
-| V6 | R6,C10,C14 | Python 심볼·module flags와 IMPORTS 엣지 | integration | decision table | 별칭 형태 {`from importlib import import_module as im`, `import importlib as il`, `from builtins import eval as e`, `import builtins as b`} × 정의 위치 {module 최상위, `if`/`try` 블록, 스캔 본문 안}; 리터럴 인자 별칭 → 엣지; 음성 {다른 모듈 정의 별칭, 다른 함수 본문의 별칭} | 형태 4 × 위치는 각 형태가 module 최상위·본문 안 1회 이상, `if`/`try` 1회 이상; 나머지 100% | 플래그·엣지 | pytest |
-| V7 | R7,C11 | Python flags | integration | equivalence partitioning | `builtins.` receiver × {eval 계열 1개 이상, attr 계열 비상수·상수 인자}; 별칭 receiver 1 | 100% | 플래그 유무 | pytest |
+| V6 | R6,C10,C14 | Python 심볼·module flags와 IMPORTS 엣지 | integration | decision table | 별칭 형태 {`from importlib import import_module as im`, `import importlib as il`, `from builtins import eval as e`, `import builtins as b`} × 정의 위치 {module 최상위, `if`/`try` 블록, 스캔 본문 안}; 리터럴 인자 별칭 → 엣지; 음성 {다른 모듈 정의 별칭, 다른 함수 본문의 별칭}; 호출 위치 {module 최상위 호출 → module 노드}; Errors 1: SyntaxError Python 파일 + 정상 파일 1 → 예외 없음, 정상 파일 결과 유지 | 형태 4 × 위치는 각 형태가 module 최상위·본문 안 1회 이상, `if`/`try` 1회 이상; 나머지 100% | 플래그·엣지 | pytest |
+| V7 | R7,C11 | Python flags | integration | equivalence partitioning | `builtins.` receiver × {eval 계열 1개 이상, attr 계열 비상수·상수 인자}; 별칭 receiver 1; 음성 {`o.eval(c)`, `o.getattr(x, n)`} | 100% | 플래그 유무 | pytest |
 | V8 | R8,C12 | Python flags | integration | equivalence partitioning | k {Name, str 상수, 정수 상수, f-string}; ctx {Load, Store, Del}(비상수 k에서); 음성 `o.mapping[n]` | 100% | `dynamic_attr` 유무 | pytest |
 | V9 | R9,C13 | Python class·module flags | integration | equivalence partitioning | 메서드 4종 각 1회(def), async def 1회, 중첩 클래스 안 정의(바깥 클래스는 해당 없음), module 최상위 `__getattr__`, 음성 module 최상위 `__setattr__`·`__dir__` | 100% | 플래그 유무·위치 | pytest |
 | V10 | R10,C16,Q1 | 실제 fixture 출력 | integration + review | error guessing | 설명 안 되는 플래그·후보·엣지 변화, schema key 변화 | none — experience-based | review.md 집계와 key 비교, 기존 suite 통과 | review + pytest |
@@ -181,7 +182,7 @@ Mutation tool:
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 0 |
+| correction batches used | 1 |
 | verifier invocations | 1 |
 | open finding ids | none |
 
@@ -205,8 +206,12 @@ Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
 | 0 | — | — | implementer + test-implementer v1; no spec challenges; no existing test changed | Test command pass |
+| 2 | verifier 1 RETRY: VF1-1 (Errors 1 parse-error signal has no obligation for TS/Python; Kotlin error-shaped call nodes) blocking; advisories VF1-2 (duplicate flags), VF1-3 (non-builtins receiver negative), VF1-4 (module-level alias call), VF1-5 (M10 description) | spec gap: Errors row approved but not mapped to coverage items | v2: coverage items added to V1, V4, V6, V7, V11; VF1-2..4 adopted as declared items (R10 and R6 already require them); VF1-5 fixed in hand-mutations.json | 진행 중 |
 | 1 | mutation tool first sanity check: ast.unparse-only files failed 145 tests | main's sanity command truncated the file before reading it (verified: `open(p,'w')` evaluated before `open(p).read()`) | re-ran with read-then-write: 145 passed; tool kills 30/30 stand | valid |
 
 # Version Log
+## v2
+- VF1-1: Errors 1(구문 오류 파일)을 V1·V4·V6·V11 coverage item으로 추가. 계약만 변경(승인된 Errors 행의 검증 누락).
+- VF1-2–4 채택: V4 중복 없음(R10), V7 비-builtins receiver 음성(R7), V6 module 최상위 호출(R6). 요구사항 변경 없음.
 ## v1
 - 초안 작성. 승인된 계획 `/root/.claude/plans/golden-cooking-boole.md`의 R1–R9를 R1–R10으로 구체화.

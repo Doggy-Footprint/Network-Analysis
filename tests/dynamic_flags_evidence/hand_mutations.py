@@ -12,7 +12,11 @@ M=[
  ("M7","C14 rebound guard removed",P,"if alias is not None and alias[1] is not None and func.id not in self.rebound:","if alias is not None and alias[1] is not None:","test_V6"),
  ("M8","R6 if/try blocks ignored",P,"    for node in _walk_excluding_defs([\n        statement for statement in statements\n        if not isinstance(statement, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef))\n    ]):","    for node in statements:","test_V6"),
  ("M9","R8 only Load context",P,"        if not (isinstance(node.value, ast.Attribute) and node.value.attr == \"__dict__\"):","        if not (isinstance(node.value, ast.Attribute) and node.value.attr == \"__dict__\") or not isinstance(node.ctx, ast.Load):","test_V8"),
- ("M10","R9 module hook set includes __setattr__",P,"if _defines_hook(entry.tree.body, {\"__getattr__\"}):","if _defines_hook(entry.tree.body, _ATTRIBUTE_HOOKS | {\"__dir__\"}):","test_V9"),
+ ("M10","R9 module hook set widened to all class hooks plus __dir__ (module __setattr__/__dir__ flagged)",P,"if _defines_hook(entry.tree.body, {\"__getattr__\"}):","if _defines_hook(entry.tree.body, _ATTRIBUTE_HOOKS | {\"__dir__\"}):","test_V9"),
+ ("M11","R10 Kotlin flag appended without dedupe",K,"            if flag not in self._nodes[symbol.id].flags:\n                self._nodes[symbol.id].flags.append(flag)","            self._nodes[symbol.id].flags.append(flag)\n            self._nodes[symbol.id].flags.append(flag)","test_V4"),
+ ("M12","Errors 1 exception on missing TS argument node",TA,"    if node is None:\n        return False\n    if node.type","    if node.type","test_V1 or test_V3"),
+ ("M13","R7 any receiver treated like builtins",P,"            elif func.value.id == \"builtins\":","            elif True:","test_V7"),
+ ("M14","R6 module-level aliases ignored for module-level calls",P,"        self.aliases.update(_import_aliases(statements))","        if module_aliases is not None:\n            self.aliases.update(_import_aliases(statements))","test_V6"),
 ]
 res=[]
 for mid,desc,path,old,new,sel in M:
