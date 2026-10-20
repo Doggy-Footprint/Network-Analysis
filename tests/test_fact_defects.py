@@ -189,7 +189,9 @@ def test_V3_python_symbol_granularity_large_node_boundary(tmp_path, line_count, 
     if is_candidate:
         assert len(found) == 1
         assert found[0]['target'] == 'py:m'
-        assert found[0]['metrics'] == {'line_count': line_count, 'line_threshold': THRESHOLD}
+        assert isinstance(found[0]['metrics']['token_count'], int)
+        assert found[0]['metrics'] == {'line_count': line_count, 'line_threshold': THRESHOLD,
+                                       'token_count': found[0]['metrics']['token_count'], 'token_threshold': 24000}
     else:
         assert found == []
 
@@ -550,7 +552,8 @@ EXPECTED_SHAPE = {
         'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy', 'candidate_groups',
                                'edge_count', 'node_count', 'node_metrics', 'package_dependencies', 'package_metrics',
                                'rankings', 'rankings_by_category', 'structure_policy'],
-        'edge_weights': ['confidence', 'large_node_line_threshold', 'resolution', 'untested_hub_top_n'],
+        'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution',
+                         'untested_hub_top_n'],
         'coverage': ['analysis_coverage', 'limitations', 'source_file_count', 'structure'],
         'snapshot': ['file_count', 'ignore_source'],
         'versions': ['analysis'],
@@ -561,7 +564,7 @@ EXPECTED_SHAPE = {
                 'versions'],
         'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy', 'candidate_groups',
                                'edge_count', 'node_count', 'node_metrics', 'rankings', 'rankings_by_category'],
-        'edge_weights': ['confidence', 'large_node_line_threshold', 'resolution'],
+        'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution'],
         'coverage': ['analysis_coverage', 'limitations', 'source_file_count'],
         'snapshot': ['file_count', 'ignore_source'],
         'versions': ['analysis'],

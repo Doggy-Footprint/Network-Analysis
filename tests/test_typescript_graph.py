@@ -335,7 +335,7 @@ class TestTypedFields(TypeScriptFixture):
         self.assertEqual(len(ambiguous), 1)
         self.assertEqual(ambiguous[0].resolution, Resolution.AMBIGUOUS)
         self.assertEqual(ambiguous[0].candidates, ["ts:b.ts#shared"])
-        self.assertIn(flag_names.AMBIGUOUS_NAME, nodes["ts:a.ts#shared"].flags)
+        self.assertNotIn("ambiguous_name", nodes["ts:a.ts#shared"].flags)
 
     def test_unimported_unique_name_is_inferred_not_certain(self):
         self.write("lib.ts", "export function onlyHere(): number {\n  return 1;\n}\n")
@@ -352,7 +352,8 @@ class TestTypedFields(TypeScriptFixture):
 
         nodes, _, _ = self.graph()
 
-        self.assertEqual(nodes["ts:main.ts#run"].metadata["unresolved_calls"], {"parseInt": 1})
+        self.assertEqual(nodes["ts:main.ts#run"].metadata["external_calls"], {"parseInt": 1})
+        self.assertNotIn("unresolved_calls", nodes["ts:main.ts#run"].metadata)
 
     def test_repeated_calls_accumulate_weight(self):
         self.write("lib.ts", "export function helper(): number {\n  return 1;\n}\n")

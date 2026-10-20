@@ -173,7 +173,7 @@ def test_V4_attribution_method_and_enclosing_class_both_flagged(tmp_path):
               'class Y {\n    fun idle() {}\n}\n\nfun top(n: String) {\n    Class.forName(n)\n}\n\nfun calm() {}\n')
     arch = build_kotlin(tmp_path, {KT_FILE: source})
     assert dyn_of(arch, 'kotlin:a/X.kt#X.m') == IMP
-    assert dyn_of(arch, 'kotlin:a/X.kt#X') == IMP
+    assert dyn_of(arch, 'kotlin:a/X.kt#X') == []
     assert dyn_of(arch, 'kotlin:a/X.kt#top') == IMP
     for quiet in ('kotlin:a/X.kt#X.quiet', 'kotlin:a/X.kt#Y', 'kotlin:a/X.kt#Y.idle', 'kotlin:a/X.kt#calm'):
         assert dyn_of(arch, quiet) == []
@@ -214,7 +214,7 @@ def test_V5_attribution_includes_enclosing_class(tmp_path):
     source = 'package a\n\nclass X {\n    fun m(c: Class<*>, n: String) {\n        c.getMethod(n)\n    }\n}\n'
     arch = build_kotlin(tmp_path, {KT_FILE: source})
     assert dyn_of(arch, 'kotlin:a/X.kt#X.m') == ATT
-    assert dyn_of(arch, 'kotlin:a/X.kt#X') == ATT
+    assert dyn_of(arch, 'kotlin:a/X.kt#X') == []
 
 
 # ------------------------------------------------------------------ Python helpers
@@ -434,7 +434,7 @@ SHAPE = {
     'symbol': ('bottlenecks.v6', '5', ['candidates', 'coverage', 'dependency_network', 'edge_weights', 'limitations',
                                        'schema', 'snapshot', 'versions']),
 }
-KNOWN_FLAGS = {'dynamic_import', 'dynamic_attr', 'dynamic_eval', 'reexport', 'ambiguous_name', 'generated', 'vendored', 'test'}
+KNOWN_FLAGS = {'dynamic_import', 'dynamic_attr', 'dynamic_eval', 'reexport', 'generated', 'vendored', 'test'}
 FIXTURES = [('typescript-nestjs-realworld', ('-l', 'typescript', '-f', 'nestjs')), ('futuramaapi', ('-l', 'python'))]
 
 
@@ -510,7 +510,7 @@ def test_V4_R10_class_with_two_flagged_methods_has_each_flag_once(tmp_path):
     source = ('package a\n\nclass X {\n    fun m1(n: String) {\n        Class.forName(n)\n    }\n\n'
               '    fun m2(n: String) {\n        Class.forName(n)\n    }\n}\n')
     arch = build_kotlin(tmp_path, {KT_FILE: source})
-    assert flag_list(arch, 'kotlin:a/X.kt#X') == [FLAG_IMPORT]
+    assert flag_list(arch, 'kotlin:a/X.kt#X') == []
     assert flag_list(arch, 'kotlin:a/X.kt#X.m1') == [FLAG_IMPORT]
     assert flag_list(arch, 'kotlin:a/X.kt#X.m2') == [FLAG_IMPORT]
 

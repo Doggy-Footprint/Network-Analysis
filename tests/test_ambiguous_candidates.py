@@ -9,6 +9,7 @@ from language_analyzers.core.graph_models import NodeCost, Resolution, SourceSpa
 from tests.edge_weights_support import edge, load_weights, symbol_nodes, weights_data
 from tests.file_analysis_support import architecture, converted, node, serialize, snapshot
 from tests.candidate_group_storage_support import recovered_candidate_evidence
+from tests.signal_defects_support import ref_pagerank
 
 POLICY = 'equal-symbol-share.v1'
 TOL = 1e-9
@@ -36,10 +37,10 @@ def test_VO1_independent_closed_form_star(tmp_path, case, count, alternatives, p
     weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
     result = metrics(nodes, edges, weights)
     assert result['ambiguity_policy'] == POLICY
-    n = count + 1
-    teleport = (1 - .85) / n
-    source_rank = (teleport + .85) / 1.85
-    target_rank = teleport + .85 * source_rank / count
+    # R7 (spec e91abc221d7deb2a): per-target share is d * score * w / outdeg, the undelivered part is spread uniformly
+    expected_rank = ref_pagerank({'S': {t: total / count for t in targets}, **{t: {'S': 1.0} for t in targets}})
+    source_rank = expected_rank['S']
+    target_rank = expected_rank[targets[0]]
     for ident in ['S', *targets]:
         m = result['node_metrics'][ident]
         is_source = ident == 'S'
@@ -82,11 +83,9 @@ def test_VO1_pagerank_competing_exact_edge_independent_allocation(tmp_path, prof
     edges += [edge(target, 'S') for target in 'ABC']
     weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
     observed = metrics(nodes, edges, weights)['node_metrics']
-    damping = .85
-    teleport = .15 / 4
-    source = (teleport + damping) / (1 + damping)
-    candidate = teleport + damping * source * (total / 2) / (1 + total)
-    exact = teleport + damping * source / (1 + total)
+    # R7: weights S->A, S->B are total/2 each, S->C is 1.0, outdeg(S) = 3
+    expected_rank = ref_pagerank({'S': {'A': total / 2, 'B': total / 2, 'C': 1.0}, 'A': {'S': 1.0}, 'B': {'S': 1.0}, 'C': {'S': 1.0}})
+    source, candidate, exact = expected_rank['S'], expected_rank['A'], expected_rank['C']
     for ident, expected in {'S': source, 'A': candidate, 'B': candidate, 'C': exact}.items():
         assert observed[ident]['pagerank'] == pytest.approx(expected, abs=TOL, rel=0)
     assert observed['S']['weighted_fan_out'] == pytest.approx(1 + total, abs=TOL, rel=0)
@@ -211,7 +210,7 @@ def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity
     assert report['dependency_network']['ambiguity_policy'] == POLICY
     assert report['dependency_network']['edge_count'] == {'symbol': 4, 'file': 4, 'collapsed-target-file': 2, 'internal-file-evidence': 3}[granularity]
     spread = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
-    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:b.py'} if granularity == 'collapsed-target-file' else {'file:b.py', 'file:c.py'}
+    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:b.py'} if granularity == 'collapsed-target-file' else {'file:c.py'} if granularity == 'internal-file-evidence' else {'file:b.py', 'file:c.py'}
     assert set(spread) == expected_targets
     for c in spread.values():
         assert c['metrics']['file_count'] == 2

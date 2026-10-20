@@ -187,13 +187,13 @@ def test_V06_spread_three_value_boundary(tmp_path, span, expected):
 
 
 def test_V06_two_files_spread(tmp_path):
-    nodes = [node('a','a.py'),node('b','c.py'),node('c','c.py')]
-    edges = [edge('a','c',evidence=SourceSpan('a.py',1,1)),edge('b','c',evidence=SourceSpan('c.py',1,1))]
-    snap, result = converted({'a.py':'x','c.py':'z'}, nodes, edges)
+    nodes = [node('a','a.py'),node('b','d.py'),node('c','c.py')]
+    edges = [edge('a','c',evidence=SourceSpan('a.py',1,1)),edge('b','c',evidence=SourceSpan('d.py',1,1))]
+    snap, result = converted({'a.py':'x','c.py':'z','d.py':'w'}, nodes, edges)
     candidates = [c for c in payload(snap,result,tmp_path)['candidates'] if c['kind']=='evidence_spread']
     assert len(candidates)==1
     assert candidates[0]['metrics']['file_count']==2
-    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('a.py',1,1),('c.py',1,1)}
+    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('a.py',1,1),('d.py',1,1)}
     assert candidates[0]['status']=='static_candidate'
 
 

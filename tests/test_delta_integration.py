@@ -84,6 +84,7 @@ def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by
     del obj['dependency_network']['package_dependencies']
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj['edge_weights'].pop('untested_hub_top_n', None)
+    obj['edge_weights'].pop('large_node_token_threshold', None)
     if entry['rules']:
         del obj['coverage']['architecture_rules']['rules_sha256']
     text = json.dumps(obj, **CANON) + '\n'

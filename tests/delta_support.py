@@ -264,6 +264,7 @@ def base_form_bytes(data):
     obj['dependency_network'].pop('package_dependencies', None)
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj.get('edge_weights', {}).pop('untested_hub_top_n', None)
+    obj.get('edge_weights', {}).pop('large_node_token_threshold', None)
     rules = obj.get('coverage', {}).get('architecture_rules')
     if isinstance(rules, dict):
         rules.pop('rules_sha256', None)

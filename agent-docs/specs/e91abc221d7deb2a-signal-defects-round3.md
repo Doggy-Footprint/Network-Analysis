@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 2
 run_id: e91abc221d7deb2a
 status: active
 base_commit: cf0cf4446106f44026dc40d00ba09df977d61ecc
@@ -69,13 +69,13 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 
 # Functional Requirements
 용어:
-- **프로젝트 모듈**: Python `PythonModuleIndex.is_internal(name)`이 참인 모듈, TS `_resolve_import`가 프로젝트 파일로 해석한 specifier, Kotlin `kotlin_is_internal(fqn, packages)`가 참인 import.
+- **프로젝트 모듈**: Python `PythonModuleIndex.is_internal(name)`이 참인 모듈, TS `_resolve_import`가 프로젝트 파일로 해석한 specifier, Kotlin `kotlin_is_internal(fqn, packages)`가 참인 import. Python 미파싱 내부 모듈은 snapshot/디렉터리에 있으나 구문 오류 등으로 파싱되지 않아 `PythonModuleIndex`에만 등록된 모듈이다.
 - **닫힌 클래스**: 프로젝트 클래스이고, 모든 base(Python `bases`, TS `heritage`)가 재귀적으로 프로젝트 클래스로 해석된다. Python `object` base는 무시한다. base가 없으면 닫힌 클래스다.
 - **미해결 호출**: 기존 해석 결과 target이 None인 호출(Python `is_call` reference, TS call/new expression, Kotlin `call_expressions` 항목). 지역 이름 제외 등 기존 필터는 유지한다.
 
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
-| R1 | 미해결 호출을 둘로 나눈다. **경계**: ⓐ receiver가 프로젝트 모듈에 바인딩되어 있고(Python module binding, TS namespace import) 그 이름이 그 모듈에 정의돼 있지 않다. ⓑ receiver 없는 호출 이름이 프로젝트 모듈로부터의 import로 바인딩되어 있다(Python `from <프로젝트 모듈> import n`, TS named/default import, Kotlin import 마지막 조각). ⓒ receiver가 Python `self`/`cls`·TS `this`(소유 클래스) 또는 프로젝트 클래스에 바인딩된 이름이고, 그 클래스가 닫힌 클래스다. **외부**: 그 밖의 모든 미해결 호출(외부 import, builtin·전역, 타입을 모르는 receiver, 열린 클래스의 멤버). 경계만 `unresolved_calls`·`unresolved_references`에 남는다. 외부는 `external_call_count`(총수)와 `external_calls`(이름별 수, 최다 20개)에 기록하고, 외부만 있는 노드에는 `unresolved_*` 키가 없다. | must | F3, I2 |
+| R1 | 미해결 호출을 둘로 나눈다. **경계**: ⓐ receiver가 프로젝트 모듈에 바인딩되어 있고(Python module binding, TS namespace import) 그 이름이 그 모듈에 정의돼 있지 않다. ⓑ receiver 없는 호출 이름이 프로젝트 모듈로부터의 import로 바인딩되어 있다(Python `from <프로젝트 모듈> import n`, TS named/default import, Kotlin 명시 import 마지막 조각; wildcard import `pkg.*`는 이름을 특정하지 않으므로 그 아래의 없는 이름은 외부). ⓒ receiver가 Python `self`/`cls`·TS `this`(소유 클래스) 또는 프로젝트 클래스에 바인딩된 이름이고, 그 클래스가 닫힌 클래스다. **외부**: 그 밖의 모든 미해결 호출(외부 import, builtin·전역, 타입을 모르는 receiver, 열린 클래스의 멤버). 경계만 `unresolved_calls`·`unresolved_references`에 남는다. 외부는 `external_call_count`(총수)와 `external_calls`(이름별 수, 최다 20개)에 기록하고, 외부만 있는 노드에는 `unresolved_*` 키가 없다. | must | F3, I2 |
 | R2 | file 아키텍처의 file 노드 metadata에 구성 노드 `external_call_count` 합을 기록한다(0이면 생략). 외부 호출은 어떤 후보도 만들지 않는다. | must | F3, I2 |
 | R3 | `unresolved_references` 목록은 source 순서 최초 20개로 유지하되, 미해결(경계) 호출이 있으면 세 analyzer 모두 `unresolved_reference_total`(잘리기 전 총수)을 기록한다. `unresolved_boundary`의 `unresolved_count`는 symbol 모드에서 노드의 `unresolved_reference_total`(없으면 목록 길이), file 모드에서 구성 레코드들의 같은 값 합이다. | must | F4 |
 | R4 | Kotlin class/object/interface 노드의 호출 스캔(`unresolved_*`, CALLS/INSTANTIATES 엣지), `dynamic_*` 플래그 스캔, READS/WRITES 이름 스캔은 class body 안의 멤버 선언(function, class, object, body `property_declaration` 중 field 심볼이 된 것) 범위를 제외한다. 그 범위는 해당 멤버 심볼이 스캔한다. 헤더 TYPE_USES·supertype 처리와 primary constructor는 바뀌지 않는다. 결과: 메서드 안 호출 4개는 메서드에만 귀속되고, file 모드 `unresolved_count`가 4다. | must | F4, I3 |
@@ -215,3 +215,5 @@ Execution ledger (append attempts; preserve failed approaches):
 # Version Log
 ## v1
 - Initial draft from handoff dad85e4830f21190 3회차와 이번 세션 답변(F6 제거, F10 절대 가중치, Kotlin 멤버 제외).
+## v2
+- Contract-only: '미파싱 내부 모듈' 정의와 Kotlin wildcard import 아래 없는 이름 = 외부를 명시(test-implementer 지적 2건). 승인 항목 변경 없음.

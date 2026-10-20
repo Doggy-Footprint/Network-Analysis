@@ -248,8 +248,8 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
     expected_top = {k: copy.deepcopy(v) for k, v in old_report.items() if k not in {'dependency_network', 'candidates'}}
     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
     assert expected_top['versions']['analysis'] == '3'
-    expected_top['versions']['analysis'] = '4'
+    expected_top['versions']['analysis'] = '5'
     actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
     if isinstance(actual_top.get('edge_weights'), dict):
-        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k != 'untested_hub_top_n'}
+        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k not in {'untested_hub_top_n', 'large_node_token_threshold'}}
     assert actual_top == expected_top
