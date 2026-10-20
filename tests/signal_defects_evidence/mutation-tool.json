@@ -29,7 +29,8 @@
   "line": 404,
   "kind": "negate",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "recheck_after_batch3": "killed"
  },
  {
   "id": 4,
@@ -69,7 +70,8 @@
   "line": 334,
   "kind": "cmp",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "recheck_after_batch3": "killed"
  },
  {
   "id": 9,
@@ -85,7 +87,8 @@
   "line": 202,
   "kind": "cmp",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "recheck_after_batch3": "killed"
  },
  {
   "id": 11,
@@ -205,7 +208,8 @@
   "line": 334,
   "kind": "bool",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "recheck_after_batch3": "killed"
  },
  {
   "id": 26,

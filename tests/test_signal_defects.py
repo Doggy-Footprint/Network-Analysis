@@ -1038,3 +1038,82 @@ def test_V11_each_import_in_a_list_gets_its_own_line(tmp_path):
     rows = _import_lines(tmp_path, text)
     assert rows[FOO_SYMBOL] == {('IMPORTS_SYMBOL', 3, 3)}
     assert rows['kotlin:com/a/Bar.kt#Bar'] == {('IMPORTS_SYMBOL', 6, 6)}
+
+
+# =============================================================== correction batch 3 (spec v4)
+
+KT_INIT_DYN = '''package com.proj.app
+
+class Wd {
+    init {
+        Class.forName(n)
+    }
+
+    fun f() {
+        val a = 1
+    }
+}
+'''
+
+
+def test_V6_contrast_init_block_dynamic_flag_stays_on_class_with_members(tmp_path):
+    arch = analyze_files(tmp_path, 'kotlin', {'com/proj/app/Wd.kt': KT_INIT_DYN})
+    assert 'dynamic_import' in flags_of(arch, 'kotlin:com/proj/app/Wd.kt#Wd')
+    assert 'dynamic_import' not in flags_of(arch, 'kotlin:com/proj/app/Wd.kt#Wd.f')
+
+
+KT_ENC = '''package com.proj.app
+import com.proj.util.u1
+import com.proj.util.u2
+import com.proj.util.u3
+// {junk}
+class Bz {{
+    fun m() {{ u2(); u3() }}
+    fun w() {{
+        Store.counter = Store.counter + 1
+    }}
+    init {{ u1() }}
+}}
+object Store {{
+    var counter = 0
+}}
+'''
+
+
+@pytest.mark.parametrize('encoding', ['utf8', 'invalid-byte'])
+def test_V6_attribution_is_the_same_for_utf8_and_non_utf8_files(tmp_path, encoding):
+    if encoding == 'utf8':
+        text = KT_ENC.format(junk='\u00e9' * 300).encode('utf-8')
+    else:
+        text = KT_ENC.format(junk='\x00' * 300).encode('utf-8').replace(b'\x00', b'\xff')
+        with pytest.raises(UnicodeDecodeError):
+            text.decode('utf-8')
+    files = {'com/proj/util/Util.kt': KT_UTIL, 'com/proj/app/Bz.kt': text}
+    arch = analyze_files(tmp_path, 'kotlin', files)
+    base = 'kotlin:com/proj/app/Bz.kt#'
+    assert meta_of(arch, base + 'Bz.m')['unresolved_reference_total'] == 2
+    assert [r['name'] for r in meta_of(arch, base + 'Bz')['unresolved_references']] == ['u1']
+    assert meta_of(arch, base + 'Bz')['unresolved_reference_total'] == 1
+    for relation in ('READS', 'WRITES'):
+        assert edge_targets_by_label(arch, base + 'Bz.w', relation, 'counter'), relation
+        assert edge_targets_by_label(arch, base + 'Bz', relation, 'counter') == [], relation
+    root = write_tree(tmp_path / 'fproj', files)
+    payload, _, _ = run_pipeline(root, tmp_path, 'file', '-l', 'kotlin')
+    found = [c for c in of_kind(payload, 'unresolved_boundary') if c['target'] == 'file:com/proj/app/Bz.kt']
+    assert len(found) == 1 and found[0]['metrics']['unresolved_count'] == 3
+
+
+@pytest.mark.parametrize('mode', ['symbol', 'file'])
+@pytest.mark.parametrize('delta,fires', [(0, False), (1, True)], ids=['equal', 'plus-one'])
+def test_V10_line_boundary_with_high_token_threshold(tmp_path, mode, delta, fires):
+    limit = 5
+    root = write_tree(tmp_path / 'proj', {'m.py': 'value = 1\n' * (limit + delta)})
+    payload = pipeline(root, tmp_path, mode, 'python', large_node_line_threshold=limit,
+                       large_node_token_threshold=10 ** 9)
+    target = 'py:m' if mode == 'symbol' else 'file:m.py'
+    found = [c for c in of_kind(payload, 'large_node') if c['target'] == target]
+    assert bool(found) is fires
+    if fires:
+        cost = payload['dependency_network']['node_metrics'][target]['token_cost']
+        assert found[0]['metrics'] == {'line_count': limit + 1, 'line_threshold': limit,
+                                       'token_count': cost, 'token_threshold': 10 ** 9}

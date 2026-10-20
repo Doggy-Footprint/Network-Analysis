@@ -143,9 +143,18 @@ def _rankings(rankings, metrics, members):
         assert entries == expected, ('ranking inconsistent', metric)
 
 
-def _spread(edges, threshold):
+def _spread(edges, threshold, nodes=None):
+    # spec e91abc221d7deb2a R5: ownership edges and evidence located in the target's own file are not spread evidence
+    from types import SimpleNamespace
+    from analysis.file_graph import ownership_edge
+    nodes = nodes or {}
+    wrapped = {i: SimpleNamespace(provenance=n.get('provenance', ''), kind=n.get('kind', ''), category=n.get('category', ''))
+               for i, n in nodes.items()}
+    own_file = {i: (n.get('span') or {}).get('file_path') for i, n in nodes.items()}
     evidence = defaultdict(list)
     for edge in edges:
+        if edge['from_id'] in wrapped and edge['to_id'] in wrapped and ownership_edge(SimpleNamespace(**edge), wrapped):
+            continue
         span = edge.get('evidence')
         if not span or not span.get('file_path'):
             continue
@@ -154,6 +163,8 @@ def _spread(edges, threshold):
             row.update(copy.deepcopy(edge))
         targets = {edge['to_id'], *edge.get('candidates', [])} if edge['resolution'] == 'ambiguous' else {edge['to_id']}
         for target in targets:
+            if own_file.get(target) and own_file[target] == row['path']:
+                continue
             evidence[target].append(row)
     expected = {}
     for target, records in evidence.items():
@@ -232,7 +243,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
             assert metrics is None
     unchanged = lambda candidates: [c for c in candidates if c['kind'] not in {'evidence_spread', 'untested_hub', 'isolated_node'}]
     assert unchanged(clean_report['candidates']) == unchanged(old_report['candidates']), 'large/unresolved/unrelated candidate rules changed'
-    expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'])
+    expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'], nodes)
     spread = {c['target']: c for c in clean_report['candidates'] if c['kind'] == 'evidence_spread'}
     assert len(spread) == sum(c['kind'] == 'evidence_spread' for c in clean_report['candidates'])
     assert spread.keys() == expected_spread.keys()

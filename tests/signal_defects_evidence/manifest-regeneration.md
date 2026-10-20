@@ -136,3 +136,60 @@ pop it and `test_V08_symbol_mode_is_byte_identical_to_base` compares raw bytes, 
 - `test_V11_size_ratio_per_fixture[futuramaapi]`: ratio 1.334 > 1.25. The bytes structure adds on top of the base
   are 407845 both before (2134318 - 1726473) and after (1632809 + 35 - 1224999) regeneration; the ratio rose because
   this run removed about 500 KB of `unresolved_boundary` candidates from the base output.
+
+## Standalone originals archive (test_nestjs_quality O11)
+
+Files: `tests/ambiguous_candidates_evidence/standalone-originals.json.gz` (`base_commit`
+5737113df15f6ed1705c1adadcf6b9c86bf9523e unchanged) and the `hashes` / `raw_hashes` of
+`tests/nestjs_evidence/baselines.json`. All other fields of both files are unchanged, including `base_commit`,
+`captured_root` and the case fields. Generators: `standalone_driver.py` and `gen_standalone.py` as described in
+`tests/fact_defects_evidence/manifest-regeneration.md` (same code, session scratchpad).
+
+Procedure:
+- Worktree of 5737113 with `git apply -3 patch-old`. Same `kotlin/analyzer.py` conflict as before, resolved the same
+  way (only `self._file_package` / `self._exact_imports` kept). The `+`/`-` lines of `git diff --cached HEAD` equal
+  `patch-old`.
+- Reproduction check on that worktree: decompressed archive bytes, `.gz` bytes and `baselines.json` bytes identical to
+  the committed files; all 8 cases equal in `outputs`, `snapshot_contents` and `category_members`.
+- Then `git apply -3 patch-r3` with the adaptations used for ef8adb3/2627174/6fda6d5 (edge_weights without
+  `_OPTIONAL_KEYS`, yaml hunk skipped, `_weights` token check only, `file_graph.py` `external_calls` without
+  `external_records`, Kotlin `_record_project_imports()` from `self._imports`, Python `PythonModuleIndex` copied from
+  cf0cf44). New at 5737113:
+  - `python/graph.py`: the `PythonModuleIndex` construction was placed after
+    `self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}` (the annotation differs at 5737113).
+  - `bottlenecks/core.py` `_candidates`: 5737113 keys `by_target` by `edge.to_id` and records spread evidence as plain
+    `{path, start_line, end_line}`. Kept: `nodes_by_id` and the `not ownership_edge(edge, nodes_by_id)` filter on that
+    single-target loop, the token-based `large_node` lines, and the merged own-file filter of the spread loop. Skipped:
+    `evidence_records`, the `candidate_targets` loop and the `evidence_record()` helper (later features, not changed by
+    `patch-r3`).
+  - `bottlenecks/core.py` `analyze_bottlenecks`: the `_file_candidates` / `_candidates` call got the new arguments.
+    Not applied: the edge-weights payload key and the `versions.analysis` bump. 5737113 emits `"analysis": "3"` (the
+    hunk changes `"4"`), and `tests/standalone_candidate_policy_support.py` asserts the archived value is `'3'`. It
+    also drops `large_node_token_threshold` from the current `edge_weights` before comparing with the archive.
+    The structure/reach block and the `network` assembly of later commits were not added.
+  - After resolution, the `+`/`-` lines of the old-patched -> r3-patched diff equal `patch-r3`, apart from the items above.
+
+Changes (old archive -> regenerated):
+- `snapshot_contents` and `category_members`: unchanged in all 8 cases. Every top-level bottlenecks key except
+  `candidates` and `dependency_network` is unchanged (`schema`, `versions`, `edge_weights`, `coverage`,
+  `limitations`, `snapshot`).
+- Python cases (fastapi-futuramaapi, fastapi-realworld, fastapi-template, python, sqlalchemy): node and edge counts
+  and edge records unchanged. Node metadata gains `external_call_count` / `external_calls` and loses the calls now
+  classified as external. `unresolved_boundary` candidates 325 -> 5 / 144 -> 0 / 127 -> 0 / 144 -> 0 / 144 -> 0,
+  `evidence_spread` 315 -> 165 / 189 -> 94 / 65 -> 32 / 180 -> 86 / 180 -> 86.
+- android / kotlin: edges 4510 -> 3747 / 4389 -> 3626 (864 edge records removed, 101 added; class bodies no longer
+  include member bodies). `unresolved_boundary` 195 -> 0, `evidence_spread` 219 -> 155 / 217 -> 153.
+- typescript: edges unchanged (637). `unresolved_boundary` 68 -> 4, `evidence_spread` 94 -> 60.
+- All 16 `hashes` and all 16 `raw_hashes` changed.
+
+Test outcome: `tests/test_nestjs_quality.py` gives `8 failed, 12 passed, 4 subtests passed`. All 8 O11 subtests fail
+in `assert_standalone_candidate_policy_transition` at `tests/standalone_candidate_policy_support.py:238`
+(`spread.keys() == expected_spread.keys()`). The archive hash checks and the earlier comparator checks pass, among
+them the equality of all non-`evidence_spread` candidates with the archive. The comparator's `_spread` restates the
+pre-round-3 rule: every edge with evidence counts for every target. This run excludes ownership edges and evidence
+located in the target's own file. Run against the current CLI output, the test's `_spread` yields more targets than
+the output (futuramaapi 354 vs 197, fastapi-realworld 200 vs 106, template 67 vs 36, python and sqlalchemy 191 vs 98,
+android 296 vs 220, kotlin 294 vs 218, typescript 137 vs 94), and no output target is missing from it. Recomputed with
+those two exclusions, the target sets and `metrics` equal the output in all 8 cases.
+
+Worktrees used for both sections were removed after generation.
