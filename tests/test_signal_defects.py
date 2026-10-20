@@ -16,7 +16,6 @@ from language_analyzers.core.graph_models import Confidence, SourceSpan
 from tests.edge_weights_support import edge, load_weights, symbol_nodes, weights_data
 from tests.fact_defects_support import run_pipeline, write_tree
 from tests.file_analysis_support import converted, node as file_node
-from tests.reach_support import Graph, run_report
 from tests.signal_defects_support import (analyze_files, assert_boundary, assert_external, assert_silent,
                                           default_weights, edge_targets_by_label, edges_between, evidence_rows,
                                           flags_of, make_subject, meta_of, node_of, observed, of_kind, pipeline,
@@ -471,21 +470,23 @@ import com.proj.util.u2
 import com.proj.util.u3
 import com.proj.util.u4
 
-var counter = 0
+object Store {
+    var counter = 0
+}
 
 class Svc(var state: Int) {
     fun fm(n: String) {
         u1()
         Class.forName(n)
         state = state + 1
-        counter = counter + 1
+        Store.counter = Store.counter + 1
     }
 
     class Inner {
         init {
             u2()
             Class.forName(n)
-            counter = counter + 1
+            Store.counter = Store.counter + 1
         }
     }
 
@@ -493,13 +494,13 @@ class Svc(var state: Int) {
         init {
             u3()
             Class.forName(n)
-            counter = counter + 1
+            Store.counter = Store.counter + 1
         }
     }
 
     val p1 = u4()
     val p2 = Class.forName(n)
-    val p3 = counter
+    val p3 = Store.counter
 }
 '''
 MX = 'kotlin:com/proj/app/Mat.kt#'
@@ -548,7 +549,7 @@ import com.proj.util.u5
 import com.proj.util.u6
 import com.proj.util.u7
 
-class Ctl(val a: Int = u5()) {
+class Ctl(a: Int = u5()) {
     init {
         u6()
     }
@@ -952,29 +953,32 @@ def test_V10_neither_line_nor_token_over_threshold_gives_no_candidate(tmp_path):
     assert of_kind(payload, 'large_node') == []
 
 
-def _file_payload(tmp_path, lines, **options):
-    graph = Graph({'src/a.py': ('production', lines)})
-    return run_report(graph, weights_in(tmp_path, **options))
+def _file_payload(tmp_path, name, **options):
+    root = write_tree(tmp_path / 'fproj', {'a.py': 'value = 1\n' * 30})
+    return pipeline(root, tmp_path, 'file', 'python', name=name, **options)
 
 
 def test_V10_C17_file_mode_token_boundary_from_observed_cost_three_values(tmp_path):
-    cost = _file_payload(tmp_path, 30)['dependency_network']['node_metrics']['file:src/a.py']['token_cost']
+    cost = _file_payload(tmp_path, 'base')['dependency_network']['node_metrics']['file:a.py']['token_cost']
     assert cost >= 2
     for threshold, fires in ((cost - 1, True), (cost, False), (cost + 1, False)):
-        payload = _file_payload(tmp_path, 30, large_node_token_threshold=threshold)
+        payload = _file_payload(tmp_path, f't{threshold}', large_node_token_threshold=threshold)
         assert payload['edge_weights']['large_node_token_threshold'] == threshold
-        found = of_kind(payload, 'large_node')
+        assert payload['dependency_network']['node_metrics']['file:a.py']['token_cost'] == cost
+        found = [c for c in of_kind(payload, 'large_node') if c['target'] == 'file:a.py']
         assert bool(found) is fires, threshold
         if fires:
-            assert found[0]['target'] == 'file:src/a.py'
             assert found[0]['metrics'] == {'line_count': 30, 'line_threshold': 2000, 'token_count': cost,
                                            'token_threshold': threshold}
 
 
 def test_V10_Q6_threshold_change_flips_the_result_on_the_same_input(tmp_path):
-    cost = _file_payload(tmp_path, 30)['dependency_network']['node_metrics']['file:src/a.py']['token_cost']
-    assert of_kind(_file_payload(tmp_path, 30), 'large_node') == []
-    assert len(of_kind(_file_payload(tmp_path, 30, large_node_token_threshold=1), 'large_node')) == (1 if cost > 1 else 0)
+    base = _file_payload(tmp_path, 'base')
+    cost = base['dependency_network']['node_metrics']['file:a.py']['token_cost']
+    assert cost > 1
+    assert [c for c in of_kind(base, 'large_node') if c['target'] == 'file:a.py'] == []
+    low = _file_payload(tmp_path, 'low', large_node_token_threshold=1)
+    assert len([c for c in of_kind(low, 'large_node') if c['target'] == 'file:a.py']) == 1
 
 
 @pytest.mark.parametrize('mode', ['symbol', 'file'])
