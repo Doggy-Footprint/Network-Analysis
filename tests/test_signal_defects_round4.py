@@ -61,6 +61,7 @@ V1_TABLE = {
     'DT6_no_evidence': ('a/x.py', [], None),
     'DT7_root_target_root_evidence_and_one_directory': ('t.py', [S('x.py', 1), S('b/y.py', 1)], None),
     'DT7_root_target_two_directories': ('t.py', [S('b/y.py', 1), S('c/z.py', 1)], metrics(2, 2)),
+    'DT8_target_without_file_excludes_nothing': (None, [S('x.py', 1), S('b/y.py', 1)], metrics(2, 2)),
     'DT7_root_evidence_counts_as_a_directory_for_a_nested_target': ('a/x.py', [S('x.py', 1), S('b/y.py', 1)], metrics(2, 2)),
 }
 

@@ -28,6 +28,13 @@ MUTATIONS = [
     ("M9", "language_analyzers/kotlin/analyzer.py", 'self._collect_field(key, field_name, f"{qualname}.{field_name}", parameter_node, symbol_id)',
      'self._collect_field(key, field_name, f"{qualname}.{field_name}", constructor, symbol_id)', "R13 field scans whole constructor", "V5"),
     ("M10", "bottlenecks/core.py", '{"analysis": "6"}', '{"analysis": "5"}', "R14 version not bumped", "V7"),
+    ("M11", "bottlenecks/core.py", SYMBOL_DIRS, 'directories = {posixpath.dirname(path) for path in paths} - {posixpath.dirname(own or "")}',
+     "R11 file-less target treated as root directory (verifier VF1-F1)", "V1"),
+    ("T15", "bottlenecks/core.py", 'records, "static_analyzer_relation"))\n    return sorted(candidates, key=lambda item: (item["kind"], item["id"]))',
+     'records, "static_analyzer_relation_x"))\n    return sorted(candidates, key=lambda item: (item["kind"], item["id"]))',
+     "tool mutants 15/27 re-applied after correction batch 1 (file-mode candidate coverage label)", "V2"),
+    ("T16", "language_analyzers/kotlin/analyzer.py", 'symbol.node.type == "infix_expression" else', 'symbol.node.type == "infix_expression_x" else',
+     "tool mutant 16 re-applied after correction batch 1 (recovered object signature)", "V4"),
 ]
 
 TEST = ["uv", "run", "-q", "--with-requirements", "requirements-dev.txt", "python", "-m", "pytest", "-q", "-rfE",

@@ -215,22 +215,22 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 1 |
-| verifier invocations | 1 |
-| open finding ids | VF1-F1 |
+| correction batches used | 2 |
+| verifier invocations | 2 |
+| open finding ids | VF1-F1 (fix pending audit) |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 5 | tests/test_signal_defects_round4.py (test_V1_*; correction batch 1) | pending | hand M1, M2, M5 killed; tool mutant 15/27 killed after batch 1 | R11 symbol code, `expected_spread` support oracle |
-| V2 | 5 | tests/test_signal_defects_round4.py (test_V2_*) | pending | hand M3, M4 killed | R11 file code |
-| V3 | 5 | tests/test_signal_defects_round4.py (test_V3_*) | pending | hand M6 killed | generate.py, app.js |
-| V4 | 5 | tests/test_signal_defects_round4.py (test_V4_*; batch 1 signatures) | pending | hand M7, M8 killed; tool mutant 16 killed after batch 1 | kotlin ast/analyzer |
-| V5 | 5 | tests/test_signal_defects_round4.py (test_V5_*) | pending | hand M9 killed | kotlin analyzer |
-| V6 | 5 | tests/test_signal_defects_round4.py (test_V6_*); fuzz D 1,000 (10% broken file), 0 violations | pending | — | kotlin analyzer |
-| V7 | 5 | tests/test_signal_defects_round4.py (test_V7_*) | pending | hand M10 killed | core.py version |
-| V8 | 5 | tests/test_signal_defects_round4.py (test_V8_*, git archive of 3b768a9) | pending | — | framework_analyzers/android unchanged |
-| V9 | 5 | tests/test_review_diff_round4.py (106 synthetic), review_diff.py, review.md Round 4, review-output/ (stage a), review-output-round4/ (stage b): 20/20 unexplained 0; perf Q3 ≤ 1.25 | pending | — | review_diff rules RV1–RV12 |
+| V1 | 6 | tests/test_signal_defects_round4.py (test_V1_*; batch 1, batch 2 DT8), tests/test_signal_defects.py V7 directory_count | open → re-audit (VF1-F1) | hand M1, M2, M5, M11 killed; T15 (tool 15/27) killed | R11 symbol code, `expected_spread` support oracle |
+| V2 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V2_*) | accepted (verifier 1) | hand M3, M4 killed; T15 killed | R11 file code; file 모드 대상은 `details["file_nodes"]`의 file 노드만(파일 항상 있음) → file-less 대상 없음, V2 DT8 불필요 |
+| V3 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V3_*) | accepted (verifier 1) | hand M6 killed | generate.py, app.js |
+| V4 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V4_*; batch 1 signatures) | accepted (verifier 1) | hand M7, M8 killed; T16 (tool 16) killed | kotlin ast/analyzer |
+| V5 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V5_*) | accepted (verifier 1) | hand M9 killed | kotlin analyzer |
+| V6 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V6_*); fuzz D 1,000 (10% broken file), 0 violations | accepted (verifier 1) | — | kotlin analyzer |
+| V7 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V7_*) | accepted (verifier 1) | hand M10 killed | core.py version |
+| V8 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V8_*, git archive of 3b768a9) | accepted (verifier 1) | — | framework_analyzers/android unchanged |
+| V9 | 5 | tests/test_review_diff_round4.py (106 synthetic), review_diff.py, review.md Round 4, review-output/ (stage a), review-output-round4/ (stage b): 20/20 unexplained 0; perf Q3 ≤ 1.25; batch 2 RV6 stage b 2 pairs | invalidated (test file changed) → re-audit | — | review_diff rules RV1–RV12 |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
@@ -243,6 +243,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 5 | 기존 suite 41 failed (manifest 5개·O11 archive) | R11·R13·R14 출력 변화 (verified) | 3회차 절차로 재생성, 6개 모두 patch-r4 이전 byte 재현 확인 | Test command 3277 passed, diff coverage 96.2% |
 | 6 | mutation tool 30개 중 27 killed, 3 survived (10%) | triage: 16 declared (V4 data object signature), 15·27 declared (R15 candidate `coverage` 필드; triager insufficient context → main이 `_candidate` 출력 확인) | correction batch 1: test-implementer가 signature·record 필드 assert 추가 | 15·16 재적용 시 killed |
 | 7 | diff coverage 미실행 3곳 | analyzer.py 250->252: 이름 없는 멤버(기존 분기 이동, 새 동작 아님); ast.py 112-113: object_literal에 class_body가 있는 infix(R12 (B) 제외 조건, 이 형태를 내는 parser 입력 미확인) | advisory | 96.2% ≥ 90% |
+| 8 | verifier 1 RETRY: VF1-F1 R11 file-less target 조항 미검증 (`""`를 자기 디렉터리로 쓰는 변형 통과) | V1 coverage item 누락 (verified, spec gap) | spec v6 DT8, batch 2: V1_TABLE DT8, round-3 V7에 directory_count assert; advisory A1 RV6 stage b 2쌍; A2 stage b 4개 출력 재실행 byte 동일; A4 round4 파일 skip 0; A5 `hand-mutations-round4-recheck.json` | M11·T15·T16 killed |
 
 # Version Log
 ## v1

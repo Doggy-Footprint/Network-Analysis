@@ -664,6 +664,7 @@ def test_V7_non_ownership_edge_with_same_shape_still_counts(tmp_path):
 def test_V7_target_without_file_excludes_nothing(tmp_path):
     found = _spread(tmp_path, [S('a/x.py', 1), S('b/y.py', 1)], target_path=None)
     assert len(found) == 1 and found[0]['metrics']['file_count'] == 2
+    assert found[0]['metrics']['directory_count'] == 2
     assert {r['path'] for r in evidence_rows(found[0])} == {'a/x.py', 'b/y.py'}
 
 

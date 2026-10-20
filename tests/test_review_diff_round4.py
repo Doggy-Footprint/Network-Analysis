@@ -904,3 +904,19 @@ def test_V9_cli_requires_stage(tmp_path):
     result = subprocess.run([sys.executable, str(EVIDENCE / 'review_diff.py'), 'a', 'b', 'x', 'symbol', str(tmp_path / 'o.json')],
                             capture_output=True, text=True)
     assert result.returncode != 0 and not (tmp_path / 'o.json').exists()
+
+
+def test_V9_RV6_stage_b_directory_count_on_a_non_spread_candidate_is_unexplained():
+    nodes = class_nodes()
+    before = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': 1})]
+    after = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': 1, 'directory_count': 2})]
+    found = review(pair(nodes, [contains()], before), pair(nodes, [contains()], after, analysis='6'), stage='b')['unexplained']
+    assert any('directory_count' in u for u in found)
+
+
+def test_V9_RV6_stage_b_directory_count_in_node_metrics_is_unexplained():
+    nodes = class_nodes()
+    base = pair(nodes, [contains()])
+    head = pair(nodes, [contains()], analysis='6')
+    head[1]['dependency_network']['node_metrics'][MEM]['directory_count'] = 2
+    assert any('directory_count' in u for u in review(base, head, stage='b')['unexplained'])
