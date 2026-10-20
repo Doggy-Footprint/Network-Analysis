@@ -1,72 +1,38 @@
 {
- "input": "self",
- "mode": "file",
- "unexplained": [],
- "nodes": {
-  "base": 450,
-  "head": 450,
-  "added": [],
-  "removed": []
- },
- "flag_changes": {},
- "metadata_changes": {
-  "external_call_count (R1/R3)": 193,
-  "analysis (R7/R4)": 450
- },
- "edges": {
-  "base": 16791,
-  "head": 16791,
-  "changes": {}
- },
- "key_paths": {
-  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
-  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
-  "-$.details.nodes[].metadata.unresolved_reference_truncated (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_reference_limit (R1/R5)": 1,
-  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
-  "+$.metadata.external_call_count (R1/R3/R8)": 193,
-  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 115,
-  "-$.evidence[].candidates (R1/R5)": 30,
-  "-$.evidence[].unresolved_references[].evidence.file_path (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].name (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].evidence (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].confidence.<map> (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].evidence.end_line (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].evidence.start_line (R1/R5)": 20,
-  "-$.evidence[].unresolved_references[].resolution.<map> (R1/R5)": 20,
-  "+$.evidence[].unresolved_reference_total (R1/R3/R8)": 2,
-  "+$.metrics.token_count (R1/R3/R8)": 2,
-  "+$.metrics.token_threshold (R1/R3/R8)": 2
- },
- "schema": "bottlenecks.v8",
- "versions": [
-  {
-   "analysis": "4"
-  },
-  {
-   "analysis": "5"
-  }
- ],
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
  "candidates": {
   "dependency_cycle": {
+   "added": 0,
    "base": 10,
+   "changed": 0,
    "head": 10,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "evidence_spread": {
+   "added": 0,
    "base": 154,
+   "changed": 124,
    "head": 133,
    "removed": 21,
-   "added": 0,
-   "changed": 124,
    "samples": [
     {
      "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
      "target": "file:archive/tests/test_readability_bottlenecks.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -74,12 +40,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/test_category_rankings_v3.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -87,12 +53,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/standalone_candidate_policy_support.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -100,12 +66,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/test_search_mimicry_schema_and_structure.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -113,12 +79,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:archive/tests/test_report_m1.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -126,12 +92,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/test_nestjs_cli.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -139,12 +105,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/test_migration_tables.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -152,12 +118,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:archive/agent_view/exact_query.py",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -165,25 +131,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:tests/test_cli_bottlenecks_v3.py",
-     "why": "R5",
-     "metrics": [
-      {
-       "file_count": 2,
-       "line_span": 0,
-       "line_threshold": 2000
-      },
-      null
-     ]
+     "why": "R5"
     },
     {
      "change": "removed",
-     "target": "file:tests/dynamic_flags_support.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 2,
@@ -191,12 +144,12 @@
        "line_threshold": 2000
       },
       null
-     ]
+     ],
+     "target": "file:tests/dynamic_flags_support.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_analysis_coverage_reporting.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 9,
@@ -208,12 +161,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/test_analysis_coverage_reporting.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:archive/report_m1/generate.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 28,
@@ -225,12 +178,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:archive/report_m1/generate.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:language_analyzers/core/flags.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 16,
@@ -242,12 +195,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:language_analyzers/core/flags.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_structure_browser.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 8,
@@ -259,12 +212,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/test_structure_browser.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/file_analysis_evidence/scan-cache-review.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 19,
@@ -276,12 +229,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/file_analysis_evidence/scan-cache-review.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/nestjs_support.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 50,
@@ -293,12 +246,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/nestjs_support.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_file_analysis_cli.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 88,
@@ -310,12 +263,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/test_file_analysis_cli.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_search_mimicry_metrics.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 8,
@@ -327,12 +280,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/test_search_mimicry_metrics.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_typescript_http_calls.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 50,
@@ -344,12 +297,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/test_typescript_http_calls.py",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:tests/candidate_group_storage_support.py",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 3,
@@ -361,29 +314,29 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:tests/candidate_group_storage_support.py",
+     "why": "R5"
     }
    ]
   },
   "isolated_node": {
+   "added": 0,
    "base": 2,
+   "changed": 0,
    "head": 2,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "large_node": {
+   "added": 0,
    "base": 2,
+   "changed": 2,
    "head": 2,
    "removed": 0,
-   "added": 0,
-   "changed": 2,
    "samples": [
     {
      "change": "changed",
-     "target": "file:tests/file_analysis_evidence/mermaid-linked-original-architecture.json",
-     "why": "R8",
      "metrics": [
       {
        "line_count": 3875,
@@ -395,12 +348,12 @@
        "token_count": 28691,
        "token_threshold": 24000
       }
-     ]
+     ],
+     "target": "file:tests/file_analysis_evidence/mermaid-linked-original-architecture.json",
+     "why": "R8"
     },
     {
      "change": "changed",
-     "target": "file:tests/file_analysis_evidence/mermaid-original-architecture.json",
-     "why": "R8",
      "metrics": [
       {
        "line_count": 3829,
@@ -412,139 +365,139 @@
        "token_count": 28472,
        "token_threshold": 24000
       }
-     ]
+     ],
+     "target": "file:tests/file_analysis_evidence/mermaid-original-architecture.json",
+     "why": "R8"
     }
    ]
   },
   "package_cycle": {
+   "added": 0,
    "base": 4,
+   "changed": 0,
    "head": 4,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "unresolved_boundary": {
+   "added": 0,
    "base": 196,
+   "changed": 22,
    "head": 25,
    "removed": 171,
-   "added": 0,
-   "changed": 22,
    "samples": [
     {
      "change": "removed",
-     "target": "file:tests/test_delta.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 108
       },
       null
-     ]
+     ],
+     "target": "file:tests/test_delta.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:tests/test_cli_multi_analyzer.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 131
       },
       null
-     ]
+     ],
+     "target": "file:tests/test_cli_multi_analyzer.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:archive/agent_view/occurrence.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 79
       },
       null
-     ]
+     ],
+     "target": "file:archive/agent_view/occurrence.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:tests/test_delta_cli.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 78
       },
       null
-     ]
+     ],
+     "target": "file:tests/test_delta_cli.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:archive/agent_view/readable.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 46
       },
       null
-     ]
+     ],
+     "target": "file:archive/agent_view/readable.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:framework_analyzers/nestjs/graph.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 24
       },
       null
-     ]
+     ],
+     "target": "file:framework_analyzers/nestjs/graph.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:tests/test_structure_facts.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 109
       },
       null
-     ]
+     ],
+     "target": "file:tests/test_structure_facts.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:language_analyzers/core/external_imports.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 64
       },
       null
-     ]
+     ],
+     "target": "file:language_analyzers/core/external_imports.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:tests/structure_support.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 99
       },
       null
-     ]
+     ],
+     "target": "file:tests/structure_support.py",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:tests/test_category_rankings_v3.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 64
       },
       null
-     ]
+     ],
+     "target": "file:tests/test_category_rankings_v3.py",
+     "why": "R1/R4"
     },
     {
      "change": "changed",
-     "target": "file:scripts/benchmark_file_analysis.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 75
@@ -552,12 +505,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:scripts/benchmark_file_analysis.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:code_analyzer/cli.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 85
@@ -565,12 +518,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:code_analyzer/cli.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_active_structure.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 59
@@ -578,12 +531,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:tests/test_active_structure.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:analysis/graph_metrics.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 114
@@ -591,12 +544,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:analysis/graph_metrics.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_analysis_coverage_reporting.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 88
@@ -604,12 +557,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:tests/test_analysis_coverage_reporting.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_search_mimicry_schema_and_structure.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 77
@@ -617,12 +570,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:tests/test_search_mimicry_schema_and_structure.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:language_analyzers/python/symbols.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 93
@@ -630,12 +583,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:language_analyzers/python/symbols.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_android_graph_contract.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 124
@@ -643,12 +596,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:tests/test_android_graph_contract.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:tests/test_typescript_analyzer.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 98
@@ -656,12 +609,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:tests/test_typescript_analyzer.py",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:archive/tests/test_readability_followup.py",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 128
@@ -669,29 +622,29 @@
       {
        "unresolved_count": 1
       }
-     ]
+     ],
+     "target": "file:archive/tests/test_readability_followup.py",
+     "why": "R1/R3/R4"
     }
    ]
   },
   "unstable_dependency": {
+   "added": 0,
    "base": 147,
+   "changed": 0,
    "head": 147,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "untested_hub": {
+   "added": 0,
    "base": 1,
+   "changed": 0,
    "head": 0,
    "removed": 1,
-   "added": 0,
-   "changed": 0,
    "samples": [
     {
      "change": "removed",
-     "target": "file:analysis/candidate_projection.py",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.016520767697838036,
@@ -700,10 +653,120 @@
        "uncertain_test_edge_count": 0
       },
       null
-     ]
+     ],
+     "target": "file:analysis/candidate_projection.py",
+     "why": "R7"
     }
    ]
   }
  },
- "structural_metric_changes": {}
+ "constructor_fields": [],
+ "edges": {
+  "base": 16791,
+  "changes": {},
+  "head": 16791
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 154,
+   "expected": 154,
+   "mismatch": 0,
+   "rule": "pre3"
+  },
+  "head": {
+   "actual": 133,
+   "expected": 133,
+   "mismatch": 0,
+   "rule": "r5"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "self",
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (allowed)": 1,
+  "+$.evidence[].unresolved_reference_total (allowed)": 2,
+  "+$.metadata.external_call_count (allowed)": 2730,
+  "+$.metadata.external_calls (allowed)": 2537,
+  "+$.metadata.external_calls.<map> (allowed)": 2537,
+  "+$.metadata.unresolved_reference_total (allowed)": 2,
+  "+$.metrics.token_count (allowed)": 2,
+  "+$.metrics.token_threshold (allowed)": 2,
+  "-$.evidence[].candidates (allowed)": 30,
+  "-$.evidence[].metadata.occurrence_lines (allowed)": 115,
+  "-$.evidence[].unresolved_references[].confidence (allowed)": 20,
+  "-$.evidence[].unresolved_references[].evidence (allowed)": 20,
+  "-$.evidence[].unresolved_references[].evidence.end_line (allowed)": 20,
+  "-$.evidence[].unresolved_references[].evidence.file_path (allowed)": 20,
+  "-$.evidence[].unresolved_references[].evidence.start_line (allowed)": 20,
+  "-$.evidence[].unresolved_references[].name (allowed)": 20,
+  "-$.evidence[].unresolved_references[].resolution (allowed)": 20,
+  "-$.metadata.unresolved_calls (allowed)": 2536,
+  "-$.metadata.unresolved_calls.<map> (allowed)": 2536,
+  "-$.metadata.unresolved_reference_limit (allowed)": 79,
+  "-$.metadata.unresolved_reference_total (allowed)": 79,
+  "-$.metadata.unresolved_reference_truncated (allowed)": 79,
+  "-$.metadata.unresolved_references (allowed)": 2536,
+  "-$.metadata.unresolved_references[].confidence (allowed)": 2536,
+  "-$.metadata.unresolved_references[].evidence (allowed)": 2536,
+  "-$.metadata.unresolved_references[].evidence.end_line (allowed)": 2536,
+  "-$.metadata.unresolved_references[].evidence.file_path (allowed)": 2536,
+  "-$.metadata.unresolved_references[].evidence.start_line (allowed)": 2536,
+  "-$.metadata.unresolved_references[].name (allowed)": 2536,
+  "-$.metadata.unresolved_references[].resolution (allowed)": 2536
+ },
+ "metadata_changes": {
+  "analysis (R7)": 450,
+  "external_call_count (R1/R3/R4)": 193
+ },
+ "mode": "file",
+ "nodes": {
+  "added": [],
+  "base": 450,
+  "head": 450,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 74,
+    "share": 0.7708
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 69,
+    "share": 0.7188
+   }
+  },
+  "head": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 72,
+    "share": 0.75
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 11,
+    "share": 0.1146
+   }
+  }
+ },
+ "schema": "bottlenecks.v8",
+ "stage": "a",
+ "structural_metric_changes": {
+  "pagerank (allowed)": 450,
+  "rankings (allowed)": 1,
+  "rankings_by_category (allowed)": 1,
+  "weighted_centrality_cost (allowed)": 450
+ },
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ]
 }

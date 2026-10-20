@@ -1,0 +1,406 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "evidence_spread": {
+   "added": 0,
+   "base": 637,
+   "changed": 360,
+   "head": 360,
+   "removed": 277,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.unified_support#CORE",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.delta_support#cycle",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.report_redesign_support#control",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.test_analysis_coverage_reporting#cli_capture.<locals>.Capture.render",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 17,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.report_redesign_support",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.external_rules_support#to_rules_ext",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.report_redesign_support#row_ids",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:repository.models#ExcludedFile",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:tests.structure_support#TIERS",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:archive.bottlenecks_v2.core#parse_harness_profile",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:archive.agent_view.models#ReadUnit.end_line",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:framework_analyzers.route_matching#match_routes",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:framework_analyzers.android.models#DaggerComponentInfo.id",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:language_analyzers.typescript.ast#end_line",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:repository.models#RepositorySnapshot.root",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:scripts.benchmark_hops#build_graph",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 5,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:language_analyzers.core.cost#cost_for_span",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:report.bottlenecks#render_report",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:repository.models#RepositorySnapshot.content_map",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 46,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 11,
+       "file_count": 46,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:tests.test_weighted_graph_metrics#analyze",
+     "why": "R11"
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "added": 0,
+   "base": 39,
+   "changed": 0,
+   "head": 39,
+   "removed": 0,
+   "samples": []
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 67602,
+  "changes": {},
+  "head": 67602
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 637,
+   "expected": 637,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 360,
+   "expected": 360,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "self",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 360
+ },
+ "metadata_changes": {},
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 10596,
+  "head": 10596,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 70,
+    "share": 0.7292
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 11,
+    "share": 0.1146
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 67,
+    "share": 0.6979
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 11,
+    "share": 0.1146
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

@@ -1,78 +1,38 @@
 {
- "input": "nestjs",
- "mode": "file",
- "unexplained": [],
- "nodes": {
-  "base": 42,
-  "head": 42,
-  "added": [],
-  "removed": []
- },
- "flag_changes": {},
- "metadata_changes": {
-  "analysis (R7/R4)": 42,
-  "external_call_count (R1/R3)": 20
- },
- "edges": {
-  "base": 407,
-  "head": 407,
-  "changes": {}
- },
- "key_paths": {
-  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
-  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].evidence (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_calls.<map> (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].confidence.<map> (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].name (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].resolution.<map> (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].evidence.end_line (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].evidence.file_path (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references (R1/R5)": 1,
-  "-$.details.nodes[].metadata.unresolved_references[].evidence.start_line (R1/R5)": 1,
-  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
-  "+$.metadata.external_call_count (R1/R3/R8)": 20,
-  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 17,
-  "-$.evidence[].unresolved_references[].evidence.start_line (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].evidence.end_line (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].confidence.<map> (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].resolution.<map> (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].name (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].evidence.file_path (R1/R5)": 3,
-  "-$.evidence[].unresolved_references[].evidence (R1/R5)": 3,
-  "-$.evidence[].node_id (R1/R5)": 1,
-  "-$.evidence[].unresolved_references (R1/R5)": 1,
-  "-$.evidence[].flags (R1/R5)": 1
- },
- "schema": "bottlenecks.v8",
- "versions": [
-  {
-   "analysis": "4"
-  },
-  {
-   "analysis": "5"
-  }
- ],
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
  "candidates": {
   "dependency_cycle": {
+   "added": 0,
    "base": 3,
+   "changed": 0,
    "head": 3,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "evidence_spread": {
+   "added": 0,
    "base": 33,
+   "changed": 20,
    "head": 25,
    "removed": 8,
-   "added": 0,
-   "changed": 20,
    "samples": [
     {
      "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
      "target": "file:src/app.module.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -80,12 +40,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/article/article.module.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -93,12 +53,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/app.controller.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -106,12 +66,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/profile/profile.controller.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -119,12 +79,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/tag/tag.module.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -132,12 +92,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/profile/profile.module.ts",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -145,25 +105,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "file:src/main.ts",
-     "why": "R5",
-     "metrics": [
-      {
-       "file_count": 2,
-       "line_span": 0,
-       "line_threshold": 2000
-      },
-      null
-     ]
+     "why": "R5"
     },
     {
      "change": "removed",
-     "target": "file:src/shared/pipes/validation.pipe.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 2,
@@ -171,12 +118,12 @@
        "line_threshold": 2000
       },
       null
-     ]
+     ],
+     "target": "file:src/shared/pipes/validation.pipe.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/profile/profile.service.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 8,
@@ -188,12 +135,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/profile/profile.service.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/article/comment.entity.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 14,
@@ -205,12 +152,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/article/comment.entity.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/article/article.service.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 9,
@@ -222,12 +169,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/article/article.service.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/article/dto/create-comment.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 7,
@@ -239,12 +186,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/article/dto/create-comment.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/tag/tag.service.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 5,
@@ -256,12 +203,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/tag/tag.service.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/article/dto/create-article.dto.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 7,
@@ -273,12 +220,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/article/dto/create-article.dto.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/tag/tag.controller.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 4,
@@ -290,12 +237,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/tag/tag.controller.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/user/dto/update-user.dto.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 10,
@@ -307,12 +254,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/user/dto/update-user.dto.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/user/user.entity.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 19,
@@ -324,12 +271,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/user/user.entity.ts",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "file:src/profile/follows.entity.ts",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 13,
@@ -341,147 +288,147 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R5"
     }
    ]
   },
   "isolated_node": {
+   "added": 0,
    "base": 1,
+   "changed": 0,
    "head": 1,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "package_cycle": {
+   "added": 0,
    "base": 3,
+   "changed": 0,
    "head": 3,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "unresolved_boundary": {
+   "added": 0,
    "base": 21,
+   "changed": 3,
    "head": 4,
    "removed": 17,
-   "added": 0,
-   "changed": 3,
    "samples": [
     {
      "change": "removed",
-     "target": "file:src/article/article.entity.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 13
       },
       null
-     ]
+     ],
+     "target": "file:src/article/article.entity.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/user/user.module.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
+     ],
+     "target": "file:src/user/user.module.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/user/auth.middleware.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 5
       },
       null
-     ]
+     ],
+     "target": "file:src/user/auth.middleware.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/article/article.module.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
+     ],
+     "target": "file:src/article/article.module.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/profile/follows.entity.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 3
       },
       null
-     ]
+     ],
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/profile/profile.module.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
+     ],
+     "target": "file:src/profile/profile.module.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/user/user.decorator.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 1
       },
       null
-     ]
+     ],
+     "target": "file:src/user/user.decorator.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/user/dto/create-user.dto.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 3
       },
       null
-     ]
+     ],
+     "target": "file:src/user/dto/create-user.dto.ts",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ],
      "target": "file:src/tag/tag.entity.ts",
-     "why": "R1/R3/R4",
-     "metrics": [
-      {
-       "unresolved_count": 2
-      },
-      null
-     ]
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "file:src/user/dto/login-user.dto.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
+     ],
+     "target": "file:src/user/dto/login-user.dto.ts",
+     "why": "R1/R4"
     },
     {
      "change": "changed",
-     "target": "file:src/main.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 11
@@ -489,12 +436,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:src/main.ts",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:src/article/article.service.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 46
@@ -502,12 +449,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:src/article/article.service.ts",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "file:src/user/user.service.ts",
-     "why": "R1/R3/R4",
      "metrics": [
       {
        "unresolved_count": 20
@@ -515,29 +462,29 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/user.service.ts",
+     "why": "R1/R3/R4"
     }
    ]
   },
   "unstable_dependency": {
+   "added": 0,
    "base": 7,
+   "changed": 0,
    "head": 7,
    "removed": 0,
-   "added": 0,
-   "changed": 0,
    "samples": []
   },
   "untested_hub": {
+   "added": 2,
    "base": 9,
+   "changed": 6,
    "head": 8,
    "removed": 3,
-   "added": 2,
-   "changed": 6,
    "samples": [
     {
      "change": "removed",
-     "target": "file:src/article/dto/create-comment.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.027738826874728853,
@@ -546,12 +493,12 @@
        "uncertain_test_edge_count": 0
       },
       null
-     ]
+     ],
+     "target": "file:src/article/dto/create-comment.ts",
+     "why": "R7"
     },
     {
      "change": "removed",
-     "target": "file:src/profile/follows.entity.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.03456886499553304,
@@ -560,12 +507,12 @@
        "uncertain_test_edge_count": 0
       },
       null
-     ]
+     ],
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R7"
     },
     {
      "change": "removed",
-     "target": "file:src/user/dto/login-user.dto.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.03981995051328113,
@@ -574,12 +521,12 @@
        "uncertain_test_edge_count": 0
       },
       null
-     ]
+     ],
+     "target": "file:src/user/dto/login-user.dto.ts",
+     "why": "R7"
     },
     {
      "change": "added",
-     "target": "file:src/user/user.module.ts",
-     "why": "R7",
      "metrics": [
       null,
       {
@@ -588,12 +535,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/user.module.ts",
+     "why": "R7"
     },
     {
      "change": "added",
-     "target": "file:src/user/user.service.ts",
-     "why": "R7",
      "metrics": [
       null,
       {
@@ -602,12 +549,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/user.service.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/user/dto/create-user.dto.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.04307890218363473,
@@ -621,12 +568,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/dto/create-user.dto.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/article/article.entity.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.21061499694558716,
@@ -640,12 +587,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/article/article.entity.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/user/dto/update-user.dto.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.04465206477650761,
@@ -659,12 +606,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/dto/update-user.dto.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/user/user.entity.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.15071508470896372,
@@ -678,12 +625,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/user/user.entity.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/article/dto/create-article.dto.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.03531656715435328,
@@ -697,12 +644,12 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/article/dto/create-article.dto.ts",
+     "why": "R7"
     },
     {
      "change": "changed",
-     "target": "file:src/article/comment.entity.ts",
-     "why": "R7",
      "metrics": [
       {
        "pagerank": 0.11753822395797187,
@@ -716,10 +663,115 @@
        "top_n": 10,
        "uncertain_test_edge_count": 0
       }
-     ]
+     ],
+     "target": "file:src/article/comment.entity.ts",
+     "why": "R7"
     }
    ]
   }
  },
- "structural_metric_changes": {}
+ "constructor_fields": [],
+ "edges": {
+  "base": 407,
+  "changes": {},
+  "head": 407
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 33,
+   "expected": 33,
+   "mismatch": 0,
+   "rule": "pre3"
+  },
+  "head": {
+   "actual": 25,
+   "expected": 25,
+   "mismatch": 0,
+   "rule": "r5"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "nestjs",
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (allowed)": 1,
+  "+$.metadata.external_call_count (allowed)": 84,
+  "+$.metadata.external_calls (allowed)": 64,
+  "+$.metadata.external_calls.<map> (allowed)": 64,
+  "-$.evidence[].flags (allowed)": 1,
+  "-$.evidence[].metadata.occurrence_lines (allowed)": 17,
+  "-$.evidence[].node_id (allowed)": 1,
+  "-$.evidence[].unresolved_references (allowed)": 1,
+  "-$.evidence[].unresolved_references[].confidence (allowed)": 3,
+  "-$.evidence[].unresolved_references[].evidence (allowed)": 3,
+  "-$.evidence[].unresolved_references[].evidence.end_line (allowed)": 3,
+  "-$.evidence[].unresolved_references[].evidence.file_path (allowed)": 3,
+  "-$.evidence[].unresolved_references[].evidence.start_line (allowed)": 3,
+  "-$.evidence[].unresolved_references[].name (allowed)": 3,
+  "-$.evidence[].unresolved_references[].resolution (allowed)": 3,
+  "-$.metadata.unresolved_calls (allowed)": 64,
+  "-$.metadata.unresolved_calls.<map> (allowed)": 64,
+  "-$.metadata.unresolved_references (allowed)": 64,
+  "-$.metadata.unresolved_references[].confidence (allowed)": 64,
+  "-$.metadata.unresolved_references[].evidence (allowed)": 64,
+  "-$.metadata.unresolved_references[].evidence.end_line (allowed)": 64,
+  "-$.metadata.unresolved_references[].evidence.file_path (allowed)": 64,
+  "-$.metadata.unresolved_references[].evidence.start_line (allowed)": 64,
+  "-$.metadata.unresolved_references[].name (allowed)": 64,
+  "-$.metadata.unresolved_references[].resolution (allowed)": 64
+ },
+ "metadata_changes": {
+  "analysis (R7)": 42,
+  "external_call_count (R1/R3/R4)": 20
+ },
+ "mode": "file",
+ "nodes": {
+  "added": [],
+  "base": 42,
+  "head": 42,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 33,
+    "share": 0.8049
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 21,
+    "share": 0.5122
+   }
+  },
+  "head": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 25,
+    "share": 0.6098
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 4,
+    "share": 0.0976
+   }
+  }
+ },
+ "schema": "bottlenecks.v8",
+ "stage": "a",
+ "structural_metric_changes": {
+  "pagerank (allowed)": 42,
+  "rankings (allowed)": 1,
+  "rankings_by_category (allowed)": 1,
+  "weighted_centrality_cost (allowed)": 42
+ },
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ]
 }

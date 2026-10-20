@@ -1,0 +1,789 @@
+{
+ "attributed_edge_changes": 190,
+ "attributed_file_pairs": [
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/1.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/10.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/11.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/12.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/13.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/14.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/2.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/3.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/4.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/5.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/6.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/7.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/8.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "CONFIGURES",
+   "core/database/schemas/com.google.samples.apps.nowinandroid.core.database.NiaDatabase/9.json:name",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicFtsDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt",
+   "feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "READS",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ],
+  [
+   "READS",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt"
+  ],
+  [
+   "READS",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt"
+  ],
+  [
+   "READS",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt"
+  ],
+  [
+   "READS",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserNewsResourceRepository.kt"
+  ],
+  [
+   "READS",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/CompositeUserNewsResourceRepositoryTest.kt"
+  ],
+  [
+   "READS",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "feature/topic/impl/src/test/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModelTest.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicFtsDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt"
+  ],
+  [
+   "TYPE_USES",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt"
+  ],
+  [
+   "TYPE_USES",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt"
+  ],
+  [
+   "TYPE_USES",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt"
+  ],
+  [
+   "TYPE_USES",
+   "feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt",
+   "core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserNewsResourceRepository.kt"
+  ],
+  [
+   "WRITES",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt"
+  ],
+  [
+   "WRITES",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt",
+   "core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt"
+  ]
+ ],
+ "attributed_removed_edges": 116,
+ "candidates": {
+  "evidence_spread": {
+   "added": 0,
+   "base": 218,
+   "changed": 175,
+   "head": 175,
+   "removed": 43,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNiaNetworkDataSource.kt#after",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt#UserDataRepository.setThemeBrand",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.ioDispatcher",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TestSynchronizer.kt#TestSynchronizer.updateChangeListVersions",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepositoryTest.kt#OfflineFirstTopicsRepositoryTest.testScope",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNiaNetworkDataSource.kt",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt#UserDataRepository.setDarkThemeConfig",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.niaPreferencesDataSource",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt#OfflineFirstNewsRepositoryTest.subject",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt#OfflineFirstTopicsRepository.network",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.syncWith",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 7,
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreen.kt#TopicScreen",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.getNewsResources",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt#OfflineFirstTopicsRepository",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserNewsResourceRepository.kt#UserNewsResourceRepository",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepository.kt#OfflineFirstUserDataRepository.userData",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt#TopicUiState.Success",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestTopicDao.kt#TestTopicDao.upsertTopics",
+     "why": "R11"
+    }
+   ]
+  }
+ },
+ "constructor_fields": [
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt#RecentSearchQuery.queriedDate",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt#RecentSearchQuery.query",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt#CompositeUserNewsResourceRepository.newsRepository",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt#CompositeUserNewsResourceRepository.userDataRepository",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultRecentSearchRepository.kt#DefaultRecentSearchRepository.recentSearchQueryDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.ioDispatcher",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.newsResourceDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.newsResourceFtsDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.topicDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt#DefaultSearchContentsRepository.topicFtsDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt#NewsResourceQuery.filterNewsIds",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt#NewsResourceQuery.filterTopicIds",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.network",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.newsResourceDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.niaPreferencesDataSource",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.notifier",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.topicDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt#OfflineFirstTopicsRepository.network",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt#OfflineFirstTopicsRepository.topicDao",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepository.kt#OfflineFirstUserDataRepository.analyticsHelper",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepository.kt#OfflineFirstUserDataRepository.niaPreferencesDataSource",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/ConnectivityManagerNetworkMonitor.kt#ConnectivityManagerNetworkMonitor.context",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/ConnectivityManagerNetworkMonitor.kt#ConnectivityManagerNetworkMonitor.ioDispatcher",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/TimeZoneMonitor.kt#TimeZoneBroadcastMonitor.context",
+  "kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/TimeZoneMonitor.kt#TimeZoneBroadcastMonitor.ioDispatcher",
+  "kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TestSynchronizer.kt#TestSynchronizer.niaPreferences",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.content",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.headerImageUrl",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.id",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.publishDate",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.title",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.type",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity.url",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt#NewsResourceFtsEntity.content",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt#NewsResourceFtsEntity.newsResourceId",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt#NewsResourceFtsEntity.title",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt#NewsResourceTopicCrossRef.newsResourceId",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt#NewsResourceTopicCrossRef.topicId",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt#PopulatedNewsResource.entity",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt#PopulatedNewsResource.topics",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/RecentSearchQueryEntity.kt#RecentSearchQueryEntity.queriedDate",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/RecentSearchQueryEntity.kt#RecentSearchQueryEntity.query",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.id",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.imageUrl",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.longDescription",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.name",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.shortDescription",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity.url",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt#TopicFtsEntity.longDescription",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt#TopicFtsEntity.name",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt#TopicFtsEntity.shortDescription",
+  "kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt#TopicFtsEntity.topicId",
+  "kotlin:feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt#TopicNavKey.id",
+  "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt#NewsUiState.Success.news",
+  "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt#TopicUiState.Success.followableTopic",
+  "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt#TopicViewModel.topicId",
+  "kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt#TopicViewModel.userDataRepository"
+ ],
+ "edges": {
+  "base": 3310,
+  "changes": {
+   "-CONFIGURES retarget (R13)": 14,
+   "-READS (R13)": 62,
+   "-TYPE_USES (R13)": 35,
+   "-WRITES (R13)": 5,
+   "constructor field re-key (R13)": 74
+  },
+  "head": 3208
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 218,
+   "expected": 218,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 175,
+   "expected": 175,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {
+  "cost (R13)": 54,
+  "signature (R13)": 57,
+  "span (R13)": 54
+ },
+ "input": "android",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 175,
+  "-$.metadata.external_call_count (allowed)": 2,
+  "-$.metadata.external_calls (allowed)": 2,
+  "-$.metadata.external_calls.<map> (allowed)": 2
+ },
+ "metadata_changes": {
+  "analysis (R14)": 885,
+  "end_line_number (R13)": 54,
+  "external_call_count (R13)": 2,
+  "external_calls (R13)": 2,
+  "line_number (R13)": 54
+ },
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 885,
+  "head": 885,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 34,
+    "share": 0.5484
+   },
+   "nontest_files": 62,
+   "unresolved_boundary": {
+    "files": 0,
+    "share": 0.0
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 31,
+    "share": 0.5
+   },
+   "nontest_files": 62,
+   "unresolved_boundary": {
+    "files": 0,
+    "share": 0.0
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "b",
+ "structural_metric_changes": {
+  "betweenness_centrality (allowed)": 210,
+  "effective_token_cost (allowed)": 54,
+  "fan_in (allowed)": 33,
+  "fan_out (allowed)": 31,
+  "hop_2_token_cost (allowed)": 438,
+  "pagerank (allowed)": 885,
+  "rankings (allowed)": 1,
+  "rankings_by_category (allowed)": 1,
+  "token_cost (allowed)": 54,
+  "weighted_centrality_cost (allowed)": 885,
+  "weighted_fan_in (allowed)": 33,
+  "weighted_fan_out (allowed)": 31
+ },
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

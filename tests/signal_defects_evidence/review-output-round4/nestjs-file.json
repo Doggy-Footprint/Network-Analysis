@@ -1,0 +1,433 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "dependency_cycle": {
+   "added": 0,
+   "base": 3,
+   "changed": 0,
+   "head": 3,
+   "removed": 0,
+   "samples": []
+  },
+  "evidence_spread": {
+   "added": 0,
+   "base": 25,
+   "changed": 16,
+   "head": 16,
+   "removed": 9,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/article/dto/create-comment.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/user/dto/index.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/tag/tag.service.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/article/dto/index.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/article/dto/create-article.dto.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/tag/tag.controller.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/profile/profile.interface.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/article/article.interface.ts",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:src/user/user.interface.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/profile/profile.service.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 5,
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/article/comment.entity.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/article/article.service.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/user/dto/update-user.dto.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 18,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 5,
+       "file_count": 18,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/user/user.entity.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/user/user.controller.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/article/article.controller.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 14,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 14,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/tag/tag.entity.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:src/user/dto/create-user.dto.ts",
+     "why": "R11"
+    }
+   ]
+  },
+  "isolated_node": {
+   "added": 0,
+   "base": 1,
+   "changed": 0,
+   "head": 1,
+   "removed": 0,
+   "samples": []
+  },
+  "package_cycle": {
+   "added": 0,
+   "base": 3,
+   "changed": 0,
+   "head": 3,
+   "removed": 0,
+   "samples": []
+  },
+  "unresolved_boundary": {
+   "added": 0,
+   "base": 4,
+   "changed": 0,
+   "head": 4,
+   "removed": 0,
+   "samples": []
+  },
+  "unstable_dependency": {
+   "added": 0,
+   "base": 7,
+   "changed": 0,
+   "head": 7,
+   "removed": 0,
+   "samples": []
+  },
+  "untested_hub": {
+   "added": 0,
+   "base": 8,
+   "changed": 0,
+   "head": 8,
+   "removed": 0,
+   "samples": []
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 407,
+  "changes": {},
+  "head": 407
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 25,
+   "expected": 25,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 16,
+   "expected": 16,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "nestjs",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 16
+ },
+ "metadata_changes": {},
+ "mode": "file",
+ "nodes": {
+  "added": [],
+  "base": 42,
+  "head": 42,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 25,
+    "share": 0.6098
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 4,
+    "share": 0.0976
+   }
+  },
+  "head": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 16,
+    "share": 0.3902
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 4,
+    "share": 0.0976
+   }
+  }
+ },
+ "schema": "bottlenecks.v8",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

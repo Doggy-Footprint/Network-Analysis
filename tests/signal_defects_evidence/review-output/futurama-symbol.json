@@ -1,77 +1,30 @@
 {
- "input": "futurama",
- "mode": "symbol",
- "unexplained": [],
- "nodes": {
-  "base": 1449,
-  "head": 1449,
-  "added": [],
-  "removed": []
- },
- "flag_changes": {
-  "-ambiguous_name (R6)": 559
- },
- "metadata_changes": {
-  "analysis (R7/R4)": 1449,
-  "unresolved_calls (R1/R3)": 325,
-  "unresolved_references (R1/R3)": 325,
-  "external_calls (R1/R3)": 325,
-  "external_call_count (R1/R3)": 325,
-  "unresolved_reference_total (R1/R3)": 3,
-  "unresolved_reference_limit (R1/R3)": 2,
-  "unresolved_reference_truncated (R1/R3)": 2
- },
- "edges": {
-  "base": 3175,
-  "head": 3175,
-  "changes": {}
- },
- "key_paths": {
-  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
-  "+$.metadata.external_calls.<map> (R1/R3/R8)": 325,
-  "+$.metadata.external_call_count (R1/R3/R8)": 325,
-  "-$.metadata.unresolved_references[].confidence.<map> (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].name (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].evidence (R1/R5)": 324,
-  "-$.metadata.unresolved_references (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].resolution.<map> (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].evidence.file_path (R1/R5)": 324,
-  "-$.metadata.unresolved_calls.<map> (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].evidence.start_line (R1/R5)": 324,
-  "-$.metadata.unresolved_references[].evidence.end_line (R1/R5)": 324,
-  "+$.metadata.unresolved_reference_total (R1/R3/R8)": 1,
-  "-$.metadata.unresolved_reference_truncated (R1/R5)": 2,
-  "-$.metadata.unresolved_reference_limit (R1/R5)": 2,
-  "-$.metadata.unresolved_reference_total (R1/R5)": 2,
-  "-$.evidence[].evidence.end_line (R1/R5)": 4,
-  "-$.evidence[].evidence.start_line (R1/R5)": 4,
-  "-$.evidence[].name (R1/R5)": 4,
-  "-$.evidence[].confidence.<map> (R1/R5)": 4,
-  "-$.evidence[].resolution.<map> (R1/R5)": 4,
-  "-$.evidence[].evidence (R1/R5)": 4,
-  "-$.evidence[].evidence.file_path (R1/R5)": 4
- },
- "schema": "bottlenecks.v6",
- "versions": [
-  {
-   "analysis": "4"
-  },
-  {
-   "analysis": "5"
-  }
- ],
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
  "candidates": {
   "evidence_spread": {
+   "added": 0,
    "base": 352,
+   "changed": 188,
    "head": 195,
    "removed": 157,
-   "added": 0,
-   "changed": 188,
    "samples": [
     {
      "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
      "target": "py:futuramaapi.db.models#EpisodeModel.name",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -79,12 +32,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.randoms.get_random_season#GetRandomSeasonResponse",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -92,12 +45,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.graphql.schemas",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -105,12 +58,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.crypto.get_secret_message#GetSecretMessageResponse",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -118,12 +71,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.episodes.get_episode#GetEpisodeResponse.name",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -131,12 +84,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.db.models#SystemMessage",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -144,12 +97,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.tokens.get_auth_user_token#GetAuthUserTokenResponse.from_user_model",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -157,12 +110,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.users.create_user#CreateUserService",
-     "why": "R5",
+     "why": "R5"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "file_count": 2,
@@ -170,25 +123,12 @@
        "line_threshold": 2000
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.randoms.get_random_character#GetRandomCharacterResponse",
-     "why": "R5",
-     "metrics": [
-      {
-       "file_count": 2,
-       "line_span": 0,
-       "line_threshold": 2000
-      },
-      null
-     ]
+     "why": "R5"
     },
     {
      "change": "removed",
-     "target": "py:futuramaapi.routers.services.randoms.get_random_episode#GetRandomEpisodeResponse",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 2,
@@ -196,12 +136,12 @@
        "line_threshold": 2000
       },
       null
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.randoms.get_random_episode#GetRandomEpisodeResponse",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.api_clients._base#RequestData",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 4,
@@ -213,12 +153,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.api_clients._base#RequestData",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.services._base#BaseUserAuthenticatedService.__init__",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 7,
@@ -230,12 +170,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services._base#BaseUserAuthenticatedService.__init__",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.db._base#Base.filter",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 4,
@@ -247,12 +187,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.db._base#Base.filter",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.db.models#UserModel",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 14,
@@ -264,12 +204,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.db.models#UserModel",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.services.randoms.get_random_character#GetRandomCharacterService",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 3,
@@ -281,12 +221,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.randoms.get_random_character#GetRandomCharacterService",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.workers.services.callbacks._base#GetItemCallbackTaskService.session",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 5,
@@ -298,12 +238,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.workers.services.callbacks._base#GetItemCallbackTaskService.session",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.graphql.schemas#Query",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 6,
@@ -315,12 +255,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.graphql.schemas#Query",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.exceptions",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 12,
@@ -332,12 +272,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.exceptions",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.services.seasons.get_season#GetSeasonResponse",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 4,
@@ -349,12 +289,12 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.seasons.get_season#GetSeasonResponse",
+     "why": "R5"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.services.passwords.get_signature_user_password_change_form#GetSignatureUserPasswordChangeFormService.request",
-     "why": "R5",
      "metrics": [
       {
        "file_count": 3,
@@ -366,131 +306,131 @@
        "line_span": 0,
        "line_threshold": 2000
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.passwords.get_signature_user_password_change_form#GetSignatureUserPasswordChangeFormService.request",
+     "why": "R5"
     }
    ]
   },
   "unresolved_boundary": {
+   "added": 0,
    "base": 325,
+   "changed": 5,
    "head": 5,
    "removed": 320,
-   "added": 0,
-   "changed": 5,
    "samples": [
     {
      "change": "removed",
-     "target": "py:futuramaapi.core._settings#RedisSettings.pool",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
+     ],
+     "target": "py:futuramaapi.core._settings#RedisSettings.pool",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ],
      "target": "py:futuramaapi.middlewares.counter#APIRequestsCounter.dispatch",
-     "why": "R1/R3",
+     "why": "R1/R4"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "unresolved_count": 1
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.sitemaps.get_sitemap#GetSiteMapService.__call__",
-     "why": "R1/R3",
-     "metrics": [
-      {
-       "unresolved_count": 1
-      },
-      null
-     ]
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "py:futuramaapi.routers.services.auth.logout_cookie_session_user#LogoutCookieSessionUserService.process",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 5
       },
       null
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.auth.logout_cookie_session_user#LogoutCookieSessionUserService.process",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "py:tests.unit.routers.services.episodes.test_get_episode#TestGetEpisodeService.test_get_episode_service_success",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 1
       },
       null
-     ]
+     ],
+     "target": "py:tests.unit.routers.services.episodes.test_get_episode#TestGetEpisodeService.test_get_episode_service_success",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "py:futuramaapi.db.models#LinkModel",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 9
       },
       null
-     ]
+     ],
+     "target": "py:futuramaapi.db.models#LinkModel",
+     "why": "R1/R4"
     },
     {
      "change": "removed",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ],
      "target": "py:futuramaapi.db.models#SeasonModel.get_select_in_load",
-     "why": "R1/R3",
-     "metrics": [
-      {
-       "unresolved_count": 1
-      },
-      null
-     ]
+     "why": "R1/R4"
     },
     {
      "change": "removed",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ],
      "target": "py:futuramaapi.routers.services.auth.auth_cookie_session_user#AuthCookieSessionUserService._build_response",
-     "why": "R1/R3",
+     "why": "R1/R4"
+    },
+    {
+     "change": "removed",
      "metrics": [
       {
        "unresolved_count": 2
       },
       null
-     ]
-    },
-    {
-     "change": "removed",
+     ],
      "target": "py:futuramaapi.routers.services.episodes.get_episode#GetEpisodeResponse",
-     "why": "R1/R3",
-     "metrics": [
-      {
-       "unresolved_count": 2
-      },
-      null
-     ]
+     "why": "R1/R4"
     },
     {
      "change": "removed",
-     "target": "py:futuramaapi.routers.services.passwords.get_signature_user_password_change_form#GetSignatureUserPasswordChangeFormService._get_decoded_token",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 1
       },
       null
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.passwords.get_signature_user_password_change_form#GetSignatureUserPasswordChangeFormService._get_decoded_token",
+     "why": "R1/R4"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.helpers.pydantic#BaseModel.to_dict",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 6
@@ -498,12 +438,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "py:futuramaapi.helpers.pydantic#BaseModel.to_dict",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.db._base#Base.str_to_field",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 1
@@ -511,12 +451,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "py:futuramaapi.db._base#Base.str_to_field",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.services.users.update_user#UpdateUserService.process",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 5
@@ -524,12 +464,12 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.services.users.update_user#UpdateUserService.process",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.db.session#SessionManager.session",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 3
@@ -537,12 +477,12 @@
       {
        "unresolved_count": 1
       }
-     ]
+     ],
+     "target": "py:futuramaapi.db.session#SessionManager.session",
+     "why": "R1/R3/R4"
     },
     {
      "change": "changed",
-     "target": "py:futuramaapi.routers.graphql.conversion#ModelConverter.to_strawberry",
-     "why": "R1/R3",
      "metrics": [
       {
        "unresolved_count": 1
@@ -550,10 +490,123 @@
       {
        "unresolved_count": 0
       }
-     ]
+     ],
+     "target": "py:futuramaapi.routers.graphql.conversion#ModelConverter.to_strawberry",
+     "why": "R1/R3/R4"
     }
    ]
   }
  },
- "structural_metric_changes": {}
+ "constructor_fields": [],
+ "edges": {
+  "base": 3175,
+  "changes": {},
+  "head": 3175
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 352,
+   "expected": 352,
+   "mismatch": 0,
+   "rule": "pre3"
+  },
+  "head": {
+   "actual": 195,
+   "expected": 195,
+   "mismatch": 0,
+   "rule": "r5"
+  }
+ },
+ "flag_changes": {
+  "-ambiguous_name (R6)": 559
+ },
+ "geometry_changes": {},
+ "input": "futurama",
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (allowed)": 1,
+  "+$.metadata.external_call_count (allowed)": 325,
+  "+$.metadata.external_calls (allowed)": 325,
+  "+$.metadata.external_calls.<map> (allowed)": 325,
+  "+$.metadata.unresolved_reference_total (allowed)": 1,
+  "-$.evidence[].confidence (allowed)": 4,
+  "-$.evidence[].evidence (allowed)": 4,
+  "-$.evidence[].evidence.end_line (allowed)": 4,
+  "-$.evidence[].evidence.file_path (allowed)": 4,
+  "-$.evidence[].evidence.start_line (allowed)": 4,
+  "-$.evidence[].name (allowed)": 4,
+  "-$.evidence[].resolution (allowed)": 4,
+  "-$.metadata.unresolved_calls (allowed)": 324,
+  "-$.metadata.unresolved_calls.<map> (allowed)": 324,
+  "-$.metadata.unresolved_reference_limit (allowed)": 2,
+  "-$.metadata.unresolved_reference_total (allowed)": 2,
+  "-$.metadata.unresolved_reference_truncated (allowed)": 2,
+  "-$.metadata.unresolved_references (allowed)": 324,
+  "-$.metadata.unresolved_references[].confidence (allowed)": 324,
+  "-$.metadata.unresolved_references[].evidence (allowed)": 324,
+  "-$.metadata.unresolved_references[].evidence.end_line (allowed)": 324,
+  "-$.metadata.unresolved_references[].evidence.file_path (allowed)": 324,
+  "-$.metadata.unresolved_references[].evidence.start_line (allowed)": 324,
+  "-$.metadata.unresolved_references[].name (allowed)": 324,
+  "-$.metadata.unresolved_references[].resolution (allowed)": 324
+ },
+ "metadata_changes": {
+  "analysis (R7)": 1449,
+  "external_call_count (R1/R3/R4)": 325,
+  "external_calls (R1/R3/R4)": 325,
+  "unresolved_calls (R1/R3/R4)": 325,
+  "unresolved_reference_limit (R1/R3/R4)": 2,
+  "unresolved_reference_total (R1/R3/R4)": 3,
+  "unresolved_reference_truncated (R1/R3/R4)": 2,
+  "unresolved_references (R1/R3/R4)": 325
+ },
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 1449,
+  "head": 1449,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 106,
+    "share": 0.631
+   },
+   "nontest_files": 168,
+   "unresolved_boundary": {
+    "files": 91,
+    "share": 0.5417
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 75,
+    "share": 0.4464
+   },
+   "nontest_files": 168,
+   "unresolved_boundary": {
+    "files": 5,
+    "share": 0.0298
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "a",
+ "structural_metric_changes": {
+  "pagerank (allowed)": 1449,
+  "rankings (allowed)": 1,
+  "rankings_by_category (allowed)": 1,
+  "weighted_centrality_cost (allowed)": 1449
+ },
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ]
 }

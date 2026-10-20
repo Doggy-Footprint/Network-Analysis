@@ -24,74 +24,74 @@
   "fixtures": {
     "android-nowinandroid": {
       "file": {
-        "bytes": 4832704,
-        "candidate_count": 46,
+        "bytes": 4603515,
+        "candidate_count": 41,
         "candidate_groups": "9aa6a2ee07a0c5026fe9b4389d72f577a1d0a5626ad386876ce41ff95c2704b0",
-        "candidates": "5de12692aba93934e84f3dae1ec91738b0e169abc2da9dd997b9f6e0b2184f58",
+        "candidates": "a471940140166b1a6ff274de8f316c78af2b2c7472b90f33173da9746fa13269",
         "node_metrics": "323659c9ac08d8489b63eb0f3c50db0abe3bc1940e134d799b778e1d61a7746c",
         "rankings": "dc41373496cab943d07890af7e3489a05b2f51de8bc0d98eb3e1fe204c1cf1a9",
         "rankings_by_category": "c61c4245169bc0995d0b1b819f13d2708fb2c3582b271d23b19ed8e1992c06b8",
         "schema": "bottlenecks.v7",
-        "sha256": "436c4534ee481022cd41afae42ece113e24c954811f0095dd514965c9658cadf"
+        "sha256": "3deecb821f7a6f4026db8d887b7f4665099f158e5f3609eb3eedf6cde2967f71"
       },
       "symbol": {
-        "bytes": 4290069,
+        "bytes": 3804645,
         "schema": "bottlenecks.v6",
-        "sha256": "f223e761fed4d831bc4cb40930dfe4578f721bd34398a80c9ff17145b96dc7ce"
+        "sha256": "5b0bc2d435183107ab1436f1aeef5f7bb6a5020563243607f46595949b9f681a"
       }
     },
     "fastapi-realworld": {
       "file": {
-        "bytes": 690802,
-        "candidate_count": 42,
+        "bytes": 645064,
+        "candidate_count": 33,
         "candidate_groups": "6f38c6e6316a16c22df5e4562bc9482a417b80c01a7e3512e078d3f408415650",
-        "candidates": "bb5457c79f908f1a8ba3bbac150f7fccf79892b8606d5e1b038d4d97a9283d02",
+        "candidates": "ae01f9d0c124de89de489d8de037920ea0fcf68fd78e33ae91324ea268bf455b",
         "node_metrics": "b4031a5083c1bd608a35eacd932f249d09f4d46c36a6ec329dd905d535380fe4",
         "rankings": "b2263610c434fdf0f1609996c769ecc79d871616ea4838b2687a4717e828faec",
         "rankings_by_category": "ebc05e340fe1fe783e6b4d2479418071aa5298eb0181d50e366b856b27ba21f7",
         "schema": "bottlenecks.v7",
-        "sha256": "a5927554fed583fad7c0e584f25d1a939fc102a7faaa49d11d753b71366990a0"
+        "sha256": "fa83aabb6551b0b1d835ce3a20e763a373d50984aac04466c6a4f82faab5dbb7"
       },
       "symbol": {
-        "bytes": 362814,
+        "bytes": 327335,
         "schema": "bottlenecks.v6",
-        "sha256": "a6b3e643715b70caab311bbef81020d948545a8adc2003bc36e098b4939327ba"
+        "sha256": "eca3c565a130bc0c83fc4939f8ea6136bedb8328d46e1560bff3aa3ab9ded770"
       }
     },
     "futuramaapi": {
       "file": {
-        "bytes": 1224999,
-        "candidate_count": 83,
+        "bytes": 1165487,
+        "candidate_count": 64,
         "candidate_groups": "2743329ca18919c4b3d89083fbe0489bfd1f2af317f1a00e454884038fe60c35",
-        "candidates": "161c98c29557661ef0f01762b8e9f6253a7849424ad30f6c9c2fdb925723d5ba",
+        "candidates": "38ba063fa31c2ba1d82a6b01d8cf577618bcf9726734e96795af23c38152f10b",
         "node_metrics": "5543fe70dd3b4e10950726594e830e97fd19c7c012a609ebfb3993418a3f624e",
         "rankings": "891c6cf2af74b9929b7174229e7eb268323ebaa17504d30f611fa6b666c94883",
         "rankings_by_category": "2865c5604883a22b31a1e70a23b49f01a2e5430c6efd497af655f94382c1f808",
         "schema": "bottlenecks.v7",
-        "sha256": "3cb67ceccefcfc480cea58f0a5f7256b96665f745a6c13c4447f429346063601"
+        "sha256": "65ab0c0dcd848524778f6614fc5c09d4f66025e08bfff99e6616410b050fa041"
       },
       "symbol": {
-        "bytes": 994640,
+        "bytes": 932538,
         "schema": "bottlenecks.v6",
-        "sha256": "f4bef81770944aefbe828c1a29868a734bec8a9c98082732ed72aad794d601e9"
+        "sha256": "8a7a6078fd41991e9313bb460ef5f1d508ce560893a2fd934da31982cc92d9a2"
       }
     },
     "typescript-nestjs-realworld": {
       "file": {
-        "bytes": 480012,
-        "candidate_count": 29,
+        "bytes": 423002,
+        "candidate_count": 20,
         "candidate_groups": "6ffc36bfaf39993a31f7d183c0ca559c8f7d78b7754f62e77cfe755b6dfc4bb0",
-        "candidates": "42aed113117101af9bd66fa8d3335485ccae31bb13d2ce37d299c8d393733fa0",
+        "candidates": "e1ae3b9e19798fe747efb90c4f588d8b957963529c9ad301fd6fa3e28e014eff",
         "node_metrics": "9b0a11a9e46b60bb823bd2583831c5af4759692e62466e596b87b5b8a3d08cea",
         "rankings": "975a82f3ecef8b90567e61462e3dfcf141b3bc65fd3b82747e8ebeda5fcd83a0",
         "rankings_by_category": "d089f7359960592cc8cac948bcb2110789ded6f21a867113190cb6f2374a8fca",
         "schema": "bottlenecks.v7",
-        "sha256": "e0133899558036006c41382fd20e4cd6135d416d51b26d5aa1c63b7b77329f8e"
+        "sha256": "a159ccf50da06ae1165b2bca2900ae98df2de8d8631a3266b8966e42d678d289"
       },
       "symbol": {
-        "bytes": 436952,
+        "bytes": 368074,
         "schema": "bottlenecks.v6",
-        "sha256": "703e89eb21143d0fee9a633daeabf4f5ddc7985eba74454e6e4ccd4a604c4285"
+        "sha256": "074de5f828765517c59bb97b06e1d6e4d6a13fafb41120d6af5681de728613fe"
       }
     }
   }

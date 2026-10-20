@@ -56,3 +56,65 @@ Schema names are unchanged: `bottlenecks.v8` (file) and `bottlenecks.v6` (symbol
 | self | 16.07 | 12.55 | 0.781 |
 
 All ratios ≤ 1.25.
+
+
+# Round 4 (spec 3f70cc03aeae9c1a, V9 · Q1 · Q3 · Q4)
+
+The round-3 sections above were produced with the loose round-3 `review_diff.py`; their counts are kept as the
+round-3 record. The rules now in `review_diff.py` (spec RV1–RV12, `--stage a|b`) supersede them.
+
+## Procedure (repeatable)
+1. Worktrees: `git worktree add --detach <scratch>/wt_a cf0cf4446106f44026dc40d00ba09df977d61ecc`,
+   `git worktree add --detach <scratch>/wt_b 3b768a9b5e9b79c519bfe667b12b8e980cfa636b`, and
+   `ln -s <repo>/.fixtures <scratch>/wt_{a,b}/.fixtures`. Put `.venv/bin` first on `PATH` (tree-sitter).
+2. Outputs, always with `SELF=<scratch>/wt_a` so the self input is identical everywhere:
+   `review_run.sh <scratch>/wt_a <scratch>/review/a_base`, `review_run.sh <scratch>/wt_b <scratch>/review/a_head`,
+   `review_run.sh <repo> <scratch>/review/b_head`.
+3. Stage a (cf0cf44 → 3b768a9, rules for R1–R10):
+   `review_diff.py <scratch>/review/a_base <scratch>/review/a_head <name> <mode> review-output/<name>-<mode>.json --stage a`.
+   Stage b (3b768a9 → this run, rules for R11–R14):
+   `review_diff.py <scratch>/review/a_head <scratch>/review/b_head <name> <mode> review-output-round4/<name>-<mode>.json --stage b`.
+   File-mode runs read the symbol-mode pair from the same directories. Each output records `unexplained`,
+   the attributed edge changes, the independent evidence_spread recomputation, and `nontest_share`.
+4. Wall time: `perf.py <dir>` where `<dir>/basewt` is the 3b768a9 worktree.
+
+## Result
+All 20 outputs (5 inputs × 2 modes × 2 stages) have `unexplained` 0.
+
+| input | mode | stage a edges (base→head): attributed | stage b edges: attributed | evidence_spread a | evidence_spread b |
+| --- | --- | --- | --- | --- | --- |
+| self | file | 16791→16791 | 16791→16791 | 154→133 | 133→108 |
+| self | symbol | 67602→67602 | 67602→67602 | 1106→637 | 637→360 |
+| nestjs | file | 407→407 | 407→407 | 33→25 | 25→16 |
+| nestjs | symbol | 669→669 | 669→669 | 137→94 | 94→41 |
+| android | file | 1620→1616: -READS 4 (R4) | 1616→1616 | 47→46 | 46→41 |
+| android | symbol | 4157→3310: -CALLS 116, -INSTANTIATES 25, -READS 398, -TESTS 200, -WRITES 108 (R4); IMPORTS re-key 42 (R9); other re-key 20 (R4) | 3310→3208: -READS 62, -TYPE_USES 35, -WRITES 5, CONFIGURES retarget 14, constructor-field re-key 74 (R13) | 294→218 | 218→175 |
+| futuramaapi | file | 1384→1384 | 1384→1384 | 91→78 | 78→59 |
+| futuramaapi | symbol | 3175→3175 | 3175→3175 | 352→195 | 195→125 |
+| fastapi-realworld | file | 726→726 | 726→726 | 44→41 | 41→32 |
+| fastapi-realworld | symbol | 1787→1787 | 1787→1787 | 191→98 | 98→66 |
+
+Observations:
+- Stage b changes edges only in android, all from R13: constructor fields no longer scan the whole constructor. The
+  14 CONFIGURES retargets move a Room column-name config key from the first constructor field of the entity to the
+  field annotated with that name (for example `TopicFtsEntity.topicId` → `TopicFtsEntity.name` for `name`).
+- No fixture contains a one-line body misparse (R12): node id sets are unchanged in every stage b output.
+- The independent evidence_spread recomputation (pre-round-3, R5, R11 definitions) equals the actual candidates in
+  all 20 outputs.
+
+## Non-test file share, file mode (computed by `review_diff.py`)
+| input | unresolved_boundary (round 3) | evidence_spread round 3 (R5) | evidence_spread round 4 (R11) |
+| --- | --- | --- | --- |
+| self | 72% → 11% | 77% → 75% | 75% → 72% |
+| nestjs | 51% → 10% | 80% → 61% | 61% → 39% |
+| android | 39% → 0% | 56% → 56% | 56% → 52% |
+| futuramaapi | 54% → 3% | 54% → 46% | 46% → 35% |
+| fastapi-realworld | 45% → 0% | 56% → 53% | 53% → 41% |
+
+The script counts non-test files from file nodes, so the round-3 numbers differ slightly from the hand-computed
+table above. In this repository most source files are used from two or more other directories, so R11 lowers the
+share only from 75% to 72% here.
+
+## Schema and keys (Q1)
+Schema names are unchanged (`bottlenecks.v8` file, `bottlenecks.v6` symbol). `versions.analysis` is "6". The only
+added key path in stage b is evidence_spread `$.metrics.directory_count`.

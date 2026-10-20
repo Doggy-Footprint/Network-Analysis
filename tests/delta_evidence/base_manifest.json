@@ -10,8 +10,8 @@
         "python"
       ],
       "rules": null,
-      "bottleneck_bytes": 1632809,
-      "bottleneck_sha256": "6faa1fdf232f2eaf6e823cc08ff2045d2282f33c33e57342aa488839f23eb224"
+      "bottleneck_bytes": 1573297,
+      "bottleneck_sha256": "2751ab8d3de8b9f7ea21602bffec370cc15890e6e375a1c66d6ad88d6c9305f4"
     },
     {
       "fixture": "fastapi-realworld",
@@ -20,8 +20,8 @@
         "python"
       ],
       "rules": null,
-      "bottleneck_bytes": 782266,
-      "bottleneck_sha256": "ab86750c687b1aa2697eebf45e70656a09f1a611627c4da69e1b13a8ffddf19a"
+      "bottleneck_bytes": 736528,
+      "bottleneck_sha256": "811503009442100d0b116f94ec06fd939834adc7cac71c21f772c09e001132db"
     },
     {
       "fixture": "fastapi-official-template",
@@ -30,8 +30,8 @@
         "python"
       ],
       "rules": null,
-      "bottleneck_bytes": 354930,
-      "bottleneck_sha256": "659fea48fabe17373ea499656c514b759525c6ed51c423164d0f93ea4b0daa39"
+      "bottleneck_bytes": 355130,
+      "bottleneck_sha256": "ae448957b08dd987f6e5f92a61df6aaa1a4c8a2c33f104f6bb7e8b735f308561"
     },
     {
       "fixture": "android-nowinandroid",
@@ -40,8 +40,8 @@
         "kotlin"
       ],
       "rules": null,
-      "bottleneck_bytes": 5200039,
-      "bottleneck_sha256": "1d2cf00e7a871a7b6d71bfbcf12986c618e3f33406797c56a990241d6ac5a9a5"
+      "bottleneck_bytes": 4969819,
+      "bottleneck_sha256": "d235efbdb1047534f1b3ed47df561132edcbf929bfa4acb1db8843cd4e9a1f75"
     },
     {
       "fixture": "typescript-nestjs-realworld",
@@ -50,8 +50,8 @@
         "typescript"
       ],
       "rules": null,
-      "bottleneck_bytes": 529311,
-      "bottleneck_sha256": "f60b01dd222ae934362de7bfb05ac5e2fdba02016c3c88c11095f52fdfdbfe68"
+      "bottleneck_bytes": 474018,
+      "bottleneck_sha256": "c7c7c6e493bda87a5a228e701cf1835e9a0ea4e1d7e913cad9b8eb7ce0d7d346"
     },
     {
       "fixture": "fastapi-realworld",
@@ -60,8 +60,8 @@
         "python"
       ],
       "rules": "profiles/architecture_rules.example.yaml",
-      "bottleneck_bytes": 787682,
-      "bottleneck_sha256": "f036d8b337531754bcb2d756d20d6957263ab5261c210bb6cee45b7acad6ff01"
+      "bottleneck_bytes": 741944,
+      "bottleneck_sha256": "368795c03a13309316e09b44dacdbc19380f16bea7c4f263cd67f5242f0ea907"
     }
   ]
 }
