@@ -1,5 +1,5 @@
 ---
-version: 3
+version: 4
 run_id: e91abc221d7deb2a
 status: active
 base_commit: cf0cf4446106f44026dc40d00ba09df977d61ecc
@@ -149,11 +149,11 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 | V3 | R1,C6 | KotlinAnalyzer metadata | integration | equivalence partitioning | {stdlib bare, receiver 메서드, 외부 import 이름, 프로젝트 패키지 import 이름(미수집), wildcard 프로젝트 import + 없는 이름} | 100% | 같음 | pytest |
 | V4 | R2 | file 아키텍처 file 노드 metadata, 후보 | integration | equivalence partitioning | {외부 호출 0 → 키 없음, 여러 노드 합}, 외부만 있는 파일 → `unresolved_boundary` 없음 | 100% | 값과 후보 유무 | pytest |
 | V5 | R3,C7,C8 | 3 analyzer metadata, symbol·file `unresolved_count` | integration | boundary value (3-value) | 경계 호출 수 {19,20,21} × 언어 3; 30 × 모드 2; file 모드 노드 2개 합 | 100% | 목록 길이 ≤ 20, total·count 값 | pytest |
-| V6 | R4,C9 | Kotlin 노드 metadata·엣지·flags | integration | decision table | 멤버 종류 {fun, 중첩 class, object, body property field} × 스캔 {호출, dynamic flag, READS/WRITES}; 대조 {class 직접 init 블록 호출 → class, primary constructor 호출 → class} | 100% | 귀속 노드와 file 모드 count | pytest |
+| V6 | R4,C9 | Kotlin 노드 metadata·엣지·flags | integration | decision table | 멤버 종류 {fun, 중첩 class, object, body property field} × 스캔 {호출, dynamic flag, READS/WRITES}; 대조 {class 직접 init 블록 호출 → class, primary constructor 호출 → class, 멤버가 있는 class의 init 블록 dynamic 호출 → class 플래그 유지}; UTF-8이 아닌 바이트가 멤버 앞에 있는 파일에서도 같은 귀속 | 100% | 귀속 노드와 file 모드 count | pytest |
 | V7 | R5,C10–C12 | `analyze_bottlenecks` symbol·file 후보 | integration | decision table + boundary value (2-value) | 외부 파일 수 {0,1,2}; 1개일 때 줄 범위 {threshold, threshold+1}; 자기 파일 근거 {있음, 없음}; ownership 엣지 {CONTAINS, DECLARES}; T 파일 없음(boundary 노드) 1 | 100% | 발동 여부, `file_count`, `line_span`, evidence 경로 | pytest |
 | V8 | R6,C13 | 3 analyzer flags, `flags` 모듈 | integration + unit | equivalence partitioning | 언어 3 × {모듈 간 같은 이름, 같은 모듈 메서드 이름}; `AMBIGUOUS_NAME` 속성 없음; ambiguous 엣지 수 불변 | 100% | 플래그 없음, 엣지 있음 | pytest |
 | V9 | R7,C14,C15 | `pagerank`, `GraphAnalyzer` | unit | equivalence partitioning + metamorphic | {단일 엣지 1.0 vs 0.3, 세트 입력 vs 1.0 맵, 혼합 가중치 다중 엣지, dangling 노드, 빈 그래프}; metamorphic: 한 가중치 감소 → 대상 점수 비증가, 합 1 | 100% | 손으로 계산한 기대값(±1e-9)과 관계 | pytest |
-| V10 | R8,C16–C18,Q2,Q6 | `load_edge_weights`, `analyze_bottlenecks` 후보·payload | unit + integration | boundary value (3-value) + equivalence partitioning | token {threshold−1, threshold, threshold+1} × 모드 2; YAML 값 {0, -1, true, 1.5, "x", 없음, 1}; 직접 생성 EdgeWeights 잘못된 값 1; line 단독 발동 대조 1 | 100% | 발동·metrics·payload·예외 | pytest |
+| V10 | R8,C16–C18,Q2,Q6 | `load_edge_weights`, `analyze_bottlenecks` 후보·payload | unit + integration | boundary value (3-value) + equivalence partitioning | token {threshold−1, threshold, threshold+1} × 모드 2; line {threshold, threshold+1} × 모드 2(token 임계 미달); YAML 값 {0, -1, true, 1.5, "x", 없음, 1}; 직접 생성 EdgeWeights 잘못된 값 1; line 단독 발동 대조 1 | 100% | 발동·metrics·payload·예외 | pytest |
 | V11 | R9,C19 | Kotlin IMPORTS·IMPORTS_SYMBOL evidence 줄 | integration | equivalence partitioning | {첫 줄 import, 빈 줄 1·2개 뒤, 들여쓰기, 주석 뒤} | 100% | 줄 번호 | pytest |
 | V12 | R10,C22,Q1 | 실제 fixture 출력 | integration + review | error guessing | 설명 안 되는 후보·플래그·엣지 변화, schema key 변화 | none — experience-based | review.md 집계와 key 비교, 기존 suite 통과 | review + pytest |
 | V13 | Q3,C20,C21 | fuzz 표면 A·B | integration / unit | random | seed 20261020, A 언어별 1,000, B 2,000 전량 | 100% | 위반 0 | main fuzz |
@@ -220,3 +220,5 @@ Execution ledger (append attempts; preserve failed approaches):
 - Contract-only: '미파싱 내부 모듈' 정의와 Kotlin wildcard import 아래 없는 이름 = 외부를 명시(test-implementer 지적 2건). 승인 항목 변경 없음.
 ## v3
 - Contract-only: D13 추가(크기 비율 테스트를 이전 허용 증가량의 절대 예산으로 판정). base_manifest 재생성 결과 `tests/signal_defects_evidence/manifest-regeneration.md`. architecture_rules·delta·external_rules manifest는 `large_node_token_threshold` 키 없이 생성(기존 helper가 추가 키를 제거하고 비교).
+## v4
+- Contract-only: mutation tool 생존 mutant triage(8·25 → V6 dynamic 대조, 10 → V10 line boundary, 3 → V6 비 UTF-8 귀속)로 coverage item 추가. 22 equivalent(TS 심볼 id 형식 `ts:<file>#<qualname>`), 11·26·29·19는 기존 suite(V12)가 kill.

@@ -1,0 +1,130 @@
+[
+  {
+    "id": "M1",
+    "file": "analysis/graph_metrics.py",
+    "defect": "R7 relative normalization (pre-change)",
+    "obligation": "V9",
+    "result": "killed",
+    "failed_tests": [
+      "test_V9_C14_closed_form_single_edge_for_both_weights",
+      "test_V9_discount_does_not_vanish_with_out_degree",
+      "test_V9_graph_analyzer_applies_default_profile_weights_to_pagerank",
+      "test_V9_metamorphic_lowering_one_weight_never_raises_its_target_and_sums_stay_one",
+      "test_V9_mixed_weights_multi_edge_closed_form"
+    ]
+  },
+  {
+    "id": "M2",
+    "file": "analysis/graph_metrics.py",
+    "defect": "R7 undelivered mass dropped",
+    "obligation": "V9",
+    "result": "killed",
+    "failed_tests": [
+      "test_V9_C14_closed_form_single_edge_for_both_weights",
+      "test_V9_discount_does_not_vanish_with_out_degree",
+      "test_V9_graph_analyzer_applies_default_profile_weights_to_pagerank",
+      "test_V9_metamorphic_lowering_one_weight_never_raises_its_target_and_sums_stay_one",
+      "test_V9_mixed_weights_multi_edge_closed_form"
+    ]
+  },
+  {
+    "id": "M3",
+    "file": "bottlenecks/core.py",
+    "defect": "R5 own-file evidence kept (symbol)",
+    "obligation": "V7",
+    "result": "killed",
+    "failed_tests": [
+      "test_V7_C10_only_own_file_evidence_never_fires_even_with_wide_range",
+      "test_V7_own_file_evidence_is_dropped_from_count_range_and_evidence_list"
+    ]
+  },
+  {
+    "id": "M4",
+    "file": "bottlenecks/core.py",
+    "defect": "R5 own-file evidence kept (file)",
+    "obligation": "V7",
+    "result": "killed",
+    "failed_tests": [
+      "test_V7_file_mode_evidence_in_target_file_is_dropped",
+      "test_V7_file_mode_two_external_files_fire"
+    ]
+  },
+  {
+    "id": "M5",
+    "file": "bottlenecks/core.py",
+    "defect": "R5 ownership edges kept",
+    "obligation": "V7",
+    "result": "killed",
+    "failed_tests": [
+      "test_V7_C12_ownership_edge_evidence_is_dropped"
+    ]
+  },
+  {
+    "id": "M6",
+    "file": "bottlenecks/core.py",
+    "defect": "R3 truncated list counted",
+    "obligation": "V5",
+    "result": "killed",
+    "failed_tests": [
+      "test_V5_C7_thirty_boundary_calls_count_thirty_in_both_modes",
+      "test_V5_file_mode_count_sums_per_node_totals_not_list_lengths",
+      "test_V5_symbol_mode_unresolved_count_equals_total"
+    ]
+  },
+  {
+    "id": "M7",
+    "file": "bottlenecks/core.py",
+    "defect": "R8 token boundary off by one (file)",
+    "obligation": "V10",
+    "result": "killed",
+    "failed_tests": [
+      "test_V10_C17_file_mode_token_boundary_from_observed_cost_three_values"
+    ]
+  },
+  {
+    "id": "M8",
+    "file": "language_analyzers/python/graph.py",
+    "defect": "R1 Python open ancestry ignored",
+    "obligation": "V1",
+    "result": "killed",
+    "failed_tests": [
+      "test_V1_C4_external_base_class_never_leaks_into_sibling_classes",
+      "test_V1_python_classification_tree"
+    ]
+  },
+  {
+    "id": "M9",
+    "file": "language_analyzers/typescript/analyzer.py",
+    "defect": "R1 TS this ancestry ignored",
+    "obligation": "V2",
+    "result": "killed",
+    "failed_tests": [
+      "test_V2_typescript_classification_tree"
+    ]
+  },
+  {
+    "id": "M10",
+    "file": "language_analyzers/kotlin/analyzer.py",
+    "defect": "R4 Kotlin class scans member calls",
+    "obligation": "V6",
+    "result": "killed",
+    "failed_tests": [
+      "test_V6_C9_file_mode_unresolved_count_is_four",
+      "test_V6_C9_four_unresolved_calls_belong_to_the_method_only",
+      "test_V6_call_scan_member_kind_attributed_to_member_not_class",
+      "test_V6_control_file_mode_counts_class_plus_method",
+      "test_V6_control_init_block_and_primary_constructor_calls_stay_on_the_class"
+    ]
+  },
+  {
+    "id": "M11",
+    "file": "language_analyzers/kotlin/analyzer.py",
+    "defect": "R9 import line includes blank lines",
+    "obligation": "V11",
+    "result": "killed",
+    "failed_tests": [
+      "test_V11_each_import_in_a_list_gets_its_own_line",
+      "test_V11_import_evidence_is_the_import_keyword_line"
+    ]
+  }
+]
