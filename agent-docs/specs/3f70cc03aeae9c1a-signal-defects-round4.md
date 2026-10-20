@@ -1,5 +1,5 @@
 ---
-version: 5
+version: 6
 run_id: 3f70cc03aeae9c1a
 status: active
 base_commit: 3b768a9b5e9b79c519bfe667b12b8e980cfa636b
@@ -172,7 +172,7 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 # Verification Obligations
 | id | parent requirement/Case ids | variant and target surface | test layer and selection policy | ISO/IEC/IEEE 29119-4 technique | coverage items | coverage target | observation and expected result | evidence procedure |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| V1 | R11,C1–C4,C6 | symbol 모드 `analyze_bottlenecks` 후보 (임시 Python 프로젝트 → CLI 또는 analyzer+bottlenecks API) | integration | decision table | 규칙: DT1 외부 디렉터리 2 → 발동; DT2 외부 디렉터리 1·파일 2 → 없음; DT3 같은 디렉터리 파일 + 외부 1 → 없음; DT4 파일 1·범위 threshold → 없음; DT5 파일 1·범위 threshold+1 → 발동; DT6 근거 0 → 없음; DT7 루트 대상(C6) | 100% | 발동, `file_count`, `directory_count`, `line_span` | pytest |
+| V1 | R11,C1–C4,C6 | symbol 모드 `analyze_bottlenecks` 후보 (임시 Python 프로젝트 → CLI 또는 analyzer+bottlenecks API) | integration | decision table | 규칙: DT1 외부 디렉터리 2 → 발동; DT2 외부 디렉터리 1·파일 2 → 없음; DT3 같은 디렉터리 파일 + 외부 1 → 없음; DT4 파일 1·범위 threshold → 없음; DT5 파일 1·범위 threshold+1 → 발동; DT6 근거 0 → 없음; DT7 루트 대상(C6); DT8 파일 없는 대상 T(span 없음)에 근거 `x.py`(루트)·`b/y.py` → 제외 없음, directory_count 2(`""`, `b`), 발동 | 100% | 발동, `file_count`, `directory_count`, `line_span` | pytest |
 | V2 | R11,C5 | file 모드 같은 DT1–DT5 | integration | decision table | DT1–DT5 file 모드 | 100% | 같음 | pytest |
 | V3 | R11r | `report/bottlenecks/generate.py` 출력, `app.js` 문자열 | unit | equivalence partitioning | {생성 보고서의 evidence_spread 설명에 "디렉터리" 포함, 정렬 지표 directory_count 순, app.js 카드 `개 디렉터리`} | 100% | 문자열·순서 | pytest |
 | V4 | R12,R12b,C7–C10 | KotlinAnalyzer symbol 노드·엣지 | integration | equivalence partitioning | {(B) object var, (B) object fun + 호출, (B) `data object`, (B) 여러 줄 top-level object 안의 한 줄 중첩 object(`object T {\n fun f() = g()\n object N { val w = 1 }\n}` → T, T.f, T.N, T.N.w; CALLS T.f→g), (A) class val, (A) object : B() val, (A) 중첩 object, (A) companion body property는 out of scope라 제외, 일반 infix(C10), 여러 줄 대조} | 100% | 노드 존재·kind·CONTAINS/DECLARES·CALLS 귀속, signature `object X` | pytest |
@@ -180,7 +180,7 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 | V6 | C13,Q2 | 구문 오류 Kotlin 파일 | integration | equivalence partitioning | {ERROR만 있는 파일, ERROR + 정상 선언 파일} | 100% | 예외 없음, 정상 선언 수집 | pytest |
 | V7 | R14,C16,Q1 | bottleneck JSON symbol·file | unit | equivalence partitioning | {symbol, file} | 100% | `versions.analysis == "6"`, schema 이름 불변 | pytest |
 | V8 | R15 | `framework_analyzers/android` 출력 | integration | equivalence partitioning | {android fixture 출력이 3b768a9와 같음(기존 characterization/manifest 통과), C7·C11 입력에서 Android analyzer 출력이 3b768a9와 같음} | 100% | 동일성 | pytest |
-| V9 | RV,R15,C14,C15,Q1,Q4 | `review_diff.py` 두 stage × 10 출력 | integration + review | decision table (RV1–RV8 규칙별 합성 JSON 입력) + review | 규칙별 합성 쌍: RV2 start_line만 다름(인정)/resolution도 다름(불인정); RV3 member 동일 edge(인정)/없음(불인정)/file 모드 다른 relation(불인정); RV4 구조 kind 추가(불인정)/겹치지 않는 변경(불인정)/겹치는 변경(인정); RV5 large_node 제거(stage a 불인정), unresolved 이름 external로 이동(인정)/이동 안 함(불인정), evidence_spread 재계산 불일치(불인정); RV6 `external_call_count`가 node_metrics에 나타남(불인정)/node metadata(인정), `token_count`가 large_node 외 후보(불인정); RV7 stage b R13 아닌 노드 span 변화(불인정); RV8 비율 기록 존재; RV9 같은 class field 사이 CONFIGURES 재귀속 + HEAD span이 근거 줄 포함(인정) / 다른 class field로 재귀속(불인정) / HEAD span이 근거 줄 미포함(불인정) | 100% | 합성 입력의 unexplained 유무; 실제 20 출력 unexplained 0 | pytest + review.md |
+| V9 | RV,R15,C14,C15,Q1,Q4 | `review_diff.py` 두 stage × 10 출력 | integration + review | decision table (RV1–RV8 규칙별 합성 JSON 입력) + review | 규칙별 합성 쌍: RV2 start_line만 다름(인정)/resolution도 다름(불인정); RV3 member 동일 edge(인정)/없음(불인정)/file 모드 다른 relation(불인정); RV4 구조 kind 추가(불인정)/겹치지 않는 변경(불인정)/겹치는 변경(인정); RV5 large_node 제거(stage a 불인정), unresolved 이름 external로 이동(인정)/이동 안 함(불인정), evidence_spread 재계산 불일치(불인정); RV6 `external_call_count`가 node_metrics에 나타남(불인정)/node metadata(인정), `token_count`가 large_node 외 후보(불인정); RV7 stage b R13 아닌 노드 span 변화(불인정); RV8 비율 기록 존재; RV6 stage b `directory_count`가 evidence_spread 외 후보 metrics 또는 `node_metrics`에 나타남(불인정); RV9 같은 class field 사이 CONFIGURES 재귀속 + HEAD span이 근거 줄 포함(인정) / 다른 class field로 재귀속(불인정) / HEAD span이 근거 줄 미포함(불인정) | 100% | 합성 입력의 unexplained 유무; 실제 20 출력 unexplained 0 | pytest + review.md |
 
 # Assumptions and Defaults
 | id | decision | evidence and uncertainty | brief v<n> — approved / vetoed → <answer> / user answer |
@@ -217,7 +217,7 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 | --- | --- |
 | correction batches used | 1 |
 | verifier invocations | 1 |
-| open finding ids | none |
+| open finding ids | VF1-F1 |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
@@ -262,3 +262,6 @@ Execution ledger (append attempts; preserve failed approaches):
 
 ## v5 (Workflow Control 갱신)
 - correction batch 1 기록, verifier 1회차 dispatch 전 invocations 1로 증가.
+
+## v6
+- contract-only: verifier 1 VF1-F1(blocking) — R11 "T에 파일이 없으면 제외 없음" 조항이 V1 coverage item에 없음. V1에 DT8 추가. VF1-A1(advisory, 저렴): V9에 stage b `directory_count` 위치 거부 항목 추가. brief 항목 변화 없음.
