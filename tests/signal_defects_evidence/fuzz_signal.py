@@ -3,6 +3,10 @@ forms each have a known R1 class (boundary or external), counted per node indepe
 analyzers; each project gets a broken extra file with probability 0.1. Surface B: random weighted
 graphs checked against R7 properties and the pre-change definition for all-1.0 weights.
 Usage: fuzz_signal.py [--seed 20261020] [--budget 1000] [--graphs 2000] [--lang python,typescript,kotlin]
+Spec 3f70cc03aeae9c1a adds `--round4 [--budget 1000]`: surface C (R11) builds Python projects whose files sit in
+random directories and import-and-call one target function, so the expected evidence files and directories are known
+by construction; surface D (R12, R13) builds Kotlin files mixing one-line and multi-line object/class bodies and
+primary constructors whose default values call known project functions.
 """
 import argparse
 import os
@@ -238,5 +242,186 @@ def main():
     return 1 if violations else 0
 
 
+def _cli_payload(root, granularity, out):
+    import code_analyzer.cli as cli
+    argv = ["code-analyzer", str(root), "-l", root.lang, "--granularity", granularity, "-o", str(out / f"{granularity}.html"),
+            "--bottlenecks", str(out / f"{granularity}.b.json"), "--json"]
+    saved = sys.argv
+    sys.argv = argv
+    try:
+        cli.main()
+    finally:
+        sys.argv = saved
+    import json
+    return (json.loads((out / f"{granularity}.b.json").read_text()), json.loads((out / f"{granularity}.json").read_text()))
+
+
+class _Root(type(Path())):
+    lang = "python"
+
+
+def spread_case(rng):
+    dirs = rng.sample(["", "a", "b", "c", "a/d", "e"], rng.randint(1, 5))
+    count = rng.randint(2, 12)
+    paths = []
+    for index in range(count):
+        directory = rng.choice(dirs)
+        paths.append(f"{directory}/m{index}.py" if directory else f"m{index}.py")
+    target = paths[0]
+    module = target[:-3].replace("/", ".")
+    files = {target: "def tgt(x):\n    return x\n"}
+    callers = set()
+    for path in paths[1:]:
+        calls = rng.randint(0, 3)
+        if calls:
+            callers.add(path)
+            files[path] = f"from {module} import tgt\n\n\ndef use(x):\n" + "".join("    tgt(x)\n" for _ in range(calls))
+        else:
+            files[path] = "def idle(x):\n    return x\n"
+    for path in list(files):
+        parts = path.split("/")[:-1]
+        for depth in range(1, len(parts) + 1):
+            files.setdefault("/".join(parts[:depth]) + "/__init__.py", "")
+    own = posix_dir(target)
+    directories = {posix_dir(path) for path in callers} - {own}
+    return files, {"target": target, "files": len(callers), "dirs": len(directories)}
+
+
+def posix_dir(path):
+    return path.rsplit("/", 1)[0] if "/" in path else ""
+
+
+def spread_check(root, expected):
+    problems = []
+    with tempfile.TemporaryDirectory() as out:
+        for granularity in ("symbol", "file"):
+            payload, _arch = _cli_payload(_Root(root), granularity, Path(out))
+            # Python symbol ids use the dotted module name, file ids the path
+            wanted = "py:" + expected["target"][:-3].replace("/", ".") + "#tgt" if granularity == "symbol" else None
+            found = [c for c in payload["candidates"] if c["kind"] == "evidence_spread"
+                     and (c["target"] == wanted if wanted else c["target"].endswith(":" + expected["target"]))]
+            fire = expected["dirs"] >= 2
+            if fire != bool(found):
+                problems.append((granularity, "fire", fire, [c["metrics"] for c in found]))
+            for candidate in found:
+                metrics = candidate["metrics"]
+                if (metrics.get("file_count"), metrics.get("directory_count")) != (expected["files"], expected["dirs"]):
+                    problems.append((granularity, "metrics", expected, metrics))
+                if metrics.get("directory_count", 0) > metrics.get("file_count", 0):
+                    problems.append((granularity, "directory_count > file_count", metrics))
+    return problems
+
+
+def kotlin_case(rng):
+    lines, expected = ["package p", ""], {"names": set(), "field_calls": {}, "member_calls": {}}
+    functions = [f"g{i}" for i in range(4)]
+    counter = [0]
+
+    def fresh(prefix):
+        counter[0] += 1
+        return f"{prefix}{counter[0]}"
+
+    for _ in range(rng.randint(1, 4)):
+        shape = rng.choice(["one_object", "one_class", "multi_object", "ctor"])
+        name = fresh("T")
+        expected["names"].add(name)
+        members = []
+        for _ in range(rng.randint(0, 3)):
+            if rng.random() < 0.5:
+                member = fresh("v")
+                members.append((f"val {member} = 1", member, None))
+            else:
+                member, callee = fresh("f"), rng.choice(functions)
+                members.append((f"fun {member}() = {callee}()", member, callee))
+        for _text, member, callee in members:
+            expected["names"].add(f"{name}.{member}")
+            if callee:
+                expected["member_calls"][f"{name}.{member}"] = callee
+        body = "; ".join(text for text, _m, _c in members)
+        if shape == "one_object":
+            lines.append(f"{rng.choice(['', 'data '])}object {name} {{ {body} }}" if members else f"object {name} {{ }}")
+        elif shape == "one_class":
+            lines.append(f"class {name} {{ {body} }}")
+        elif shape == "multi_object":
+            nested = fresh("N")
+            expected["names"].add(f"{name}.{nested}")
+            expected["names"].add(f"{name}.{nested}.w")
+            lines += [f"object {name} {{"] + [f"    {text}" for text, _m, _c in members] + [f"    object {nested} {{ val w = 1 }}", "}"]
+        else:
+            params = []
+            for _ in range(rng.randint(0, 4)):
+                param, binding = fresh("p"), rng.choice(["val ", "var ", ""])
+                callees = rng.sample(functions, rng.randint(0, 2))
+                default = " + ".join(f"{c}()" for c in callees) if callees else "0"
+                params.append(f"{binding}{param}: Int = {default}")
+                if binding:
+                    expected["names"].add(f"{name}.{param}")
+                    expected["field_calls"][f"{name}.{param}"] = set(callees)
+            for text, member, callee in members:
+                expected["names"].discard(f"{name}.{member}")
+                expected["member_calls"].pop(f"{name}.{member}", None)
+            split = rng.random() < 0.5
+            lines.append(f"class {name}(" + (",\n    ".join(params) if split else ", ".join(params)) + ")")
+        lines.append("")
+    lines += [f"fun {f}() = 1" for f in functions]
+    return {"src/A.kt": "\n".join(lines) + "\n"}, expected
+
+
+def kotlin_shape_check(root, expected):
+    arch = KotlinAnalyzer(str(root)).analyze()
+    ids = {n.id for n in arch.nodes}
+    prefix = "kotlin:src/A.kt#"
+    problems = [("missing", name) for name in sorted(expected["names"]) if prefix + name not in ids]
+    calls = {}
+    for edge in arch.edges:
+        if edge.relation == "CALLS" and edge.from_id.startswith(prefix):
+            calls.setdefault(edge.from_id[len(prefix):], set()).add(edge.to_id[len(prefix):])
+    for field, callees in expected["field_calls"].items():
+        if calls.get(field, set()) != callees:
+            problems.append(("field calls", field, callees, calls.get(field, set())))
+    for member, callee in expected["member_calls"].items():
+        owner = member.rsplit(".", 1)[0]
+        if calls.get(member, set()) != {callee}:
+            problems.append(("member calls", member, callee, calls.get(member, set())))
+        if callee in calls.get(owner, set()) and not any(c == callee for m, c in expected["member_calls"].items()
+                                                          if m.rsplit(".", 1)[0] != owner):
+            problems.append(("owner calls member callee", owner, callee))
+    return problems
+
+
+def round4(args):
+    violations = executions = 0
+    surfaces = (("C", spread_case, spread_check, None),
+                ("D", kotlin_case, kotlin_shape_check, ("src/B.kt", "package p\nclass Broken( {\n  fun x( = \n")))
+    for label, case, check, broken in surfaces:
+        rng = random.Random(f"{args.seed}:round4:{label}")
+        for index in range(args.budget):
+            files, expected = case(rng)
+            if broken and rng.random() < 0.1:
+                files[broken[0]] = broken[1]
+            with tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                for rel, text in files.items():
+                    (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                    (root / rel).write_text(text)
+                try:
+                    problems = check(root, expected)
+                except Exception:
+                    problems = [("exception", traceback.format_exc())]
+            executions += 1
+            if problems:
+                violations += 1
+                print(f"VIOLATION {label} #{index}: {problems}\n--- files ---\n{files}", flush=True)
+        print(f"surface {label}: {args.budget} projects done", flush=True)
+    print(f"executions={executions} violations={violations}")
+    return 1 if violations else 0
+
+
 if __name__ == "__main__":
+    if "--round4" in sys.argv:
+        sys.argv.remove("--round4")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--seed", type=int, default=20261020)
+        parser.add_argument("--budget", type=int, default=1000)
+        sys.exit(round4(parser.parse_args()))
     sys.exit(main())

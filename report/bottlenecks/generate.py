@@ -27,7 +27,7 @@ KIND_LABELS = {
 }
 
 KIND_DESCRIPTIONS = {
-    "evidence_spread": "대상 밖의 다른 파일에서 오는 근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
+    "evidence_spread": "대상 디렉터리 밖의 둘 이상의 디렉터리에서 오는 근거, 또는 한 파일에서 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
     "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘거나 토큰 수가 large_node_token_threshold를 넘는 사례입니다.",
     "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
     "dependency_cycle": "파일들이 서로 의존해 순환을 이루는 사례입니다. 같은 순환도 연결 확실성 tier(certain, resolved, all)별로 따로 나옵니다.",
@@ -55,7 +55,7 @@ CATEGORY_ORDER = ("production", "test", "generated", "vendored", "unknown")
 
 _KIND_SCORE_FIELDS = {
     "large_node": ("line_count", 0),
-    "evidence_spread": ("file_count", 0),
+    "evidence_spread": ("directory_count", 0),
     "unresolved_boundary": ("unresolved_count", 1),
     "dependency_cycle": ("member_count", 0),
     "package_cycle": ("member_count", 0),

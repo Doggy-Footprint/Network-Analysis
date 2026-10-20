@@ -202,7 +202,9 @@ class KotlinAnalyzer:
             (match.group(1), text.count("\n", 0, match.start()) + 1)
             for match in re.finditer(r"^[^\S\n]*import\s+([\w.*]+)", text, re.M)
         ]
-        for declaration in ka.top_level_declarations(root):
+        for declaration in root.children:
+            if declaration.type not in ("function_declaration", "class_declaration", "object_declaration") and ka.recovered_object_members(declaration) is None:
+                continue
             self._collect_declaration(key, source, declaration, None, [])
             name = ka.declared_name(declaration, source)
             if name:
@@ -234,26 +236,25 @@ class KotlinAnalyzer:
         if parent:
             self._add_edge(parent, symbol_id, RelationKind.CONTAINS,
                            SourceSpan(key, ka.start_line(node), ka.start_line(node)))
-        if node.type in ("class_declaration", "object_declaration"):
+        recovered = ka.recovered_object_members(node)
+        if node.type in ("class_declaration", "object_declaration") or recovered is not None:
             constructor = ka.primary_constructor(node)
             if constructor is not None:
                 constructor_text = ka.node_text(source, constructor)
-                for parameter in ka.class_parameters(constructor, source):
+                for parameter, parameter_node in zip(ka.class_parameters(constructor, source), ka.class_parameter_nodes(constructor)):
                     field_name = parameter.get("name")
                     if field_name and re.search(rf"\b(?:val|var)\s+{re.escape(field_name)}\b", constructor_text):
-                        self._collect_field(key, field_name, f"{qualname}.{field_name}", constructor, symbol_id)
-            body = ka.class_body(node)
-            if body is not None:
-                for child in body.children:
-                    if child.type in ("function_declaration", "class_declaration", "object_declaration"):
-                        if ka.declared_name(child, source):
-                            self._member_nodes.setdefault(symbol_id, []).append(child)
-                        self._collect_declaration(key, source, child, symbol_id, scope + [name])
-                    elif child.type == "property_declaration":
-                        field_match = re.search(r"\b(?:val|var)\s+([A-Za-z_]\w*)", ka.node_text(source, child))
-                        field_name = field_match.group(1) if field_match else None
-                        if field_name and self._collect_field(key, field_name, f"{qualname}.{field_name}", child, symbol_id):
-                            self._member_nodes.setdefault(symbol_id, []).append(child)
+                        self._collect_field(key, field_name, f"{qualname}.{field_name}", parameter_node, symbol_id)
+            for child in (recovered if recovered is not None else ka.body_members(node)):
+                if child.type != "property_declaration":
+                    if ka.declared_name(child, source):
+                        self._member_nodes.setdefault(symbol_id, []).append(child)
+                    self._collect_declaration(key, source, child, symbol_id, scope + [name])
+                else:
+                    field_match = re.search(r"\b(?:val|var)\s+([A-Za-z_]\w*)", ka.node_text(source, child))
+                    field_name = field_match.group(1) if field_match else None
+                    if field_name and self._collect_field(key, field_name, f"{qualname}.{field_name}", child, symbol_id):
+                        self._member_nodes.setdefault(symbol_id, []).append(child)
 
     def _collect_field(self, key: str, name: str, qualname: str, node: Any, parent: str) -> bool:
         field_id = self._symbol_id(key, qualname)
@@ -277,7 +278,7 @@ class KotlinAnalyzer:
         self._nodes[symbol.id] = GraphNode(
             id=symbol.id, label=symbol.name, group=symbol.kind, category=symbol.kind,
             kind=symbol.kind, language="kotlin", span=span, cost=cost_for_span(text, span),
-            signature=ka.node_text(source, symbol.node).split("{")[0].split("=")[0].strip(),
+            signature=f"object {symbol.name}" if symbol.node.type == "infix_expression" else ka.node_text(source, symbol.node).split("{")[0].split("=")[0].strip(),
             symbol_path=f"{symbol.file_key}:{symbol.qualname}", flags=flags,
             provenance="kotlin-core", metadata={"name": symbol.name, "file_path": symbol.file_key,
                                                   "qualname": symbol.qualname},

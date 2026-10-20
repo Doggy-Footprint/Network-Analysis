@@ -85,6 +85,43 @@ def nested_declarations(node) -> List[Any]:
     ]
 
 
+_MEMBER_TYPES = ("function_declaration", "class_declaration", "object_declaration", "property_declaration")
+
+
+def body_members(node) -> List[Any]:
+    """Direct declarations of a class body. tree-sitter-kotlin misparses a one-line body
+    such as `class K { val v = 1 }` by wrapping the trailing declarations in an ERROR child
+    of class_body, so those are read as if they were direct children."""
+    body = class_body(node)
+    if body is None:
+        return []
+    members = []
+    for child in body.children:
+        if child.type == "ERROR":
+            members.extend(grandchild for grandchild in child.children if grandchild.type in _MEMBER_TYPES)
+        elif child.type in _MEMBER_TYPES:
+            members.append(child)
+    return members
+
+
+def recovered_object_members(node) -> Optional[List[Any]]:
+    """tree-sitter-kotlin parses a top-level one-line `object X { ... }` as the infix
+    expression `object` `X` `{lambda}`; returns the lambda's declarations, None for any other infix."""
+    if node.type != "infix_expression" or [child.type for child in node.children] != ["object_literal", "simple_identifier", "lambda_literal"]:
+        return None
+    if class_body(node.children[0]) is not None:
+        return None
+    members = []
+    for statements in node.children[2].children:
+        if statements.type == "statements":
+            members.extend(child for child in statements.children if child.type in _MEMBER_TYPES or recovered_object_members(child) is not None)
+    return members
+
+
+def class_parameter_nodes(ctor_node) -> List[Any]:
+    return [child for child in ctor_node.children if child.type == "class_parameter"]
+
+
 def class_body(node) -> Optional[Any]:
     for child in node.children:
         if child.type == "class_body":

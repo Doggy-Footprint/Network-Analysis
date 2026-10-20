@@ -1,0 +1,224 @@
+---
+version: 3
+run_id: 3f70cc03aeae9c1a
+status: active
+base_commit: 3b768a9b5e9b79c519bfe667b12b8e980cfa636b
+max_verifier_invocations: 2
+handoff: agent-docs/handoff/dad85e4830f21190-existing-signal-defects.md
+---
+
+# User Intent
+| id | stakeholder | intention | observable goal |
+| --- | --- | --- | --- |
+| I1 | 사용자 | "handoff에 신호 결함 처리가 남았어?" → "처리하자", 범위 "V12 + Open Questions 전부" | 3회차 V12(review evidence)가 엄격한 귀속 규칙으로 닫히고 handoff Open Questions 3건이 처리된다 |
+| I2 | 사용자 | file 모드 `evidence_spread` ≈ fan_in ≥ 2 문제 → "디렉터리 단위로 재정의" | `evidence_spread`가 대상 디렉터리 밖 디렉터리 수로 발동한다 |
+| I3 | 사용자 | Kotlin 한 줄 body 오파싱 (A)·(B) 모두 복원, `versions.analysis` "6" (brief 승인) | 한 줄 object·class의 선언과 멤버가 그래프에 나온다 |
+| I4 | 사용자 | Kotlin primary constructor field 중복 귀속 수정 | constructor field 노드는 자기 parameter 범위만 스캔한다 |
+| I5 | 프로젝트 | 고치지 않은 신호는 그대로 둔다 (3회차 I4 계승) | 3b768a9 대비 출력 변화가 모두 R11–R14로 설명된다 |
+
+# Scope
+In scope:
+- 3회차 V12 review 스크립트 정정(verifier 2 finding VF2-F2–F5), 3회차 base(cf0cf44)→3회차 HEAD(3b768a9) 비교 재실행.
+- R11 evidence_spread 디렉터리 재정의(symbol·file 모드), 보고서·HTML 문구와 정렬 지표.
+- R12 KotlinAnalyzer(kotlin-core)의 한 줄 body 오파싱 복원 (A)·(B).
+- R13 Kotlin primary constructor field 스캔 범위.
+- R14 `versions.analysis` "6".
+
+Out of scope:
+- `framework_analyzers/android`의 선언 수집(같은 ast helper를 쓰지만 이번 run에서 출력 불변).
+- 그 밖의 Kotlin 오파싱 형태(companion object 자체 수집, supertype 있는 top-level 한 줄 object의 class_body는 (A)로만 처리).
+- schema 이름 변경, 새 candidate kind, 3회차 R1–R10 동작 변경.
+- ADR·rejection record 작성(완료 후 사용자에게 제안만).
+
+# Paths
+Implementation: bottlenecks/core.py, language_analyzers/kotlin/analyzer.py, language_analyzers/kotlin/ast.py, report/bottlenecks/generate.py, renderers/html/static/app.js
+Tests: tests/test_signal_defects_round4.py (new), tests/signal_defects_round4_support.py (new, 선택), tests/signal_defects_evidence/review_diff.py, tests/signal_defects_evidence/review_run.sh, tests/signal_defects_evidence/nontest_share.py (new, 선택). 기존 tests/ 파일 조정도 허용한다(3회차 D14와 같은 규칙: 결과 기대값만 갱신, 원래 의도를 기대값만으로 지킬 수 없으면 의도를 보존하는 입력·oracle 변경 허용, 약화 금지, 각 변경에 R11–R14 id와 이유를 `tests/signal_defects_evidence/existing-tests-round4.diff`에 기록). main 전용(test role은 쓰지 않음): `tests/signal_defects_evidence/review.md`, `review-output/`, `review-output-round4/`, `fuzz_signal.py`, `fuzz-run*.log`, `hand-mutations*.json`, `mutation-tool*.json`, `manifest-regeneration.md`, `tests/*_evidence/base_manifest.json` 재생성.
+
+Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with coverage python -m coverage run --branch --include=bottlenecks/core.py,language_analyzers/kotlin/analyzer.py,language_analyzers/kotlin/ast.py,report/bottlenecks/generate.py -m pytest -q -p no:cacheprovider --deselect tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages --deselect tests/test_analysis_coverage_reporting.py::test_V07_read_parse_counts_match_immutable_characterization --deselect tests/test_analyzer.py::FastAPIRealFixtureSmokeTests::test_fastapi_realworld_fixture_analyzes_without_crashing --deselect tests/test_file_analysis_cli.py::test_V01_direct_builder_defaults_characterization && uv run -q --with coverage python -m coverage json -o .coverage-signal.json && python3 tests/fact_defects_evidence/diff_coverage.py --base 3b768a9b5e9b79c519bfe667b12b8e980cfa636b --coverage .coverage-signal.json --fail-under 90
+
+Review evidence:
+- 산출물: `tests/signal_defects_evidence/review.md`(main), stage (a) `review-output/`, stage (b) `review-output-round4/`.
+- 입력: self(base worktree의 소스를 `-l python`), `typescript-nestjs-realworld`, `android-nowinandroid`, `futuramaapi`, `fastapi-realworld` × `--granularity file|symbol`, `--json`과 `--bottlenecks`, `PYTHONHASHSEED=0` (`review_run.sh`).
+- stage (a): 코드 cf0cf44 vs 3b768a9, 규칙 집합 R1–R10(3회차 spec). stage (b): 코드 3b768a9 vs 이번 HEAD, 규칙 집합 R11–R14. 두 stage 모두 self 입력은 같은 base worktree 소스를 쓴다.
+- `review_diff.py <base_dir> <head_dir> <name> <mode> <out.json> --stage a|b`가 아래 RV 규칙으로 모든 차이를 R id에 귀속하거나 `unexplained`에 넣는다. non-test 비율은 `review_diff.py`(또는 `nontest_share.py`)가 계산해 out JSON에 기록한다.
+- 기대 결과: 두 stage × 10 출력 모두 `unexplained` 0.
+
+Fuzzing:
+- 도구: main이 확장하는 `tests/signal_defects_evidence/fuzz_signal.py`, seed 20261020.
+- 표면 C(R11): 디렉터리 1–5개, 파일 2–12개의 임시 Python 프로젝트. 대상 함수 1개를 무작위 파일에 두고, 다른 파일에서 0–3회 호출한다. symbol·file 모드 모두 분석한다.
+- 표면 D(R12·R13): 임시 Kotlin 프로젝트. 한 줄·여러 줄 object/class body(멤버 0–3개, 마지막 멤버 뒤 같은 줄 `}` 여부), primary constructor parameter 0–4개(val/var/일반, 기본값에 프로젝트 함수 호출 0–2개)를 무작위로 만든다. 10%는 구문 오류 파일 1개를 포함한다.
+- oracle (property):
+  - C ① 예외 0 ② 후보의 `directory_count`·`file_count`·발동 여부가 생성기의 독립 계산과 같다 ③ `directory_count ≤ file_count`.
+  - D ① 예외 0 ② 생성기가 만든 모든 선언 이름(object/class/멤버/val·var parameter)이 노드로 존재 ③ constructor field 노드의 CALLS 대상 집합이 자기 기본값 식의 호출 집합과 같다.
+- 예산: C 1,000 프로젝트, D 1,000 프로젝트.
+
+Mutation tool:
+- 도구: `tests/dynamic_flags_evidence/ast_mut.py`.
+- 대상: base_commit 이후 변경된 Implementation Python 줄만.
+- 표본: 최대 30개, seed 20261020.
+- 실행 명령: `uv run -q --with-requirements requirements-dev.txt python -m pytest -q -p no:cacheprovider -x tests/test_signal_defects_round4.py tests/test_signal_defects.py`
+- 생존율 임계: 40%.
+
+# Signatures
+bottleneck JSON `evidence_spread` metrics: `file_count: int`, `directory_count: int`(new), `line_span: int`, `line_threshold: int`
+bottleneck JSON `versions.analysis == "6"`; schema 이름 `bottlenecks.v8`(file)·`bottlenecks.v6`(symbol) 불변
+KotlinAnalyzer 노드 id 형식 불변: `kotlin:<file>#<qualname>`
+
+# Functional Requirements
+| id | requirement | priority | source |
+| --- | --- | --- | --- |
+| R11 | `evidence_spread`: 3회차 R5의 근거 제외(ownership 엣지, 대상 T의 파일과 같은 `file_path`)를 그대로 적용한 남은 근거 집합 E에 대해 `file_count` = E의 서로 다른 `file_path` 수(R5와 같음), `directory_count` = E의 `posixpath.dirname(file_path)` 중 T의 디렉터리(`dirname(T 파일)`; T에 파일이 없으면 제외 없음)와 다른 서로 다른 값의 수. 루트 파일의 디렉터리는 `""`. 발동: `directory_count ≥ 2`, 또는 `file_count == 1`이고 그 파일 근거의 줄 범위 > `large_node_line_threshold`. `line_span`·evidence 목록·후보 id·kind 이름은 R5와 같다. symbol·file 모드 모두. | must | I2 |
+| R11r | 보고서(`report/bottlenecks/generate.py`)와 HTML(`app.js`)의 evidence_spread 설명 문구는 "대상 디렉터리 밖 둘 이상의 디렉터리" 의미로, 정렬 지표와 카드 값은 `directory_count`(`<n>개 디렉터리`)로 바꾼다. | should | I2 |
+| R12 | KotlinAnalyzer 선언 수집: (A) class/object/companion의 `class_body` 직계 child 중 `ERROR` 노드가 있으면 그 직계 child의 `function_declaration`·`class_declaration`·`object_declaration`·`property_declaration`을 class_body 직계 child와 똑같이 멤버로 수집한다(R4 멤버 범위 제외 포함). (B) `source_file` 직계 child이거나 (B)로 복원된 object의 `statements` 직계 child인 `infix_expression`의 children이 정확히 [`object_literal`(자식에 class_body가 없음), `simple_identifier`, `lambda_literal`]이면 이름 = simple_identifier인 top-level object 선언으로 수집한다. 노드 kind = class, span = infix_expression 전체, 멤버 = lambda_literal의 `statements` 직계 선언(위와 같은 종류), file의 DECLARES 엣지 포함. 그 밖의 infix_expression은 바뀌지 않는다. | must | I3 |
+| R12b | (B)로 복원된 object 노드는 multi-line `object X {…}`와 같은 방식으로 호출·READS/WRITES·flag 스캔을 받는다(멤버 범위 제외). `signature`는 `object <name>`. | must | I3 |
+| R13 | primary constructor의 `val`/`var` parameter로 만든 field 노드는 그 `class_parameter` 노드를 자기 node로 쓴다. span·cost·signature·CONTAINS 근거 줄·호출/READS/WRITES/TYPE_USES 스캔이 그 parameter 범위로 한정된다. class 노드의 primary constructor 스캔(3회차 R4)은 바뀌지 않는다. 같은 이름 field가 body에도 있으면 기존처럼 처음 수집된 것만 남는다. | must | I4 |
+| R14 | bottleneck JSON `versions.analysis`는 "6"이다. | must | I3 (brief 승인) |
+| R15 | R11–R14로 설명되지 않는 3b768a9의 출력은 바뀌지 않는다. `framework_analyzers/android` 출력은 불변이다. | must | I5 |
+| RV | `review_diff.py` 귀속 규칙(V12): 아래 RV1–RV8. | must | I1, VF2-F2–F5 |
+
+RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
+- RV1 (edge 비교 key) edge는 (from, to, relation, resolution, confidence, evidence start_line, candidates)로 multiset 비교한다.
+- RV2 (stage a R9) 제거 edge와 추가 edge가 relation ∈ {IMPORTS, IMPORTS_SYMBOL}이고 Kotlin이며 key가 `start_line`만 다를 때만 짝지어 R9. 짝은 1:1로 소비한다.
+- RV3 (stage a R4)
+  - symbol 모드 Kotlin class 노드 C에서 제거된 relation ∈ {CALLS, INSTANTIATES, READS, WRITES} edge는 다음 둘 중 하나면 R4다: C의 멤버(CONTAINS 경로)가 HEAD에 같은 (to, relation)을 가진다, 또는 to가 C 자신의 멤버다.
+  - 제거된 TESTS edge는 to가 C의 멤버이거나, C→to의 TESTS 외 relation이 base에 있고 HEAD에 하나도 없을 때 R4다.
+  - key가 evidence 줄만 다른 짝(제거·추가)은 relation과 양 끝이 같을 때만 R4 re-key다.
+  - 추가 edge는 Kotlin이고 RV2·RV3 짝에 속할 때만 설명된다.
+  - file 모드 edge 제거는 같은 입력의 symbol 모드에서 R4로 귀속된 제거 중 같은 relation, 같은 (from 파일, to 파일) 쌍이 있을 때만 R4다. `*` relation 매핑은 없다.
+- RV4 (구조 kind) dependency_cycle·package_cycle·unstable_dependency만 대상이다. 후보는 제자리 변경만 허용한다(추가·제거는 unexplained). 변경된 후보는 그 구성 파일 또는 패키지 중 하나가 같은 stage에서 귀속된 제거 edge(stage a R4, stage b R13)의 양 끝 파일 또는 패키지와 겹칠 때만 설명된다. 그 밖의 kind는 RV5 규칙 밖이면 unexplained다.
+- RV5 (kind별 방향)
+  - large_node: stage a에서는 제자리 변경 중 metrics 키 추가(`token_count`, `token_threshold`)만, 또는 token 임계로 생긴 추가만 R8이다. 제거는 unexplained다. stage b에서는 R13으로 span이 바뀐 constructor field 노드의 제거만 R13이다.
+  - unresolved_boundary: stage a 제거는 대상 노드의 base `unresolved_calls` 이름이 모두 HEAD에서 `external_calls`에 있거나, (Kotlin) R4 멤버로 옮겨졌을 때만 R1/R4다. stage b에서는 R13 field 노드의 변화만 R13이다.
+  - evidence_spread: 양쪽 각각에서 스크립트가 아키텍처 JSON으로부터 독립 재계산한 후보 집합(stage a base: 3회차 이전 정의, HEAD: R5; stage b base: R5, HEAD: R11)이 실제 후보 id 집합·`file_count`·`directory_count`(stage b HEAD)와 같을 때만 모든 차이가 설명된다.
+  - untested_hub: 대상의 pagerank가 바뀐 경우만 R7(stage a). stage b에서는 unexplained다.
+- RV6 (key 경로) 허용 추가 경로는 위치까지 고정한다.
+  - stage a: 노드 `$.metadata.external_call_count`, `$.metadata.external_calls`, `$.metadata.unresolved_reference_total`, bottleneck `edge_weights.large_node_token_threshold`, large_node 후보 `$.metrics.token_count`, `$.metrics.token_threshold`.
+  - stage b: evidence_spread 후보 `$.metrics.directory_count`.
+  - 허용 제거 경로: stage a의 R1 필터 metadata(`unresolved_*`)와 unresolved_boundary·evidence_spread 후보 `$.evidence[]` 하위.
+- RV7 (metadata·flag·노드)
+  - 노드 id 집합: stage a는 불변이다. stage b는 Kotlin R12 복원 노드 추가만 허용한다(fixture에는 0건이 기대값).
+  - flag: stage a는 기존 규칙(R6, R4 member)이다. stage b는 R13 field 노드의 dynamic_* 제거만 허용한다.
+  - metadata 값 변화: stage a는 R1·R3·R4 키와 `analysis`다. stage b는 R13 field 노드의 `unresolved_*`·`external_*`와 모든 노드 `analysis`다.
+  - span·cost·signature 변화: stage b의 R13 field 노드에서만 허용한다.
+- RV8 (구조 지표·비율)
+  - stage a: fan_in·fan_out·token_cost·betweenness·hop_2는 android에서 R4 제거 edge의 끝점 노드와 그 2-hop 이내 노드만 바뀔 수 있다.
+  - stage b: token_cost는 R13 field 노드만 바뀔 수 있다. fan·betweenness·hop_2는 R13 제거 edge의 끝점과 2-hop 이내 노드만 바뀔 수 있다.
+  - 모든 출력에 file 모드 non-test 파일의 unresolved_boundary·evidence_spread 비율(base→head)을 기록한다. non-test는 경로에 `test`/`tests`/`spec` 디렉터리가 없고 파일명이 `test_*`, `*_test.*`, `*.spec.*`, `*.test.*`, `*Test.kt`, `*Tests.kt`가 아닌 파일이다.
+
+- RV9 (stage b, R13 → enrichment) R13으로 field span이 좁아지면, 줄 기반 소비자 선택(repository enrichment의 "그 줄을 포함하는 가장 작은 노드")이 다른 field를 고를 수 있다. 다음 조건을 모두 만족하는 제거·추가 edge 짝은 R13으로 귀속된다: relation이 CONFIGURES(또는 그 밖의 enrichment relation)이고, from·evidence가 같고, 양쪽 to가 같은 class의 primary constructor field 노드이며, HEAD 쪽 to field의 span이 evidence 줄을 포함한다. 짝은 1:1로 소비한다.
+
+# Errors
+- 구문 오류 Kotlin 파일(ERROR 노드 다수) — 예외 없음, 수집 가능한 선언만 수집, analysis coverage는 기존처럼 has_error 기록.
+- (B) 패턴이 아닌 infix_expression(예: `a to b`) — 선언으로 수집하지 않음, 출력 불변.
+- `review_diff.py`에 입력 파일 누락 — 예외로 종료(0이 아닌 종료 코드), out JSON 생성 안 함.
+
+# Cases
+| id | level | input / state | expected result |
+| --- | --- | --- | --- |
+| C1 | normal | symbol 모드: `a/t.py`의 `f`를 `b/x.py`, `c/y.py`에서 호출 | evidence_spread, file_count 2, directory_count 2 |
+| C2 | boundary | `f`를 `b/x.py`, `b/y.py`에서 호출 | file_count 2, directory_count 1, 후보 없음 |
+| C3 | boundary | `f`를 `a/u.py`(대상과 같은 디렉터리), `b/x.py`에서 호출 | directory_count 1, 후보 없음 |
+| C4 | boundary | 근거 파일 1개, 줄 범위 threshold / threshold+1 | 없음 / 후보(directory_count 1) |
+| C5 | normal | file 모드에서 C1·C2 | symbol 모드와 같은 발동, metrics |
+| C6 | edge | 루트 파일 `t.py` 대상, `x.py`(루트)·`b/y.py` 근거 | directory_count 1 (루트 `""` = 대상 디렉터리) |
+| C7 | normal | `object X { var y = 0 }` | 노드 X(class), X.y(field), CONTAINS X→X.y, DECLARES file→X |
+| C8 | normal | `class K { val v = 1 }`, `object O : B() { val y = 0 }`, 중첩 `object B { val c = 1 }` | K.v, O.y, A.B.c field |
+| C9 | normal | `object Q { fun f() = g() }` (top-level 한 줄) | Q, Q.f; CALLS Q.f→g, Q에는 CALLS g 없음 |
+| C10 | edge | `val p = a to b` 같은 일반 infix | 선언 추가 없음 |
+| C11 | normal | `class C(val a: Int = foo(), val b: Int = bar(), c: Int = baz())` | C.a CALLS foo만, C.b CALLS bar만, C CALLS foo·bar·baz |
+| C12 | normal | 여러 줄 constructor, parameter별 줄 | field span = 자기 parameter 줄 |
+| C13 | error | 구문 오류 Kotlin 파일 + 정상 파일 | 예외 없음, 정상 파일 선언 수집 |
+| C14 | normal | 실제 fixture·self, 3b768a9 vs HEAD | 변화가 R11–R14로 설명 |
+| C15 | normal | 실제 fixture·self, cf0cf44 vs 3b768a9 | 변화가 R1–R10으로 설명(엄격 규칙) |
+| C16 | normal | 임의 bottleneck 출력 | `versions.analysis == "6"` |
+
+# Quality Applicability
+| ISO/IEC 25010:2023 characteristic | applicable | rationale |
+| --- | --- | --- |
+| Functional suitability | yes | 신호 정의·선언 수집 정확성 |
+| Performance efficiency | yes | 대형 입력(self) 분석 시간 회귀 방지 |
+| Compatibility | yes | JSON key·schema 이름이 소비자 계약 |
+| Interaction capability | no | 문구 변경만, 상호작용 변화 없음 |
+| Reliability | yes | 구문 오류 Kotlin 파일에서 crash 없음 |
+| Security | no | 입력 처리 경계·권한 변화 없음 |
+| Maintainability | yes | review evidence가 재현 가능하고 규칙이 문서와 일치 |
+| Flexibility | no | 설정·이식성 변화 없음 |
+| Safety | no | 물리적·인명 위험 없음 |
+
+# Quality Requirements
+| id | characteristic / subcharacteristic | target and context | measure method / inputs / unit | threshold and direction | evidence: automated, review, mutation | source |
+| --- | --- | --- | --- | --- | --- | --- |
+| Q1 | Compatibility / interoperability | JSON 출력, fixture 5개 | stage b key 경로 차이(RV6 허용 제외)와 schema 이름 | 차이 0 | review(review_diff), automated(V7) | I5 |
+| Q2 | Reliability / fault tolerance | 구문 오류 Kotlin 파일 | 표면 D fuzz 예외 수 | 0 | fuzz, automated(V6) | Errors |
+| Q3 | Performance / time behaviour | file 모드 `--bottlenecks`, android·nestjs·self | `perf.py` 3회 중앙값 HEAD/3b768a9, 초 비율 | ≤ 1.25 | review(perf 기록) | 3회차 Q4 계승 |
+| Q4 | Maintainability / testability | review 절차 | `review.md` 절차대로 재실행 시 같은 out JSON(정렬 후) | 차이 0 | review | VF2-F5 |
+
+# Verification Obligations
+| id | parent requirement/Case ids | variant and target surface | test layer and selection policy | ISO/IEC/IEEE 29119-4 technique | coverage items | coverage target | observation and expected result | evidence procedure |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| V1 | R11,C1–C4,C6 | symbol 모드 `analyze_bottlenecks` 후보 (임시 Python 프로젝트 → CLI 또는 analyzer+bottlenecks API) | integration | decision table | 규칙: DT1 외부 디렉터리 2 → 발동; DT2 외부 디렉터리 1·파일 2 → 없음; DT3 같은 디렉터리 파일 + 외부 1 → 없음; DT4 파일 1·범위 threshold → 없음; DT5 파일 1·범위 threshold+1 → 발동; DT6 근거 0 → 없음; DT7 루트 대상(C6) | 100% | 발동, `file_count`, `directory_count`, `line_span` | pytest |
+| V2 | R11,C5 | file 모드 같은 DT1–DT5 | integration | decision table | DT1–DT5 file 모드 | 100% | 같음 | pytest |
+| V3 | R11r | `report/bottlenecks/generate.py` 출력, `app.js` 문자열 | unit | equivalence partitioning | {생성 보고서의 evidence_spread 설명에 "디렉터리" 포함, 정렬 지표 directory_count 순, app.js 카드 `개 디렉터리`} | 100% | 문자열·순서 | pytest |
+| V4 | R12,R12b,C7–C10 | KotlinAnalyzer symbol 노드·엣지 | integration | equivalence partitioning | {(B) object var, (B) object fun + 호출, (B) `data object`, (B) 여러 줄 top-level object 안의 한 줄 중첩 object(`object T {\n fun f() = g()\n object N { val w = 1 }\n}` → T, T.f, T.N, T.N.w; CALLS T.f→g), (A) class val, (A) object : B() val, (A) 중첩 object, (A) companion body property는 out of scope라 제외, 일반 infix(C10), 여러 줄 대조} | 100% | 노드 존재·kind·CONTAINS/DECLARES·CALLS 귀속, signature `object X` | pytest |
+| V5 | R13,C11,C12 | KotlinAnalyzer field 노드 | integration | decision table | {val 기본값 호출 → 그 field만; var 기본값 호출 → 그 field만; 일반 parameter 기본값 호출 → class만; 기본값 없는 val → CALLS 없음; 여러 줄 constructor span; parameter 타입 TYPE_USES는 해당 field만; class의 constructor 호출 귀속 유지} | 100% | CALLS/TYPE_USES 대상 집합, span | pytest |
+| V6 | C13,Q2 | 구문 오류 Kotlin 파일 | integration | equivalence partitioning | {ERROR만 있는 파일, ERROR + 정상 선언 파일} | 100% | 예외 없음, 정상 선언 수집 | pytest |
+| V7 | R14,C16,Q1 | bottleneck JSON symbol·file | unit | equivalence partitioning | {symbol, file} | 100% | `versions.analysis == "6"`, schema 이름 불변 | pytest |
+| V8 | R15 | `framework_analyzers/android` 출력 | integration | equivalence partitioning | {android fixture 출력이 3b768a9와 같음(기존 characterization/manifest 통과), C7·C11 입력에서 Android analyzer 출력이 3b768a9와 같음} | 100% | 동일성 | pytest |
+| V9 | RV,R15,C14,C15,Q1,Q4 | `review_diff.py` 두 stage × 10 출력 | integration + review | decision table (RV1–RV8 규칙별 합성 JSON 입력) + review | 규칙별 합성 쌍: RV2 start_line만 다름(인정)/resolution도 다름(불인정); RV3 member 동일 edge(인정)/없음(불인정)/file 모드 다른 relation(불인정); RV4 구조 kind 추가(불인정)/겹치지 않는 변경(불인정)/겹치는 변경(인정); RV5 large_node 제거(stage a 불인정), unresolved 이름 external로 이동(인정)/이동 안 함(불인정), evidence_spread 재계산 불일치(불인정); RV6 `external_call_count`가 node_metrics에 나타남(불인정)/node metadata(인정), `token_count`가 large_node 외 후보(불인정); RV7 stage b R13 아닌 노드 span 변화(불인정); RV8 비율 기록 존재; RV9 같은 class field 사이 CONFIGURES 재귀속 + HEAD span이 근거 줄 포함(인정) / 다른 class field로 재귀속(불인정) / HEAD span이 근거 줄 미포함(불인정) | 100% | 합성 입력의 unexplained 유무; 실제 20 출력 unexplained 0 | pytest + review.md |
+
+# Assumptions and Defaults
+| id | decision | evidence and uncertainty | brief v<n> — approved / vetoed → <answer> / user answer |
+| --- | --- | --- | --- |
+| D1 | evidence_spread 디렉터리 단위 재정의 | 3회차 review: file 모드 non-test 51–75% 발동 ≈ fan_in ≥ 2 | user answer |
+| D2 | Open Questions 전부 포함 | 사용자 범위 선택 | user answer |
+| D3 | R12 (B) 복원 포함 | tree dump: top-level 한 줄 object가 infix_expression으로 파싱, 노드 소실. fixture 0건 | user answer (brief 승인) |
+| D4 | `versions.analysis` "6", schema 이름 유지, `directory_count` 추가 키 | 발동 의미 변경 | user answer (brief 승인) |
+| D5 | 디렉터리 = `posixpath.dirname`, 루트 `""`, 대상 디렉터리 제외, symbol·file 같은 정의 | 단순·결정적 | brief v1 — approved |
+| D6 | 보고서·HTML 정렬 지표·문구 directory_count 기준 | 지표 일관성 | brief v1 — approved |
+| D7 | R12는 KotlinAnalyzer만, 기존 ast helper 동작은 다른 호출자(android framework)에 불변 | `framework_analyzers/android/analyzer.py`가 같은 helper 사용 | brief v1 — approved (기존 동작 보존 원칙) |
+| D8 | review 2단계(a: cf0cf44→3b768a9, b: 3b768a9→HEAD) | 3회차 V12 종결 + 이번 변화 분리 | brief v1 — approved |
+| D9 | Test command: 3회차와 같고 diff coverage base 3b768a9, include는 이번 Implementation Python 파일 | 3회차 spec | brief v1 — approved |
+| D10 | 기존 테스트 조정 규칙은 3회차 D14 계승 | 3회차 user answer | brief v1 — approved |
+| D11 | 이번 run은 3회차(limit)의 후속이며 verifier 예산 2를 새로 갖는다 | handoff Next Step이 새 run을 지정, 범위가 새 요구사항으로 확장됨 | brief v1 — approved |
+
+# Traceability
+| requirement id | Case ids | obligation ids | evidence procedure |
+| --- | --- | --- | --- |
+| R11 | C1–C6 | V1, V2 | pytest, fuzz C |
+| R11r | — | V3 | pytest |
+| R12, R12b | C7–C10 | V4 | pytest, fuzz D |
+| R13 | C11, C12 | V5 | pytest, fuzz D |
+| R14 | C16 | V7 | pytest |
+| R15 | C14 | V8, V9 | pytest, review |
+| RV | C14, C15 | V9 | pytest, review |
+| Q1 | C14 | V7, V9 | pytest, review |
+| Q2 | C13 | V6 | pytest, fuzz D |
+| Q3 | — | review(perf) | perf.py |
+| Q4 | — | V9 | review |
+
+# Workflow Control
+| item | value |
+| --- | --- |
+| correction batches used | 0 |
+| verifier invocations | 0 |
+| open finding ids | none |
+
+Audit state (one entry per obligation; retain prior decisions in the execution ledger):
+| obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
+| --- | --- | --- | --- | --- | --- |
+| V1–V9 | 1 | — | pending | — | — |
+
+Execution ledger (append attempts; preserve failed approaches):
+| attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
+| --- | --- | --- | --- | --- |
+| 0 | 3회차 VF2-F2–F5 (V12 귀속 규칙 느슨) | verified (3회차 ledger 11) | RV1–RV8로 규칙 고정, 2단계 review | pending |
+
+# Version Log
+## v1
+- 3회차(e91abc221d7deb2a, limit) 후속. V12 정정(RV), Open Questions(R11–R13), R14. 사용자 답변 D1–D4, brief v1 승인.
+
+## v2
+- contract-only: RV9 추가. 근거: stage b android symbol 출력에서 CONFIGURES 14개가 `TopicFtsEntity.topicId` → `TopicFtsEntity.name` 등으로 재귀속(config `name` 근거 줄 33 = `@ColumnInfo(name = "name")`, R13 이전에는 모든 constructor field span이 constructor 전체여서 첫 field가 선택됨). R13의 직접 결과이며 brief 항목 변화 없음. V9 coverage item 3개 추가.
+
+## v3
+- R12 (B) 범위 보정: 한 줄 중첩 object를 포함한 top-level object는 여러 줄이어도 (B) 형태로 파싱되고, 중첩 object는 복원된 object의 `statements` 안에서 다시 infix_expression이 된다(tree dump, fuzz D #1·#5·#7·#9·#11·#14). (B) 복원을 그 위치까지 적용한다. 승인된 (B) 의도와 같아 brief 재확인 없이 contract 보정으로 기록하고 사용자 보고에 포함. V4 coverage item 1개 추가.

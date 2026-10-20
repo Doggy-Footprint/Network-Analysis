@@ -29,7 +29,7 @@
     const core = Object.keys(definitions).slice(0, 6);
     const kinds = {
         unresolved_boundary: ['분석 미확정 참조', '분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.'],
-        evidence_spread: ['근거 분산', '대상 밖의 다른 파일에서 오는 참조 근거가 여러 파일 또는 넓은 줄 범위에 퍼져 있습니다.'],
+        evidence_spread: ['근거 분산', '대상 디렉터리 밖의 둘 이상의 디렉터리에서 오는 근거, 또는 한 파일에서 임계 줄 수를 넘는 범위에 걸쳐 있습니다.'],
         large_node: ['큰 노드', '소스 범위가 설정한 줄 수 또는 토큰 수 임계값을 넘습니다.'],
         untested_hub: ['테스트 미도달 허브', '연결이 많은 상위 파일인데 테스트 파일에서 직접 확정 연결이 닿지 않습니다.'],
         isolated_node: ['고립 파일', '다른 운영 코드 파일과 확정된 정적 연결이 없는 소스 파일입니다.'],
@@ -280,7 +280,7 @@
     function candidateReason(c) {
         const m = c.metrics || {};
         if (c.kind === 'large_node') return `${format(m.line_count)}줄`;
-        if (c.kind === 'evidence_spread') return `${format(m.file_count)}개 파일`;
+        if (c.kind === 'evidence_spread') return `${format(m.directory_count)}개 디렉터리`;
         if (c.kind === 'untested_hub') return `PageRank ${format(m.pagerank_rank)}위`;
         if (c.kind === 'isolated_node') return `${format(m.line_count)}줄`;
         if (c.kind === 'dependency_cycle') return `${format(m.member_count)}개 파일 순환 · ${tierLabels[c.structure?.tier] || c.structure?.tier}`;

@@ -1,6 +1,7 @@
 import hashlib
 import json
 import math
+import posixpath
 from pathlib import Path
 from dataclasses import asdict, dataclass
 from typing import Any, Mapping, Tuple, Optional
@@ -152,7 +153,8 @@ def _candidates(architecture: Any, threshold: int, token_threshold: int, metrics
         if not edges:
             continue
         paths = {edge.evidence.file_path for edge in edges}; span = max(edge.evidence.end_line for edge in edges) - min(edge.evidence.start_line for edge in edges) + 1 if len(paths) == 1 else 0
-        if len(paths) > 1 or span > threshold: candidates.append(_candidate(target + "|spread", "evidence_spread", target, {"file_count": len(paths), "line_span": span, "line_threshold": threshold}, [evidence_record(edge) for edge in edges], "static_analyzer_relation"))
+        directories = {posixpath.dirname(path) for path in paths} - ({posixpath.dirname(own)} if own is not None else set())
+        if len(directories) > 1 or (len(paths) == 1 and span > threshold): candidates.append(_candidate(target + "|spread", "evidence_spread", target, {"file_count": len(paths), "directory_count": len(directories), "line_span": span, "line_threshold": threshold}, [evidence_record(edge) for edge in edges], "static_analyzer_relation"))
     return sorted({item["id"]: item for item in candidates}.values(), key=lambda item: (item["kind"], item["id"]))
 
 
@@ -212,9 +214,10 @@ def _file_candidates(architecture: Any, threshold: int, token_threshold: int, me
         if records:
             paths = {record["evidence"]["file_path"] for record in records}
             span = max(record["evidence"]["end_line"] for record in records) - min(record["evidence"]["start_line"] for record in records) + 1 if len(paths) == 1 else 0
-            if len(paths) > 1 or span > threshold:
+            directories = {posixpath.dirname(path) for path in paths} - {posixpath.dirname(own)}
+            if len(directories) > 1 or (len(paths) == 1 and span > threshold):
                 candidates.append(_candidate(node.id + "|spread", "evidence_spread", node.id,
-                    {"file_count": len(paths), "line_span": span, "line_threshold": threshold}, records, "static_analyzer_relation"))
+                    {"file_count": len(paths), "directory_count": len(directories), "line_span": span, "line_threshold": threshold}, records, "static_analyzer_relation"))
     return sorted(candidates, key=lambda item: (item["kind"], item["id"]))
 
 
@@ -282,7 +285,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "5"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "6"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 
