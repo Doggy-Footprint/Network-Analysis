@@ -183,24 +183,24 @@ Mutation tool:
 | item | value |
 | --- | --- |
 | correction batches used | 1 |
-| verifier invocations | 1 |
-| open finding ids | none |
+| verifier invocations | 2 |
+| open finding ids | VF1-1 (pending verifier 2) |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 1 | tests/test_dynamic_flags.py::test_V1_* @1efd6bb | pending | hand M1 killed | — |
-| V2 | 1 | test_V2_* @1efd6bb | pending | hand M4 killed | — |
-| V3 | 1 | test_V3_* @1efd6bb | pending | hand M2, M3 killed | — |
-| V4 | 1 | test_V4_* @1efd6bb | pending | hand M6 killed | — |
-| V5 | 1 | test_V5_* @1efd6bb | pending | hand M5 killed | — |
-| V6 | 1 | test_V6_* @1efd6bb | pending | hand M7, M8 killed | — |
-| V7 | 1 | test_V7_* @1efd6bb | pending | — | — |
-| V8 | 1 | test_V8_* @1efd6bb | pending | hand M9 killed | — |
-| V9 | 1 | test_V9_* @1efd6bb | pending | hand M10 killed | — |
-| V10 | 1 | test_V10_Q1_*; tests/dynamic_flags_evidence/review.md, review-output/flagdiff.txt | pending | 0 changes in 10 fixture runs | — |
-| V11 | 1 | tests/dynamic_flags_evidence/fuzz_dynamic.py, fuzz-run.log: 3×1,000 execs, 0 crashes, 0 violations; base 963d700 detects 97/120 at budget 40 | pending | — | — |
-| V12 | 1 | Test command: 2883 passed, 1 skipped; diff coverage 204/212 = 96.2% | pending | — | — |
+| V1 | 2 | tests/test_dynamic_flags.py::test_V1_* @3804f10 | invalidated → pending | v1 accepted (verifier 1); v2 adds Errors 1 items; hand M1, M12 killed | VF1-1 |
+| V2 | 2 | test_V2_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M4 killed | — |
+| V3 | 2 | test_V3_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M2, M3 killed | — |
+| V4 | 2 | test_V4_* @3804f10 | invalidated → pending | v1 accepted; v2 adds Errors 1 + R10 duplicate items; hand M6, M11 killed | VF1-1, VF1-2 |
+| V5 | 2 | test_V5_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M5 killed | — |
+| V6 | 2 | test_V6_* @3804f10 | invalidated → pending | v1 accepted; v2 adds module-level call + Errors 1 items; hand M7, M8, M14 killed | VF1-1, VF1-4 |
+| V7 | 2 | test_V7_* @3804f10 | invalidated → pending | v1 accepted; v2 adds non-builtins negatives; hand M13 killed | VF1-3 |
+| V8 | 2 | test_V8_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M9 killed | — |
+| V9 | 2 | test_V9_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M10 killed | — |
+| V10 | 2 | test_V10_Q1_*; tests/dynamic_flags_evidence/review.md, review-output/flagdiff.txt | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | 0 changes in 10 fixture runs | — |
+| V11 | 2 | tests/dynamic_flags_evidence/fuzz_dynamic.py, fuzz-run.log: 3×1,000 execs with 10% broken extra files and duplicate check, 0 crashes, 0 violations; base 963d700 detects 97/120 at budget 40 | pending | — | — |
+| V12 | 2 | Test command @3804f10: 2894 passed, 1 skipped; diff coverage 208/212 = 98.1% | pending | — | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
