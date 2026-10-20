@@ -118,3 +118,12 @@ share only from 75% to 72% here.
 ## Schema and keys (Q1)
 Schema names are unchanged (`bottlenecks.v8` file, `bottlenecks.v6` symbol). `versions.analysis` is "6". The only
 added key path in stage b is evidence_spread `$.metrics.directory_count`.
+
+## Performance (Q3, file mode, 3-run median seconds, `perf.py`, base = 3b768a9)
+| input | base | HEAD | ratio |
+| --- | --- | --- | --- |
+| android-nowinandroid | 1.35 | 1.52 | 1.133 |
+| typescript-nestjs-realworld | 0.50 | 0.43 | 0.848 |
+| self | 18.31 | 18.62 | 1.017 |
+
+All ratios ≤ 1.25.

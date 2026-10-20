@@ -215,19 +215,34 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 0 |
-| verifier invocations | 0 |
+| correction batches used | 1 |
+| verifier invocations | 1 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1–V9 | 1 | — | pending | — | — |
+| V1 | 5 | tests/test_signal_defects_round4.py (test_V1_*; correction batch 1) | pending | hand M1, M2, M5 killed; tool mutant 15/27 killed after batch 1 | R11 symbol code, `expected_spread` support oracle |
+| V2 | 5 | tests/test_signal_defects_round4.py (test_V2_*) | pending | hand M3, M4 killed | R11 file code |
+| V3 | 5 | tests/test_signal_defects_round4.py (test_V3_*) | pending | hand M6 killed | generate.py, app.js |
+| V4 | 5 | tests/test_signal_defects_round4.py (test_V4_*; batch 1 signatures) | pending | hand M7, M8 killed; tool mutant 16 killed after batch 1 | kotlin ast/analyzer |
+| V5 | 5 | tests/test_signal_defects_round4.py (test_V5_*) | pending | hand M9 killed | kotlin analyzer |
+| V6 | 5 | tests/test_signal_defects_round4.py (test_V6_*); fuzz D 1,000 (10% broken file), 0 violations | pending | — | kotlin analyzer |
+| V7 | 5 | tests/test_signal_defects_round4.py (test_V7_*) | pending | hand M10 killed | core.py version |
+| V8 | 5 | tests/test_signal_defects_round4.py (test_V8_*, git archive of 3b768a9) | pending | — | framework_analyzers/android unchanged |
+| V9 | 5 | tests/test_review_diff_round4.py (106 synthetic), review_diff.py, review.md Round 4, review-output/ (stage a), review-output-round4/ (stage b): 20/20 unexplained 0; perf Q3 ≤ 1.25 | pending | — | review_diff rules RV1–RV12 |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
-| 0 | 3회차 VF2-F2–F5 (V12 귀속 규칙 느슨) | verified (3회차 ledger 11) | RV1–RV8로 규칙 고정, 2단계 review | pending |
+| 0 | 3회차 VF2-F2–F5 (V12 귀속 규칙 느슨) | verified (3회차 ledger 11) | RV1–RV8로 규칙 고정, 2단계 review | stage a·b 20개 출력 unexplained 0 (v4 규칙) |
+| 1 | stage b android CONFIGURES 14 재귀속이 규칙 밖 | R13 field span 축소로 enrichment 소비자 선택 변화 (verified, TopicFtsEntity line 33) | spec v2 RV9 | 설명됨 |
+| 2 | fuzz D: 여러 줄 top-level object 안의 한 줄 중첩 object 누락 | 바깥 object도 (B)로 파싱, 중첩은 statements 안 infix (verified, tree dump) | spec v3, implementer 수정 | fuzz D 1,000 위반 0 |
+| 3 | fuzz C harness가 Python symbol id를 경로로 매칭 | harness defect (verified: id `py:e.m0#tgt`) | harness 수정 | fuzz C 1,000 위반 0 |
+| 4 | test-implementer spec challenge: RV6 R3 key, RV3 interface·candidates, stage b R13 규칙, RV8 betweenness, detail_edge_index | spec 공백 (verified on real outputs) | spec v4–v5 RV3a·RV5a·RV5b·RV6a·RV8a·RV8b·RV10–RV12 | 20/20 unexplained 0 |
+| 5 | 기존 suite 41 failed (manifest 5개·O11 archive) | R11·R13·R14 출력 변화 (verified) | 3회차 절차로 재생성, 6개 모두 patch-r4 이전 byte 재현 확인 | Test command 3277 passed, diff coverage 96.2% |
+| 6 | mutation tool 30개 중 27 killed, 3 survived (10%) | triage: 16 declared (V4 data object signature), 15·27 declared (R15 candidate `coverage` 필드; triager insufficient context → main이 `_candidate` 출력 확인) | correction batch 1: test-implementer가 signature·record 필드 assert 추가 | 15·16 재적용 시 killed |
+| 7 | diff coverage 미실행 3곳 | analyzer.py 250->252: 이름 없는 멤버(기존 분기 이동, 새 동작 아님); ast.py 112-113: object_literal에 class_body가 있는 infix(R12 (B) 제외 조건, 이 형태를 내는 parser 입력 미확인) | advisory | 96.2% ≥ 90% |
 
 # Version Log
 ## v1
@@ -244,3 +259,6 @@ Execution ledger (append attempts; preserve failed approaches):
 
 ## v5
 - contract-only: test-implementer가 v4 문구 밖에서 해석한 세 가지를 RV8b·RV5b로 명시(weighted fan·effective_token_cost, stage a pagerank R7, stage b unresolved_boundary 추가·제거). 실제 20개 출력 unexplained 0(v4 스크립트). brief 항목 변화 없음.
+
+## v5 (Workflow Control 갱신)
+- correction batch 1 기록, verifier 1회차 dispatch 전 invocations 1로 증가.
