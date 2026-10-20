@@ -515,15 +515,297 @@ def test_V9_RV8_ratios_are_recorded_in_the_output():
     assert report['nontest_share']['base'] == share
 
 
-def test_V9_RV8_structural_metric_change_needs_attributed_neighbourhood():
-    nodes = class_nodes([node('kotlin:far.kt#Z', 'class', 'far.kt')])
-    base = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')], metrics={'kotlin:far.kt#Z': {'fan_in': 1}})
-    head_near = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={'kotlin:far.kt#Z': {'fan_in': 1}, TGT: {'fan_in': 2}})
-    base_near = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')], metrics={'kotlin:far.kt#Z': {'fan_in': 1}})
-    assert review(base_near, head_near, name='android')['unexplained'] == []
-    assert review(base_near, head_near, name='other')['unexplained']
-    head_far = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={'kotlin:far.kt#Z': {'fan_in': 5}})
-    assert review(base, head_far, name='android')['unexplained']
+def test_V9_RV8a_fan_change_only_at_attributed_endpoints():
+    far = 'kotlin:far.kt#Z'
+    nodes = class_nodes([node(far, 'class', 'far.kt')])
+    base = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')])
+    at_endpoint = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={TGT: {'fan_in': 2}})
+    assert review(base, at_endpoint)['unexplained'] == []
+    elsewhere = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={far: {'fan_in': 5}})
+    assert any('fan_in changed' in u for u in review(base, elsewhere)['unexplained'])
+
+
+def test_V9_RV8a_global_metrics_need_attributed_edge_changes():
+    far = 'kotlin:far.kt#Z'
+    nodes = class_nodes([node(far, 'class', 'far.kt')])
+    base = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')])
+    changed = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={far: {'betweenness_centrality': 0.5}})
+    assert review(base, changed)['unexplained'] == []
+    same_edges = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')], metrics={far: {'betweenness_centrality': 0.5}})
+    assert any('betweenness_centrality changed' in u for u in review(base, same_edges)['unexplained'])
+
+
+def test_V9_RV8a_hop_2_within_two_hops_only():
+    far = 'kotlin:far.kt#Z'
+    nodes = class_nodes([node(far, 'class', 'far.kt')])
+    base = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')])
+    near = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={MEM: {'hop_2_token_cost': 3}})
+    assert review(base, near)['unexplained'] == []
+    away = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={far: {'hop_2_token_cost': 3}})
+    assert any('hop_2_token_cost changed' in u for u in review(base, away)['unexplained'])
+
+
+def test_V9_RV8a_token_cost_never_changes_in_stage_a():
+    nodes = class_nodes()
+    base = pair(nodes, [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')])
+    head = pair(nodes, [contains(), edge(MEM, TGT, 'CALLS')], metrics={TGT: {'token_cost': 9}})
+    assert any('token_cost changed' in u for u in review(base, head)['unexplained'])
+
+
+def test_V9_RV8a_rankings_change_needs_attributed_edge_changes_in_stage_b():
+    base, head = ctor_pair(False), ctor_pair(True)
+    head[1]['dependency_network']['rankings'] = {'pagerank': ['x']}
+    assert any('rankings' in u for u in review(base, head, stage='b')['unexplained'])
+
+
+# ---------------------------------------------------------------- RV3a
+
+def test_V9_RV3a_interface_source_is_treated_like_a_class():
+    iface = 'kotlin:a.kt#I'
+    nodes = [node(iface, 'interface', start=1, end=9), node('kotlin:a.kt#I.m', 'method', start=2, end=2), node(TGT, 'class', 'b.kt', 1, 3)]
+    base = pair(nodes, [contains(iface, 'kotlin:a.kt#I.m'), edge(iface, TGT, 'READS'), edge('kotlin:a.kt#I.m', TGT, 'READS')])
+    head = pair(nodes, [contains(iface, 'kotlin:a.kt#I.m'), edge('kotlin:a.kt#I.m', TGT, 'READS')])
+    assert review(base, head)['unexplained'] == []
+
+
+def test_V9_RV3a_ambiguous_candidate_that_is_a_member_explains_the_removal():
+    other = 'kotlin:b.kt#Other'
+    nodes = class_nodes([node(other, 'class', 'b.kt', 5, 6)])
+    ambiguous = lambda cands: edge(CLS, other, 'READS', resolution='ambiguous', candidates=cands)
+    head = pair(nodes, [contains()])
+    assert review(pair(nodes, [contains(), ambiguous([MEM])]), head)['unexplained'] == []
+    assert review(pair(nodes, [contains(), ambiguous([TGT])]), head)['unexplained']
+    # a candidate list does not matter for a non-ambiguous edge
+    exact = edge(CLS, other, 'READS', candidates=[MEM])
+    assert review(pair(nodes, [contains(), exact]), head)['unexplained']
+
+
+# ---------------------------------------------------------------- RV5a
+
+def _boundary_change(count_head, base_names=('foo', 'bar'), head_unresolved=('bar',), head_external=('foo',)):
+    meta_b = {'unresolved_calls': {n: 1 for n in base_names}, 'unresolved_reference_total': len(base_names)}
+    meta_h = {'unresolved_calls': {n: 1 for n in head_unresolved}, 'unresolved_reference_total': len(head_unresolved)}
+    if head_external:
+        meta_h.update(external_calls={n: 1 for n in head_external}, external_call_count=len(head_external))
+    mk = lambda meta: [node(MEM, 'method', start=2, end=2, meta=meta), node(CLS, 'class', start=1, end=9), node(TGT, 'class', 'b.kt', 1, 3)]
+    cb = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': len(base_names)}, {'path': 'a.kt'})]
+    ch = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': count_head}, {'path': 'a.kt'})]
+    return pair(mk(meta_b), [contains()], cb), pair(mk(meta_h), [contains()], ch)
+
+
+def test_V9_RV5a_stage_a_in_place_change_with_matching_recompute_is_explained():
+    base, head = _boundary_change(1)
+    assert review(base, head)['unexplained'] == []
+
+
+def test_V9_RV5a_stage_a_count_not_equal_to_recompute_is_unexplained():
+    base, head = _boundary_change(3)
+    assert any(u.startswith('unresolved_boundary changed') for u in review(base, head)['unexplained'])
+    base, head = _boundary_change(0)
+    assert any(u.startswith('unresolved_boundary changed') for u in review(base, head)['unexplained'])
+
+
+def test_V9_RV5a_stage_a_disappeared_name_not_moved_is_unexplained():
+    base, head = _boundary_change(1, head_external=())
+    assert any(u.startswith('unresolved_boundary changed') for u in review(base, head)['unexplained'])
+
+
+def _stage_b_boundary(target, head_count, ctor_metadata=True):
+    base, head = ctor_pair(False), ctor_pair(True)
+    for pr, total in ((base, 2), (head, 1)):
+        for n in pr[0]['nodes']:
+            if n['id'] == F1:
+                n['metadata'] = {'unresolved_calls': {'x': total}, 'unresolved_reference_total': total}
+    for pr, total in ((base, 2), (head, 1)):
+        for n in pr[0]['nodes']:
+            if n['id'] == target:
+                n['metadata'] = {'unresolved_reference_total': total}
+    base[1]['candidates'].append(candidate('u1', 'unresolved_boundary', target, {'unresolved_count': 2}, {'path': 'a.kt'}))
+    head[1]['candidates'].append(candidate('u1', 'unresolved_boundary', target, {'unresolved_count': head_count}, {'path': 'a.kt'}))
+    return base, head
+
+
+@pytest.mark.parametrize('target', [F1, CTOR_CLASS])
+def test_V9_RV5a_stage_b_constructor_field_or_holder_with_matching_recompute_is_explained(target):
+    base, head = _stage_b_boundary(target, 1)
+    found = review(base, head, stage='b')['unexplained']
+    assert not [u for u in found if u.startswith('unresolved_boundary')]
+
+
+def test_V9_RV5a_stage_b_mismatch_or_other_target_is_unexplained():
+    base, head = _stage_b_boundary(F1, 5)
+    assert any(u.startswith('unresolved_boundary changed') for u in review(base, head, stage='b')['unexplained'])
+    base, head = _stage_b_boundary(F1, 1)
+    for pr in (base, head):
+        pr[1]['candidates'][-1]['target'] = 'kotlin:a.kt#Elsewhere'
+    assert any(u.startswith('unresolved_boundary changed') for u in review(base, head, stage='b')['unexplained'])
+
+
+# ---------------------------------------------------------------- RV6a
+
+def test_V9_RV6a_evidence_key_allowed_only_for_file_mode_unresolved_boundary():
+    path = ('$', 'evidence[]', 'unresolved_reference_total')
+    assert rd.key_added_allowed('a', 'candidate c1', 'unresolved_boundary', path, set(), 'file')
+    assert not rd.key_added_allowed('a', 'candidate c1', 'evidence_spread', path, set(), 'file')
+    assert not rd.key_added_allowed('a', 'candidate c1', 'unresolved_boundary', path, set(), 'symbol')
+    assert not rd.key_added_allowed('b', 'candidate c1', 'unresolved_boundary', path, set(), 'file')
+    assert not rd.key_added_allowed('a', 'candidate c1', 'unresolved_boundary', ('$', 'evidence[]', 'other'), set(), 'file')
+
+
+def test_V9_RV6a_whole_review_accepts_the_evidence_key_for_unresolved_boundary():
+    meta = {'unresolved_calls': {'foo': 1}, 'unresolved_reference_total': 1}
+    nodes = [node(MEM, 'method', start=2, end=2, meta=meta), node(CLS, 'class', start=1, end=9)]
+    before = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': 1}, [{'path': 'a.kt', 'name': 'foo'}])]
+    after = [candidate('u1', 'unresolved_boundary', MEM, {'unresolved_count': 1}, [{'path': 'a.kt', 'name': 'foo', 'unresolved_reference_total': 1}])]
+    # symbol mode: the key is not in the allowed position set
+    found = review(pair(nodes, [contains()], before), pair(nodes, [contains()], after))['unexplained']
+    assert any('unresolved_reference_total' in u for u in found)
+
+
+# ---------------------------------------------------------------- RV10
+
+TX = 'kotlin:b.kt#T'
+
+
+def _field_edge_pair(base_edge, head_edge, head_nodes_extra=(), meta_head=None):
+    nb, eb, _ = ctor_side(False, [base_edge] if base_edge else [])
+    nh, eh, _ = ctor_side(True, [head_edge] if head_edge else [])
+    tgt = node(TX, 'class', 'b.kt', 1, 3)
+    return pair(nb + [tgt], eb), pair(nh + [tgt, *head_nodes_extra], eh, analysis='6')
+
+
+def test_V9_RV10_removed_scan_edge_outside_head_span_is_explained():
+    for relation in ('CALLS', 'INSTANTIATES', 'READS', 'WRITES', 'TYPE_USES'):
+        base, head = _field_edge_pair(edge(F1, TX, relation, 3), None)
+        assert review(base, head, stage='b')['unexplained'] == [], relation
+
+
+def test_V9_RV10_removed_scan_edge_inside_head_span_is_unexplained():
+    base, head = _field_edge_pair(edge(F1, TX, 'CALLS', 2), None)
+    assert any(u.startswith('edge removed') for u in review(base, head, stage='b')['unexplained'])
+
+
+def test_V9_RV10_removed_edge_with_non_scan_relation_is_unexplained():
+    base, head = _field_edge_pair(edge(F1, TX, 'CONFIGURES', 3), None)
+    assert any(u.startswith('edge removed') for u in review(base, head, stage='b')['unexplained'])
+
+
+def test_V9_RV10_line_only_rekey_touching_a_constructor_field_is_explained():
+    from_field = _field_edge_pair(edge(F1, TX, 'CALLS', 1), edge(F1, TX, 'CALLS', 2))
+    assert review(*from_field, stage='b')['unexplained'] == []
+    to_field = _field_edge_pair(edge(TX, F1, 'READS', 1, 'b.kt'), edge(TX, F1, 'READS', 2, 'b.kt'))
+    assert review(*to_field, stage='b')['unexplained'] == []
+
+
+def test_V9_RV10_rekey_needs_same_relation_and_a_constructor_field():
+    other_relation = _field_edge_pair(edge(F1, TX, 'CALLS', 1), edge(F1, TX, 'READS', 2))
+    assert review(*other_relation, stage='b')['unexplained']
+    nodes_b = class_nodes()
+    plain = (pair(nodes_b, [contains(), edge(MEM, TGT, 'CALLS', 1)]), pair(nodes_b, [contains(), edge(MEM, TGT, 'CALLS', 2)], analysis='6'))
+    assert review(*plain, stage='b')['unexplained']
+
+
+def test_V9_RV10_edges_touching_a_stage_b_added_node_are_r12():
+    added = node('kotlin:n.kt#N', 'class', 'n.kt')
+    base, head = _field_edge_pair(None, edge(F1, 'kotlin:n.kt#N', 'CALLS', 2), head_nodes_extra=[added])
+    assert review(base, head, stage='b')['unexplained'] == []
+    nb, eb, _ = ctor_side(False)
+    nh, eh, _ = ctor_side(True, [edge(F1, TX, 'CALLS', 2)])
+    base = pair(nb + [node(TX, 'class', 'b.kt', 1, 3)], eb)
+    head = pair(nh + [node(TX, 'class', 'b.kt', 1, 3)], eh, analysis='6')
+    assert any(u.startswith('edge added') for u in review(base, head, stage='b')['unexplained'])
+
+
+def _meta_pair(key_values_head, node_id=F1):
+    base, head = ctor_pair(False), ctor_pair(True)
+    for n in head[0]['nodes']:
+        if n['id'] == node_id:
+            n['metadata'] = dict(key_values_head)
+    return base, head
+
+
+def test_V9_RV10_line_number_metadata_equal_to_head_span_is_explained():
+    base, head = _meta_pair({'line_number': 2, 'end_line_number': 2})
+    for n in base[0]['nodes']:
+        if n['id'] == F1:
+            n['metadata'] = {'line_number': 1, 'end_line_number': 4}
+    assert review(base, head, stage='b')['unexplained'] == []
+    base, head = _meta_pair({'line_number': 7, 'end_line_number': 8})
+    assert any('line_number' in u for u in review(base, head, stage='b')['unexplained'])
+
+
+def test_V9_RV10_external_and_unresolved_keys_on_constructor_fields_are_explained():
+    base, head = _meta_pair({'external_call_count': 1, 'external_calls': {'x': 1}, 'unresolved_reference_total': 2})
+    assert review(base, head, stage='b')['unexplained'] == []
+    base, head = _meta_pair({'external_call_count': 1}, node_id=CTOR_CLASS)
+    assert any('external_call_count' in u for u in review(base, head, stage='b')['unexplained'])
+
+
+def test_V9_RV10_holder_file_node_keys_follow_the_constructor_field():
+    assert rd.r13_node('file:a.kt', {F1})
+    assert not rd.r13_node('file:z.kt', {F1})
+    assert rd.key_added_allowed('b', 'node file:a.kt', None, ('$', 'metadata', 'external_call_count'), {F1})
+    assert rd.key_removed_allowed('b', 'node file:a.kt', None, ('$', 'metadata', 'external_calls'), {F1})
+    assert not rd.key_added_allowed('b', 'node file:z.kt', None, ('$', 'metadata', 'external_call_count'), {F1})
+
+
+# ---------------------------------------------------------------- RV11
+
+def test_V9_RV11_identification_rules():
+    base, head = ctor_pair(False), ctor_pair(True)
+    sides = [rd.Side(*base), rd.Side(*head)]
+    parent = rd.parent_map(*sides)
+    assert rd.constructor_fields(sides[0], sides[1], parent) == {F1, F2}
+    # a body field (signature without "(") is not a constructor field
+    for n in base[0]['nodes']:
+        if n['id'] == F2:
+            n['signature'] = 'val b: Int'
+    sides = [rd.Side(*base), rd.Side(*head)]
+    assert rd.constructor_fields(sides[0], sides[1], parent) == {F1}
+    # an interface parent counts; a function parent does not
+    for n in base[0]['nodes']:
+        if n['id'] == CTOR_CLASS:
+            n['kind'] = 'interface'
+    sides = [rd.Side(*base), rd.Side(*head)]
+    assert rd.constructor_fields(sides[0], sides[1], parent) == {F1}
+    for n in base[0]['nodes']:
+        if n['id'] == CTOR_CLASS:
+            n['kind'] = 'function'
+    sides = [rd.Side(*base), rd.Side(*head)]
+    assert rd.constructor_fields(sides[0], sides[1], parent) == set()
+
+
+# ---------------------------------------------------------------- RV12
+
+def _hub(indices, extra=None):
+    ev = {'path': 'a.kt', 'uncertain_test_edges': [{'metadata': {'detail_edge_indices': indices, 'evidence_count': 1}}]}
+    if extra:
+        ev.update(extra)
+    return [candidate('h1', 'untested_hub', 'file:a.kt', {'pagerank': 0.1}, ev)]
+
+
+def _index_case(base_idx, head_idx, extra=None):
+    nb, eb, _ = ctor_side(False, [edge(F1, TX, 'CALLS', 3)])
+    nh, eh, _ = ctor_side(True)
+    tgt = node(TX, 'class', 'b.kt', 1, 3)
+    return (pair(nb + [tgt], eb, _hub(base_idx)), pair(nh + [tgt], eh, _hub(head_idx, extra), analysis='6'))
+
+
+def test_V9_RV12_index_only_change_is_explained_when_edges_changed():
+    base, head = _index_case([1, 2], [3, 4])
+    assert review(base, head, stage='b')['unexplained'] == []
+
+
+def test_V9_RV12_index_plus_another_field_is_unexplained():
+    base, head = _index_case([1, 2], [3, 4], extra={'note': 'x'})
+    assert any(u.startswith('untested_hub changed') for u in review(base, head, stage='b')['unexplained'])
+
+
+def test_V9_RV12_index_change_without_attributed_edge_changes_is_unexplained():
+    nodes = class_nodes()
+    base = pair(nodes, [contains()], _hub([1, 2]))
+    head = pair(nodes, [contains()], _hub([3, 4]), analysis='6')
+    assert any(u.startswith('untested_hub changed') for u in review(base, head, stage='b')['unexplained'])
 
 
 def test_V9_RV8_stage_b_token_cost_only_on_constructor_fields():

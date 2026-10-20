@@ -270,9 +270,9 @@ def review(base_pair, head_pair, *, name, mode, stage, symbol_pairs=None):
         head_nontests[(e["from_id"], e["to_id"])].add(e["relation"])
     edge_why = collections.Counter()
     attributed = []  # removed edges attributed to R4 / R13: (from, to, relation)
-    sym_attr = None
+    sym_attr, sym_changes = None, 0
     if mode == "file":
-        sym_attr, ctor = symbol_attributed_files(symbol_pairs, name, stage)
+        sym_attr, ctor, sym_changes = symbol_attributed_files(symbol_pairs, name, stage)
 
     def take(key, counter, n=1):
         counter[key] -= n
@@ -359,6 +359,8 @@ def review(base_pair, head_pair, *, name, mode, stage, symbol_pairs=None):
     report["edges"] = {"base": len(base.edges), "head": len(head.edges), "changes": dict(edge_why)}
     marker = ("R4",) if stage == "a" else ("R13", "R12")
     edge_changes = sum(v for k, v in edge_why.items() if any(m in k for m in marker) and "unexplained" not in k)
+    edge_changes = max(edge_changes, sym_changes)
+    report["attributed_edge_changes"] = edge_changes
     report["attributed_removed_edges"] = len(attributed)
     report["constructor_fields"] = sorted(ctor)
     report["attributed_file_pairs"] = sorted({(rel, file_of(s), file_of(t)) for s, t, rel, cands in attributed
@@ -572,7 +574,7 @@ def line_in_span(line, node):
 def symbol_attributed_files(symbol_pairs, name, stage):
     base_pair, head_pair = symbol_pairs
     sym = review(base_pair, head_pair, name=name, mode="symbol", stage=stage)
-    return {tuple(pair) for pair in sym["attributed_file_pairs"]}, set(sym["constructor_fields"])
+    return {tuple(pair) for pair in sym["attributed_file_pairs"]}, set(sym["constructor_fields"]), sym["attributed_edge_changes"]
 
 
 def r13_node(node_id, ctor):
@@ -705,8 +707,10 @@ def constituent_names(side, target, mode, key):
 def boundary_moved(target, base, head, mode, names=None):
     if names is None:
         names = constituent_names(base, target, mode, "unresolved_calls")
-    if not names:
-        return False
+        if not names:
+            return False
+    elif not names:
+        return True
     external = constituent_names(head, target, mode, "external_calls")
     if names <= external:
         return True
