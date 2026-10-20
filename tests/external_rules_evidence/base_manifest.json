@@ -9,10 +9,10 @@
         "kotlin"
       ],
       "file": {
-        "architecture_bytes": 8832368,
-        "architecture_canonical_sha256": "1c6b68be570501214a25b236d09ceba74402a62a34641689984282323752648f",
-        "bottleneck_bytes": 7803572,
-        "bottleneck_sha256": "932538e4e5ebc260709f2bdbafb11b54311db217fde6c8f9858e2e472e3d2a25"
+        "architecture_bytes": 7359757,
+        "architecture_canonical_sha256": "3b4e59ae97e53b561be4d4bf3c1408596a7678118af5170068e2d48c5665e2ee",
+        "bottleneck_bytes": 5200039,
+        "bottleneck_sha256": "1d2cf00e7a871a7b6d71bfbcf12986c618e3f33406797c56a990241d6ac5a9a5"
       }
     },
     "fastapi-official-template": {
@@ -21,10 +21,10 @@
         "python"
       ],
       "file": {
-        "architecture_bytes": 1475804,
-        "architecture_canonical_sha256": "0b77ac0122de27834477e9fe4f145c58ad5cce7a9127211259cc34ecbe26a2b0",
-        "bottleneck_bytes": 490343,
-        "bottleneck_sha256": "8f03c2e189fb0d5097d1eef95ff36fcf5a100fd4dc7475c2b15972513548ce88"
+        "architecture_bytes": 1303503,
+        "architecture_canonical_sha256": "05967f7098ee2cb6bca9e8bef540c6af7ec2e9266f8ea4283d8517a6fc0303ba",
+        "bottleneck_bytes": 354930,
+        "bottleneck_sha256": "659fea48fabe17373ea499656c514b759525c6ed51c423164d0f93ea4b0daa39"
       }
     },
     "fastapi-realworld": {
@@ -33,14 +33,14 @@
         "python"
       ],
       "file": {
-        "architecture_bytes": 3004525,
-        "architecture_canonical_sha256": "9c8d0fd0a11358ee83f976be0146d88d35e60dbe55c1d8c6a562f0f1e4982aa5",
-        "bottleneck_bytes": 943448,
-        "bottleneck_sha256": "714adacce6c3a54bee43735d33388fa86e73c4a6d6def100e0b6911d1ebcc6de"
+        "architecture_bytes": 2851724,
+        "architecture_canonical_sha256": "705e05c5227b9106a948e8bbcf1eea66f0a7bf266b4c836b203ecbd015c82888",
+        "bottleneck_bytes": 782266,
+        "bottleneck_sha256": "ab86750c687b1aa2697eebf45e70656a09f1a611627c4da69e1b13a8ffddf19a"
       },
       "symbol": {
-        "architecture_bytes": 2649377,
-        "architecture_canonical_sha256": "7a4fb9af8bd2c96a3f4de3163a9f4e87f24b0318717128778952baf44aa5958c"
+        "architecture_bytes": 2504202,
+        "architecture_canonical_sha256": "042107d02aa6b1b4a96713e14a19dc13a219f75f01f693fc7dfdfff4e71fa483"
       }
     },
     "futuramaapi": {
@@ -49,10 +49,10 @@
         "python"
       ],
       "file": {
-        "architecture_bytes": 6794814,
-        "architecture_canonical_sha256": "09fe261bf9a6eb290e9cc9ddb7da6d5ac0d2587ab130cfde1297a0714f0a8e45",
-        "bottleneck_bytes": 2134318,
-        "bottleneck_sha256": "38a75f1977781023cad9fd47a2e2160aea520663fc90c7d4f8147ea6ba16984b"
+        "architecture_bytes": 6397487,
+        "architecture_canonical_sha256": "bbcec7376ca1e143b2ba6763520d23cc3b335e3d96d47af0d85ec8babea71c4e",
+        "bottleneck_bytes": 1632809,
+        "bottleneck_sha256": "6faa1fdf232f2eaf6e823cc08ff2045d2282f33c33e57342aa488839f23eb224"
       }
     },
     "typescript-nestjs-realworld": {
@@ -63,14 +63,14 @@
         "nestjs"
       ],
       "file": {
-        "architecture_bytes": 1465756,
-        "architecture_canonical_sha256": "8965576aed79639d2a0d3d5c6550f694525ef125cb07ca1dc1e04fab49642dc0",
-        "bottleneck_bytes": 725096,
-        "bottleneck_sha256": "2061100027accdbbbdd0d80feea1527e03529752c710e1c650ed4d2994cb771b"
+        "architecture_bytes": 1413409,
+        "architecture_canonical_sha256": "6a2243cfe4d6b0d99e8dd126d5ed4c9c590f0d8e663bd3e8b5109cc6e35b7c0a",
+        "bottleneck_bytes": 559719,
+        "bottleneck_sha256": "eeb0c6397d567e07989abb557081de9f281f09c1510801af1330ac03a1460dd6"
       },
       "symbol": {
-        "architecture_bytes": 1279736,
-        "architecture_canonical_sha256": "b74b20a7259cf71f9c4832e2d1b71fb87a7e38cf24688ee14f2b7cbedefd2d43"
+        "architecture_bytes": 1229393,
+        "architecture_canonical_sha256": "04ba457d46203ca185c223e8f9d7dca7bbf24568996d8c8c0bec64cb65b3cc81"
       }
     }
   }

@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 run_id: e91abc221d7deb2a
 status: active
 base_commit: cf0cf4446106f44026dc40d00ba09df977d61ecc
@@ -174,6 +174,7 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 | D9 | token 임계 기본 24000 = 2000줄 × 관측 12 token/줄(`typescript/analyzer.py` 925줄 10733 token) | 저장소별 편차 있음; YAML로 변경 | brief v1 — approved |
 | D10 | `versions.analysis` "4" → "5", schema 이름 유지 | pagerank 정의 변경; delta는 versions를 비교하지 않음(`bottlenecks/delta.py`) | brief v1 — approved |
 | D11 | 변경 줄 branch coverage 90%, fuzz A 언어별 1,000·B 2,000, hand mutation 8–10, mutation tool 30개, 성능 비율 ≤ 1.25 | run 1·2 관행 | brief v1 — approved |
+| D13 | 기존 크기 비율 테스트(`test_structure_integration.py::test_V11_size_ratio_per_fixture`)는 비율 대신 같은 절대 예산으로 판정: structure가 더한 byte ≤ 0.25 × 3회차 이전 base file bytes(android 7430385, fastapi-realworld 851949, futuramaapi 1726473, nestjs 645354). 축소 하한(≥0.95)은 새 base 대비 유지 | R1·R5로 base가 작아져 futuramaapi 비율 1.334(추가분 407845 byte는 전후 동일). 이전 run의 허용 증가량을 그대로 보존하므로 약화 아님 | brief v1 — default (사용자에게 보고, veto 가능) |
 | D12 | ADR `31d2dee6912427d5`의 pagerank 정의 갱신은 완료 후 사용자에게 제안만 한다 | AGENTS.md ADR 규칙 | brief v1 — approved |
 
 # Traceability
@@ -217,3 +218,5 @@ Execution ledger (append attempts; preserve failed approaches):
 - Initial draft from handoff dad85e4830f21190 3회차와 이번 세션 답변(F6 제거, F10 절대 가중치, Kotlin 멤버 제외).
 ## v2
 - Contract-only: '미파싱 내부 모듈' 정의와 Kotlin wildcard import 아래 없는 이름 = 외부를 명시(test-implementer 지적 2건). 승인 항목 변경 없음.
+## v3
+- Contract-only: D13 추가(크기 비율 테스트를 이전 허용 증가량의 절대 예산으로 판정). base_manifest 재생성 결과 `tests/signal_defects_evidence/manifest-regeneration.md`. architecture_rules·delta·external_rules manifest는 `large_node_token_threshold` 키 없이 생성(기존 helper가 추가 키를 제거하고 비교).

@@ -24,74 +24,74 @@
   "fixtures": {
     "android-nowinandroid": {
       "file": {
-        "bytes": 7430385,
-        "candidate_count": 87,
+        "bytes": 4832704,
+        "candidate_count": 46,
         "candidate_groups": "9aa6a2ee07a0c5026fe9b4389d72f577a1d0a5626ad386876ce41ff95c2704b0",
-        "candidates": "1239b677a58a479b66e23da918b07e13bb5ff97d87f123d59f598c0c152aca45",
-        "node_metrics": "9609e0daba59072bed1463637f9ced0a37b669e53a6062db9fc453a68fa3dc97",
-        "rankings": "68bd9e7d16457a32ba4c0b261a48853404aac629828f5ba12aac699ff104a2ad",
-        "rankings_by_category": "ca5e4ea4e17be5be5bc603b600b1d8ff9c586ef365357ca553cf85a843dfce9a",
+        "candidates": "5de12692aba93934e84f3dae1ec91738b0e169abc2da9dd997b9f6e0b2184f58",
+        "node_metrics": "323659c9ac08d8489b63eb0f3c50db0abe3bc1940e134d799b778e1d61a7746c",
+        "rankings": "dc41373496cab943d07890af7e3489a05b2f51de8bc0d98eb3e1fe204c1cf1a9",
+        "rankings_by_category": "c61c4245169bc0995d0b1b819f13d2708fb2c3582b271d23b19ed8e1992c06b8",
         "schema": "bottlenecks.v7",
-        "sha256": "05aec9ba61a445534791896b4eae935067e7330d592920939609600b8f7bf2a5"
+        "sha256": "436c4534ee481022cd41afae42ece113e24c954811f0095dd514965c9658cadf"
       },
       "symbol": {
-        "bytes": 6641877,
+        "bytes": 4290069,
         "schema": "bottlenecks.v6",
-        "sha256": "eedb73b51169cbeb8ae26765f151bba6cc54945036e4020e338e4a36d6829f1b"
+        "sha256": "f223e761fed4d831bc4cb40930dfe4578f721bd34398a80c9ff17145b96dc7ce"
       }
     },
     "fastapi-realworld": {
       "file": {
-        "bytes": 851949,
-        "candidate_count": 94,
+        "bytes": 690802,
+        "candidate_count": 42,
         "candidate_groups": "6f38c6e6316a16c22df5e4562bc9482a417b80c01a7e3512e078d3f408415650",
-        "candidates": "f41a7c8c45c17fdd58e9f022e0a2c08f3d3e838410a2dc36c1485838fdc98c19",
-        "node_metrics": "6e9bcd42d928f44e1f2a2284edfa6388bb9ea20d0c8541580b66af9c1f3a93a9",
-        "rankings": "f02ceaa2aaadff393a932d2ab999fc63489bed56987a46664244b0d530c5c242",
-        "rankings_by_category": "e5488fb6ace81e717e28d3e66795db6718117332f0b5bfaebde38eef3b5684e5",
+        "candidates": "bb5457c79f908f1a8ba3bbac150f7fccf79892b8606d5e1b038d4d97a9283d02",
+        "node_metrics": "b4031a5083c1bd608a35eacd932f249d09f4d46c36a6ec329dd905d535380fe4",
+        "rankings": "b2263610c434fdf0f1609996c769ecc79d871616ea4838b2687a4717e828faec",
+        "rankings_by_category": "ebc05e340fe1fe783e6b4d2479418071aa5298eb0181d50e366b856b27ba21f7",
         "schema": "bottlenecks.v7",
-        "sha256": "a33c9d2be74e5b7306f1d8b2d7d93cf1c2f34b218bf54f4bcf47f7efb700d6ce"
+        "sha256": "a5927554fed583fad7c0e584f25d1a939fc102a7faaa49d11d753b71366990a0"
       },
       "symbol": {
-        "bytes": 535904,
+        "bytes": 362814,
         "schema": "bottlenecks.v6",
-        "sha256": "88953b636a7a785cd1f7e4b665ef34dc329badb856f27d826b9d447d4e8c3f32"
+        "sha256": "a6b3e643715b70caab311bbef81020d948545a8adc2003bc36e098b4939327ba"
       }
     },
     "futuramaapi": {
       "file": {
-        "bytes": 1726473,
-        "candidate_count": 192,
-        "candidate_groups": "f52b6ab2acf65823e0f8b02cfba7a29b75ae74fe51b5cb7f230f27321f37ea3e",
-        "candidates": "0995375968a50648ba09d6e7a48055bfdbc0e9b999d6a07a06c3e34f9c07e63c",
-        "node_metrics": "5bdefcd9a455b08eae7867d1fdf1e3f2bfcb5e9bbb22a99512dce6e938a9e300",
-        "rankings": "3017716bab1a5735382e7f496172972655d4d2bf1ab624ae9cebe380e582dd50",
-        "rankings_by_category": "004242bfff313791ad78650c15201a28f2437556651cda1bf4cbf6a8955eac5c",
+        "bytes": 1224999,
+        "candidate_count": 83,
+        "candidate_groups": "2743329ca18919c4b3d89083fbe0489bfd1f2af317f1a00e454884038fe60c35",
+        "candidates": "161c98c29557661ef0f01762b8e9f6253a7849424ad30f6c9c2fdb925723d5ba",
+        "node_metrics": "5543fe70dd3b4e10950726594e830e97fd19c7c012a609ebfb3993418a3f624e",
+        "rankings": "891c6cf2af74b9929b7174229e7eb268323ebaa17504d30f611fa6b666c94883",
+        "rankings_by_category": "2865c5604883a22b31a1e70a23b49f01a2e5430c6efd497af655f94382c1f808",
         "schema": "bottlenecks.v7",
-        "sha256": "8cc8083c0da5070ae2f5c756101cc57a110de656aee4fb616d51169d9ca5a622"
+        "sha256": "3cb67ceccefcfc480cea58f0a5f7256b96665f745a6c13c4447f429346063601"
       },
       "symbol": {
-        "bytes": 1435879,
+        "bytes": 994640,
         "schema": "bottlenecks.v6",
-        "sha256": "07cf573c33e5d35062cba8f19a2fe29fec35dad7d50c3d3e5b1b68f8b68054d8"
+        "sha256": "f4bef81770944aefbe828c1a29868a734bec8a9c98082732ed72aad794d601e9"
       }
     },
     "typescript-nestjs-realworld": {
       "file": {
-        "bytes": 645354,
-        "candidate_count": 54,
+        "bytes": 480012,
+        "candidate_count": 29,
         "candidate_groups": "6ffc36bfaf39993a31f7d183c0ca559c8f7d78b7754f62e77cfe755b6dfc4bb0",
-        "candidates": "d82cf46bc2c3b09a65ca3699800fc309df3584e91f351d65d68ee2b941a4e2df",
-        "node_metrics": "0d29d8e547f8d8ed56f36a85e3d6c1a13b6600b6faad41419ff672b77dc458aa",
-        "rankings": "01f0aaab25671859f25b5597b161b82b8aa69d186dbccb7b1c48f93269717939",
-        "rankings_by_category": "1bd40bf00938fe930a884bf1a9624424746587cd2396723c22f96e4e43a716a9",
+        "candidates": "42aed113117101af9bd66fa8d3335485ccae31bb13d2ce37d299c8d393733fa0",
+        "node_metrics": "9b0a11a9e46b60bb823bd2583831c5af4759692e62466e596b87b5b8a3d08cea",
+        "rankings": "975a82f3ecef8b90567e61462e3dfcf141b3bc65fd3b82747e8ebeda5fcd83a0",
+        "rankings_by_category": "d089f7359960592cc8cac948bcb2110789ded6f21a867113190cb6f2374a8fca",
         "schema": "bottlenecks.v7",
-        "sha256": "b797cd258d5d3b362dbee8d877d35df3a6f0901367e15c669802feec69e4b147"
+        "sha256": "e0133899558036006c41382fd20e4cd6135d416d51b26d5aa1c63b7b77329f8e"
       },
       "symbol": {
-        "bytes": 568427,
+        "bytes": 436952,
         "schema": "bottlenecks.v6",
-        "sha256": "dd8b94d82cefa89c9d870961af9e7978b31861773feaaf2d033487e88a8288b8"
+        "sha256": "703e89eb21143d0fee9a633daeabf4f5ddc7985eba74454e6e4ccd4a604c4285"
       }
     }
   }
