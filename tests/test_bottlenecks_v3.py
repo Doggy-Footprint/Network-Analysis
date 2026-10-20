@@ -158,7 +158,8 @@ def test_V6_F13_unresolved_boundary_is_emitted_for_dynamic_relations_only():
 
 def evidence_subject(evidences):
     """Edges n1->n2, n3->n2 (one target n2), each carrying one evidence span."""
-    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6, "c.py": "x\n" * 6})
+    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6, "c.py": "x\n" * 6,
+                                      "b/b.py": "x\n" * 6, "c/c.py": "x\n" * 6})
     nodes = [
         GraphNode(item, item, "g", "c", span=SourceSpan("a.py", 1, 1), cost=NodeCost(10, 10, 1))
         for item in ("n1", "n2", "n3")
@@ -170,11 +171,12 @@ def evidence_subject(evidences):
 @pytest.mark.parametrize("threshold", [1, 2000])
 def test_V6_F13_evidence_spread_two_files_is_a_candidate_at_any_threshold(tmp_path, threshold):
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
-    snapshot, architecture = evidence_subject([SourceSpan("b.py", 1, 1), SourceSpan("c.py", 1, 1)])
+    snapshot, architecture = evidence_subject([SourceSpan("b/b.py", 1, 1), SourceSpan("c/c.py", 1, 1)])
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == 1
-    assert set(found[0]["metrics"]) == {"file_count", "line_span", "line_threshold"}
+    assert set(found[0]["metrics"]) == {"file_count", "directory_count", "line_span", "line_threshold"}
     assert found[0]["metrics"]["file_count"] == 2
+    assert found[0]["metrics"]["directory_count"] == 2
     assert found[0]["metrics"]["line_threshold"] == threshold
 
 
@@ -186,7 +188,7 @@ def test_V6_F13_evidence_spread_single_file_boundary(tmp_path, threshold, expect
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == expected_count
     if expected_count:
-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 4, "line_threshold": 3}
+        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 4, "line_threshold": 3}
 
 
 def test_V6_duplicate_and_self_edges_are_ignored():
@@ -235,8 +237,10 @@ def test_V6_equivalent_inputs_have_byte_identical_compact_json():
     assert outputs[0].endswith("\n") and "\n" not in outputs[0][:-1]
 
 
-def custom_subject(nodes, edges, lines=12):
-    snapshot, architecture = subject({"a.py": "x\n" * lines, "b.py": "x\n" * lines, "c.py": "x\n" * lines})
+def custom_subject(nodes, edges, lines=12, extra_files=()):
+    files = {"a.py": "x\n" * lines, "b.py": "x\n" * lines, "c.py": "x\n" * lines}
+    files.update({path: "x\n" * lines for path in extra_files})
+    snapshot, architecture = subject(files)
     return snapshot, replace(architecture, nodes=nodes, edges=list(edges))
 
 
@@ -255,12 +259,12 @@ def three_kind_subject():
     edges = [
         edge("n1", "n2", Confidence.DYNAMIC_REQUIRED),
         edge("n3", "n4", Confidence.DYNAMIC_REQUIRED),
-        edge("n5", "n6", evidence=SourceSpan("b.py", 1, 1)),
-        edge("n7", "n6", evidence=SourceSpan("c.py", 1, 1)),
-        edge("n5", "n8", evidence=SourceSpan("b.py", 1, 1)),
-        edge("n7", "n8", evidence=SourceSpan("c.py", 1, 1)),
+        edge("n5", "n6", evidence=SourceSpan("b/b.py", 1, 1)),
+        edge("n7", "n6", evidence=SourceSpan("c/c.py", 1, 1)),
+        edge("n5", "n8", evidence=SourceSpan("b/b.py", 1, 1)),
+        edge("n7", "n8", evidence=SourceSpan("c/c.py", 1, 1)),
     ]
-    return custom_subject(nodes, edges)
+    return custom_subject(nodes, edges, extra_files=("b/b.py", "c/c.py"))
 
 
 def test_V6_E3_candidate_ids_are_unique_stable_and_sorted_by_kind_then_id(tmp_path):
@@ -303,7 +307,7 @@ def test_V6_E3_evidence_spread_line_span_is_extent_not_sum(tmp_path, threshold, 
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == expected_count
     if expected_count:
-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 10, "line_threshold": 9}
+        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 10, "line_threshold": 9}
         evidence = found[0]["evidence"]
         rows = evidence if isinstance(evidence, list) else [evidence]
         assert all(set(row) == {"path", "start_line", "end_line"} for row in rows)

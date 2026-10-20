@@ -1,5 +1,5 @@
 ---
-version: 3
+version: 4
 run_id: 3f70cc03aeae9c1a
 status: active
 base_commit: 3b768a9b5e9b79c519bfe667b12b8e980cfa636b
@@ -105,6 +105,20 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
   - stage b: token_cost는 R13 field 노드만 바뀔 수 있다. fan·betweenness·hop_2는 R13 제거 edge의 끝점과 2-hop 이내 노드만 바뀔 수 있다.
   - 모든 출력에 file 모드 non-test 파일의 unresolved_boundary·evidence_spread 비율(base→head)을 기록한다. non-test는 경로에 `test`/`tests`/`spec` 디렉터리가 없고 파일명이 `test_*`, `*_test.*`, `*.spec.*`, `*.test.*`, `*Test.kt`, `*Tests.kt`가 아닌 파일이다.
 
+- RV3a (RV3 보정) "Kotlin class 노드"는 R4 대상 kind 전체(class·object·interface; JSON kind `class`·`interface`)다. "to가 C의 멤버"에는 ambiguous edge의 `candidates` 중 C의 멤버가 있는 경우도 포함한다.
+- RV6a (RV6 보정) stage a 허용 추가 경로에 file 모드 unresolved_boundary 후보 `$.evidence[].unresolved_reference_total`(3회차 R3)을 더한다.
+- RV5a (unresolved_boundary 제자리 변경)
+  - stage a: 사라진 base 이름이 모두 RV5의 이동 조건(HEAD `external_calls` 또는 R4 멤버)을 만족하고, HEAD `unresolved_count`가 HEAD 아키텍처 metadata로 다시 계산한 R3 값(symbol: 대상 노드의 `unresolved_reference_total`, 없으면 목록 길이; file: 구성 레코드 합)과 같을 때만 설명된다.
+  - stage b: 대상(symbol 모드 노드, file 모드 파일)이 R13 constructor field 노드이거나 그런 노드를 포함하고, HEAD 값이 위 R3 재계산과 같을 때만 설명된다.
+- RV10 (stage b R13 edge·metadata, 아래 "constructor field"는 RV11의 식별)
+  - 제거: from이 constructor field이고 relation ∈ {CALLS, INSTANTIATES, READS, WRITES, TYPE_USES}이며 evidence 줄이 그 field의 HEAD span 밖이면 R13.
+  - re-key: from 또는 to가 constructor field이고 relation이 같고 key 차이가 evidence 줄뿐인 제거·추가 짝은 R13(CONTAINS 포함). 짝은 1:1로 소비한다.
+  - stage b에서 추가된 노드(R12)에 닿는 edge는 R12.
+  - constructor field의 metadata `line_number`·`end_line_number`가 HEAD span과 같으면 R13. constructor field와 그것을 포함한 file 노드의 `unresolved_*`·`external_*` 키 추가·제거·값 변화는 R13.
+- RV11 (constructor field 식별) kind `field`이고, CONTAINS 부모가 class·interface이며, base 쪽 signature가 `(`로 시작하거나 `constructor(`를 포함하고, span이 부모 span 안에 있는 노드.
+- RV12 (evidence 색인) R13·R12 edge 변화가 있는 입력에서 후보 evidence 레코드의 `detail_edge_index`·`detail_edge_indices` 값만 다른 제자리 변경은 모든 kind에서 설명된다.
+- RV8a (RV8 보정) pagerank·`weighted_centrality_cost`·betweenness·rankings는 전역 지표이므로, 그 입력에 귀속된 edge 변화(stage a R4, stage b R12·R13)가 있을 때 바뀔 수 있다. fan_in·fan_out은 귀속된 edge 끝점만, token_cost는 stage b의 constructor field만, hop_2_token_cost는 그 변화 노드의 2-hop 이내만 바뀔 수 있다.
+- RV9 relation은 CONFIGURES로 한정한다.
 - RV9 (stage b, R13 → enrichment) R13으로 field span이 좁아지면, 줄 기반 소비자 선택(repository enrichment의 "그 줄을 포함하는 가장 작은 노드")이 다른 field를 고를 수 있다. 다음 조건을 모두 만족하는 제거·추가 edge 짝은 R13으로 귀속된다: relation이 CONFIGURES(또는 그 밖의 enrichment relation)이고, from·evidence가 같고, 양쪽 to가 같은 class의 primary constructor field 노드이며, HEAD 쪽 to field의 span이 evidence 줄을 포함한다. 짝은 1:1로 소비한다.
 
 # Errors
@@ -222,3 +236,6 @@ Execution ledger (append attempts; preserve failed approaches):
 
 ## v3
 - R12 (B) 범위 보정: 한 줄 중첩 object를 포함한 top-level object는 여러 줄이어도 (B) 형태로 파싱되고, 중첩 object는 복원된 object의 `statements` 안에서 다시 infix_expression이 된다(tree dump, fuzz D #1·#5·#7·#9·#11·#14). (B) 복원을 그 위치까지 적용한다. 승인된 (B) 의도와 같아 brief 재확인 없이 contract 보정으로 기록하고 사용자 보고에 포함. V4 coverage item 1개 추가.
+
+## v4
+- contract-only (test-implementer spec challenge 반영): RV3a·RV5a·RV6a·RV8a·RV10–RV12 추가, RV9 relation을 CONFIGURES로 한정. 근거: 실제 출력 review에서 3회차 R3의 file 모드 evidence 키, R4 interface·ambiguous candidates, R13 stage b edge·metadata 변화, 전역 지표 betweenness, edge 제거에 따른 `detail_edge_index` 재번호가 RV1–RV9로 기술되지 않음. unresolved_boundary 제자리 변경은 제안된 "count 비증가" 대신 R3 재계산 일치로 엄격하게 정함. brief 항목 변화 없음.

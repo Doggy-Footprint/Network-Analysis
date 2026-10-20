@@ -83,7 +83,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     manifest = run.manifest['file']
     network = payload['dependency_network']
     assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
-    assert payload['versions']['analysis'] == '5'
+    assert payload['versions']['analysis'] == '6'
     assert canonical_sha(network['rankings']) == manifest['rankings']
     assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']
     assert canonical_sha(network['node_metrics']) == manifest['node_metrics']

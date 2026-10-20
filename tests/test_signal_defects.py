@@ -578,11 +578,11 @@ def test_V6_control_file_mode_counts_class_plus_method(tmp_path):
 
 # =============================================================== V7: evidence_spread (R5; C10-C12)
 
-FILES7 = {name: 'x\n' * 12 for name in ('x.py', 'y.py', 'z.py', 'w.py')}
+FILES7 = {name: 'x\n' * 12 for name in ('a/x.py', 'b/y.py', 'c/z.py', 'w.py')}
 LINE_T = 3
 
 
-def _spread(tmp_path, evidences, *, target_path='x.py', extra_edges=(), nodes_extra=(), threshold=LINE_T):
+def _spread(tmp_path, evidences, *, target_path='a/x.py', extra_edges=(), nodes_extra=(), threshold=LINE_T):
     """Target t (in target_path); one source per evidence span; returns the evidence_spread candidates for t."""
     nodes = [sym('t', target_path, 1, 1)]
     edges = []
@@ -601,7 +601,7 @@ def S(path, a, b=None):
 
 
 def test_V7_C10_only_own_file_evidence_never_fires_even_with_wide_range(tmp_path):
-    assert _spread(tmp_path, [S('x.py', 1), S('x.py', 10)]) == []
+    assert _spread(tmp_path, [S('a/x.py', 1), S('a/x.py', 10)]) == []
 
 
 def test_V7_zero_evidence_files(tmp_path):
@@ -609,52 +609,52 @@ def test_V7_zero_evidence_files(tmp_path):
 
 
 def test_V7_C11_two_external_files_fire_with_zero_line_span(tmp_path):
-    found = _spread(tmp_path, [S('y.py', 1), S('z.py', 1)])
+    found = _spread(tmp_path, [S('b/y.py', 1), S('c/z.py', 1)])
     assert len(found) == 1
-    assert found[0]['metrics'] == {'file_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
-    assert {(r['path'], r['start_line'], r['end_line']) for r in evidence_rows(found[0])} == {('y.py', 1, 1), ('z.py', 1, 1)}
+    assert found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
+    assert {(r['path'], r['start_line'], r['end_line']) for r in evidence_rows(found[0])} == {('b/y.py', 1, 1), ('c/z.py', 1, 1)}
 
 
 @pytest.mark.parametrize('end,fires', [(LINE_T - 1, False), (LINE_T, False), (LINE_T + 1, True)])
 def test_V7_C11_one_external_file_line_range_boundary(tmp_path, end, fires):
-    found = _spread(tmp_path, [S('y.py', 1), S('y.py', end)])
+    found = _spread(tmp_path, [S('b/y.py', 1), S('b/y.py', end)])
     assert len(found) == int(fires)
     if fires:
-        assert found[0]['metrics'] == {'file_count': 1, 'line_span': end, 'line_threshold': LINE_T}
-        assert {(r['path'], r['start_line']) for r in evidence_rows(found[0])} == {('y.py', 1), ('y.py', end)}
+        assert found[0]['metrics'] == {'file_count': 1, 'directory_count': 1, 'line_span': end, 'line_threshold': LINE_T}
+        assert {(r['path'], r['start_line']) for r in evidence_rows(found[0])} == {('b/y.py', 1), ('b/y.py', end)}
 
 
 def test_V7_one_external_file_single_short_evidence_does_not_fire(tmp_path):
-    assert _spread(tmp_path, [S('y.py', 5)]) == []
+    assert _spread(tmp_path, [S('b/y.py', 5)]) == []
 
 
 def test_V7_own_file_evidence_is_dropped_from_count_range_and_evidence_list(tmp_path):
-    found = _spread(tmp_path, [S('x.py', 1), S('y.py', 1), S('z.py', 1)])
+    found = _spread(tmp_path, [S('a/x.py', 1), S('b/y.py', 1), S('c/z.py', 1)])
     assert len(found) == 1 and found[0]['metrics']['file_count'] == 2
-    assert {r['path'] for r in evidence_rows(found[0])} == {'y.py', 'z.py'}
+    assert {r['path'] for r in evidence_rows(found[0])} == {'b/y.py', 'c/z.py'}
     # own-file evidence far from the external evidence must not stretch the single-file range either
-    assert _spread(tmp_path, [S('x.py', 12), S('y.py', 1), S('y.py', 3)]) == []
-    wide = _spread(tmp_path, [S('x.py', 12), S('y.py', 1), S('y.py', 4)])
+    assert _spread(tmp_path, [S('a/x.py', 12), S('b/y.py', 1), S('b/y.py', 3)]) == []
+    wide = _spread(tmp_path, [S('a/x.py', 12), S('b/y.py', 1), S('b/y.py', 4)])
     assert len(wide) == 1 and wide[0]['metrics']['line_span'] == 4
-    assert {r['path'] for r in evidence_rows(wide[0])} == {'y.py'}
+    assert {r['path'] for r in evidence_rows(wide[0])} == {'b/y.py'}
 
 
 @pytest.mark.parametrize('relation', ['CONTAINS', 'DECLARES'])
 def test_V7_C12_ownership_edge_evidence_is_dropped(tmp_path, relation):
-    owner = sym('K', 'x.py', 1, 1, kind='class', provenance='python-core')
-    child = sym('t', 'x.py', 2, 2, kind='function', provenance='python-core')
+    owner = sym('K', 'a/x.py', 1, 1, kind='class', provenance='python-core')
+    child = sym('t', 'a/x.py', 2, 2, kind='function', provenance='python-core')
     use = sym('s0', 'w.py', 1, 1)
-    edges = [edge('K', 't', relation=relation, evidence=S('z.py', 1)), edge('s0', 't', evidence=S('y.py', 1))]
+    edges = [edge('K', 't', relation=relation, evidence=S('c/z.py', 1)), edge('s0', 't', evidence=S('b/y.py', 1))]
     snap, arch = make_subject(FILES7, [owner, child, use], edges)
     payload = run_payload(snap, arch, weights_in(tmp_path, large_node_line_threshold=LINE_T))
     assert [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 't'] == []
 
 
 def test_V7_non_ownership_edge_with_same_shape_still_counts(tmp_path):
-    owner = sym('K', 'x.py', 1, 1, kind='class', provenance='python-core')
-    child = sym('t', 'x.py', 2, 2, kind='function', provenance='python-core')
+    owner = sym('K', 'a/x.py', 1, 1, kind='class', provenance='python-core')
+    child = sym('t', 'a/x.py', 2, 2, kind='function', provenance='python-core')
     use = sym('s0', 'w.py', 1, 1)
-    edges = [edge('K', 't', relation='CALLS', evidence=S('z.py', 1)), edge('s0', 't', evidence=S('y.py', 1))]
+    edges = [edge('K', 't', relation='CALLS', evidence=S('c/z.py', 1)), edge('s0', 't', evidence=S('b/y.py', 1))]
     snap, arch = make_subject(FILES7, [owner, child, use], edges)
     payload = run_payload(snap, arch, weights_in(tmp_path, large_node_line_threshold=LINE_T))
     found = [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 't']
@@ -662,20 +662,20 @@ def test_V7_non_ownership_edge_with_same_shape_still_counts(tmp_path):
 
 
 def test_V7_target_without_file_excludes_nothing(tmp_path):
-    found = _spread(tmp_path, [S('x.py', 1), S('y.py', 1)], target_path=None)
+    found = _spread(tmp_path, [S('a/x.py', 1), S('b/y.py', 1)], target_path=None)
     assert len(found) == 1 and found[0]['metrics']['file_count'] == 2
-    assert {r['path'] for r in evidence_rows(found[0])} == {'x.py', 'y.py'}
+    assert {r['path'] for r in evidence_rows(found[0])} == {'a/x.py', 'b/y.py'}
 
 
 # ---- file mode
 
 def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
-    nodes = [file_node('t', 'x.py')]
+    nodes = [file_node('t', 'a/x.py')]
     edges = []
     for i, (path, span) in enumerate(evidences):
         nodes.append(file_node(f'u{i}', path))
         edges.append(edge(f'u{i}', 't', evidence=span))
-    files = {'x.py': 'x\n' * 12, 'y.py': 'x\n' * 12, 'z.py': 'x\n' * 12}
+    files = {'a/x.py': 'x\n' * 12, 'b/y.py': 'x\n' * 12, 'c/z.py': 'x\n' * 12}
     nodes.extend(n for n, _ in owner_edges)
     edges.extend(e for _, e in owner_edges)
     snap, result = converted(files, nodes, edges)
@@ -683,32 +683,32 @@ def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
     from bottlenecks import bottlenecks_to_json
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
     payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights)))
-    return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:x.py']
+    return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/x.py']
 
 
 def test_V7_file_mode_evidence_in_target_file_is_dropped(tmp_path):
-    assert _file_spread(tmp_path, [('y.py', S('x.py', 1)), ('z.py', S('x.py', 10))]) == []
+    assert _file_spread(tmp_path, [('b/y.py', S('a/x.py', 1)), ('c/z.py', S('a/x.py', 10))]) == []
 
 
 def test_V7_file_mode_two_external_files_fire(tmp_path):
-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1)), ('z.py', S('z.py', 1)), ('y.py', S('x.py', 5))])
-    assert len(found) == 1 and found[0]['metrics'] == {'file_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
-    assert {r['path'] for r in evidence_rows(found[0])} == {'y.py', 'z.py'}
+    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1)), ('c/z.py', S('c/z.py', 1)), ('b/y.py', S('a/x.py', 5))])
+    assert len(found) == 1 and found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
+    assert {r['path'] for r in evidence_rows(found[0])} == {'b/y.py', 'c/z.py'}
 
 
 @pytest.mark.parametrize('end,fires', [(LINE_T, False), (LINE_T + 1, True)])
 def test_V7_file_mode_one_external_file_boundary(tmp_path, end, fires):
-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1)), ('y.py', S('y.py', end))])
+    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1)), ('b/y.py', S('b/y.py', end))])
     assert len(found) == int(fires)
     if fires:
-        assert found[0]['metrics'] == {'file_count': 1, 'line_span': end, 'line_threshold': LINE_T}
+        assert found[0]['metrics'] == {'file_count': 1, 'directory_count': 1, 'line_span': end, 'line_threshold': LINE_T}
 
 
 @pytest.mark.parametrize('relation', ['CONTAINS', 'DECLARES'])
 def test_V7_file_mode_ownership_evidence_is_dropped(tmp_path, relation):
-    owner = file_node('K', 'z.py', 'class')
-    owned = edge('K', 't', relation=relation, evidence=S('z.py', 1))
-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1))], owner_edges=[(owner, owned)])
+    owner = file_node('K', 'c/z.py', 'class')
+    owned = edge('K', 't', relation=relation, evidence=S('c/z.py', 1))
+    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1))], owner_edges=[(owner, owned)])
     assert found == []
 
 
