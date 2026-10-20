@@ -10,6 +10,8 @@
 
 > handoff-existing signal defects에서 F3, F4, F5, F6, F9 토큰, F10, F12을 처리해야 해
 
+> 처리하자 (범위: V12 + Open Questions 전부; evidence_spread는 디렉터리 단위로 재정의)
+
 AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검수했고, 아래 결함이 나왔다. 이 문서는 그 수정 작업을 인계한다.
 
 ## State
@@ -52,6 +54,8 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 | 3회차 `review_diff.py`로 자동 비교, 규칙을 넓혀 unexplained 0 달성 | verifier 2 F2–F5: R4/R9 edge 규칙이 resolution·confidence·candidates 변화를 거르지 않음, file 모드 `*` relation 매핑, 구조 kind "changed only" 규칙이 문서보다 넓고 후보-edge 연결 없음, 후보 label 무조건(large_node 제거도 R8), key 허용 경로 위치 무관(node_metrics에 `external_call_count`가 새도 통과), non-test 비율 계산 미기록 | verified: 코드 검토(verifier 2) |
 | 3회차 R4 edge 귀속을 "member가 있는 class면 R4"로 판정 | 너무 느슨해 실제 손실(자기 member READS·TESTS 중복)을 가렸다가 member 동일 edge 조건으로 좁힘 | verified |
 | 2회차 mutation tool 첫 sanity check(`ast.unparse`만 적용한 파일로 145 failed) | 확인 명령이 `open(p,'w')`로 파일을 읽기 전에 비움 | verified: 읽은 뒤 쓰도록 고친 재실행 145 passed |
+| 4회차 workflow (V12 정정, Open Questions 3건) | 완료. verifier 2회(RETRY → PASS), 정정 batch 2회 | verified: spec-logs/3f70cc03aeae9c1a |
+| 4회차 R12 (B) 복원을 top-level에만 적용 | fuzz D: 여러 줄 top-level object 안의 한 줄 중첩 object 누락 | verified: 바깥 object도 infix로 파싱됨. 복원된 object의 statements까지 확장(spec v3) |
 
 ## Next Step
 
@@ -74,6 +78,7 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 - 1회차: `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`, v4, complete, run `7ab6320d2eb56ccf`.
 - 2회차: `agent-docs/spec-logs/f3972ebd2386454f-dynamic-flags.md`, v2, complete, run `f3972ebd2386454f`.
 - 3회차: `agent-docs/spec-logs/e91abc221d7deb2a-signal-defects-round3.md`, v5, limit, run `e91abc221d7deb2a`.
+- 4회차: `agent-docs/spec-logs/3f70cc03aeae9c1a-signal-defects-round4.md`, v6, complete, run `3f70cc03aeae9c1a`.
 
 ## Execution Ledger
 
@@ -84,3 +89,5 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 검수 agent 실행 기록: 관련 테스트 650 passed, browser 31 error(Chromium 없음). 결함 F1–F10은 scratchpad fixture로 재현했다. mutation·fuzz 실행 없음.
 
 3회차: Test command 3098 passed(1 skipped), diff coverage 97.9%, fuzz 5,000회(언어별 1,000 + PageRank 2,000) 위반 0, hand mutation 11/11 killed(M8 첫 probe는 예외로 inconclusive → 변경 후 killed), mutation tool 30개 중 21 killed·9 survived → triage: 8·25·10·3 declared/undeclared gap을 테스트 보강으로 killed, 11·19·26·29 기존 suite가 kill, 22 equivalent. 성능 비율 0.78–0.98. verifier 2회(RETRY → RETRY, V12만 open), 정정 batch 4회. base manifest 5개·O11 archive 재생성(`tests/signal_defects_evidence/manifest-regeneration.md`). file 모드 non-test 비율: `unresolved_boundary` 72%→11%(이 저장소), `evidence_spread` 77%→75%.
+
+4회차: Test command 3281 passed(1 skipped), diff coverage 96.2%, fuzz 2,000회(표면 C·D) 위반 0, hand mutation 10/10 killed + 재확인 3/3(M11·T15·T16), mutation tool 30개 중 27 killed·3 survived → declared gap으로 테스트 보강 후 killed. review 2단계(cf0cf44→3b768a9, 3b768a9→HEAD) 20개 출력 unexplained 0. 성능 비율 0.85–1.13. verifier 2회(RETRY → PASS), 정정 batch 2회. base manifest 5개·O11 archive 재생성(`tests/signal_defects_evidence/manifest-regeneration.md` Round 4). file 모드 non-test `evidence_spread` 비율: self 75%→72%, nestjs 61%→39%, android 56%→52%, futuramaapi 46%→35%, fastapi-realworld 53%→41%. 범위 밖으로 남긴 것: 한 줄 class 안의 한 줄 중첩 object 오파싱, companion object 자체 수집.

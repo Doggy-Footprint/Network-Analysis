@@ -1,7 +1,7 @@
 ---
 version: 6
 run_id: 3f70cc03aeae9c1a
-status: active
+status: complete
 base_commit: 3b768a9b5e9b79c519bfe667b12b8e980cfa636b
 max_verifier_invocations: 2
 handoff: agent-docs/handoff/dad85e4830f21190-existing-signal-defects.md
@@ -217,20 +217,20 @@ RV 규칙 (stage a는 R1–R10, stage b는 R11–R14 귀속):
 | --- | --- |
 | correction batches used | 2 |
 | verifier invocations | 2 |
-| open finding ids | VF1-F1 (fix pending audit) |
+| open finding ids | none (VF1-F1 closed by verifier 2; advisories VF1-A3 and ledger 7 remain) |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 6 | tests/test_signal_defects_round4.py (test_V1_*; batch 1, batch 2 DT8), tests/test_signal_defects.py V7 directory_count | open → re-audit (VF1-F1) | hand M1, M2, M5, M11 killed; T15 (tool 15/27) killed | R11 symbol code, `expected_spread` support oracle |
-| V2 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V2_*) | accepted (verifier 1) | hand M3, M4 killed; T15 killed | R11 file code; file 모드 대상은 `details["file_nodes"]`의 file 노드만(파일 항상 있음) → file-less 대상 없음, V2 DT8 불필요 |
-| V3 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V3_*) | accepted (verifier 1) | hand M6 killed | generate.py, app.js |
-| V4 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V4_*; batch 1 signatures) | accepted (verifier 1) | hand M7, M8 killed; T16 (tool 16) killed | kotlin ast/analyzer |
-| V5 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V5_*) | accepted (verifier 1) | hand M9 killed | kotlin analyzer |
-| V6 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V6_*); fuzz D 1,000 (10% broken file), 0 violations | accepted (verifier 1) | — | kotlin analyzer |
-| V7 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V7_*) | accepted (verifier 1) | hand M10 killed | core.py version |
-| V8 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V8_*, git archive of 3b768a9) | accepted (verifier 1) | — | framework_analyzers/android unchanged |
-| V9 | 5 | tests/test_review_diff_round4.py (106 synthetic), review_diff.py, review.md Round 4, review-output/ (stage a), review-output-round4/ (stage b): 20/20 unexplained 0; perf Q3 ≤ 1.25; batch 2 RV6 stage b 2 pairs | invalidated (test file changed) → re-audit | — | review_diff rules RV1–RV12 |
+| V1 | 6 | tests/test_signal_defects_round4.py (test_V1_*; batch 1, batch 2 DT8), tests/test_signal_defects.py V7 directory_count | accepted (verifier 2) | hand M1, M2, M5, M11 killed; T15 (tool 15/27) killed | R11 symbol code, `expected_spread` support oracle |
+| V2 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V2_*) | accepted (verifier 1, retained by verifier 2) | hand M3, M4 killed; T15 killed | R11 file code; file 모드 대상은 `details["file_nodes"]`의 file 노드만(파일 항상 있음) → file-less 대상 없음, V2 DT8 불필요 |
+| V3 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V3_*) | accepted (verifier 1, retained by verifier 2) | hand M6 killed | generate.py, app.js |
+| V4 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V4_*; batch 1 signatures) | accepted (verifier 1, retained by verifier 2) | hand M7, M8 killed; T16 (tool 16) killed | kotlin ast/analyzer |
+| V5 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V5_*) | accepted (verifier 1, retained by verifier 2) | hand M9 killed | kotlin analyzer |
+| V6 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V6_*); fuzz D 1,000 (10% broken file), 0 violations | accepted (verifier 1, retained by verifier 2) | — | kotlin analyzer |
+| V7 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V7_*) | accepted (verifier 1, retained by verifier 2) | hand M10 killed | core.py version |
+| V8 | 5 → 6 (unchanged evidence) | tests/test_signal_defects_round4.py (test_V8_*, git archive of 3b768a9) | accepted (verifier 1, retained by verifier 2) | — | framework_analyzers/android unchanged |
+| V9 | 5 | tests/test_review_diff_round4.py (106 synthetic), review_diff.py, review.md Round 4, review-output/ (stage a), review-output-round4/ (stage b): 20/20 unexplained 0; perf Q3 ≤ 1.25; batch 2 RV6 stage b 2 pairs | accepted (verifier 2) | — | review_diff rules RV1–RV12 |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
@@ -244,6 +244,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 6 | mutation tool 30개 중 27 killed, 3 survived (10%) | triage: 16 declared (V4 data object signature), 15·27 declared (R15 candidate `coverage` 필드; triager insufficient context → main이 `_candidate` 출력 확인) | correction batch 1: test-implementer가 signature·record 필드 assert 추가 | 15·16 재적용 시 killed |
 | 7 | diff coverage 미실행 3곳 | analyzer.py 250->252: 이름 없는 멤버(기존 분기 이동, 새 동작 아님); ast.py 112-113: object_literal에 class_body가 있는 infix(R12 (B) 제외 조건, 이 형태를 내는 parser 입력 미확인) | advisory | 96.2% ≥ 90% |
 | 8 | verifier 1 RETRY: VF1-F1 R11 file-less target 조항 미검증 (`""`를 자기 디렉터리로 쓰는 변형 통과) | V1 coverage item 누락 (verified, spec gap) | spec v6 DT8, batch 2: V1_TABLE DT8, round-3 V7에 directory_count assert; advisory A1 RV6 stage b 2쌍; A2 stage b 4개 출력 재실행 byte 동일; A4 round4 파일 skip 0; A5 `hand-mutations-round4-recheck.json` | M11·T15·T16 killed |
+| 9 | verifier 2 PASS | — | — | complete |
 
 # Version Log
 ## v1
@@ -266,3 +267,6 @@ Execution ledger (append attempts; preserve failed approaches):
 
 ## v6
 - contract-only: verifier 1 VF1-F1(blocking) — R11 "T에 파일이 없으면 제외 없음" 조항이 V1 coverage item에 없음. V1에 DT8 추가. VF1-A1(advisory, 저렴): V9에 stage b `directory_count` 위치 거부 항목 추가. brief 항목 변화 없음.
+
+## v6 (close)
+- verifier 2 PASS(V1–V9 accepted, VF1-F1 closed). status complete. 남은 advisory: VF1-A3(R12 (B) object_literal에 class_body가 있는 제외 분기 미실행). 범위 밖으로 남긴 Kotlin 오파싱: 한 줄 class 안의 한 줄 중첩 object(`class A { object B { val c = 1 } }`, top-level ERROR로 파싱), companion object 자체 수집.
