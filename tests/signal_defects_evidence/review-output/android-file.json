@@ -1,0 +1,894 @@
+{
+ "input": "android",
+ "mode": "file",
+ "unexplained": [],
+ "nodes": {
+  "base": 78,
+  "head": 78,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {},
+ "metadata_changes": {
+  "analysis (R7/R4)": 78,
+  "external_call_count (R1/R3)": 40
+ },
+ "edges": {
+  "base": 1620,
+  "head": 1616,
+  "changes": {
+   "-READS (R4)": 4
+  }
+ },
+ "key_paths": {
+  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
+  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].resolution.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].confidence.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.start_line (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.end_line (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].name (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.file_path (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_calls.<map> (R1/R5)": 1,
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 40,
+  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 2,
+  "-$.evidence[].candidates (R1/R5)": 1
+ },
+ "schema": "bottlenecks.v8",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "dependency_cycle": {
+   "base": 4,
+   "head": 4,
+   "removed": 0,
+   "added": 0,
+   "changed": 4,
+   "samples": [
+    {
+     "change": "changed",
+     "target": "cycle:file:resolved:373083fe2c2210f9",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 33,
+       "internal_pair_count": 8,
+       "member_count": 4,
+       "min_pair_weight": 0.3
+      },
+      {
+       "internal_evidence_count": 33,
+       "internal_pair_count": 8,
+       "member_count": 4,
+       "min_pair_weight": 0.3
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:file:resolved:43ca5065254d5fdd",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 24,
+       "internal_pair_count": 7,
+       "member_count": 4,
+       "min_pair_weight": 0.3
+      },
+      {
+       "internal_evidence_count": 19,
+       "internal_pair_count": 7,
+       "member_count": 4,
+       "min_pair_weight": 0.3
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:file:resolved:4687b6ce8eff2735",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 111,
+       "internal_pair_count": 14,
+       "member_count": 6,
+       "min_pair_weight": 0.3
+      },
+      {
+       "internal_evidence_count": 91,
+       "internal_pair_count": 14,
+       "member_count": 6,
+       "min_pair_weight": 0.3
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:file:all:81ed7be30821f0d4",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 3745,
+       "internal_pair_count": 373,
+       "member_count": 41,
+       "min_pair_weight": 0.04285714285714285
+      },
+      {
+       "internal_evidence_count": 2876,
+       "internal_pair_count": 373,
+       "member_count": 41,
+       "min_pair_weight": 0.04285714285714285
+      }
+     ]
+    }
+   ]
+  },
+  "evidence_spread": {
+   "base": 47,
+   "head": 46,
+   "removed": 1,
+   "added": 0,
+   "changed": 46,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDaoTest.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/ConnectivityManagerNetworkMonitor.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/TimeZoneMonitor.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 20,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 20,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 36,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 35,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNiaNetworkDataSource.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreen.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 36,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 35,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 30,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 29,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "isolated_node": {
+   "base": 1,
+   "head": 1,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "package_cycle": {
+   "base": 4,
+   "head": 4,
+   "removed": 0,
+   "added": 0,
+   "changed": 4,
+   "samples": [
+    {
+     "change": "changed",
+     "target": "cycle:language:all:55d45a736028b2e4",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 2844,
+       "internal_pair_count": 44,
+       "member_count": 10,
+       "min_pair_weight": 0.06
+      },
+      {
+       "internal_evidence_count": 2141,
+       "internal_pair_count": 44,
+       "member_count": 10,
+       "min_pair_weight": 0.06
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:language:resolved:938f6f9f74afd8e5",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 775,
+       "internal_pair_count": 22,
+       "member_count": 8,
+       "min_pair_weight": 0.3
+      },
+      {
+       "internal_evidence_count": 638,
+       "internal_pair_count": 22,
+       "member_count": 8,
+       "min_pair_weight": 0.3
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:language:certain:eb839c936bbc9f35",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 58,
+       "internal_pair_count": 2,
+       "member_count": 2,
+       "min_pair_weight": 1.0
+      },
+      {
+       "internal_evidence_count": 46,
+       "internal_pair_count": 2,
+       "member_count": 2,
+       "min_pair_weight": 1.0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "cycle:language:certain:f28f64612762d01b",
+     "why": "R4",
+     "metrics": [
+      {
+       "internal_evidence_count": 31,
+       "internal_pair_count": 2,
+       "member_count": 2,
+       "min_pair_weight": 1.0
+      },
+      {
+       "internal_evidence_count": 25,
+       "internal_pair_count": 2,
+       "member_count": 2,
+       "min_pair_weight": 1.0
+      }
+     ]
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "base": 40,
+   "head": 0,
+   "removed": 40,
+   "added": 0,
+   "changed": 0,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDaoTest.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 69
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResourceKtTest.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 14
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:feature/topic/impl/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreenTest.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 43
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepositoryTest.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 114
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 8
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreen.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 58
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNiaNetworkDataSource.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 38
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/UserNewsResourceTest.kt",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 40
+      },
+      null
+     ]
+    }
+   ]
+  },
+  "unstable_dependency": {
+   "base": 13,
+   "head": 13,
+   "removed": 0,
+   "added": 0,
+   "changed": 13,
+   "samples": [
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.database.model",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 7,
+       "file_pair_count": 2,
+       "instability_delta": 0.14285714285714288,
+       "instability_from": 0.21428571428571427,
+       "instability_to": 0.35714285714285715,
+       "weighted_instability_from": 0.06705539358600583,
+       "weighted_instability_to": 0.3707865168539326
+      },
+      {
+       "evidence_count": 6,
+       "file_pair_count": 2,
+       "instability_delta": 0.14285714285714288,
+       "instability_from": 0.21428571428571427,
+       "instability_to": 0.35714285714285715,
+       "weighted_instability_from": 0.06705539358600583,
+       "weighted_instability_to": 0.3707865168539326
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.feature.topic.api.navigation",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 1,
+       "file_pair_count": 1,
+       "instability_delta": 0.15714285714285714,
+       "instability_from": 0.2,
+       "instability_to": 0.35714285714285715,
+       "weighted_instability_from": 0.10526315789473684,
+       "weighted_instability_to": 0.3707865168539326
+      },
+      {
+       "evidence_count": 1,
+       "file_pair_count": 1,
+       "instability_delta": 0.15714285714285714,
+       "instability_from": 0.2,
+       "instability_to": 0.35714285714285715,
+       "weighted_instability_from": 0.10526315789473684,
+       "weighted_instability_to": 0.3707865168539326
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.feature.topic.impl",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 6,
+       "file_pair_count": 2,
+       "instability_delta": 0.25824175824175827,
+       "instability_from": 0.35714285714285715,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.3707865168539326,
+       "weighted_instability_to": 0.43448275862068964
+      },
+      {
+       "evidence_count": 4,
+       "file_pair_count": 2,
+       "instability_delta": 0.25824175824175827,
+       "instability_from": 0.35714285714285715,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.3707865168539326,
+       "weighted_instability_to": 0.43448275862068964
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.feature.topic.impl",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 38,
+       "file_pair_count": 2,
+       "instability_delta": 0.21428571428571425,
+       "instability_from": 0.35714285714285715,
+       "instability_to": 0.5714285714285714,
+       "weighted_instability_from": 0.3707865168539326,
+       "weighted_instability_to": 0.576271186440678
+      },
+      {
+       "evidence_count": 29,
+       "file_pair_count": 2,
+       "instability_delta": 0.21428571428571425,
+       "instability_from": 0.35714285714285715,
+       "instability_to": 0.5714285714285714,
+       "weighted_instability_from": 0.3707865168539326,
+       "weighted_instability_to": 0.576271186440678
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.feature.topic.api.navigation",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 2,
+       "file_pair_count": 2,
+       "instability_delta": 0.014285714285714263,
+       "instability_from": 0.2,
+       "instability_to": 0.21428571428571427,
+       "weighted_instability_from": 0.10526315789473684,
+       "weighted_instability_to": 0.06705539358600583
+      },
+      {
+       "evidence_count": 2,
+       "file_pair_count": 2,
+       "instability_delta": 0.014285714285714263,
+       "instability_from": 0.2,
+       "instability_to": 0.21428571428571427,
+       "weighted_instability_from": 0.10526315789473684,
+       "weighted_instability_to": 0.06705539358600583
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.database.model",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 8,
+       "file_pair_count": 2,
+       "instability_delta": 0.21428571428571427,
+       "instability_from": 0.21428571428571427,
+       "instability_to": 0.42857142857142855,
+       "weighted_instability_from": 0.06705539358600583,
+       "weighted_instability_to": 0.46875000000000006
+      },
+      {
+       "evidence_count": 4,
+       "file_pair_count": 2,
+       "instability_delta": 0.21428571428571427,
+       "instability_from": 0.21428571428571427,
+       "instability_to": 0.42857142857142855,
+       "weighted_instability_from": 0.06705539358600583,
+       "weighted_instability_to": 0.46875000000000006
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.database.dao",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 86,
+       "file_pair_count": 4,
+       "instability_delta": 0.05128205128205121,
+       "instability_from": 0.6153846153846154,
+       "instability_to": 0.6666666666666666,
+       "weighted_instability_from": 0.43448275862068964,
+       "weighted_instability_to": 0.6463414634146342
+      },
+      {
+       "evidence_count": 62,
+       "file_pair_count": 4,
+       "instability_delta": 0.05128205128205121,
+       "instability_from": 0.6153846153846154,
+       "instability_to": 0.6666666666666666,
+       "weighted_instability_from": 0.43448275862068964,
+       "weighted_instability_to": 0.6463414634146342
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.data.repository",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 120,
+       "file_pair_count": 8,
+       "instability_delta": 0.008928571428571397,
+       "instability_from": 0.5625,
+       "instability_to": 0.5714285714285714,
+       "weighted_instability_from": 0.5947368421052631,
+       "weighted_instability_to": 0.576271186440678
+      },
+      {
+       "evidence_count": 94,
+       "file_pair_count": 8,
+       "instability_delta": 0.008928571428571397,
+       "instability_from": 0.5625,
+       "instability_to": 0.5714285714285714,
+       "weighted_instability_from": 0.5947368421052631,
+       "weighted_instability_to": 0.576271186440678
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.database",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 25,
+       "file_pair_count": 5,
+       "instability_delta": 0.11538461538461542,
+       "instability_from": 0.5,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.5825242718446602,
+       "weighted_instability_to": 0.43448275862068964
+      },
+      {
+       "evidence_count": 20,
+       "file_pair_count": 5,
+       "instability_delta": 0.11538461538461542,
+       "instability_from": 0.5,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.5825242718446602,
+       "weighted_instability_to": 0.43448275862068964
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "pkg:kotlin:com.google.samples.apps.nowinandroid.core.data.repository",
+     "why": "R4",
+     "metrics": [
+      {
+       "evidence_count": 285,
+       "file_pair_count": 19,
+       "instability_delta": 0.05288461538461542,
+       "instability_from": 0.5625,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.5947368421052631,
+       "weighted_instability_to": 0.43448275862068964
+      },
+      {
+       "evidence_count": 218,
+       "file_pair_count": 19,
+       "instability_delta": 0.05288461538461542,
+       "instability_from": 0.5625,
+       "instability_to": 0.6153846153846154,
+       "weighted_instability_from": 0.5947368421052631,
+       "weighted_instability_to": 0.43448275862068964
+      }
+     ]
+    }
+   ]
+  },
+  "untested_hub": {
+   "base": 4,
+   "head": 4,
+   "removed": 1,
+   "added": 1,
+   "changed": 3,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.059956539357895175,
+       "pagerank_rank": 6,
+       "top_n": 10,
+       "uncertain_test_edge_count": 12
+      },
+      null
+     ]
+    },
+    {
+     "change": "added",
+     "target": "file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt",
+     "why": "R7",
+     "metrics": [
+      null,
+      {
+       "pagerank": 0.022481309507062102,
+       "pagerank_rank": 6,
+       "top_n": 10,
+       "uncertain_test_edge_count": 5
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.09286744011244473,
+       "pagerank_rank": 4,
+       "top_n": 10,
+       "uncertain_test_edge_count": 9
+      },
+      {
+       "pagerank": 0.030093499884170975,
+       "pagerank_rank": 2,
+       "top_n": 10,
+       "uncertain_test_edge_count": 9
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/RecentSearchQueryEntity.kt",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.017750782238078664,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 1
+      },
+      {
+       "pagerank": 0.03770437058216662,
+       "pagerank_rank": 1,
+       "top_n": 10,
+       "uncertain_test_edge_count": 1
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.0491719877917088,
+       "pagerank_rank": 7,
+       "top_n": 10,
+       "uncertain_test_edge_count": 7
+      },
+      {
+       "pagerank": 0.017583914895377514,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 7
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

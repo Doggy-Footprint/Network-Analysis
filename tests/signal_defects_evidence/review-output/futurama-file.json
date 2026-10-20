@@ -1,0 +1,643 @@
+{
+ "input": "futurama",
+ "mode": "file",
+ "unexplained": [],
+ "nodes": {
+  "base": 188,
+  "head": 188,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {},
+ "metadata_changes": {
+  "analysis (R7/R4)": 188,
+  "external_call_count (R1/R3)": 101
+ },
+ "edges": {
+  "base": 1384,
+  "head": 1384,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
+  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
+  "-$.details.nodes[].metadata.unresolved_reference_truncated (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_reference_limit (R1/R5)": 1,
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 101,
+  "-$.evidence[].candidate_group_id (R1/R5)": 12,
+  "-$.evidence[].unresolved_references[].evidence (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].evidence.end_line (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].resolution.<map> (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].name (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].confidence.<map> (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].evidence.file_path (R1/R5)": 4,
+  "-$.evidence[].unresolved_references[].evidence.start_line (R1/R5)": 4,
+  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 5,
+  "+$.evidence[].unresolved_reference_total (R1/R3/R8)": 1
+ },
+ "schema": "bottlenecks.v8",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "dependency_cycle": {
+   "base": 6,
+   "head": 6,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "evidence_spread": {
+   "base": 91,
+   "head": 78,
+   "removed": 13,
+   "added": 0,
+   "changed": 64,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/tokens/get_refreshed_auth_user_token.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/favorites/list_favorite_characters.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/middlewares/secure.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/middlewares/counter.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/graphql/validators.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/graphql/conversion.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/notifications/sse_character.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/views/api.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/users/request_change_user_password.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/links/create_link.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/views/s/api.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/api_clients/_base.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 17,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 16,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/characters/list_characters.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/crypto/get_secret_message.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/users/create_user.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/auth/auth_cookie_session_user.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/callbacks/_base.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/seasons/list_seasons.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/episodes/list_episodes.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/users/get_user_me.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "package_cycle": {
+   "base": 6,
+   "head": 6,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "unresolved_boundary": {
+   "base": 101,
+   "head": 5,
+   "removed": 96,
+   "added": 0,
+   "changed": 5,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/db/migrations/versions/ee5656c8dc7f_define_user_model.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 21
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/helpers/_markdown.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/favorites/create_favorite_character.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 8
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/characters/get_character.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 8
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/workers/services/callbacks/get_character.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/api_clients/_httpx.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 10
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:tests/unit/routers/services/episodes/test_get_episode.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 4
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/workers/_dramatiq/_runner.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 6
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/db/models.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 117
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/routers/services/tokens/get_auth_user_token.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 16
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/services/users/update_user.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 11
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/db/session.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 9
+      },
+      {
+       "unresolved_count": 1
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/db/_base.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 25
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/helpers/pydantic.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 7
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/routers/graphql/conversion.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 9
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    }
+   ]
+  },
+  "unstable_dependency": {
+   "base": 74,
+   "head": 74,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "untested_hub": {
+   "base": 3,
+   "head": 3,
+   "removed": 1,
+   "added": 1,
+   "changed": 2,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:futuramaapi/db/session.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.017835414969994953,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "added",
+     "target": "file:futuramaapi/routers/services/_base_template.py",
+     "why": "R7",
+     "metrics": [
+      null,
+      {
+       "pagerank": 0.018200701494514446,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/helpers/templates.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.06418468978988039,
+       "pagerank_rank": 3,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.024713935797299837,
+       "pagerank_rank": 9,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:futuramaapi/helpers/pydantic.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.1021333488317559,
+       "pagerank_rank": 2,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.04884175006641453,
+       "pagerank_rank": 2,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

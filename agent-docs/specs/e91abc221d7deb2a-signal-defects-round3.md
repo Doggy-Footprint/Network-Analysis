@@ -1,5 +1,5 @@
 ---
-version: 4
+version: 5
 run_id: e91abc221d7deb2a
 status: active
 base_commit: cf0cf4446106f44026dc40d00ba09df977d61ecc
@@ -30,6 +30,7 @@ Out of scope:
 Implementation: bottlenecks/core.py, analysis/graph_metrics.py, analysis/edge_weights.py, analysis/file_graph.py, profiles/edge_weights.v1.yaml, language_analyzers/core/flags.py, language_analyzers/python/graph.py, language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/kotlin/ast.py, report/bottlenecks/generate.py, renderers/html/static/app.js
 Tests: tests/test_signal_defects.py (new), tests/signal_defects_support.py (new), tests/signal_defects_evidence/ (new; 단 main이 쓰는 `review.md`, `review-output/`, `fuzz_signal.py`, `fuzz-run.log`, `hand-mutations.json`, `mutation-tool.json` 제외). 기존 tests/ 파일 조정도 허용한다. 허용 범위:
 - 결과 기대값(golden, characterization, count, hash, 플래그 목록, pagerank 값, `versions.analysis`, 후보 집합)만 갱신한다.
+- 테스트가 기대던 동작을 이번 run이 바꿔 기대값만으로 원래 의도를 지킬 수 없으면, 의도를 보존하는 입력 fixture·oracle 본문 변경도 허용한다(D14). 각 변경에 R id와 이유를 기록한다.
 - 각 변경은 R1–R10 중 하나로 설명할 수 있어야 한다. 약화(assert 삭제, 범위 확대)는 금지한다.
 - 모든 변경은 `tests/signal_defects_evidence/existing-tests.diff`에 R id와 함께 기록한다.
 - 이전 run의 `tests/*_evidence/base_manifest.json` 재생성이 필요하면 main이 run 1과 같은 절차로 한다. 출처는 `tests/signal_defects_evidence/manifest-regeneration.md`. test role은 그 diff를 보지 않는다.
@@ -42,6 +43,7 @@ Review evidence:
   1. main이 이 저장소(python), `typescript-nestjs-realworld`, `android-nowinandroid`, `futuramaapi`, `fastapi-realworld`를 base_commit과 HEAD에서 file·symbol granularity로 `--bottlenecks` 분석한다.
   2. kind별 후보 수, non-test 파일 중 `unresolved_boundary`·`evidence_spread` 후보 비율, 노드 `flags` 차이, `untested_hub` 차이를 집계한다.
   3. kind별로 사라지거나 생긴 후보를 최대 10개씩 열어 R id를 기록한다.
+  4. 2–3은 `tests/signal_defects_evidence/review_diff.py`로 자동화한다(노드 집합·flags·metadata·edge multiset·key path·후보·구조 지표 비교, 결과 `review-output/<input>-<mode>.json`). 실행 절차는 `review.md`.
 - 기대 결과: R1–R10으로 설명되지 않는 변화 0건. 이 저장소 file 모드 non-test 파일의 `unresolved_boundary` 비율 < 71%, `evidence_spread` 비율 < 77%(handoff 측정값 대비 감소; 감소 폭은 기록만 한다).
 
 Fuzzing:
@@ -175,6 +177,7 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 | D10 | `versions.analysis` "4" → "5", schema 이름 유지 | pagerank 정의 변경; delta는 versions를 비교하지 않음(`bottlenecks/delta.py`) | brief v1 — approved |
 | D11 | 변경 줄 branch coverage 90%, fuzz A 언어별 1,000·B 2,000, hand mutation 8–10, mutation tool 30개, 성능 비율 ≤ 1.25 | run 1·2 관행 | brief v1 — approved |
 | D13 | 기존 크기 비율 테스트(`test_structure_integration.py::test_V11_size_ratio_per_fixture`)는 비율 대신 같은 절대 예산으로 판정: structure가 더한 byte ≤ 0.25 × 3회차 이전 base file bytes(android 7430385, fastapi-realworld 851949, futuramaapi 1726473, nestjs 645354). 축소 하한(≥0.95)은 새 base 대비 유지 | R1·R5로 base가 작아져 futuramaapi 비율 1.334(추가분 407845 byte는 전후 동일). 이전 run의 허용 증가량을 그대로 보존하므로 약화 아님 | brief v1 — default (사용자에게 보고, veto 가능) |
+| D14 | 기존 테스트의 의도 보존 입력·oracle 변경 허용(Paths) | verifier 1 SC1; R1·R5·R7이 기존 fixture가 기대던 동작을 바꿈 | user answer |
 | D12 | ADR `31d2dee6912427d5`의 pagerank 정의 갱신은 완료 후 사용자에게 제안만 한다 | AGENTS.md ADR 규칙 | brief v1 — approved |
 
 # Traceability
@@ -200,28 +203,28 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 3 |
-| verifier invocations | 1 |
+| correction batches used | 4 |
+| verifier invocations | 2 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 4 | tests/test_signal_defects.py::test_V1_* | pending (verifier 1) | hand M8 killed; fuzz A python 1,000 위반 0 | — |
-| V2 | 4 | test_V2_* | pending | hand M9 killed; fuzz A typescript 1,000 위반 0 | — |
-| V3 | 4 | test_V3_* | pending | fuzz A kotlin 1,000 위반 0 | — |
-| V4 | 4 | test_V4_* | pending | — | — |
-| V5 | 4 | test_V5_* | pending | hand M6 killed | — |
-| V6 | 4 | test_V6_* (batch 1 TD2·TD3, batch 3 dynamic·non-UTF-8 추가) | pending | hand M10 killed; tool 3·8·25 재실행 killed | v4 coverage item 추가 |
-| V7 | 4 | test_V7_* | pending | hand M3·M4·M5 killed | — |
-| V8 | 4 | test_V8_* | pending | — | — |
-| V9 | 4 | test_V9_* | pending | hand M1·M2 killed; fuzz B 2,000 위반 0 | — |
-| V10 | 4 | test_V10_* (batch 1 TD1, batch 3 line boundary) | pending | hand M7 killed; tool 10 재실행 killed | v4 coverage item 추가 |
-| V11 | 4 | test_V11_* | pending | hand M11 killed | — |
-| V12 | 4 | tests/signal_defects_evidence/review.md, existing suite, existing-tests.diff, manifest-regeneration.md | pending | tool 11·19·26·29 existing suite kill | base manifests·O11 archive 재생성 |
-| V13 | 4 | tests/signal_defects_evidence/fuzz-run.log | pending | 5,000 executions, 위반 0 | — |
-| V14 | 4 | review.md Performance | pending | 0.78–0.98 | — |
-| V15 | 4 | Test command | pending | diff coverage 97.9% | — |
+| V1 | 5 | tests/test_signal_defects.py::test_V1_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M8 killed; fuzz A python 1,000 위반 0 | — |
+| V2 | 5 | test_V2_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M9 killed; fuzz A typescript 1,000 위반 0 | — |
+| V3 | 5 | test_V3_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | fuzz A kotlin 1,000 위반 0 | — |
+| V4 | 5 | test_V4_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | — | — |
+| V5 | 5 | test_V5_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M6 killed | — |
+| V6 | 5 | test_V6_* (batch 1 TD2·TD3, batch 3 dynamic·non-UTF-8 추가) | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M10 killed; tool 3·8·25 재실행 killed | v4 coverage item 추가 |
+| V7 | 5 | test_V7_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M3·M4·M5 killed | — |
+| V8 | 5 | test_V8_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | — | — |
+| V9 | 5 | test_V9_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M1·M2 killed; fuzz B 2,000 위반 0 | — |
+| V10 | 5 | test_V10_* (batch 1 TD1, batch 3 line boundary) | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M7 killed; tool 10 재실행 killed | v4 coverage item 추가 |
+| V11 | 5 | test_V11_* | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | hand M11 killed | — |
+| V12 | 5 | review.md (rewritten), review_diff.py, review_run.sh, review-output/*.json, existing-tests.diff, manifest-regeneration.md | pending (verifier 2) | verifier 1 F1(review 집계 부족)·SC1(Paths) → 자동 diff 10개 출력 unexplained 0, D14 | mutant 11·19·26·29 existing suite kill 기록 |
+| V13 | 5 | tests/signal_defects_evidence/fuzz-run.log | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | 5,000 executions, 위반 0 | — |
+| V14 | 5 | review.md Performance | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | 0.78–0.98 | — |
+| V15 | 5 | Test command | accepted (verifier 1; v5 changes only Paths/V12 procedure, not this obligation's tests or dependencies) | diff coverage 97.9% | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
@@ -235,6 +238,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 7 | mutation tool 9 survived (30%) | triage: 8·25·10 declared gap, 3 undeclared, 22 equivalent, 11·19·26·29 V12 | spec v4 coverage item, batch 3 | 3·8·10·25 killed |
 | 8 | mutant 3 batch 3 후에도 survived | 비 UTF-8 offset은 READS/WRITES 제외에만 쓰임(verified) | 비 UTF-8 테스트에 READS/WRITES 관찰 추가(한 줄 object는 기존 analyzer가 field 미수집) | killed |
 | 9 | 컨테이너 재시작으로 Test command 중단 | 외부 | 재실행 | 3098 passed, diff coverage 97.9% |
+| 10 | verifier 1 RETRY: F1 V12 review에 flags·edge·key 비교와 kind별 표본 없음, SC1 Paths가 입력 변경 미허용 | review가 수작업 표본 위주(verified) / spec 공백(verified) | `review_diff.py` 자동 비교(R4 attribution은 member가 같은 edge를 가질 때만, 처음의 느슨한 규칙은 폐기), D14 user answer | 10개 출력 unexplained 0 |
 
 # Version Log
 ## v1
@@ -245,3 +249,5 @@ Execution ledger (append attempts; preserve failed approaches):
 - Contract-only: D13 추가(크기 비율 테스트를 이전 허용 증가량의 절대 예산으로 판정). base_manifest 재생성 결과 `tests/signal_defects_evidence/manifest-regeneration.md`. architecture_rules·delta·external_rules manifest는 `large_node_token_threshold` 키 없이 생성(기존 helper가 추가 키를 제거하고 비교).
 ## v4
 - Contract-only: mutation tool 생존 mutant triage(8·25 → V6 dynamic 대조, 10 → V10 line boundary, 3 → V6 비 UTF-8 귀속)로 coverage item 추가. 22 equivalent(TS 심볼 id 형식 `ts:<file>#<qualname>`), 11·26·29·19는 기존 suite(V12)가 kill.
+## v5
+- Paths에 D14 추가(의도 보존 입력·oracle 변경 허용, user answer), Review evidence 절차에 `review_diff.py` 자동화 단계 추가. verifier 1 SC1·F1 대응. V12 외 acceptance 유지(해당 테스트·의존성 불변).

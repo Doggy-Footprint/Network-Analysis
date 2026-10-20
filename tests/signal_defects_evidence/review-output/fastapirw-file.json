@@ -1,0 +1,573 @@
+{
+ "input": "fastapirw",
+ "mode": "file",
+ "unexplained": [],
+ "nodes": {
+  "base": 98,
+  "head": 98,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {},
+ "metadata_changes": {
+  "analysis (R7/R4)": 98,
+  "external_call_count (R1/R3)": 49
+ },
+ "edges": {
+  "base": 726,
+  "head": 726,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
+  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.start_line (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].confidence.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_calls.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.end_line (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_reference_truncated (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_reference_limit (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.file_path (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_reference_total (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].resolution.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].name (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references (R1/R5)": 1,
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 49,
+  "+$.metrics.token_count (R1/R3/R8)": 1,
+  "+$.metrics.token_threshold (R1/R3/R8)": 1,
+  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 5
+ },
+ "schema": "bottlenecks.v8",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "dependency_cycle": {
+   "base": 5,
+   "head": 5,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "evidence_spread": {
+   "base": 44,
+   "head": 41,
+   "removed": 3,
+   "added": 0,
+   "changed": 24,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:tests/conftest.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/api/errors/validation_error.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/services/security.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/services/jwt.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/models/schemas/rwschema.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/main.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/models/domain/users.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 27,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 26,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/db/queries/queries.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/db/repositories/tags.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/api/dependencies/authentication.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/core/settings/production.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/api/routes/comments.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/api/routes/tags.py",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "large_node": {
+   "base": 1,
+   "head": 1,
+   "removed": 0,
+   "added": 0,
+   "changed": 1,
+   "samples": [
+    {
+     "change": "changed",
+     "target": "file:postman/Conduit.postman_collection.json",
+     "why": "R8",
+     "metrics": [
+      {
+       "line_count": 2136,
+       "line_threshold": 2000
+      },
+      {
+       "line_count": 2136,
+       "line_threshold": 2000,
+       "token_count": 19538,
+       "token_threshold": 24000
+      }
+     ]
+    }
+   ]
+  },
+  "package_cycle": {
+   "base": 4,
+   "head": 4,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "unresolved_boundary": {
+   "base": 49,
+   "head": 0,
+   "removed": 49,
+   "added": 0,
+   "changed": 0,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:app/db/migrations/versions/fdf8821871d7_main_tables.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 62
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/services/security.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 4
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/api/routes/authentication.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 8
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:tests/test_db/test_queries/test_tables.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/db/queries/tables.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/api/dependencies/authentication.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 9
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/db/repositories/articles.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 31
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/api/errors/http_error.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/api/routes/profiles.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 6
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:tests/conftest.py",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    }
+   ]
+  },
+  "unstable_dependency": {
+   "base": 17,
+   "head": 17,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "untested_hub": {
+   "base": 7,
+   "head": 5,
+   "removed": 2,
+   "added": 0,
+   "changed": 5,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:app/core/logging.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.021907842708205776,
+       "pagerank_rank": 8,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:app/db/queries/queries.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.019635781820326433,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/db/repositories/base.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.029217710599357218,
+       "pagerank_rank": 4,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.022020686741885082,
+       "pagerank_rank": 6,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/models/common.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.025220898167314255,
+       "pagerank_rank": 6,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.02572112023724339,
+       "pagerank_rank": 4,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/core/settings/app.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.038799993313121874,
+       "pagerank_rank": 3,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.02663747894296298,
+       "pagerank_rank": 3,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/core/settings/base.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.025368209122493466,
+       "pagerank_rank": 5,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.02016882646410854,
+       "pagerank_rank": 7,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:app/models/domain/profiles.py",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.023672805284580448,
+       "pagerank_rank": 7,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.024183549202185056,
+       "pagerank_rank": 5,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

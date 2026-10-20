@@ -1,0 +1,480 @@
+{
+ "input": "nestjs",
+ "mode": "symbol",
+ "unexplained": [],
+ "nodes": {
+  "base": 268,
+  "head": 268,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {
+  "-ambiguous_name (R6)": 82
+ },
+ "metadata_changes": {
+  "unresolved_calls (R1/R3)": 64,
+  "unresolved_references (R1/R3)": 64,
+  "analysis (R7/R4)": 268,
+  "external_call_count (R1/R3)": 64,
+  "external_calls (R1/R3)": 64
+ },
+ "edges": {
+  "base": 669,
+  "head": 669,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 64,
+  "+$.metadata.external_calls.<map> (R1/R3/R8)": 64,
+  "-$.metadata.unresolved_references[].resolution.<map> (R1/R5)": 64,
+  "-$.metadata.unresolved_references (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].evidence.file_path (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].evidence (R1/R5)": 64,
+  "-$.metadata.unresolved_calls.<map> (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].evidence.end_line (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].evidence.start_line (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].name (R1/R5)": 64,
+  "-$.metadata.unresolved_references[].confidence.<map> (R1/R5)": 64
+ },
+ "schema": "bottlenecks.v6",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "evidence_spread": {
+   "base": 137,
+   "head": 94,
+   "removed": 43,
+   "added": 0,
+   "changed": 89,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.service.ts#UserService.generateJWT",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/tag/tag.entity.ts#TagEntity.tag",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/article.entity.ts#ArticleEntity.favoriteCount",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/profile/profile.module.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/user/dto/create-user.dto.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/article.service.ts#ArticleService.addComment",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/article.service.ts#ArticleService.unFavorite",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/profile/profile.controller.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.controller.ts#UserController",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/profile/profile.service.ts#ProfileService.findProfile",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/user/dto/login-user.dto.ts#LoginUserDto",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/article/article.service.ts#ArticleService.findOne",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/user/user.service.ts#UserService",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/user/user.decorator.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/article/article.interface.ts#ArticlesRO",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/article/article.service.ts#ArticleService.findAll",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/user/user.entity.ts#UserEntity.image",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/article/article.entity.ts#ArticleEntity.description",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/profile/profile.service.ts#ProfileService",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "ts:src/article/comment.entity.ts#Comment",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "base": 68,
+   "head": 4,
+   "removed": 64,
+   "added": 0,
+   "changed": 0,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.entity.ts#UserEntity.hashPassword",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/article.service.ts#ArticleService.findAll",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 13
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/article.entity.ts#ArticleEntity.body",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.entity.ts#UserEntity.bio",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/shared/pipes/validation.pipe.ts#ValidationPipe.buildError",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/profile/profile.service.ts#ProfileService.follow",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.controller.ts#UserController.login",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/user/user.decorator.ts#User",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/profile/follows.entity.ts#FollowsEntity.followingId",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "ts:src/article/comment.entity.ts#Comment.article",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

@@ -96,7 +96,14 @@
   "line": 285,
   "kind": "str",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "existing_suite_check": {
+   "command": "tests/test_bottlenecks_v3.py tests/test_search_mimicry_schema_and_structure.py",
+   "result": "killed",
+   "failed": [
+    "tests/test_search_mimicry_schema_and_structure.py::test_V5_O2_file_output_is_v7_with_granularity_file"
+   ]
+  }
  },
  {
   "id": 12,
@@ -160,7 +167,14 @@
   "line": 269,
   "kind": "str",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "existing_suite_check": {
+   "command": "tests/test_bottlenecks_v3.py tests/test_search_mimicry_schema_and_structure.py",
+   "result": "killed",
+   "failed": [
+    "tests/test_bottlenecks_v3.py::test_V6_edge_weights_section_echoes_the_loaded_configuration"
+   ]
+  }
  },
  {
   "id": 20,
@@ -184,7 +198,13 @@
   "line": 834,
   "kind": "str",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "existing_suite_check": {
+   "command": "tests/test_bottlenecks_v3.py tests/test_search_mimicry_schema_and_structure.py",
+   "result": "survived",
+   "failed": []
+  },
+  "triage": "equivalent: TS symbol ids are always 'ts:<file>#<qualname>' (_symbol_id), so no id equals '' or '_x'"
  },
  {
   "id": 23,
@@ -217,7 +237,14 @@
   "line": 285,
   "kind": "str",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "existing_suite_check": {
+   "command": "tests/test_bottlenecks_v3.py tests/test_search_mimicry_schema_and_structure.py",
+   "result": "killed",
+   "failed": [
+    "tests/test_search_mimicry_schema_and_structure.py::test_V5_O2_file_output_is_v7_with_granularity_file"
+   ]
+  }
  },
  {
   "id": 27,
@@ -241,6 +268,13 @@
   "line": 285,
   "kind": "str",
   "pos": 0,
-  "result": "survived"
+  "result": "survived",
+  "existing_suite_check": {
+   "command": "tests/test_bottlenecks_v3.py tests/test_search_mimicry_schema_and_structure.py",
+   "result": "killed",
+   "failed": [
+    "tests/test_search_mimicry_schema_and_structure.py::test_V5_O2_file_output_is_v7_with_granularity_file"
+   ]
+  }
  }
 ]

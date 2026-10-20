@@ -1,0 +1,725 @@
+{
+ "input": "nestjs",
+ "mode": "file",
+ "unexplained": [],
+ "nodes": {
+  "base": 42,
+  "head": 42,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {},
+ "metadata_changes": {
+  "analysis (R7/R4)": 42,
+  "external_call_count (R1/R3)": 20
+ },
+ "edges": {
+  "base": 407,
+  "head": 407,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.details.nodes[].metadata.external_calls.<map> (R1/R3/R8)": 1,
+  "+$.details.nodes[].metadata.external_call_count (R1/R3/R8)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_calls.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].confidence.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].name (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].resolution.<map> (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.end_line (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.file_path (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references (R1/R5)": 1,
+  "-$.details.nodes[].metadata.unresolved_references[].evidence.start_line (R1/R5)": 1,
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 20,
+  "-$.evidence[].metadata.occurrence_lines (R1/R5)": 17,
+  "-$.evidence[].unresolved_references[].evidence.start_line (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].evidence.end_line (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].confidence.<map> (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].resolution.<map> (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].name (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].evidence.file_path (R1/R5)": 3,
+  "-$.evidence[].unresolved_references[].evidence (R1/R5)": 3,
+  "-$.evidence[].node_id (R1/R5)": 1,
+  "-$.evidence[].unresolved_references (R1/R5)": 1,
+  "-$.evidence[].flags (R1/R5)": 1
+ },
+ "schema": "bottlenecks.v8",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "dependency_cycle": {
+   "base": 3,
+   "head": 3,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "evidence_spread": {
+   "base": 33,
+   "head": 25,
+   "removed": 8,
+   "added": 0,
+   "changed": 20,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:src/app.module.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/article/article.module.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/app.controller.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/profile/profile.controller.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/tag/tag.module.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/profile/profile.module.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/main.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/shared/pipes/validation.pipe.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/profile/profile.service.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/comment.entity.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 14,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/article.service.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/dto/create-comment.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/tag/tag.service.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/dto/create-article.dto.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/tag/tag.controller.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/dto/update-user.dto.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/user.entity.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 19,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 18,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "isolated_node": {
+   "base": 1,
+   "head": 1,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "package_cycle": {
+   "base": 3,
+   "head": 3,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "unresolved_boundary": {
+   "base": 21,
+   "head": 4,
+   "removed": 17,
+   "added": 0,
+   "changed": 3,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:src/article/article.entity.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 13
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/user.module.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/auth.middleware.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 5
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/article/article.module.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/profile/profile.module.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/user.decorator.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/dto/create-user.dto.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/tag/tag.entity.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/dto/login-user.dto.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/main.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 11
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/article.service.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 46
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/user.service.ts",
+     "why": "R1/R3/R4",
+     "metrics": [
+      {
+       "unresolved_count": 20
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    }
+   ]
+  },
+  "unstable_dependency": {
+   "base": 7,
+   "head": 7,
+   "removed": 0,
+   "added": 0,
+   "changed": 0,
+   "samples": []
+  },
+  "untested_hub": {
+   "base": 9,
+   "head": 8,
+   "removed": 3,
+   "added": 2,
+   "changed": 6,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "file:src/article/dto/create-comment.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.027738826874728853,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/profile/follows.entity.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.03456886499553304,
+       "pagerank_rank": 9,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "file:src/user/dto/login-user.dto.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.03981995051328113,
+       "pagerank_rank": 7,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      null
+     ]
+    },
+    {
+     "change": "added",
+     "target": "file:src/user/user.module.ts",
+     "why": "R7",
+     "metrics": [
+      null,
+      {
+       "pagerank": 0.029411203514246313,
+       "pagerank_rank": 5,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "added",
+     "target": "file:src/user/user.service.ts",
+     "why": "R7",
+     "metrics": [
+      null,
+      {
+       "pagerank": 0.029887755536890645,
+       "pagerank_rank": 4,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/dto/create-user.dto.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.04307890218363473,
+       "pagerank_rank": 6,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.028140284498563324,
+       "pagerank_rank": 9,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/article.entity.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.21061499694558716,
+       "pagerank_rank": 1,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.04096522733510741,
+       "pagerank_rank": 3,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/dto/update-user.dto.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.04465206477650761,
+       "pagerank_rank": 4,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.028117678940575326,
+       "pagerank_rank": 10,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/user/user.entity.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.15071508470896372,
+       "pagerank_rank": 2,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.04217320713063471,
+       "pagerank_rank": 2,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/dto/create-article.dto.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.03531656715435328,
+       "pagerank_rank": 8,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.028421608476267842,
+       "pagerank_rank": 7,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "file:src/article/comment.entity.ts",
+     "why": "R7",
+     "metrics": [
+      {
+       "pagerank": 0.11753822395797187,
+       "pagerank_rank": 3,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      },
+      {
+       "pagerank": 0.028206090708215482,
+       "pagerank_rank": 8,
+       "top_n": 10,
+       "uncertain_test_edge_count": 0
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

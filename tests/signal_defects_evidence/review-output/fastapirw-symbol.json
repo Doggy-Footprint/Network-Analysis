@@ -1,0 +1,486 @@
+{
+ "input": "fastapirw",
+ "mode": "symbol",
+ "unexplained": [],
+ "nodes": {
+  "base": 601,
+  "head": 601,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {
+  "-ambiguous_name (R6)": 124
+ },
+ "metadata_changes": {
+  "analysis (R7/R4)": 601,
+  "external_call_count (R1/R3)": 144,
+  "external_calls (R1/R3)": 144,
+  "unresolved_calls (R1/R3)": 144,
+  "unresolved_references (R1/R3)": 144,
+  "unresolved_reference_total (R1/R3)": 1,
+  "unresolved_reference_limit (R1/R3)": 1,
+  "unresolved_reference_truncated (R1/R3)": 1
+ },
+ "edges": {
+  "base": 1787,
+  "head": 1787,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_call_count (R1/R3/R8)": 144,
+  "+$.metadata.external_calls.<map> (R1/R3/R8)": 144,
+  "-$.metadata.unresolved_calls.<map> (R1/R5)": 144,
+  "-$.metadata.unresolved_references (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].evidence.file_path (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].evidence.start_line (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].evidence (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].confidence.<map> (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].evidence.end_line (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].name (R1/R5)": 144,
+  "-$.metadata.unresolved_references[].resolution.<map> (R1/R5)": 144,
+  "-$.metadata.unresolved_reference_truncated (R1/R5)": 1,
+  "-$.metadata.unresolved_reference_limit (R1/R5)": 1,
+  "-$.metadata.unresolved_reference_total (R1/R5)": 1
+ },
+ "schema": "bottlenecks.v6",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "evidence_spread": {
+   "base": 191,
+   "head": 98,
+   "removed": 93,
+   "added": 0,
+   "changed": 95,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "py:app.api.routes.tags",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.services.security",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.core.settings.test",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.models.domain.users#UserInDB.change_password",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.queries.tables#Parameter",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.models.schemas.articles#ArticleInUpdate",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.main",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.events#close_db_connection",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.repositories.users#UsersRepository.update_user",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.services.articles#check_user_can_modify_article",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.services.authentication#check_email_is_taken",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.schemas.comments#ListOfCommentsInResponse",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.domain.comments",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.core.settings.base#BaseAppSettings.Config",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.domain.profiles#Profile",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.api.dependencies.database#get_repository",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 11,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.domain.articles",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.schemas.rwschema#RWSchema.Config",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.models.schemas.profiles#ProfileInResponse",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:app.services.jwt",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "base": 144,
+   "head": 0,
+   "removed": 144,
+   "added": 0,
+   "changed": 0,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "py:app.core.settings.app#AppSettings.configure_logging",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.api.routes.articles.articles_common#mark_article_as_favorite",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_api.test_routes.test_users#test_user_can_update_own_profile",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 4
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.repositories.comments#CommentsRepository.get_comment_by_id",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.api.dependencies.articles#check_article_modification_permissions",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_api.test_routes.test_articles#test_user_will_receive_only_following_articles",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 7
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.repositories.articles#ArticlesRepository.add_article_into_favorites",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_api.test_routes.test_articles#test_user_can_update_article",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 8
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.queries.queries",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:app.db.repositories.comments#CommentsRepository.create_comment_for_article",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}

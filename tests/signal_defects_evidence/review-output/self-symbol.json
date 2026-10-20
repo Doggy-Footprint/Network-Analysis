@@ -1,0 +1,624 @@
+{
+ "input": "self",
+ "mode": "symbol",
+ "unexplained": [],
+ "nodes": {
+  "base": 10596,
+  "head": 10596,
+  "added": [],
+  "removed": []
+ },
+ "flag_changes": {
+  "-ambiguous_name (R6)": 1210
+ },
+ "metadata_changes": {
+  "analysis (R7/R4)": 10596,
+  "unresolved_references (R1/R3)": 2537,
+  "external_call_count (R1/R3)": 2537,
+  "unresolved_calls (R1/R3)": 2537,
+  "external_calls (R1/R3)": 2537,
+  "unresolved_reference_limit (R1/R3)": 79,
+  "unresolved_reference_truncated (R1/R3)": 79,
+  "unresolved_reference_total (R1/R3)": 81
+ },
+ "edges": {
+  "base": 67602,
+  "head": 67602,
+  "changes": {}
+ },
+ "key_paths": {
+  "+$.edge_weights.large_node_token_threshold (R1/R3/R8)": 1,
+  "+$.metadata.external_calls.<map> (R1/R3/R8)": 2537,
+  "+$.metadata.external_call_count (R1/R3/R8)": 2537,
+  "-$.metadata.unresolved_references[].name (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].confidence.<map> (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].evidence.end_line (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].evidence.start_line (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].evidence (R1/R5)": 2536,
+  "-$.metadata.unresolved_references (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].evidence.file_path (R1/R5)": 2536,
+  "-$.metadata.unresolved_references[].resolution.<map> (R1/R5)": 2536,
+  "-$.metadata.unresolved_calls.<map> (R1/R5)": 2536,
+  "-$.metadata.unresolved_reference_total (R1/R5)": 79,
+  "-$.metadata.unresolved_reference_truncated (R1/R5)": 79,
+  "-$.metadata.unresolved_reference_limit (R1/R5)": 79,
+  "+$.metadata.unresolved_reference_total (R1/R3/R8)": 2,
+  "-$.evidence[].evidence.end_line (R1/R5)": 29,
+  "-$.evidence[].evidence.file_path (R1/R5)": 29,
+  "-$.evidence[].evidence (R1/R5)": 29,
+  "-$.evidence[].confidence.<map> (R1/R5)": 29,
+  "-$.evidence[].name (R1/R5)": 29,
+  "-$.evidence[].resolution.<map> (R1/R5)": 29,
+  "-$.evidence[].evidence.start_line (R1/R5)": 29
+ },
+ "schema": "bottlenecks.v6",
+ "versions": [
+  {
+   "analysis": "4"
+  },
+  {
+   "analysis": "5"
+  }
+ ],
+ "candidates": {
+  "evidence_spread": {
+   "base": 1106,
+   "head": 637,
+   "removed": 469,
+   "added": 0,
+   "changed": 629,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "py:archive.agent_view.models#Occurrence.line",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:framework_analyzers.android.models#RoomQueryMethodInfo",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_android_graph_contract",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.delta_evidence.fuzz.fuzz#target",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:language_analyzers.kotlin.analyzer#KotlinProjectArchitecture.edges",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:analysis.graph_metrics#GraphAnalyzer._estimate_neighborhood_bitset_bytes",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:archive.agent_view.models#ScanReport",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.structure_support#without_structure_facts",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_report_modal#open_modal",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.external_rules_support#names_by_file",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:archive.agent_view.models#ReadUnit.end_line",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:framework_analyzers.route_matching#match_routes",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:framework_analyzers.android.models#DaggerComponentInfo.id",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:language_analyzers.typescript.ast#end_line",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:repository.models#RepositorySnapshot.root",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:scripts.benchmark_hops#build_graph",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.unified_support#CORE",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.delta_support#cycle",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.report_redesign_support#control",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:language_analyzers.core.cost#cost_for_span",
+     "why": "R5",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ]
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "base": 2546,
+   "head": 39,
+   "removed": 2507,
+   "added": 0,
+   "changed": 30,
+   "samples": [
+    {
+     "change": "removed",
+     "target": "py:tests.test_delta#pairs_of",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_cli_sqlalchemy#CliFixture.run_main.<locals>.capturing_factory",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:analysis.architecture_rules#_parse_allow",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:framework_analyzers.fastapi.graph#ArchitectureGraphBuilder._find_deps_by_name",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_delta#test_V05_C13_key_order_is_irrelevant",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_report_compat#file_inputs",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_file_analysis_cli#test_V01_single_cli_order_one_final_metrics.<locals>.build",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_repository_scan#SnapshotMetadataTests.test_VO11_F2_invalid_utf8_is_replaced",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:tests.test_nestjs_analyzer#TestDeclarations.test_O1_export_wrappers_siblings_alias_namespace_and_unrelated_decorator",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 5
+      },
+      null
+     ]
+    },
+    {
+     "change": "removed",
+     "target": "py:language_analyzers.python.symbols#_ModuleCollector._import",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      null
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_typescript_analyzer#TestTypeScriptAnalyzer._analyze",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_repository_scan#PolicyLoadingTests.test_VO2_V1_default_policy_matches_snapshot_v1_yaml",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 11
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:scripts.benchmark_file_analysis#worker",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 20
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_typescript_analyzer#TestTypeScriptAnalyzer.test_language_analyzer_package_does_not_depend_on_framework_analyzers",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 11
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:framework_analyzers.android.graph#AndroidArchitectureGraphBuilder.build_graph.<locals>.by_name",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_analysis_coverage_reporting#test_V04_source_and_build_only_apis",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 1
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_search_mimicry_schema_and_structure#test_V7_F11_graph_analyzer_has_no_disk_fallback_state",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 2
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.coverage_reporting_support#adapter",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 3
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:tests.test_typescript_analyzer#TestTypeScriptAnalyzer.test_C_2_snapshot_analysis_uses_captured_source_after_repository_is_removed",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 14
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    },
+    {
+     "change": "changed",
+     "target": "py:language_analyzers.python.symbols#_ModuleCollector._visit_body",
+     "why": "R1/R3",
+     "metrics": [
+      {
+       "unresolved_count": 7
+      },
+      {
+       "unresolved_count": 0
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "structural_metric_changes": {}
+}
