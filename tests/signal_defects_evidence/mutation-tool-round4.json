@@ -1,0 +1,242 @@
+[
+ {
+  "id": 0,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 256,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 1,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 122,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 2,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 249,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 3,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 4,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 281,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 5,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 6,
+  "file": "report/bottlenecks/generate.py",
+  "line": 58,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 7,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 96,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 8,
+  "file": "bottlenecks/core.py",
+  "line": 218,
+  "kind": "bool",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 9,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 10,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "bool",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 11,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 206,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 12,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 112,
+  "kind": "negate",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 13,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 14,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "cmp",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 15,
+  "file": "bottlenecks/core.py",
+  "line": 220,
+  "kind": "str",
+  "pos": 0,
+  "result": "survived"
+ },
+ {
+  "id": 16,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 281,
+  "kind": "str",
+  "pos": 0,
+  "result": "survived"
+ },
+ {
+  "id": 17,
+  "file": "bottlenecks/core.py",
+  "line": 288,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 18,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 110,
+  "kind": "bool",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 19,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 20,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 88,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 21,
+  "file": "report/bottlenecks/generate.py",
+  "line": 30,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 22,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 23,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 24,
+  "file": "language_analyzers/kotlin/ast.py",
+  "line": 110,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 25,
+  "file": "bottlenecks/core.py",
+  "line": 157,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 26,
+  "file": "bottlenecks/core.py",
+  "line": 288,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 27,
+  "file": "bottlenecks/core.py",
+  "line": 220,
+  "kind": "str",
+  "pos": 0,
+  "result": "survived"
+ },
+ {
+  "id": 28,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 281,
+  "kind": "const",
+  "pos": 0,
+  "result": "killed"
+ },
+ {
+  "id": 29,
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "line": 206,
+  "kind": "str",
+  "pos": 0,
+  "result": "killed"
+ }
+]
