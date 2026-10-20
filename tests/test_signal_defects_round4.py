@@ -28,6 +28,14 @@ def S(path, a, b=None):
     return SourceSpan(path, a, a if b is None else b)
 
 
+def assert_candidate_record_unchanged(candidate):
+    """R15: fields of an evidence_spread candidate other than metrics keep their 3b768a9 values."""
+    assert candidate['kind'] == 'evidence_spread'
+    assert candidate['coverage'] == 'static_analyzer_relation'
+    assert candidate['status'] == 'static_candidate'
+    assert re.fullmatch(r'b:[0-9a-f]{16}', candidate['id'])
+
+
 def _symbol_spread(tmp_path, target_path, evidence):
     """Target `t` in target_path; one caller node per evidence span. Returns the evidence_spread candidates of `t`."""
     paths = {target_path, 'w.py', *(s.file_path for s in evidence)} - {None}
@@ -76,6 +84,7 @@ def test_V1_symbol_mode_decision_table(tmp_path, case):
     else:
         assert len(found) == 1
         assert found[0]['metrics'] == expected
+        assert_candidate_record_unchanged(found[0])
         assert {(r['path'], r['start_line']) for r in evidence_rows(found[0])} == {(s.file_path, s.start_line) for s in evidence}
 
 
@@ -96,6 +105,7 @@ def test_V1_C1_project_two_external_directories_fire(tmp_path):
     found = _f_candidates(pipeline(root, tmp_path, 'symbol', 'python', name='c1'), 'a.t')
     assert len(found) == 1
     assert found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': 2000}
+    assert_candidate_record_unchanged(found[0])
 
 
 def test_V1_C2_project_one_external_directory_two_files_no_candidate(tmp_path):
@@ -141,6 +151,7 @@ def test_V2_file_mode_decision_table(tmp_path, case):
         assert found == []
     else:
         assert len(found) == 1 and found[0]['metrics'] == expected
+        assert_candidate_record_unchanged(found[0])
         assert {r['path'] for r in evidence_rows(found[0])} == {s.file_path for s in evidence}
 
 
@@ -150,6 +161,7 @@ def test_V2_C5_file_mode_project_matches_symbol_mode(tmp_path):
     found = [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/t.py']
     assert len(found) == 1
     assert found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': 2000}
+    assert_candidate_record_unchanged(found[0])
     quiet = _py_project(tmp_path, 'c5b', ['b/x.py', 'b/y.py'])
     payload = pipeline(quiet, tmp_path, 'file', 'python', name='c5b')
     assert [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/t.py'] == []
@@ -230,6 +242,7 @@ def test_V4_B_object_var_C7(tmp_path):
 def test_V4_B_object_fun_with_call_C9(tmp_path):
     arch = kt(tmp_path, 'object Q { fun f() = g() }\nfun g() = 1\n')
     assert kind_of(node_of(arch, F + 'Q')) == 'class' and node_of(arch, F + 'Q.f')
+    assert node_of(arch, F + 'Q').signature == 'object Q'
     assert has_edge(arch, F + 'Q', 'CONTAINS', F + 'Q.f')
     assert has_edge(arch, FILE, 'DECLARES', F + 'Q')
     assert targets(arch, F + 'Q.f', 'CALLS') == {F + 'g'}
@@ -249,6 +262,7 @@ def test_V4_B_object_scans_exclude_member_ranges_R12b(tmp_path):
 def test_V4_B_data_object(tmp_path):
     arch = kt(tmp_path, 'data object D { val z = 1 }\n')
     assert kind_of(node_of(arch, F + 'D')) == 'class'
+    assert node_of(arch, F + 'D').signature == 'object D'
     assert kind_of(node_of(arch, F + 'D.z')) == 'field'
     assert has_edge(arch, F + 'D', 'CONTAINS', F + 'D.z') and has_edge(arch, FILE, 'DECLARES', F + 'D')
 
@@ -284,6 +298,7 @@ def test_V4_B_nested_one_line_object_inside_recovered_object(tmp_path):
     arch = analyze_files(tmp_path, 'kotlin', {'f.kt': 'package p\n\nobject T {\n    fun f() = g()\n    object N { val w = 1 }\n}\nfun g() = 1\n'})
     for qual, kind in (('T', 'class'), ('T.f', 'method'), ('T.N', 'class'), ('T.N.w', 'field')):
         assert kind_of(node_of(arch, F + qual)) == kind, qual
+    assert node_of(arch, F + 'T').signature == 'object T' and node_of(arch, F + 'T.N').signature == 'object N'
     assert has_edge(arch, F + 'T', 'CONTAINS', F + 'T.N') and has_edge(arch, F + 'T.N', 'CONTAINS', F + 'T.N.w')
     assert targets(arch, F + 'T.f', 'CALLS') == {F + 'g'}
     assert targets(arch, F + 'T', 'CALLS') == set()
