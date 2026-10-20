@@ -111,6 +111,7 @@
     "failed_tests": [
       "test_V6_C9_file_mode_unresolved_count_is_four",
       "test_V6_C9_four_unresolved_calls_belong_to_the_method_only",
+      "test_V6_attribution_is_the_same_for_utf8_and_non_utf8_files",
       "test_V6_call_scan_member_kind_attributed_to_member_not_class",
       "test_V6_control_file_mode_counts_class_plus_method",
       "test_V6_control_init_block_and_primary_constructor_calls_stay_on_the_class"

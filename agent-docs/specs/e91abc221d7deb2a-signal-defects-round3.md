@@ -200,18 +200,41 @@ bottleneck JSON: `edge_weights.large_node_token_threshold`, `large_node` metrics
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 0 |
-| verifier invocations | 0 |
+| correction batches used | 3 |
+| verifier invocations | 1 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1–V15 | 1 | — | pending | — | — |
+| V1 | 4 | tests/test_signal_defects.py::test_V1_* | pending (verifier 1) | hand M8 killed; fuzz A python 1,000 위반 0 | — |
+| V2 | 4 | test_V2_* | pending | hand M9 killed; fuzz A typescript 1,000 위반 0 | — |
+| V3 | 4 | test_V3_* | pending | fuzz A kotlin 1,000 위반 0 | — |
+| V4 | 4 | test_V4_* | pending | — | — |
+| V5 | 4 | test_V5_* | pending | hand M6 killed | — |
+| V6 | 4 | test_V6_* (batch 1 TD2·TD3, batch 3 dynamic·non-UTF-8 추가) | pending | hand M10 killed; tool 3·8·25 재실행 killed | v4 coverage item 추가 |
+| V7 | 4 | test_V7_* | pending | hand M3·M4·M5 killed | — |
+| V8 | 4 | test_V8_* | pending | — | — |
+| V9 | 4 | test_V9_* | pending | hand M1·M2 killed; fuzz B 2,000 위반 0 | — |
+| V10 | 4 | test_V10_* (batch 1 TD1, batch 3 line boundary) | pending | hand M7 killed; tool 10 재실행 killed | v4 coverage item 추가 |
+| V11 | 4 | test_V11_* | pending | hand M11 killed | — |
+| V12 | 4 | tests/signal_defects_evidence/review.md, existing suite, existing-tests.diff, manifest-regeneration.md | pending | tool 11·19·26·29 existing suite kill | base manifests·O11 archive 재생성 |
+| V13 | 4 | tests/signal_defects_evidence/fuzz-run.log | pending | 5,000 executions, 위반 0 | — |
+| V14 | 4 | review.md Performance | pending | 0.78–0.98 | — |
+| V15 | 4 | Test command | pending | diff coverage 97.9% | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 1 | 새 테스트 7 failed (V10 2, V6 5) | test defect: `reach_support.Graph`의 빈 detail 표(verified), Kotlin top-level var 미수집(verified), constructor field 이중 스캔은 범위 밖(verified) | correction batch 1 | 197 passed |
+| 2 | 기존 suite 64 failed: base manifest byte/size 비교 | 이번 run의 의도된 출력 변화(verified) | base manifest 5개 재생성(patch-old 재현 확인 후 patch-r3) | 5 failed 남음 |
+| 3 | `test_V08` versions '4', futuramaapi size ratio 1.334 | 기대값 갱신 필요 / base 축소로 비율 상승(추가분 동일, verified) | correction batch 2, D13 | pass |
+| 4 | O11 8 subfailed | archive 재생성 필요 → 이후 comparator `_spread`가 구 R5 규칙(verified) | archive 재생성, batch 3에서 `_spread` R5 갱신 | pass |
+| 5 | report_modal V04[connection] 1회 실패 | flaky(재실행 3/3 통과, base 통과) | 없음 | advisory |
+| 6 | hand M8 survived 0 failed | probe가 예외 → ERROR로 집계 안 됨(verified) | 하네스가 ERROR를 inconclusive 처리, M8을 `continue` probe로 변경; M11 anchor 2회 → 고유 anchor | 11/11 killed |
+| 7 | mutation tool 9 survived (30%) | triage: 8·25·10 declared gap, 3 undeclared, 22 equivalent, 11·19·26·29 V12 | spec v4 coverage item, batch 3 | 3·8·10·25 killed |
+| 8 | mutant 3 batch 3 후에도 survived | 비 UTF-8 offset은 READS/WRITES 제외에만 쓰임(verified) | 비 UTF-8 테스트에 READS/WRITES 관찰 추가(한 줄 object는 기존 analyzer가 field 미수집) | killed |
+| 9 | 컨테이너 재시작으로 Test command 중단 | 외부 | 재실행 | 3098 passed, diff coverage 97.9% |
 
 # Version Log
 ## v1
