@@ -1,0 +1,122 @@
+[
+  {
+    "id": "M1",
+    "file": "bottlenecks/core.py",
+    "defect": "R11 file count kept as trigger (symbol)",
+    "obligation": "V1",
+    "result": "killed",
+    "failed_tests": [
+      "test_V1_C2_project_one_external_directory_two_files_no_candidate",
+      "test_V1_C3_project_same_directory_caller_plus_one_external_no_candidate",
+      "test_V1_C6_project_root_target_root_caller_and_one_directory_no_candidate",
+      "test_V1_symbol_mode_decision_table"
+    ]
+  },
+  {
+    "id": "M2",
+    "file": "bottlenecks/core.py",
+    "defect": "R11 target directory not excluded (symbol)",
+    "obligation": "V1",
+    "result": "killed",
+    "failed_tests": [
+      "test_V1_C3_project_same_directory_caller_plus_one_external_no_candidate",
+      "test_V1_C6_project_root_target_root_caller_and_one_directory_no_candidate",
+      "test_V1_symbol_mode_decision_table"
+    ]
+  },
+  {
+    "id": "M3",
+    "file": "bottlenecks/core.py",
+    "defect": "R11 target directory not excluded (file)",
+    "obligation": "V2",
+    "result": "killed",
+    "failed_tests": [
+      "test_V2_file_mode_decision_table"
+    ]
+  },
+  {
+    "id": "M4",
+    "file": "bottlenecks/core.py",
+    "defect": "R11 single-file range boundary off by one (file)",
+    "obligation": "V2",
+    "result": "killed",
+    "failed_tests": [
+      "test_V2_file_mode_decision_table"
+    ]
+  },
+  {
+    "id": "M5",
+    "file": "bottlenecks/core.py",
+    "defect": "R11 directory_count reports files (symbol)",
+    "obligation": "V1",
+    "result": "killed",
+    "failed_tests": [
+      "test_V1_symbol_mode_decision_table"
+    ]
+  },
+  {
+    "id": "M6",
+    "file": "report/bottlenecks/generate.py",
+    "defect": "R11r report ranks by file_count",
+    "obligation": "V3",
+    "result": "killed",
+    "failed_tests": [
+      "test_V3_report_ranks_evidence_spread_by_directory_count"
+    ]
+  },
+  {
+    "id": "M7",
+    "file": "language_analyzers/kotlin/ast.py",
+    "defect": "R12 (A) ERROR-wrapped members ignored",
+    "obligation": "V4",
+    "result": "killed",
+    "failed_tests": [
+      "test_V4_A_class_val_C8",
+      "test_V4_A_nested_object",
+      "test_V4_A_object_with_supertype_val",
+      "test_V6_error_inside_a_valid_declaration_keeps_collectable_members"
+    ]
+  },
+  {
+    "id": "M8",
+    "file": "language_analyzers/kotlin/ast.py",
+    "defect": "R12 (B) nested recovered object ignored",
+    "obligation": "V4",
+    "result": "killed",
+    "failed_tests": [
+      "test_V4_B_nested_one_line_object_inside_recovered_object"
+    ]
+  },
+  {
+    "id": "M9",
+    "file": "language_analyzers/kotlin/analyzer.py",
+    "defect": "R13 field scans whole constructor",
+    "obligation": "V5",
+    "result": "killed",
+    "failed_tests": [
+      "test_V5_C12_multi_line_calls_follow_the_parameter_lines",
+      "test_V5_C12_multi_line_constructor_field_span_is_its_own_parameter",
+      "test_V5_C12_signature_and_contains_evidence_use_the_parameter",
+      "test_V5_class_instantiation_in_constructor_keeps_class_attribution",
+      "test_V5_external_calls_in_defaults_are_scanned_per_parameter",
+      "test_V5_parameter_type_use_belongs_to_that_field_only",
+      "test_V5_plain_parameter_default_call_goes_to_class_only",
+      "test_V5_reads_writes_scan_is_limited_to_the_parameter",
+      "test_V5_val_default_call_belongs_to_that_field_only_C11",
+      "test_V5_val_without_default_has_no_calls",
+      "test_V5_var_default_call_belongs_to_that_field_only"
+    ]
+  },
+  {
+    "id": "M10",
+    "file": "bottlenecks/core.py",
+    "defect": "R14 version not bumped",
+    "obligation": "V7",
+    "result": "killed",
+    "failed_tests": [
+      "test_V7_cli_output_declares_version_six",
+      "test_V7_file_bottlenecks_json",
+      "test_V7_symbol_bottlenecks_json"
+    ]
+  }
+]

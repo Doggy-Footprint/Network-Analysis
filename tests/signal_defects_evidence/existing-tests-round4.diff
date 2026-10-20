@@ -1,0 +1,536 @@
+Existing-test changes for spec 3f70cc03aeae9c1a (round 4). Rule: expectations only, intent preserved, nothing weakened.
+Reasons by file (R id: reason):
+- R14 (versions.analysis "6"): test_search_mimicry_metrics.py, test_search_mimicry_schema_and_structure.py (test renamed ..._is_6_...), test_structure_integration.py, legacy_metric_transition_support.py (old "3" payload is converted to the current version), standalone_candidate_policy_support.py (same conversion).
+- R11 (evidence_spread fires on >= 2 directories outside the target's directory, metrics gain directory_count): test_signal_defects.py V7 (files moved into directories a/, b/, c/ so the original file-count cases still hold; metrics gain directory_count), test_bottlenecks_v3.py (evidence_subject and three_kind_subject use b/b.py and c/c.py; single-file cases keep a root target and root evidence so directory_count is 0), test_file_analysis_core.py test_V06_two_files_spread (p/a.py and q/d.py; directory_count 2 asserted additionally), test_ambiguous_candidates.py (VO4 cases: source, user and target files in separate directories; directory_count 2 asserted additionally), standalone_candidate_policy_support._spread (independent oracle now follows R11: directories other than the target's, directory_count in metrics).
+- R11r (card shows directory_count): report_redesign_support.py, file_analysis_browser_support.py, unified_support.py add directory_count to synthetic evidence_spread metrics; test_report_modal.py gives file_count 6 / directory_count 5 and now asserts the card shows 5 and not 6 (stronger than before).
+Not changed here (needs the main role): tests/test_nestjs_quality.py O11 compares against tests/ambiguous_candidates_evidence/standalone-originals.json.gz, whose Kotlin/android raw nodes differ after R13 (constructor field span/cost/signature); the archive must be regenerated as in round 3.
+diff --git a/tests/file_analysis_browser_support.py b/tests/file_analysis_browser_support.py
+index ae3408a..f3d30c9 100644
+--- a/tests/file_analysis_browser_support.py
++++ b/tests/file_analysis_browser_support.py
+@@ -71,7 +71,7 @@ def file_bottlenecks(arch, candidate_count=3):
+     for i in range(candidate_count if arch['nodes'] else 0):
+         kind = ('large_node', 'evidence_spread', 'unresolved_boundary')[i % 3]
+         candidates.append({'id': f'b:{i:016x}', 'kind': kind, 'target': arch['nodes'][i % len(arch['nodes'])]['id'],
+-                           'metrics': {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2},
++                           'metrics': {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'directory_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2},
+                            'evidence': [{'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29}] if kind == 'evidence_spread' else {'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29},
+                            'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'})
+     return {'schema': 'bottlenecks.v8', 'granularity': 'file', 'snapshot': {}, 'versions': {}, 'coverage': {},
+diff --git a/tests/legacy_metric_transition_support.py b/tests/legacy_metric_transition_support.py
+index a44421d..8fc58ae 100644
+--- a/tests/legacy_metric_transition_support.py
++++ b/tests/legacy_metric_transition_support.py
+@@ -31,7 +31,7 @@ def _strip(value):
+             result["schema"] = SCHEMA_RENAMES[result["schema"]]
+             versions = result.get("versions")
+             if isinstance(versions, dict) and versions.get("analysis") == "3":
+-                versions["analysis"] = "5"
++                versions["analysis"] = "6"
+         return result
+     if isinstance(value, list):
+         return [_strip(item) for item in value]
+diff --git a/tests/report_redesign_support.py b/tests/report_redesign_support.py
+index a588094..c17fe02 100644
+--- a/tests/report_redesign_support.py
++++ b/tests/report_redesign_support.py
+@@ -69,7 +69,7 @@ def sym_id(path):
+ 
+ 
+ def candidate(index, kind, path, metrics=None):
+-    default = {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2}
++    default = {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'directory_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2}
+     return {'id': f'b:{index:016x}', 'kind': kind, 'target': file_id(path), 'metrics': metrics or default,
+             'evidence': [{'path': f'candidate-{index}.py', 'start_line': 13, 'end_line': 29}] if kind == 'evidence_spread' else {'path': f'candidate-{index}.py', 'start_line': 13, 'end_line': 29},
+             'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'}
+diff --git a/tests/standalone_candidate_policy_support.py b/tests/standalone_candidate_policy_support.py
+index 3b9e9c1..19c2f13 100644
+--- a/tests/standalone_candidate_policy_support.py
++++ b/tests/standalone_candidate_policy_support.py
+@@ -1,4 +1,5 @@
+ import copy
++import posixpath
+ import hashlib
+ import json
+ import math
+@@ -144,7 +145,7 @@ def _rankings(rankings, metrics, members):
+ 
+ 
+ def _spread(edges, threshold, nodes=None):
+-    # spec e91abc221d7deb2a R5: ownership edges and evidence located in the target's own file are not spread evidence
++    # spec e91abc221d7deb2a R5 + 3f70cc03aeae9c1a R11: ownership edges and evidence in the target's own file are dropped; firing counts directories other than the target's
+     from types import SimpleNamespace
+     from analysis.file_graph import ownership_edge
+     nodes = nodes or {}
+@@ -170,8 +171,10 @@ def _spread(edges, threshold, nodes=None):
+     for target, records in evidence.items():
+         paths = {e['path'] for e in records}
+         extent = max(e['end_line'] for e in records) - min(e['start_line'] for e in records) + 1 if len(paths) == 1 else 0
+-        if len(paths) > 1 or extent > threshold:
+-            expected[target] = ({'file_count': len(paths), 'line_span': extent, 'line_threshold': threshold}, records)
++        own_dir = posixpath.dirname(own_file[target]) if own_file.get(target) else None
++        directories = {posixpath.dirname(path) for path in paths} - {own_dir}
++        if len(directories) >= 2 or (len(paths) == 1 and extent > threshold):
++            expected[target] = ({'file_count': len(paths), 'directory_count': len(directories), 'line_span': extent, 'line_threshold': threshold}, records)
+     return expected
+ 
+ 
+@@ -259,7 +262,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
+     expected_top = {k: copy.deepcopy(v) for k, v in old_report.items() if k not in {'dependency_network', 'candidates'}}
+     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
+     assert expected_top['versions']['analysis'] == '3'
+-    expected_top['versions']['analysis'] = '5'
++    expected_top['versions']['analysis'] = '6'
+     actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
+     if isinstance(actual_top.get('edge_weights'), dict):
+         actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k not in {'untested_hub_top_n', 'large_node_token_threshold'}}
+diff --git a/tests/test_ambiguous_candidates.py b/tests/test_ambiguous_candidates.py
+index 9cb8ec8..81b1b8a 100644
+--- a/tests/test_ambiguous_candidates.py
++++ b/tests/test_ambiguous_candidates.py
+@@ -194,11 +194,11 @@ def test_VO6_unknown_candidate_rejected(tmp_path, boundary):
+ @pytest.mark.parametrize('granularity', ['symbol', 'file', 'collapsed-target-file', 'internal-file-evidence'])
+ def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity):
+     import json
+-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('b', 'b.py'), node('c', 'b.py' if granularity == 'collapsed-target-file' else 'c.py')]
++    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('b', 'tb/b.py'), node('c', 'tb/b.py' if granularity == 'collapsed-target-file' else 'tc/c.py')]
+     if granularity == 'internal-file-evidence':
+-        nodes[0].span = SourceSpan('b.py', 1, 1)
++        nodes[0].span = SourceSpan('tb/b.py', 1, 1)
+     edges = [edge('s', 'b', resolution=Resolution.AMBIGUOUS, candidates=['c', 'c'], evidence=SourceSpan(nodes[0].span.file_path, 1, 1)), edge('u', 'c', resolution=Resolution.AMBIGUOUS, candidates=['b'], evidence=SourceSpan('u.py', 1, 1))]
+-    files = {'a.py': 'x', 'u.py': 'u', 'b.py': 'b', 'c.py': 'c'}
++    files = {'sa/a.py': 'x', 'su/u.py': 'u', 'tb/b.py': 'b', 'tc/c.py': 'c'}
+     snap = snapshot(files)
+     arch = architecture(nodes, edges)
+     if granularity != 'symbol':
+@@ -210,10 +210,11 @@ def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity
+     assert report['dependency_network']['ambiguity_policy'] == POLICY
+     assert report['dependency_network']['edge_count'] == {'symbol': 4, 'file': 4, 'collapsed-target-file': 2, 'internal-file-evidence': 3}[granularity]
+     spread = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
+-    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:b.py'} if granularity == 'collapsed-target-file' else {'file:c.py'} if granularity == 'internal-file-evidence' else {'file:b.py', 'file:c.py'}
++    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:tb/b.py'} if granularity == 'collapsed-target-file' else {'file:tc/c.py'} if granularity == 'internal-file-evidence' else {'file:tb/b.py', 'file:tc/c.py'}
+     assert set(spread) == expected_targets
+     for c in spread.values():
+         assert c['metrics']['file_count'] == 2
++        assert c['metrics']['directory_count'] == 2
+         assert len(c['evidence']) == 2
+         assert {r['start_line'] for r in c['evidence']} == {1}
+         assert 'ambiguous' in json.dumps(c['evidence'])
+@@ -398,18 +399,19 @@ def test_VO3_enrichment_TESTS_each_candidate(tmp_path):
+ 
+ def test_VO4_overlapping_original_evidence_count_once_per_target(tmp_path):
+     import json
+-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('b1', 'b.py'), node('b2', 'b.py'), node('c', 'c.py')]
+-    edges = [edge('s', 'b1', resolution=Resolution.AMBIGUOUS, candidates=['b2', 'c'], evidence=SourceSpan('a.py', 1, 2)),
+-             edge('u', 'b2', resolution=Resolution.AMBIGUOUS, candidates=['b1', 'c'], evidence=SourceSpan('u.py', 3, 4))]
+-    snap, arch = converted({'a.py': 'a\na', 'u.py': 'u\nu\nu\nu', 'b.py': 'b', 'c.py': 'c'}, nodes, edges)
++    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('b1', 'tb/b.py'), node('b2', 'tb/b.py'), node('c', 'tc/c.py')]
++    edges = [edge('s', 'b1', resolution=Resolution.AMBIGUOUS, candidates=['b2', 'c'], evidence=SourceSpan('sa/a.py', 1, 2)),
++             edge('u', 'b2', resolution=Resolution.AMBIGUOUS, candidates=['b1', 'c'], evidence=SourceSpan('su/u.py', 3, 4))]
++    snap, arch = converted({'sa/a.py': 'a\na', 'su/u.py': 'u\nu\nu\nu', 'tb/b.py': 'b', 'tc/c.py': 'c'}, nodes, edges)
+     report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
+     report = recovered_candidate_evidence(report)
+     candidates = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
+-    assert set(candidates) == {'file:b.py', 'file:c.py'}
++    assert set(candidates) == {'file:tb/b.py', 'file:tc/c.py'}
+     for c in candidates.values():
+         assert c['metrics']['file_count'] == 2
++        assert c['metrics']['directory_count'] == 2
+         assert len(c['evidence']) == 2
+-        assert {(e['path'], e['start_line'], e['end_line']) for e in c['evidence']} == {('a.py', 1, 2), ('u.py', 3, 4)}
++        assert {(e['path'], e['start_line'], e['end_line']) for e in c['evidence']} == {('sa/a.py', 1, 2), ('su/u.py', 3, 4)}
+ 
+ 
+ def test_VO7_characterization_exact_unique_unresolved_targets_and_repeat():
+@@ -467,10 +469,10 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
+     import json
+     from collections import Counter
+     groups = [('b', ['c', 'd', 'c']), ('b', ['c', 'd', 'c']), ('b', ['d', 'c', 'c']), ('c', ['b', 'd', 'c']), ('b', ['c', 'd'])]
+-    nodes = [node(f's{i}', f's{i}.py') for i in range(len(groups))] + [node(ident, 'target.py') for ident in 'bcd']
+-    edges = [edge(f's{i}', target, resolution=Resolution.AMBIGUOUS, candidates=alternatives, weight=i + 7, evidence=SourceSpan(f's{i}.py', 1, 1), metadata={'original_marker': i}) for i, (target, alternatives) in enumerate(groups)]
+-    files = {f's{i}.py': f's{i}()\n' for i in range(len(groups))}
+-    files['target.py'] = 'target\n'
++    nodes = [node(f's{i}', f'd{i}/s{i}.py') for i in range(len(groups))] + [node(ident, 'tgt/target.py') for ident in 'bcd']
++    edges = [edge(f's{i}', target, resolution=Resolution.AMBIGUOUS, candidates=alternatives, weight=i + 7, evidence=SourceSpan(f'd{i}/s{i}.py', 1, 1), metadata={'original_marker': i}) for i, (target, alternatives) in enumerate(groups)]
++    files = {f'd{i}/s{i}.py': f's{i}()\n' for i in range(len(groups))}
++    files['tgt/target.py'] = 'target\n'
+     snap = snapshot(files)
+     arch = architecture(nodes, edges)
+     raw = serialize(arch)['edges']
+@@ -491,7 +493,7 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
+         for ordinal, record in enumerate(expected_records):
+             record['detail_edge_index'] = ordinal
+     candidates = [c for c in recovered['candidates'] if c['kind'] == 'evidence_spread']
+-    assert {c['target'] for c in candidates} == ({'b', 'c', 'd'} if granularity == 'symbol' else {'file:target.py'})
++    assert {c['target'] for c in candidates} == ({'b', 'c', 'd'} if granularity == 'symbol' else {'file:tgt/target.py'})
+     for candidate in candidates:
+         assert Counter(fingerprint(record) for record in candidate['evidence']) == Counter(fingerprint(record) for record in expected_records)
+     references = {i: set() for i in range(len(groups))}
+@@ -518,10 +520,10 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
+ 
+ def test_VO4_registry_omitted_for_unchanged_nonambiguous_evidence(tmp_path):
+     import json
+-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('t', 'target.py')]
+-    edges = [edge('s', 't', evidence=SourceSpan('a.py', 1, 1)), edge('u', 't', evidence=SourceSpan('u.py', 2, 2))]
+-    report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot({'a.py': 'a', 'u.py': 'u\nu', 'target.py': 't'}), architecture(nodes, edges), load_weights(tmp_path, weights_data()))))
++    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('t', 'tg/target.py')]
++    edges = [edge('s', 't', evidence=SourceSpan('sa/a.py', 1, 1)), edge('u', 't', evidence=SourceSpan('su/u.py', 2, 2))]
++    report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot({'sa/a.py': 'a', 'su/u.py': 'u\nu', 'tg/target.py': 't'}), architecture(nodes, edges), load_weights(tmp_path, weights_data()))))
+     assert 'candidate_groups' not in report['dependency_network']
+     assert recovered_candidate_evidence(report) == report
+     candidate = next(c for c in report['candidates'] if c['kind'] == 'evidence_spread')
+-    assert candidate['evidence'] == [{'path': 'a.py', 'start_line': 1, 'end_line': 1}, {'path': 'u.py', 'start_line': 2, 'end_line': 2}]
++    assert candidate['evidence'] == [{'path': 'sa/a.py', 'start_line': 1, 'end_line': 1}, {'path': 'su/u.py', 'start_line': 2, 'end_line': 2}]
+diff --git a/tests/test_bottlenecks_v3.py b/tests/test_bottlenecks_v3.py
+index 90255c8..adaacbe 100644
+--- a/tests/test_bottlenecks_v3.py
++++ b/tests/test_bottlenecks_v3.py
+@@ -158,7 +158,8 @@ def test_V6_F13_unresolved_boundary_is_emitted_for_dynamic_relations_only():
+ 
+ def evidence_subject(evidences):
+     """Edges n1->n2, n3->n2 (one target n2), each carrying one evidence span."""
+-    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6, "c.py": "x\n" * 6})
++    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6, "c.py": "x\n" * 6,
++                                      "b/b.py": "x\n" * 6, "c/c.py": "x\n" * 6})
+     nodes = [
+         GraphNode(item, item, "g", "c", span=SourceSpan("a.py", 1, 1), cost=NodeCost(10, 10, 1))
+         for item in ("n1", "n2", "n3")
+@@ -170,11 +171,12 @@ def evidence_subject(evidences):
+ @pytest.mark.parametrize("threshold", [1, 2000])
+ def test_V6_F13_evidence_spread_two_files_is_a_candidate_at_any_threshold(tmp_path, threshold):
+     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
+-    snapshot, architecture = evidence_subject([SourceSpan("b.py", 1, 1), SourceSpan("c.py", 1, 1)])
++    snapshot, architecture = evidence_subject([SourceSpan("b/b.py", 1, 1), SourceSpan("c/c.py", 1, 1)])
+     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
+     assert len(found) == 1
+-    assert set(found[0]["metrics"]) == {"file_count", "line_span", "line_threshold"}
++    assert set(found[0]["metrics"]) == {"file_count", "directory_count", "line_span", "line_threshold"}
+     assert found[0]["metrics"]["file_count"] == 2
++    assert found[0]["metrics"]["directory_count"] == 2
+     assert found[0]["metrics"]["line_threshold"] == threshold
+ 
+ 
+@@ -186,7 +188,7 @@ def test_V6_F13_evidence_spread_single_file_boundary(tmp_path, threshold, expect
+     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
+     assert len(found) == expected_count
+     if expected_count:
+-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 4, "line_threshold": 3}
++        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 4, "line_threshold": 3}
+ 
+ 
+ def test_V6_duplicate_and_self_edges_are_ignored():
+@@ -235,8 +237,10 @@ def test_V6_equivalent_inputs_have_byte_identical_compact_json():
+     assert outputs[0].endswith("\n") and "\n" not in outputs[0][:-1]
+ 
+ 
+-def custom_subject(nodes, edges, lines=12):
+-    snapshot, architecture = subject({"a.py": "x\n" * lines, "b.py": "x\n" * lines, "c.py": "x\n" * lines})
++def custom_subject(nodes, edges, lines=12, extra_files=()):
++    files = {"a.py": "x\n" * lines, "b.py": "x\n" * lines, "c.py": "x\n" * lines}
++    files.update({path: "x\n" * lines for path in extra_files})
++    snapshot, architecture = subject(files)
+     return snapshot, replace(architecture, nodes=nodes, edges=list(edges))
+ 
+ 
+@@ -255,12 +259,12 @@ def three_kind_subject():
+     edges = [
+         edge("n1", "n2", Confidence.DYNAMIC_REQUIRED),
+         edge("n3", "n4", Confidence.DYNAMIC_REQUIRED),
+-        edge("n5", "n6", evidence=SourceSpan("b.py", 1, 1)),
+-        edge("n7", "n6", evidence=SourceSpan("c.py", 1, 1)),
+-        edge("n5", "n8", evidence=SourceSpan("b.py", 1, 1)),
+-        edge("n7", "n8", evidence=SourceSpan("c.py", 1, 1)),
++        edge("n5", "n6", evidence=SourceSpan("b/b.py", 1, 1)),
++        edge("n7", "n6", evidence=SourceSpan("c/c.py", 1, 1)),
++        edge("n5", "n8", evidence=SourceSpan("b/b.py", 1, 1)),
++        edge("n7", "n8", evidence=SourceSpan("c/c.py", 1, 1)),
+     ]
+-    return custom_subject(nodes, edges)
++    return custom_subject(nodes, edges, extra_files=("b/b.py", "c/c.py"))
+ 
+ 
+ def test_V6_E3_candidate_ids_are_unique_stable_and_sorted_by_kind_then_id(tmp_path):
+@@ -303,7 +307,7 @@ def test_V6_E3_evidence_spread_line_span_is_extent_not_sum(tmp_path, threshold,
+     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
+     assert len(found) == expected_count
+     if expected_count:
+-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 10, "line_threshold": 9}
++        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 10, "line_threshold": 9}
+         evidence = found[0]["evidence"]
+         rows = evidence if isinstance(evidence, list) else [evidence]
+         assert all(set(row) == {"path", "start_line", "end_line"} for row in rows)
+diff --git a/tests/test_file_analysis_core.py b/tests/test_file_analysis_core.py
+index 6e5664c..20dc3f9 100644
+--- a/tests/test_file_analysis_core.py
++++ b/tests/test_file_analysis_core.py
+@@ -187,13 +187,14 @@ def test_V06_spread_three_value_boundary(tmp_path, span, expected):
+ 
+ 
+ def test_V06_two_files_spread(tmp_path):
+-    nodes = [node('a','a.py'),node('b','d.py'),node('c','c.py')]
+-    edges = [edge('a','c',evidence=SourceSpan('a.py',1,1)),edge('b','c',evidence=SourceSpan('d.py',1,1))]
+-    snap, result = converted({'a.py':'x','c.py':'z','d.py':'w'}, nodes, edges)
++    nodes = [node('a','p/a.py'),node('b','q/d.py'),node('c','c.py')]
++    edges = [edge('a','c',evidence=SourceSpan('p/a.py',1,1)),edge('b','c',evidence=SourceSpan('q/d.py',1,1))]
++    snap, result = converted({'p/a.py':'x','c.py':'z','q/d.py':'w'}, nodes, edges)
+     candidates = [c for c in payload(snap,result,tmp_path)['candidates'] if c['kind']=='evidence_spread']
+     assert len(candidates)==1
+     assert candidates[0]['metrics']['file_count']==2
+-    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('a.py',1,1),('d.py',1,1)}
++    assert candidates[0]['metrics']['directory_count']==2
++    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('p/a.py',1,1),('q/d.py',1,1)}
+     assert candidates[0]['status']=='static_candidate'
+ 
+ 
+diff --git a/tests/test_report_modal.py b/tests/test_report_modal.py
+index 1e1747e..b928213 100644
+--- a/tests/test_report_modal.py
++++ b/tests/test_report_modal.py
+@@ -46,7 +46,7 @@ def modal_report():
+     for i, path in enumerate(OUTBOUND):
+         relations.append((HUB, path, 'CALLS', *TIERS[OUT_TIER[i]], 200 + i))
+     candidates = [candidate(0, 'large_node', HUB, {'line_count': 2417, 'line_threshold': 2000}), candidate(1, 'unresolved_boundary', HUB, {'unresolved_count': 7}),
+-                  candidate(2, 'evidence_spread', SPREAD, {'file_count': 6, 'line_span': 1234, 'line_threshold': 2000})]
++                  candidate(2, 'evidence_spread', SPREAD, {'file_count': 6, 'directory_count': 5, 'line_span': 1234, 'line_threshold': 2000})]
+     return build_report(files, relations, weights=WEIGHT_TABLE, candidates=candidates)
+ 
+ 
+@@ -225,12 +225,12 @@ def test_V04_connection_click_switches_modal_target(open_report):
+ 
+ 
+ def test_V04_candidate_headline_numbers_per_kind(open_report):
+-    """A12: unresolved_count / file_count / line_count."""
++    """A12: unresolved_count / directory_count (evidence_spread, spec 3f70cc03aeae9c1a R11r) / line_count."""
+     arch, bn = modal_report()
+     page = open_report(arch, bn)
+     open_modal(page, 'list', SPREAD)
+     lines = [l for l in dialog_text(page).splitlines() if kind_label(page, 'evidence_spread') in l]
+-    assert lines and has_number(lines[0], 6)
++    assert lines and has_number(lines[0], 5) and not has_number(lines[0], 6)
+     assert kind_label(page, 'large_node') not in dialog_text(page)
+ 
+ 
+diff --git a/tests/test_search_mimicry_metrics.py b/tests/test_search_mimicry_metrics.py
+index 0d77104..83e59fe 100644
+--- a/tests/test_search_mimicry_metrics.py
++++ b/tests/test_search_mimicry_metrics.py
+@@ -215,7 +215,7 @@ def test_V1_C1_C2_cli_bottlenecks_and_architecture_json(monkeypatch, project, tm
+     assert ("granularity" in bottlenecks) == (granularity == "file")
+     if granularity == "file":
+         assert bottlenecks["granularity"] == "file"
+-    assert bottlenecks["versions"]["analysis"] == "5"
++    assert bottlenecks["versions"]["analysis"] == "6"
+     network = bottlenecks["dependency_network"]
+     assert network["node_metrics"]
+     for node_id, row in network["node_metrics"].items():
+diff --git a/tests/test_search_mimicry_schema_and_structure.py b/tests/test_search_mimicry_schema_and_structure.py
+index 6c5f2b6..7583781 100644
+--- a/tests/test_search_mimicry_schema_and_structure.py
++++ b/tests/test_search_mimicry_schema_and_structure.py
+@@ -145,11 +145,11 @@ def test_V5_O2_file_output_is_v7_with_granularity_file(tmp_path):
+     assert payload["granularity"] == "file"
+ 
+ 
+-def test_V5_O3_versions_analysis_is_5_in_both_modes(tmp_path):
++def test_V5_O3_versions_analysis_is_6_in_both_modes(tmp_path):
+     snapshot, architecture = network_subject(["a"], [])
+     symbol = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot, architecture, load_weights(tmp_path, weights_data()))))
+-    assert symbol["versions"]["analysis"] == "5"
+-    assert file_mode_payload(tmp_path)["versions"]["analysis"] == "5"
++    assert symbol["versions"]["analysis"] == "6"
++    assert file_mode_payload(tmp_path)["versions"]["analysis"] == "6"
+ 
+ 
+ # ---- V7 -------------------------------------------------------------------------------------------------------------
+diff --git a/tests/test_signal_defects.py b/tests/test_signal_defects.py
+index d62a7f3..37353fa 100644
+--- a/tests/test_signal_defects.py
++++ b/tests/test_signal_defects.py
+@@ -578,11 +578,11 @@ def test_V6_control_file_mode_counts_class_plus_method(tmp_path):
+ 
+ # =============================================================== V7: evidence_spread (R5; C10-C12)
+ 
+-FILES7 = {name: 'x\n' * 12 for name in ('x.py', 'y.py', 'z.py', 'w.py')}
++FILES7 = {name: 'x\n' * 12 for name in ('a/x.py', 'b/y.py', 'c/z.py', 'w.py')}
+ LINE_T = 3
+ 
+ 
+-def _spread(tmp_path, evidences, *, target_path='x.py', extra_edges=(), nodes_extra=(), threshold=LINE_T):
++def _spread(tmp_path, evidences, *, target_path='a/x.py', extra_edges=(), nodes_extra=(), threshold=LINE_T):
+     """Target t (in target_path); one source per evidence span; returns the evidence_spread candidates for t."""
+     nodes = [sym('t', target_path, 1, 1)]
+     edges = []
+@@ -601,7 +601,7 @@ def S(path, a, b=None):
+ 
+ 
+ def test_V7_C10_only_own_file_evidence_never_fires_even_with_wide_range(tmp_path):
+-    assert _spread(tmp_path, [S('x.py', 1), S('x.py', 10)]) == []
++    assert _spread(tmp_path, [S('a/x.py', 1), S('a/x.py', 10)]) == []
+ 
+ 
+ def test_V7_zero_evidence_files(tmp_path):
+@@ -609,52 +609,52 @@ def test_V7_zero_evidence_files(tmp_path):
+ 
+ 
+ def test_V7_C11_two_external_files_fire_with_zero_line_span(tmp_path):
+-    found = _spread(tmp_path, [S('y.py', 1), S('z.py', 1)])
++    found = _spread(tmp_path, [S('b/y.py', 1), S('c/z.py', 1)])
+     assert len(found) == 1
+-    assert found[0]['metrics'] == {'file_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
+-    assert {(r['path'], r['start_line'], r['end_line']) for r in evidence_rows(found[0])} == {('y.py', 1, 1), ('z.py', 1, 1)}
++    assert found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
++    assert {(r['path'], r['start_line'], r['end_line']) for r in evidence_rows(found[0])} == {('b/y.py', 1, 1), ('c/z.py', 1, 1)}
+ 
+ 
+ @pytest.mark.parametrize('end,fires', [(LINE_T - 1, False), (LINE_T, False), (LINE_T + 1, True)])
+ def test_V7_C11_one_external_file_line_range_boundary(tmp_path, end, fires):
+-    found = _spread(tmp_path, [S('y.py', 1), S('y.py', end)])
++    found = _spread(tmp_path, [S('b/y.py', 1), S('b/y.py', end)])
+     assert len(found) == int(fires)
+     if fires:
+-        assert found[0]['metrics'] == {'file_count': 1, 'line_span': end, 'line_threshold': LINE_T}
+-        assert {(r['path'], r['start_line']) for r in evidence_rows(found[0])} == {('y.py', 1), ('y.py', end)}
++        assert found[0]['metrics'] == {'file_count': 1, 'directory_count': 1, 'line_span': end, 'line_threshold': LINE_T}
++        assert {(r['path'], r['start_line']) for r in evidence_rows(found[0])} == {('b/y.py', 1), ('b/y.py', end)}
+ 
+ 
+ def test_V7_one_external_file_single_short_evidence_does_not_fire(tmp_path):
+-    assert _spread(tmp_path, [S('y.py', 5)]) == []
++    assert _spread(tmp_path, [S('b/y.py', 5)]) == []
+ 
+ 
+ def test_V7_own_file_evidence_is_dropped_from_count_range_and_evidence_list(tmp_path):
+-    found = _spread(tmp_path, [S('x.py', 1), S('y.py', 1), S('z.py', 1)])
++    found = _spread(tmp_path, [S('a/x.py', 1), S('b/y.py', 1), S('c/z.py', 1)])
+     assert len(found) == 1 and found[0]['metrics']['file_count'] == 2
+-    assert {r['path'] for r in evidence_rows(found[0])} == {'y.py', 'z.py'}
++    assert {r['path'] for r in evidence_rows(found[0])} == {'b/y.py', 'c/z.py'}
+     # own-file evidence far from the external evidence must not stretch the single-file range either
+-    assert _spread(tmp_path, [S('x.py', 12), S('y.py', 1), S('y.py', 3)]) == []
+-    wide = _spread(tmp_path, [S('x.py', 12), S('y.py', 1), S('y.py', 4)])
++    assert _spread(tmp_path, [S('a/x.py', 12), S('b/y.py', 1), S('b/y.py', 3)]) == []
++    wide = _spread(tmp_path, [S('a/x.py', 12), S('b/y.py', 1), S('b/y.py', 4)])
+     assert len(wide) == 1 and wide[0]['metrics']['line_span'] == 4
+-    assert {r['path'] for r in evidence_rows(wide[0])} == {'y.py'}
++    assert {r['path'] for r in evidence_rows(wide[0])} == {'b/y.py'}
+ 
+ 
+ @pytest.mark.parametrize('relation', ['CONTAINS', 'DECLARES'])
+ def test_V7_C12_ownership_edge_evidence_is_dropped(tmp_path, relation):
+-    owner = sym('K', 'x.py', 1, 1, kind='class', provenance='python-core')
+-    child = sym('t', 'x.py', 2, 2, kind='function', provenance='python-core')
++    owner = sym('K', 'a/x.py', 1, 1, kind='class', provenance='python-core')
++    child = sym('t', 'a/x.py', 2, 2, kind='function', provenance='python-core')
+     use = sym('s0', 'w.py', 1, 1)
+-    edges = [edge('K', 't', relation=relation, evidence=S('z.py', 1)), edge('s0', 't', evidence=S('y.py', 1))]
++    edges = [edge('K', 't', relation=relation, evidence=S('c/z.py', 1)), edge('s0', 't', evidence=S('b/y.py', 1))]
+     snap, arch = make_subject(FILES7, [owner, child, use], edges)
+     payload = run_payload(snap, arch, weights_in(tmp_path, large_node_line_threshold=LINE_T))
+     assert [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 't'] == []
+ 
+ 
+ def test_V7_non_ownership_edge_with_same_shape_still_counts(tmp_path):
+-    owner = sym('K', 'x.py', 1, 1, kind='class', provenance='python-core')
+-    child = sym('t', 'x.py', 2, 2, kind='function', provenance='python-core')
++    owner = sym('K', 'a/x.py', 1, 1, kind='class', provenance='python-core')
++    child = sym('t', 'a/x.py', 2, 2, kind='function', provenance='python-core')
+     use = sym('s0', 'w.py', 1, 1)
+-    edges = [edge('K', 't', relation='CALLS', evidence=S('z.py', 1)), edge('s0', 't', evidence=S('y.py', 1))]
++    edges = [edge('K', 't', relation='CALLS', evidence=S('c/z.py', 1)), edge('s0', 't', evidence=S('b/y.py', 1))]
+     snap, arch = make_subject(FILES7, [owner, child, use], edges)
+     payload = run_payload(snap, arch, weights_in(tmp_path, large_node_line_threshold=LINE_T))
+     found = [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 't']
+@@ -662,20 +662,20 @@ def test_V7_non_ownership_edge_with_same_shape_still_counts(tmp_path):
+ 
+ 
+ def test_V7_target_without_file_excludes_nothing(tmp_path):
+-    found = _spread(tmp_path, [S('x.py', 1), S('y.py', 1)], target_path=None)
++    found = _spread(tmp_path, [S('a/x.py', 1), S('b/y.py', 1)], target_path=None)
+     assert len(found) == 1 and found[0]['metrics']['file_count'] == 2
+-    assert {r['path'] for r in evidence_rows(found[0])} == {'x.py', 'y.py'}
++    assert {r['path'] for r in evidence_rows(found[0])} == {'a/x.py', 'b/y.py'}
+ 
+ 
+ # ---- file mode
+ 
+ def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
+-    nodes = [file_node('t', 'x.py')]
++    nodes = [file_node('t', 'a/x.py')]
+     edges = []
+     for i, (path, span) in enumerate(evidences):
+         nodes.append(file_node(f'u{i}', path))
+         edges.append(edge(f'u{i}', 't', evidence=span))
+-    files = {'x.py': 'x\n' * 12, 'y.py': 'x\n' * 12, 'z.py': 'x\n' * 12}
++    files = {'a/x.py': 'x\n' * 12, 'b/y.py': 'x\n' * 12, 'c/z.py': 'x\n' * 12}
+     nodes.extend(n for n, _ in owner_edges)
+     edges.extend(e for _, e in owner_edges)
+     snap, result = converted(files, nodes, edges)
+@@ -683,32 +683,32 @@ def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
+     from bottlenecks import bottlenecks_to_json
+     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
+     payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights)))
+-    return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:x.py']
++    return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/x.py']
+ 
+ 
+ def test_V7_file_mode_evidence_in_target_file_is_dropped(tmp_path):
+-    assert _file_spread(tmp_path, [('y.py', S('x.py', 1)), ('z.py', S('x.py', 10))]) == []
++    assert _file_spread(tmp_path, [('b/y.py', S('a/x.py', 1)), ('c/z.py', S('a/x.py', 10))]) == []
+ 
+ 
+ def test_V7_file_mode_two_external_files_fire(tmp_path):
+-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1)), ('z.py', S('z.py', 1)), ('y.py', S('x.py', 5))])
+-    assert len(found) == 1 and found[0]['metrics'] == {'file_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
+-    assert {r['path'] for r in evidence_rows(found[0])} == {'y.py', 'z.py'}
++    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1)), ('c/z.py', S('c/z.py', 1)), ('b/y.py', S('a/x.py', 5))])
++    assert len(found) == 1 and found[0]['metrics'] == {'file_count': 2, 'directory_count': 2, 'line_span': 0, 'line_threshold': LINE_T}
++    assert {r['path'] for r in evidence_rows(found[0])} == {'b/y.py', 'c/z.py'}
+ 
+ 
+ @pytest.mark.parametrize('end,fires', [(LINE_T, False), (LINE_T + 1, True)])
+ def test_V7_file_mode_one_external_file_boundary(tmp_path, end, fires):
+-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1)), ('y.py', S('y.py', end))])
++    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1)), ('b/y.py', S('b/y.py', end))])
+     assert len(found) == int(fires)
+     if fires:
+-        assert found[0]['metrics'] == {'file_count': 1, 'line_span': end, 'line_threshold': LINE_T}
++        assert found[0]['metrics'] == {'file_count': 1, 'directory_count': 1, 'line_span': end, 'line_threshold': LINE_T}
+ 
+ 
+ @pytest.mark.parametrize('relation', ['CONTAINS', 'DECLARES'])
+ def test_V7_file_mode_ownership_evidence_is_dropped(tmp_path, relation):
+-    owner = file_node('K', 'z.py', 'class')
+-    owned = edge('K', 't', relation=relation, evidence=S('z.py', 1))
+-    found = _file_spread(tmp_path, [('y.py', S('y.py', 1))], owner_edges=[(owner, owned)])
++    owner = file_node('K', 'c/z.py', 'class')
++    owned = edge('K', 't', relation=relation, evidence=S('c/z.py', 1))
++    found = _file_spread(tmp_path, [('b/y.py', S('b/y.py', 1))], owner_edges=[(owner, owned)])
+     assert found == []
+ 
+ 
+diff --git a/tests/test_structure_integration.py b/tests/test_structure_integration.py
+index d410e99..376eb1e 100644
+--- a/tests/test_structure_integration.py
++++ b/tests/test_structure_integration.py
+@@ -83,7 +83,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
+     manifest = run.manifest['file']
+     network = payload['dependency_network']
+     assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
+-    assert payload['versions']['analysis'] == '5'
++    assert payload['versions']['analysis'] == '6'
+     assert canonical_sha(network['rankings']) == manifest['rankings']
+     assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']
+     assert canonical_sha(network['node_metrics']) == manifest['node_metrics']
+diff --git a/tests/unified_support.py b/tests/unified_support.py
+index baa8fea..ad8e9a6 100644
+--- a/tests/unified_support.py
++++ b/tests/unified_support.py
+@@ -111,7 +111,7 @@ def bottleneck_fixture(directory,nodes,edges=(),candidate_count=3):
+     for i in range(candidate_count if nodes else 0):
+         kind=('large_node','evidence_spread','unresolved_boundary')[i%3]
+         target=nodes[min(i,len(nodes)-1)]['id']
+-        payload['candidates'].append({'id':f'b:{i:016x}','kind':kind,'target':target,'metrics':{'line_count':2001,'line_threshold':2000} if kind=='large_node' else {'file_count':2,'line_span':9,'line_threshold':2000} if kind=='evidence_spread' else {'unresolved_count':2},'evidence':[{'path':f'candidate-{i}.py','start_line':13,'end_line':29},{'path':f'candidate-{i}-other.py','start_line':31,'end_line':39}] if kind=='evidence_spread' else {'path':f'candidate-{i}.py','start_line':13,'end_line':29},'coverage':'ORACLE_COVERAGE','status':'static_candidate'})
++        payload['candidates'].append({'id':f'b:{i:016x}','kind':kind,'target':target,'metrics':{'line_count':2001,'line_threshold':2000} if kind=='large_node' else {'file_count':2,'directory_count':2,'line_span':9,'line_threshold':2000} if kind=='evidence_spread' else {'unresolved_count':2},'evidence':[{'path':f'candidate-{i}.py','start_line':13,'end_line':29},{'path':f'candidate-{i}-other.py','start_line':31,'end_line':39}] if kind=='evidence_spread' else {'path':f'candidate-{i}.py','start_line':13,'end_line':29},'coverage':'ORACLE_COVERAGE','status':'static_candidate'})
+     return payload
+ 
+ 

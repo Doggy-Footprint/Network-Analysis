@@ -1,0 +1,446 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "dependency_cycle": {
+   "added": 0,
+   "base": 10,
+   "changed": 0,
+   "head": 10,
+   "removed": 0,
+   "samples": []
+  },
+  "evidence_spread": {
+   "added": 0,
+   "base": 133,
+   "changed": 108,
+   "head": 108,
+   "removed": 25,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 8,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/test_analysis_coverage_reporting.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/test_structure_browser.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/candidate_group_storage_support.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/delta_support.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/architecture_rules_support.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 21,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/unified_support.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/test_bottlenecks_v3.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/test_file_analysis_core.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:archive/agent_view/readable.py",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "file:tests/test_unified_cli.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 27,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 27,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:archive/report_m1/generate.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 15,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 9,
+       "file_count": 15,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:language_analyzers/core/flags.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 18,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 18,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/file_analysis_evidence/scan-cache-review.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 49,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 11,
+       "file_count": 49,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/nestjs_support.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 87,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 23,
+       "file_count": 87,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/test_file_analysis_cli.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 17,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 17,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:repository/__init__.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 6,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/test_search_mimicry_metrics.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 49,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 11,
+       "file_count": 49,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/test_typescript_http_calls.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 32,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 9,
+       "file_count": 32,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:tests/test_structure_facts.py",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 9,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "file:language_analyzers/core/__init__.py",
+     "why": "R11"
+    }
+   ]
+  },
+  "isolated_node": {
+   "added": 0,
+   "base": 2,
+   "changed": 0,
+   "head": 2,
+   "removed": 0,
+   "samples": []
+  },
+  "large_node": {
+   "added": 0,
+   "base": 2,
+   "changed": 0,
+   "head": 2,
+   "removed": 0,
+   "samples": []
+  },
+  "package_cycle": {
+   "added": 0,
+   "base": 4,
+   "changed": 0,
+   "head": 4,
+   "removed": 0,
+   "samples": []
+  },
+  "unresolved_boundary": {
+   "added": 0,
+   "base": 25,
+   "changed": 0,
+   "head": 25,
+   "removed": 0,
+   "samples": []
+  },
+  "unstable_dependency": {
+   "added": 0,
+   "base": 147,
+   "changed": 0,
+   "head": 147,
+   "removed": 0,
+   "samples": []
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 16791,
+  "changes": {},
+  "head": 16791
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 133,
+   "expected": 133,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 108,
+   "expected": 108,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "self",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 108
+ },
+ "metadata_changes": {},
+ "mode": "file",
+ "nodes": {
+  "added": [],
+  "base": 450,
+  "head": 450,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 72,
+    "share": 0.75
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 11,
+    "share": 0.1146
+   }
+  },
+  "head": {
+   "basis": "file nodes",
+   "evidence_spread": {
+    "files": 69,
+    "share": 0.7188
+   },
+   "nontest_files": 96,
+   "unresolved_boundary": {
+    "files": 11,
+    "share": 0.1146
+   }
+  }
+ },
+ "schema": "bottlenecks.v8",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

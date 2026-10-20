@@ -69,7 +69,7 @@ def sym_id(path):
 
 
 def candidate(index, kind, path, metrics=None):
-    default = {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2}
+    default = {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'directory_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2}
     return {'id': f'b:{index:016x}', 'kind': kind, 'target': file_id(path), 'metrics': metrics or default,
             'evidence': [{'path': f'candidate-{index}.py', 'start_line': 13, 'end_line': 29}] if kind == 'evidence_spread' else {'path': f'candidate-{index}.py', 'start_line': 13, 'end_line': 29},
             'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'}

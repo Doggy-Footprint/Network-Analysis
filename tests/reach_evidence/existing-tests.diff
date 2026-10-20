@@ -1,0 +1,142 @@
+diff --git a/tests/delta_support.py b/tests/delta_support.py
+index 5709c94..4ed1264 100644
+--- a/tests/delta_support.py
++++ b/tests/delta_support.py
+@@ -262,6 +262,8 @@ def without_digest(coverage):
+ def base_form_bytes(data):
+     obj = json.loads(data)
+     obj['dependency_network'].pop('package_dependencies', None)
++    obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
++    obj.get('edge_weights', {}).pop('untested_hub_top_n', None)
+     rules = obj.get('coverage', {}).get('architecture_rules')
+     if isinstance(rules, dict):
+         rules.pop('rules_sha256', None)
+diff --git a/tests/report_redesign_evidence/glossary.json b/tests/report_redesign_evidence/glossary.json
+index d1fe929..457b076 100644
+--- a/tests/report_redesign_evidence/glossary.json
++++ b/tests/report_redesign_evidence/glossary.json
+@@ -31,7 +31,7 @@
+     "외부 코드": "저장소에 포함된 외부(vendored) 코드입니다.",
+     "운영 코드": "테스트·생성·외부 코드가 아닌 저장소 자체 코드입니다.",
+     "전체": "모든 코드 분류를 합친 범위입니다.",
+-    "정적 분석 미확정 참조": "정적 분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.",
++    "분석 미확정 참조": "분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.",
+     "제외": "수집 정책상 분석 목록에서 제외된 파일입니다.",
+     "주변 코드가 넓은 곳": "연결 두 단계 이내 주변 코드의 할인된 토큰 합 (추정 토큰)",
+     "중심에 있는 큰 코드": "PageRank × 할인된 코드 토큰 수 (가중 토큰)",
+diff --git a/tests/report_redesign_evidence/tooltip-matrix.json b/tests/report_redesign_evidence/tooltip-matrix.json
+index b0b83c5..76b684e 100644
+--- a/tests/report_redesign_evidence/tooltip-matrix.json
++++ b/tests/report_redesign_evidence/tooltip-matrix.json
+@@ -207,22 +207,22 @@
+    "modal"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "appendix-open",
+    "page"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "graph-tab",
+    "page"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "list-tab",
+    "list"
+   ],
+   [
+-   "정적 분석 미확정 참조",
++   "분석 미확정 참조",
+    "list-tab",
+    "page"
+   ],
+diff --git a/tests/standalone_candidate_policy_support.py b/tests/standalone_candidate_policy_support.py
+index ee84de7..e3fda17 100644
+--- a/tests/standalone_candidate_policy_support.py
++++ b/tests/standalone_candidate_policy_support.py
+@@ -230,7 +230,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
+             _metric_rows({ident: expected}, {ident: metrics}, pairs)
+         else:
+             assert metrics is None
+-    unchanged = lambda candidates: [c for c in candidates if c['kind'] != 'evidence_spread']
++    unchanged = lambda candidates: [c for c in candidates if c['kind'] not in {'evidence_spread', 'untested_hub', 'isolated_node'}]
+     assert unchanged(clean_report['candidates']) == unchanged(old_report['candidates']), 'large/unresolved/unrelated candidate rules changed'
+     expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'])
+     spread = {c['target']: c for c in clean_report['candidates'] if c['kind'] == 'evidence_spread'}
+@@ -249,4 +249,7 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
+     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
+     assert expected_top['versions']['analysis'] == '3'
+     expected_top['versions']['analysis'] = '4'
+-    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == expected_top
++    actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
++    if isinstance(actual_top.get('edge_weights'), dict):
++        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k != 'untested_hub_top_n'}
++    assert actual_top == expected_top
+diff --git a/tests/test_delta_integration.py b/tests/test_delta_integration.py
+index ed22817..24a76c0 100644
+--- a/tests/test_delta_integration.py
++++ b/tests/test_delta_integration.py
+@@ -82,6 +82,8 @@ def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by
+     data = outputs_by_id(entry)
+     obj = json.loads(data)
+     del obj['dependency_network']['package_dependencies']
++    obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
++    obj['edge_weights'].pop('untested_hub_top_n', None)
+     if entry['rules']:
+         del obj['coverage']['architecture_rules']['rules_sha256']
+     text = json.dumps(obj, **CANON) + '\n'
+diff --git a/tests/test_structure_facts.py b/tests/test_structure_facts.py
+index c6bd2e2..1b45909 100644
+--- a/tests/test_structure_facts.py
++++ b/tests/test_structure_facts.py
+@@ -409,7 +409,7 @@ def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):
+     from report.bottlenecks import render_report
+     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
+     payload = v8_payload(tmp_path)
+-    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency'):
++    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency', 'untested_hub', 'isolated_node'):
+         assert isinstance(KIND_LABELS[kind], str) and KIND_LABELS[kind].strip()
+         assert isinstance(KIND_DESCRIPTIONS[kind], str) and KIND_DESCRIPTIONS[kind].strip()
+     for kind in ('large_node', 'unresolved_boundary', 'evidence_spread'):
+diff --git a/tests/test_structure_integration.py b/tests/test_structure_integration.py
+index 360f59d..eaf2644 100644
+--- a/tests/test_structure_integration.py
++++ b/tests/test_structure_integration.py
+@@ -93,7 +93,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
+     assert canonical_sha(base) == manifest['candidates']
+     assert network['structure_policy'] == 'structure.v1'
+     assert 'language' in network['package_metrics']
+-    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS)
++    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS) | {'untested_hub', 'isolated_node'}
+ 
+ 
+ def test_V08_candidates_are_sorted_by_kind_then_id(run):
+diff --git a/tests/unified_support.py b/tests/unified_support.py
+index b752393..baa8fea 100644
+--- a/tests/unified_support.py
++++ b/tests/unified_support.py
+@@ -1,3 +1,4 @@
++import os
+ import copy
+ from pathlib import Path
+ 
+@@ -33,7 +34,13 @@ def document(arch, bottlenecks=None, **kwargs):
+ @pytest.fixture(scope='session')
+ def chromium():
+     with sync_playwright() as playwright:
+-        browser = playwright.chromium.launch(channel="chrome")
++        try:
++            browser = playwright.chromium.launch(channel="chrome")
++        except Exception:
++            bundled = sorted(Path(os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/opt/pw-browsers")).glob("chromium-*/chrome-linux/chrome"))
++            if not bundled:
++                raise
++            browser = playwright.chromium.launch(executable_path=str(bundled[-1]))
+         yield browser
+         browser.close()
+ 

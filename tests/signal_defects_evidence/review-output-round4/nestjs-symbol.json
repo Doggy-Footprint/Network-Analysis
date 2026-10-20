@@ -1,0 +1,406 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "evidence_spread": {
+   "added": 0,
+   "base": 94,
+   "changed": 41,
+   "head": 41,
+   "removed": 53,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/user/dto/login-user.dto.ts#LoginUserDto",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/user/user.service.ts#UserService",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/article.interface.ts#ArticlesRO",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/article.service.ts#ArticleService.findAll",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/article.entity.ts#ArticleEntity.description",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/profile/profile.service.ts#ProfileService",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/comment.entity.ts#Comment",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/article.entity.ts#ArticleEntity.slug",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/article/article.interface.ts#CommentsRO",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "ts:src/user/user.service.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/article/article.service.ts#ArticleService.findOne",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/user.decorator.ts",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/user.entity.ts#UserEntity.image",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/article/article.service.ts#ArticleService.create",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/dto/login-user.dto.ts#LoginUserDto.email",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/user.service.ts#UserService.delete",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/user.entity.ts#UserEntity.username",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/tag/tag.entity.ts#TagEntity.id",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/auth.middleware.ts#AuthMiddleware",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 7,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "ts:src/user/user.entity.ts#UserEntity.email",
+     "why": "R11"
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "added": 0,
+   "base": 4,
+   "changed": 0,
+   "head": 4,
+   "removed": 0,
+   "samples": []
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 669,
+  "changes": {},
+  "head": 669
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 94,
+   "expected": 94,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 41,
+   "expected": 41,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "nestjs",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 41
+ },
+ "metadata_changes": {},
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 268,
+  "head": 268,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 25,
+    "share": 0.6098
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 4,
+    "share": 0.0976
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 16,
+    "share": 0.3902
+   },
+   "nontest_files": 41,
+   "unresolved_boundary": {
+    "files": 4,
+    "share": 0.0976
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

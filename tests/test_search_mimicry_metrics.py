@@ -215,7 +215,7 @@ def test_V1_C1_C2_cli_bottlenecks_and_architecture_json(monkeypatch, project, tm
     assert ("granularity" in bottlenecks) == (granularity == "file")
     if granularity == "file":
         assert bottlenecks["granularity"] == "file"
-    assert bottlenecks["versions"]["analysis"] == "4"
+    assert bottlenecks["versions"]["analysis"] == "6"
     network = bottlenecks["dependency_network"]
     assert network["node_metrics"]
     for node_id, row in network["node_metrics"].items():

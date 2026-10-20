@@ -409,7 +409,7 @@ def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):
     from report.bottlenecks import render_report
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
     payload = v8_payload(tmp_path)
-    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency'):
+    for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency', 'untested_hub', 'isolated_node'):
         assert isinstance(KIND_LABELS[kind], str) and KIND_LABELS[kind].strip()
         assert isinstance(KIND_DESCRIPTIONS[kind], str) and KIND_DESCRIPTIONS[kind].strip()
     for kind in ('large_node', 'unresolved_boundary', 'evidence_spread'):

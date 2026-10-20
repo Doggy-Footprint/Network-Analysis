@@ -2,11 +2,6 @@
  "spec_version": 1,
  "term_state_region": [
   [
-   "Authority",
-   "appendix-open",
-   "appendix"
-  ],
-  [
    "Betweenness",
    "appendix-open",
    "appendix"
@@ -18,11 +13,6 @@
   ],
   [
    "Fan-out",
-   "appendix-open",
-   "appendix"
-  ],
-  [
-   "Hub",
    "appendix-open",
    "appendix"
   ],
@@ -62,6 +52,21 @@
    "appendix"
   ],
   [
+   "경계 규칙 위반",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "경계 규칙 위반",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "경계 규칙 위반",
+   "list-tab",
+   "page"
+  ],
+  [
    "경로를 잇는 곳",
    "appendix-open",
    "card"
@@ -80,6 +85,21 @@
    "경로를 잇는 곳",
    "modal-open",
    "modal"
+  ],
+  [
+   "고립 파일",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "고립 파일",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "고립 파일",
+   "list-tab",
+   "page"
   ],
   [
    "근거 분산",
@@ -162,6 +182,26 @@
    "page"
   ],
   [
+   "분석 미확정 참조",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "분석 미확정 참조",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "분석 미확정 참조",
+   "list-tab",
+   "list"
+  ],
+  [
+   "분석 미확정 참조",
+   "list-tab",
+   "page"
+  ],
+  [
    "실패",
    "appendix-open",
    "page"
@@ -207,22 +247,17 @@
    "modal"
   ],
   [
-   "정적 분석 미확정 참조",
+   "의존 순환",
    "appendix-open",
    "page"
   ],
   [
-   "정적 분석 미확정 참조",
+   "의존 순환",
    "graph-tab",
    "page"
   ],
   [
-   "정적 분석 미확정 참조",
-   "list-tab",
-   "list"
-  ],
-  [
-   "정적 분석 미확정 참조",
+   "의존 순환",
    "list-tab",
    "page"
   ],
@@ -330,6 +365,21 @@
    "큰 노드",
    "modal-open",
    "modal"
+  ],
+  [
+   "테스트 미도달 허브",
+   "appendix-open",
+   "page"
+  ],
+  [
+   "테스트 미도달 허브",
+   "graph-tab",
+   "page"
+  ],
+  [
+   "테스트 미도달 허브",
+   "list-tab",
+   "page"
   ],
   [
    "할인",

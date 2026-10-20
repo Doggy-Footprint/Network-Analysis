@@ -1,0 +1,406 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "evidence_spread": {
+   "added": 0,
+   "base": 195,
+   "changed": 125,
+   "head": 125,
+   "removed": 70,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.api_clients._base#RequestData",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.workers._dramatiq._config#broker",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.routers.rest.callbacks.api#router",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.routers.services.links.get_link",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.routers.services._base#ServiceError",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.routers.rest.notifications.api#router",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.helpers._markdown#render_markdown",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.db.models#LinkModel",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.api_clients._base#BaseClient.request",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:futuramaapi.routers.services.tokens.get_auth_user_token",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 6,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.routers.services._base#BaseUserAuthenticatedService.__init__",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.apps",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.db._base#Base.filter",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 6,
+       "file_count": 13,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.db.models#UserModel",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.routers.services.randoms.get_random_character#GetRandomCharacterService",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 4,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.workers.services.callbacks._base#GetItemCallbackTaskService.session",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.routers.graphql.schemas#Query",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 3,
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.security",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 11,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 11,
+       "file_count": 11,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.routers.exceptions",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 31,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 20,
+       "file_count": 31,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:futuramaapi.core",
+     "why": "R11"
+    }
+   ]
+  },
+  "unresolved_boundary": {
+   "added": 0,
+   "base": 5,
+   "changed": 0,
+   "head": 5,
+   "removed": 0,
+   "samples": []
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 3175,
+  "changes": {},
+  "head": 3175
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 195,
+   "expected": 195,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 125,
+   "expected": 125,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "futurama",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 125
+ },
+ "metadata_changes": {},
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 1449,
+  "head": 1449,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 75,
+    "share": 0.4464
+   },
+   "nontest_files": 168,
+   "unresolved_boundary": {
+    "files": 5,
+    "share": 0.0298
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 51,
+    "share": 0.3036
+   },
+   "nontest_files": 168,
+   "unresolved_boundary": {
+    "files": 5,
+    "share": 0.0298
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

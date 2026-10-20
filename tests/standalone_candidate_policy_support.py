@@ -1,4 +1,5 @@
 import copy
+import posixpath
 import hashlib
 import json
 import math
@@ -143,9 +144,18 @@ def _rankings(rankings, metrics, members):
         assert entries == expected, ('ranking inconsistent', metric)
 
 
-def _spread(edges, threshold):
+def _spread(edges, threshold, nodes=None):
+    # spec e91abc221d7deb2a R5 + 3f70cc03aeae9c1a R11: ownership edges and evidence in the target's own file are dropped; firing counts directories other than the target's
+    from types import SimpleNamespace
+    from analysis.file_graph import ownership_edge
+    nodes = nodes or {}
+    wrapped = {i: SimpleNamespace(provenance=n.get('provenance', ''), kind=n.get('kind', ''), category=n.get('category', ''))
+               for i, n in nodes.items()}
+    own_file = {i: (n.get('span') or {}).get('file_path') for i, n in nodes.items()}
     evidence = defaultdict(list)
     for edge in edges:
+        if edge['from_id'] in wrapped and edge['to_id'] in wrapped and ownership_edge(SimpleNamespace(**edge), wrapped):
+            continue
         span = edge.get('evidence')
         if not span or not span.get('file_path'):
             continue
@@ -154,13 +164,17 @@ def _spread(edges, threshold):
             row.update(copy.deepcopy(edge))
         targets = {edge['to_id'], *edge.get('candidates', [])} if edge['resolution'] == 'ambiguous' else {edge['to_id']}
         for target in targets:
+            if own_file.get(target) and own_file[target] == row['path']:
+                continue
             evidence[target].append(row)
     expected = {}
     for target, records in evidence.items():
         paths = {e['path'] for e in records}
         extent = max(e['end_line'] for e in records) - min(e['start_line'] for e in records) + 1 if len(paths) == 1 else 0
-        if len(paths) > 1 or extent > threshold:
-            expected[target] = ({'file_count': len(paths), 'line_span': extent, 'line_threshold': threshold}, records)
+        own_dir = posixpath.dirname(own_file[target]) if own_file.get(target) else None
+        directories = {posixpath.dirname(path) for path in paths} - {own_dir}
+        if len(directories) >= 2 or (len(paths) == 1 and extent > threshold):
+            expected[target] = ({'file_count': len(paths), 'directory_count': len(directories), 'line_span': extent, 'line_threshold': threshold}, records)
     return expected
 
 
@@ -230,9 +244,9 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
             _metric_rows({ident: expected}, {ident: metrics}, pairs)
         else:
             assert metrics is None
-    unchanged = lambda candidates: [c for c in candidates if c['kind'] != 'evidence_spread']
+    unchanged = lambda candidates: [c for c in candidates if c['kind'] not in {'evidence_spread', 'untested_hub', 'isolated_node'}]
     assert unchanged(clean_report['candidates']) == unchanged(old_report['candidates']), 'large/unresolved/unrelated candidate rules changed'
-    expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'])
+    expected_spread = _spread(arch['edges'], old_report['edge_weights']['large_node_line_threshold'], nodes)
     spread = {c['target']: c for c in clean_report['candidates'] if c['kind'] == 'evidence_spread'}
     assert len(spread) == sum(c['kind'] == 'evidence_spread' for c in clean_report['candidates'])
     assert spread.keys() == expected_spread.keys()
@@ -248,5 +262,8 @@ def assert_standalone_candidate_policy_transition(old_arch, old_report, arch, re
     expected_top = {k: copy.deepcopy(v) for k, v in old_report.items() if k not in {'dependency_network', 'candidates'}}
     expected_top['schema'] = SCHEMA_RENAMES[expected_top['schema']]
     assert expected_top['versions']['analysis'] == '3'
-    expected_top['versions']['analysis'] = '4'
-    assert {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}} == expected_top
+    expected_top['versions']['analysis'] = '6'
+    actual_top = {k: v for k, v in clean_report.items() if k not in {'dependency_network', 'candidates'}}
+    if isinstance(actual_top.get('edge_weights'), dict):
+        actual_top['edge_weights'] = {k: v for k, v in actual_top['edge_weights'].items() if k not in {'untested_hub_top_n', 'large_node_token_threshold'}}
+    assert actual_top == expected_top

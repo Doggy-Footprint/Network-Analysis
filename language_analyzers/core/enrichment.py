@@ -263,7 +263,10 @@ def smallest_node_at_line(nodes: Sequence[GraphNode], line: int) -> Optional[Gra
     ]
     if not matches:
         return None
-    return min(matches, key=lambda node: node.span.end_line - node.span.start_line)
+    return min(
+        matches,
+        key=lambda node: (node.span.end_line - node.span.start_line, node.kind in (NodeKind.FILE, NodeKind.MODULE)),
+    )
 
 
 def _append_edge(

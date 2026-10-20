@@ -31,7 +31,7 @@ def _strip(value):
             result["schema"] = SCHEMA_RENAMES[result["schema"]]
             versions = result.get("versions")
             if isinstance(versions, dict) and versions.get("analysis") == "3":
-                versions["analysis"] = "4"
+                versions["analysis"] = "6"
         return result
     if isinstance(value, list):
         return [_strip(item) for item in value]

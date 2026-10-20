@@ -31,16 +31,18 @@ def analyze(nodes, edges, weights=None, project_path=None, **config_options):
 
 
 def expected_star_pagerank():
-    """A->B (1.0), A->C (0.3), B->A, C->A (1.0 each; single out-edge takes the full share).
+    """R7 (spec e91abc221d7deb2a): A->B (1.0), A->C (0.3), B->A, C->A (1.0 each).
 
-    With teleport t = (1-d)/3 and total mass 1:
-      pA = t + d*(pB + pC) = t + d*(1 - pA)  =>  pA = (t + d) / (1 + d)
-      pB = t + d*pA*(1.0/1.3),  pC = t + d*pA*(0.3/1.3)
+    outdeg(A) = 2, so B gets d*pA*1.0/2 and C gets d*pA*0.3/2; the undelivered d*pA*(1 - 1.3/2) is spread uniformly.
+    With t = (1-d)/3 and u = d*pA*0.35:
+      pA = t + d*(pB + pC) + u/3 = t + d*(1 - pA) + u/3  =>  pA = (t + d) / (1 + d - d*0.35/3)
+      pB = t + d*pA*0.5 + u/3,  pC = t + d*pA*0.15 + u/3
     """
     teleport = (1 - DAMPING) / 3
-    p_a = (teleport + DAMPING) / (1 + DAMPING)
-    p_b = teleport + DAMPING * p_a * (1.0 / 1.3)
-    p_c = teleport + DAMPING * p_a * (0.3 / 1.3)
+    p_a = (teleport + DAMPING) / (1 + DAMPING - DAMPING * 0.35 / 3)
+    undelivered = DAMPING * p_a * 0.35
+    p_b = teleport + DAMPING * p_a * 0.5 + undelivered / 3
+    p_c = teleport + DAMPING * p_a * 0.15 + undelivered / 3
     return {"A": p_a, "B": p_b, "C": p_c}
 
 
@@ -53,14 +55,10 @@ def test_V3_C2_pagerank_function_splits_by_weight_ratio():
 
 
 def test_V3_C2_pagerank_function_is_consistent_for_any_damping():
-    """Damping-free relation: with s = pA, d = (3s - 1) / (2 - 3s) follows from the closed form,
-    and pB, pC must then satisfy the weighted split with that d."""
+    """R7 relation at the fixed damping: the delivered shares are w/outdeg, so pB - pC = d*pA*(1.0 - 0.3)/2."""
     result = pagerank({"A": {"B": 1.0, "C": 0.3}, "B": {"A": 1.0}, "C": {"A": 1.0}}, GraphAnalysisConfig(**EXACT_CONFIG))
-    s = result["A"]
-    d = (3 * s - 1) / (2 - 3 * s)
-    teleport = (1 - d) / 3
-    assert result["B"] == pytest.approx(teleport + d * s / 1.3, abs=TOLERANCE, rel=0)
-    assert result["C"] == pytest.approx(teleport + d * s * 0.3 / 1.3, abs=TOLERANCE, rel=0)
+    assert result["B"] - result["C"] == pytest.approx(DAMPING * result["A"] * 0.7 / 2, abs=TOLERANCE, rel=0)
+    assert sum(result.values()) == pytest.approx(1.0, abs=TOLERANCE, rel=0)
 
 
 def test_V3_C2_analyzer_pagerank_uses_default_yaml_weights():

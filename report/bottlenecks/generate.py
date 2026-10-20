@@ -17,27 +17,31 @@ _ID_TARGET_RE = re.compile(r"^([A-Za-z][A-Za-z0-9_]*):([A-Za-z0-9_.]+)(?:#(.+))?
 KIND_LABELS = {
     "evidence_spread": "근거 분산",
     "large_node": "큰 노드",
-    "unresolved_boundary": "정적 분석 미확정 참조",
+    "unresolved_boundary": "분석 미확정 참조",
     "dependency_cycle": "의존 순환",
     "package_cycle": "package 순환",
     "unstable_dependency": "불안정 package 의존",
     "rule_violation": "경계 규칙 위반",
+    "untested_hub": "테스트 미도달 허브",
+    "isolated_node": "고립 파일",
 }
 
 KIND_DESCRIPTIONS = {
-    "evidence_spread": "근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
-    "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘는 사례입니다.",
+    "evidence_spread": "대상 디렉터리 밖의 둘 이상의 디렉터리에서 오는 근거, 또는 한 파일에서 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
+    "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘거나 토큰 수가 large_node_token_threshold를 넘는 사례입니다.",
     "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
     "dependency_cycle": "파일들이 서로 의존해 순환을 이루는 사례입니다. 같은 순환도 연결 확실성 tier(certain, resolved, all)별로 따로 나옵니다.",
     "package_cycle": "package들이 서로 의존해 순환을 이루는 사례입니다.",
     "unstable_dependency": "package가 자신보다 불안정한(instability가 더 큰) package에 의존하는 사례입니다.",
     "rule_violation": "아키텍처 규칙 file에 선언된 layer 경계(allow 목록 밖 또는 forbid 대상)를 넘는 file 의존 사례입니다.",
+    "untested_hub": "PageRank 상위 production 파일 중 테스트 파일에서 직접 확정 연결(TESTS)이 닿지 않는 사례입니다.",
+    "isolated_node": "다른 production 파일과 확정된 정적 연결이 없는 소스 파일 사례입니다. 프레임워크·동적·불확실 연결은 근거로 함께 보입니다.",
 }
 
 METRIC_DEFINITIONS = [
     ("token_cost", "코드 조각을 읽는 데 드는 텍스트 양의 근사값입니다."),
     ("effective_token_cost", "token_cost에 배율을 곱한 값입니다. vendored 파일이나 /vendor/, /node_modules/ 경로는 0배, generated·migration 관련 파일이나 /migrations/, /alembic/versions/ 경로는 0.1배, 그 외는 1배입니다."),
-    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다. 확정되지 않은 edge는 edge_weights 설정만큼 할인됩니다."),
+    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다. 확정되지 않은 edge는 edge_weights 설정만큼 할인되며, 할인된 몫은 모든 node에 고르게 분배됩니다."),
     ("weighted_centrality_cost", "pagerank × effective_token_cost로 계산됩니다."),
     ("fan_in", "들어오는 connection 수입니다."),
     ("fan_out", "나가는 connection 수입니다."),
@@ -51,11 +55,13 @@ CATEGORY_ORDER = ("production", "test", "generated", "vendored", "unknown")
 
 _KIND_SCORE_FIELDS = {
     "large_node": ("line_count", 0),
-    "evidence_spread": ("file_count", 0),
+    "evidence_spread": ("directory_count", 0),
     "unresolved_boundary": ("unresolved_count", 1),
     "dependency_cycle": ("member_count", 0),
     "package_cycle": ("member_count", 0),
     "unstable_dependency": ("instability_delta", 0),
+    "untested_hub": ("pagerank_rank", 0),
+    "isolated_node": ("line_count", 0),
 }
 
 

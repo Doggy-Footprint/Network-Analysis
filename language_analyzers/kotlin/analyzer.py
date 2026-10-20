@@ -5,7 +5,7 @@ import bisect
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
 from language_analyzers.core.analysis_coverage import CoverageRecorder, attach_coverage
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
 from language_analyzers.core import flags as flag_names
-from language_analyzers.core.cost import cost_for_span, cost_for_text
+from language_analyzers.core.cost import cost_for_span, cost_for_text, module_end_line
 from language_analyzers.core.positions import NamePositions
 from language_analyzers.core.enrichment import enrich_repository
 from language_analyzers.core.external_imports import kotlin_is_internal, normalize_external_imports
@@ -103,10 +103,15 @@ class KotlinAnalyzer:
         self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
         self._imports: Dict[str, List[Tuple[str, int]]] = {}
         self._import_statements: Dict[str, List[Tuple[str, int]]] = {}
+        self._file_package: Dict[str, str] = {}
+        self._exact_imports: Dict[str, Dict[str, str]] = {}
         self._positions = {}
         self._byte_starts = {}
         self._valid_utf8 = {}
         self._symbol_offsets = {}
+        self._fqn_index: Optional[Dict[str, List[str]]] = None
+        self._member_nodes: Dict[str, List[Any]] = {}
+        self._project_imports: Dict[str, Set[str]] = {}
 
         paths = self._discover_files()
         recorder = CoverageRecorder(self.snapshot, "kotlin-core", paths, {".kt"})
@@ -148,6 +153,7 @@ class KotlinAnalyzer:
         packages = tuple(sorted(node.symbol_path for node_id, node in self._nodes.items()
                                 if node_id.startswith("kotlin-package:") and node.symbol_path != "<default>"))
         for key, imports in self._import_statements.items():
+            self._project_imports[key] = {raw.rsplit(".", 1)[-1] for raw, _line in imports if not raw.endswith("*") and kotlin_is_internal(raw, packages)}
             external = normalize_external_imports(
                 {"name": name, "line": line} for name, line in ((raw[:-2] if raw.endswith(".*") else raw, line) for raw, line in imports)
                 if name and not kotlin_is_internal(name, packages))
@@ -169,7 +175,7 @@ class KotlinAnalyzer:
     def _collect_file(self, key: str, source: bytes, text: str, root: Any) -> None:
         flags = flag_names.path_flags(key)
         file_id = f"kotlin:{key}"
-        file_span = SourceSpan(key, 1, max(1, text.count("\n") + 1))
+        file_span = SourceSpan(key, 1, module_end_line(text))
         self._nodes[file_id] = GraphNode(
             id=file_id, label=key, group=NodeKind.FILE, category=NodeKind.FILE,
             kind=NodeKind.FILE, language="kotlin", span=file_span,
@@ -178,6 +184,8 @@ class KotlinAnalyzer:
         )
         package_match = re.search(r"^\s*package\s+([\w.]+)", text, re.M)
         package_name = package_match.group(1) if package_match else "<default>"
+        if package_match:
+            self._file_package[key] = package_name
         package_id = f"kotlin-package:{package_name}"
         if package_id not in self._nodes:
             self._nodes[package_id] = GraphNode(
@@ -188,13 +196,15 @@ class KotlinAnalyzer:
         self._add_edge(package_id, file_id, RelationKind.CONTAINS, SourceSpan(key, 1, 1))
         self._imports[key] = [
             (match.group(1), text.count("\n", 0, match.start()) + 1)
-            for match in re.finditer(r"^\s*import\s+([\w.*]+)", text, re.M)
+            for match in re.finditer(r"^[^\S\n]*import\s+([\w.*]+)", text, re.M)
         ]
         self._import_statements[key] = [
             (match.group(1), text.count("\n", 0, match.start()) + 1)
             for match in re.finditer(r"^[^\S\n]*import\s+([\w.*]+)", text, re.M)
         ]
-        for declaration in ka.top_level_declarations(root):
+        for declaration in root.children:
+            if declaration.type not in ("function_declaration", "class_declaration", "object_declaration") and ka.recovered_object_members(declaration) is None:
+                continue
             self._collect_declaration(key, source, declaration, None, [])
             name = ka.declared_name(declaration, source)
             if name:
@@ -226,34 +236,36 @@ class KotlinAnalyzer:
         if parent:
             self._add_edge(parent, symbol_id, RelationKind.CONTAINS,
                            SourceSpan(key, ka.start_line(node), ka.start_line(node)))
-        if node.type in ("class_declaration", "object_declaration"):
+        recovered = ka.recovered_object_members(node)
+        if node.type in ("class_declaration", "object_declaration") or recovered is not None:
             constructor = ka.primary_constructor(node)
             if constructor is not None:
                 constructor_text = ka.node_text(source, constructor)
-                for parameter in ka.class_parameters(constructor, source):
+                for parameter, parameter_node in zip(ka.class_parameters(constructor, source), ka.class_parameter_nodes(constructor)):
                     field_name = parameter.get("name")
                     if field_name and re.search(rf"\b(?:val|var)\s+{re.escape(field_name)}\b", constructor_text):
-                        self._collect_field(key, field_name, f"{qualname}.{field_name}", constructor, symbol_id)
-            body = ka.class_body(node)
-            if body is not None:
-                for child in body.children:
-                    if child.type in ("function_declaration", "class_declaration", "object_declaration"):
-                        self._collect_declaration(key, source, child, symbol_id, scope + [name])
-                    elif child.type == "property_declaration":
-                        field_match = re.search(r"\b(?:val|var)\s+([A-Za-z_]\w*)", ka.node_text(source, child))
-                        field_name = field_match.group(1) if field_match else None
-                        if field_name:
-                            self._collect_field(key, field_name, f"{qualname}.{field_name}", child, symbol_id)
+                        self._collect_field(key, field_name, f"{qualname}.{field_name}", parameter_node, symbol_id)
+            for child in (recovered if recovered is not None else ka.body_members(node)):
+                if child.type != "property_declaration":
+                    if ka.declared_name(child, source):
+                        self._member_nodes.setdefault(symbol_id, []).append(child)
+                    self._collect_declaration(key, source, child, symbol_id, scope + [name])
+                else:
+                    field_match = re.search(r"\b(?:val|var)\s+([A-Za-z_]\w*)", ka.node_text(source, child))
+                    field_name = field_match.group(1) if field_match else None
+                    if field_name and self._collect_field(key, field_name, f"{qualname}.{field_name}", child, symbol_id):
+                        self._member_nodes.setdefault(symbol_id, []).append(child)
 
-    def _collect_field(self, key: str, name: str, qualname: str, node: Any, parent: str) -> None:
+    def _collect_field(self, key: str, name: str, qualname: str, node: Any, parent: str) -> bool:
         field_id = self._symbol_id(key, qualname)
         if field_id in self._symbols:
-            return
+            return False
         field = _KotlinSymbol(field_id, name, NodeKind.FIELD, key, qualname, node, parent)
         self._symbols[field_id] = field
         self._by_name.setdefault(name, []).append(field_id)
         self._add_edge(parent, field_id, RelationKind.CONTAINS,
                        SourceSpan(key, ka.start_line(node), ka.start_line(node)))
+        return True
 
     @staticmethod
     def _symbol_id(key: str, qualname: str) -> str:
@@ -263,16 +275,24 @@ class KotlinAnalyzer:
         source, text, _root = self._files[symbol.file_key]
         span = SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.end_line(symbol.node))
         flags = flag_names.path_flags(symbol.file_key)
-        if len(self._by_name.get(symbol.name, [])) > 1:
-            flags.append(flag_names.AMBIGUOUS_NAME)
         self._nodes[symbol.id] = GraphNode(
             id=symbol.id, label=symbol.name, group=symbol.kind, category=symbol.kind,
             kind=symbol.kind, language="kotlin", span=span, cost=cost_for_span(text, span),
-            signature=ka.node_text(source, symbol.node).split("{")[0].split("=")[0].strip(),
+            signature=f"object {symbol.name}" if symbol.node.type == "infix_expression" else ka.node_text(source, symbol.node).split("{")[0].split("=")[0].strip(),
             symbol_path=f"{symbol.file_key}:{symbol.qualname}", flags=flags,
             provenance="kotlin-core", metadata={"name": symbol.name, "file_path": symbol.file_key,
                                                   "qualname": symbol.qualname},
         )
+
+    def _symbols_by_fqn(self) -> Dict[str, List[str]]:
+        if self._fqn_index is None:
+            index: Dict[str, List[str]] = {}
+            for symbol in self._symbols.values():
+                package = self._file_package.get(symbol.file_key)
+                fqn = f"{package}.{symbol.qualname}" if package else symbol.qualname
+                index.setdefault(fqn, []).append(symbol.id)
+            self._fqn_index = {fqn: sorted(ids) for fqn, ids in index.items()}
+        return self._fqn_index
 
     def _add_import_edges(self, key: str) -> None:
         file_id = f"kotlin:{key}"
@@ -280,7 +300,16 @@ class KotlinAnalyzer:
             simple = imported.rsplit(".", 1)[-1]
             if simple == "*":
                 continue
-            target, resolution, confidence, candidates = self._resolve(simple)
+            matches = self._symbols_by_fqn().get(imported, [])
+            if len(matches) == 1:
+                self._exact_imports.setdefault(key, {})[simple] = matches[0]
+                target, resolution, confidence, candidates = (
+                    matches[0], Resolution.EXACT, Confidence.STATIC_CERTAIN, [])
+            elif matches:
+                target, resolution, confidence, candidates = (
+                    matches[0], Resolution.AMBIGUOUS, Confidence.STATIC_INFERRED, matches[1:])
+            else:
+                target, resolution, confidence, candidates = self._resolve(simple)
             if target:
                 self._add_edge(file_id, target, RelationKind.IMPORTS_SYMBOL, SourceSpan(key, line, line),
                                confidence, resolution, candidates)
@@ -300,32 +329,46 @@ class KotlinAnalyzer:
             self._symbol_offsets[symbol.id] = offset
         offset = self._symbol_offsets[symbol.id]
         end_offset = offset + len(node_text)
+        members = self._member_nodes.get(symbol.id, ()) if symbol.kind in (NodeKind.CLASS, NodeKind.INTERFACE) else ()
+        excluded = sorted((self._char_offset(symbol.file_key, member.start_byte), self._char_offset(symbol.file_key, member.end_byte)) for member in members)
+        starts = [start for start, _end in excluded]
+        def in_member(position):
+            index = bisect.bisect_right(starts, position) - 1
+            return index >= 0 and position < excluded[index][1]
         def occurrences(name, header_only=False):
-            return positions.matches(name, offset, offset + len(header) if header_only else end_offset)
+            found = positions.matches(name, offset, offset + len(header) if header_only else end_offset)
+            return [item for item in found if not in_member(item[0])] if excluded and not header_only else found
         if symbol.kind in (NodeKind.CLASS, NodeKind.INTERFACE):
             for name in ka.supertype_names(symbol.node, source):
-                target, resolution, confidence, candidates = self._resolve(name.rsplit(".", 1)[-1])
+                target, resolution, confidence, candidates = self._resolve(name.rsplit(".", 1)[-1], symbol.file_key)
                 if target:
                     relation = RelationKind.IMPLEMENTS if symbol.kind == NodeKind.CLASS and self._symbols[target].kind == NodeKind.INTERFACE else RelationKind.INHERITS
                     self._add_edge(symbol.id, target, relation, SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
         if symbol.is_extension:
-            target, resolution, confidence, candidates = self._resolve(symbol.receiver_type)
+            target, resolution, confidence, candidates = self._resolve(symbol.receiver_type, symbol.file_key)
             if target:
                 self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
                                SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
         for name in positions.candidate_names(self._name_order, offset, offset + len(header)):
             if name == symbol.name or not occurrences(name, header_only=True):
                 continue
-            target, resolution, confidence, candidates = self._resolve(name)
+            target, resolution, confidence, candidates = self._resolve(name, symbol.file_key)
             if target and self._symbols[target].kind in (NodeKind.CLASS, NodeKind.INTERFACE):
                 self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
                                SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
+        for flag in sorted(ka.dynamic_call_flags(symbol.node, source, members)):
+            if flag not in self._nodes[symbol.id].flags:
+                self._nodes[symbol.id].flags.append(flag)
         unresolved: List[Dict[str, Any]] = []
-        for call in ka.call_expressions(symbol.node, source):
+        external: Counter = Counter()
+        for call in ka.call_expressions(symbol.node, source, members):
             name = call["name"]
-            target, resolution, confidence, candidates = self._resolve(name)
+            target, resolution, confidence, candidates = self._resolve(name, symbol.file_key)
             matches = occurrences(name)
             line = ka.start_line(symbol.node) + positions.line(matches[0][0]) - positions.line(offset) if matches else ka.start_line(symbol.node)
+            if target is None and name not in self._project_imports.get(symbol.file_key, ()):
+                external[name] += 1
+                continue
             if target is None:
                 unresolved.append({
                     "name": name, "resolution": str(Resolution.UNRESOLVED),
@@ -338,6 +381,10 @@ class KotlinAnalyzer:
         if unresolved:
             self._nodes[symbol.id].metadata["unresolved_calls"] = dict(Counter(item["name"] for item in unresolved))
             self._nodes[symbol.id].metadata["unresolved_references"] = unresolved[:20]
+            self._nodes[symbol.id].metadata["unresolved_reference_total"] = len(unresolved)
+        if external:
+            self._nodes[symbol.id].metadata["external_call_count"] = sum(external.values())
+            self._nodes[symbol.id].metadata["external_calls"] = dict(external.most_common(20))
         for name in positions.candidate_names(self._name_order, offset, end_offset):
             if name == symbol.name:
                 continue
@@ -346,7 +393,7 @@ class KotlinAnalyzer:
                 prefix = node_text[max(0, match_start - 12):match_start]
                 if re.search(r"(class|fun|val|var)\s+$", prefix):
                     continue
-                target, resolution, confidence, candidates = self._resolve(name)
+                target, resolution, confidence, candidates = self._resolve(name, symbol.file_key)
                 if target is None:
                     continue
                 tail = node_text[match_end:match_end + 8]
@@ -354,7 +401,15 @@ class KotlinAnalyzer:
                 line = positions.line(absolute_start) - positions.line(offset) + ka.start_line(symbol.node)
                 self._add_edge(symbol.id, target, relation, SourceSpan(symbol.file_key, line, line), confidence, resolution, candidates)
 
-    def _resolve(self, name: str):
+    def _char_offset(self, key: str, byte: int) -> int:
+        if self._valid_utf8[key]:
+            return bisect.bisect_left(self._byte_starts[key], byte)
+        return len(self._files[key][0][:byte].decode("utf-8", "replace"))
+
+    def _resolve(self, name: str, file_key: Optional[str] = None):
+        imported = self._exact_imports.get(file_key, {}).get(name) if file_key else None
+        if imported:
+            return imported, Resolution.EXACT, Confidence.STATIC_CERTAIN, []
         candidates = self._by_name.get(name, [])
         if len(candidates) == 1:
             return candidates[0], Resolution.UNIQUE_NAME, Confidence.STATIC_INFERRED, []

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from language_analyzers.core import flags as flag_names
+from language_analyzers.core.cost import module_end_line
 from language_analyzers.core.graph_models import NodeKind
 
 from .source import PythonSourceFile
@@ -365,7 +366,7 @@ def build_symbol_table(sources: Sequence[PythonSourceFile], project_path: Path, 
             file_path=relative,
             source=source.source_code,
             tree=source.tree,
-            end_line=max(1, source.source_code.count("\n") + 1),
+            end_line=module_end_line(source.source_code),
             docstring=ast.get_docstring(source.tree) if isinstance(source.tree, ast.Module) else None,
             package=package,
             is_package_init=is_init,

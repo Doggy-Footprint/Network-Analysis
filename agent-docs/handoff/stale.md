@@ -110,3 +110,8 @@ File: ec9d04784407ee5b-v3-real-repository-validation.md
 Summary: Validate bottlenecks.v3 and edge weights on a real repository.
 Related Files: fixtures/registry.py, code_analyzer/cli.py, bottlenecks/core.py
 Related Symbols: analyze_bottlenecks, load_edge_weights
+---
+File: dad85e4830f21190-existing-signal-defects.md
+Summary: 기존 후보 신호 결함 F1–F12 수정 인계; 3회차까지 구현 완료, V12 review evidence(review_diff 귀속 규칙) 정정만 남음(verifier limit)
+Related Files: tests/signal_defects_evidence/review_diff.py, language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/graph.py, bottlenecks/core.py, analysis/graph_metrics.py, analysis/file_graph.py
+Related Symbols: unresolved_boundary, evidence_spread, large_node, ambiguous_name, pagerank

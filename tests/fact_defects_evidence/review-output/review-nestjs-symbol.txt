@@ -1,0 +1,122 @@
+== (relation, resolution) count diff: base -> head
+relation        resolution      base    head   delta
+IMPORTS         exact              6      71     +65
+IMPORTS_SYMBOL  exact              1      75     +74
+INSTANTIATES    ambiguous          1       0      -1
+INSTANTIATES    exact              0       4      +4
+INSTANTIATES    unique_name        3       0      -3
+READS           ambiguous        118     117      -1
+READS           exact              2      13     +11
+READS           unique_name       40      30     -10
+RE_EXPORTS      exact              1       5      +4
+TESTS           exact              0       6      +6
+TYPE_USES       ambiguous          2       0      -2
+TYPE_USES       exact              1      65     +64
+TYPE_USES       unique_name       62       0     -62
+total edges: base=602 head=751
+== added edges by (relation, resolution, confidence): 228
+  IMPORTS         exact       static_certain          65
+  IMPORTS_SYMBOL  exact       static_certain          74
+  INSTANTIATES    exact       static_certain           4
+  READS           exact       static_certain          11
+  RE_EXPORTS      exact       static_certain           4
+  TESTS           exact       static_certain           6
+  TYPE_USES       exact       static_certain          64
+== removed edges by (relation, resolution, confidence): 79
+  INSTANTIATES    ambiguous   static_inferred          1
+  INSTANTIATES    unique_name static_inferred          3
+  READS           ambiguous   static_inferred          1
+  READS           unique_name static_inferred         10
+  TYPE_USES       ambiguous   static_inferred          2
+  TYPE_USES       unique_name static_inferred         62
+== nodes with changed span end_line / cost.line_count (F8/F9)
+  ts:src/app.module.ts: (end_line, line_count) (26, 25) -> (25, 25)
+  ts:src/article/article.interface.ts: (end_line, line_count) (33, 32) -> (32, 32)
+  ts:src/article/article.module.ts: (end_line, line_count) (34, 33) -> (33, 33)
+  ts:src/article/article.service.ts: (end_line, line_count) (205, 204) -> (204, 204)
+  ts:src/article/dto/create-article.dto.ts: (end_line, line_count) (7, 6) -> (6, 6)
+  ts:src/profile/follows.entity.ts: (end_line, line_count) (16, 15) -> (15, 15)
+  ts:src/profile/profile.module.ts: (end_line, line_count) (25, 24) -> (24, 24)
+  ts:src/profile/profile.service.ts: (end_line, line_count) (105, 104) -> (104, 104)
+  ts:src/shared/pipes/validation.pipe.ts: (end_line, line_count) (42, 41) -> (41, 41)
+  ts:src/tag/tag.entity.ts: (end_line, line_count) (13, 12) -> (12, 12)
+  ts:src/tag/tag.module.ts: (end_line, line_count) (20, 19) -> (19, 19)
+  ts:src/tag/tag.service.ts: (end_line, line_count) (18, 17) -> (17, 17)
+  ts:src/user/auth.middleware.ts: (end_line, line_count) (32, 31) -> (31, 31)
+  ts:src/user/user.controller.ts: (end_line, line_count) (56, 55) -> (55, 55)
+  ts:src/user/user.decorator.ts: (end_line, line_count) (19, 18) -> (18, 18)
+  ts:src/user/user.entity.ts: (end_line, line_count) (40, 39) -> (39, 39)
+  ts:src/user/user.module.ts: (end_line, line_count) (23, 22) -> (22, 22)
+  ts:src/user/user.service.ts: (end_line, line_count) (129, 128) -> (128, 128)
+  changed nodes: 18; only in base: 0; only in head: 0
+== bottleneck payload
+  schema: base=bottlenecks.v6 head=bottlenecks.v6
+  top-level keys only in base: []; only in head: []
+  dependency_network keys only in base: []; only in head: []
+  edge_weights keys only in base: []; only in head: []
+  coverage keys only in base: []; only in head: []
+  candidate kind counts (base -> head)
+    evidence_spread          105   142   +37
+    unresolved_boundary       68    68    +0
+  new candidates: 38
+    evidence_spread     ts:src/user/user.decorator.ts
+    evidence_spread     ts:src/profile/profile.module.ts
+    evidence_spread     ts:src/user/dto/create-user.dto.ts
+    evidence_spread     ts:src/user/user.service.ts
+    evidence_spread     ts:src/profile/profile.controller.ts
+    evidence_spread     ts:src/user/user.controller.ts#UserController
+    evidence_spread     ts:src/profile/profile.service.ts
+    evidence_spread     ts:src/tag/tag.controller.ts
+    evidence_spread     ts:src/tag/tag.service.ts
+    evidence_spread     ts:src/tag/tag.entity.ts
+    evidence_spread     ts:src/user/user.module.ts
+    evidence_spread     ts:src/article/article.controller.ts
+    evidence_spread     ts:src/article/article.module.ts
+    evidence_spread     ts:src/user/user.entity.ts
+    evidence_spread     ts:src/article/article.controller.ts#ArticleController
+    evidence_spread     ts:src/user/auth.middleware.ts
+    evidence_spread     ts:src/profile/profile.interface.ts
+    evidence_spread     ts:src/tag/tag.module.ts#TagModule
+    evidence_spread     ts:src/article/article.interface.ts
+    evidence_spread     ts:src/tag/tag.controller.ts#TagController
+    evidence_spread     ts:src/profile/profile.module.ts#ProfileModule
+    evidence_spread     ts:src/tag/tag.module.ts
+    evidence_spread     ts:src/profile/profile.controller.ts#ProfileController
+    evidence_spread     ts:src/article/comment.entity.ts
+    evidence_spread     ts:src/app.module.ts
+    evidence_spread     ts:src/user/dto/login-user.dto.ts
+    evidence_spread     ts:src/profile/follows.entity.ts
+    evidence_spread     ts:src/article/article.module.ts#ArticleModule
+    evidence_spread     ts:src/user/user.interface.ts
+    evidence_spread     ts:src/app.controller.ts#AppController
+    evidence_spread     ts:src/user/user.interface.ts#UserData
+    evidence_spread     ts:src/article/article.entity.ts
+    evidence_spread     ts:src/shared/pipes/validation.pipe.ts
+    evidence_spread     ts:src/user/user.controller.ts
+    evidence_spread     ts:src/shared/pipes/validation.pipe.ts#ValidationPipe
+    evidence_spread     ts:src/article/article.service.ts
+    evidence_spread     ts:src/user/user.module.ts#UserModule
+    evidence_spread     ts:src/app.controller.ts
+  gone candidates: 1
+    evidence_spread     ts:src/article/article.interface.ts#Comment
+== 10 sampled added edges (seed=20261019); verify each against the cited source line
+[1] ts:src/tag/tag.controller.ts -IMPORTS-> ts:src/tag/tag.entity.ts  (static_certain, exact, candidates=[])
+[2] ts:src/article/article.service.ts#ArticleService.findFeed -READS-> ts:src/article/article.entity.ts#ArticleEntity  (static_certain, exact, candidates=[])
+[3] ts:src/user/user.controller.ts -IMPORTS_SYMBOL-> ts:src/user/user.interface.ts#UserRO  (static_certain, exact, candidates=[])
+[4] ts:src/article/article.entity.ts#ArticleEntity.author -TYPE_USES-> ts:src/user/user.entity.ts#UserEntity  (static_certain, exact, candidates=[])
+[5] ts:src/article/article.service.ts -IMPORTS_SYMBOL-> ts:src/article/article.entity.ts#ArticleEntity  (static_certain, exact, candidates=[])
+[6] ts:src/profile/profile.service.ts -IMPORTS-> ts:src/profile/profile.interface.ts  (static_certain, exact, candidates=[])
+[7] ts:src/tag/tag.controller.spec.ts -IMPORTS-> ts:src/tag/tag.controller.ts  (static_certain, exact, candidates=[])
+[8] ts:src/article/article.service.ts#ArticleService.create -READS-> ts:src/article/article.entity.ts#ArticleEntity  (static_certain, exact, candidates=[])
+[9] ts:src/article/article.service.ts#ArticleService.addComment -READS-> ts:src/article/comment.entity.ts#Comment  (static_certain, exact, candidates=[])
+[10] ts:src/user/user.controller.ts -IMPORTS_SYMBOL-> ts:src/user/user.decorator.ts#User  (static_certain, exact, candidates=[])
+[1] src/tag/tag.controller.ts:3: import { TagEntity } from './tag.entity';
+[2] src/article/article.service.ts:75: const qb = await getRepository(ArticleEntity)
+[3] src/user/user.controller.ts:4: import { UserRO } from './user.interface';
+[4] src/article/article.entity.ts:38: author: UserEntity;
+[5] src/article/article.service.ts:4: import { ArticleEntity } from './article.entity';
+[6] src/profile/profile.service.ts:6: import { ProfileRO, ProfileData } from './profile.interface';
+[7] src/tag/tag.controller.spec.ts:2: import { TagController } from './tag.controller';
+[8] src/article/article.service.ts:172: let article = new ArticleEntity();
+[9] src/article/article.service.ts:104: const comment = new Comment();
+[10] src/user/user.controller.ts:7: import { User } from './user.decorator';

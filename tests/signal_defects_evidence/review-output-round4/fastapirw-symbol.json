@@ -1,0 +1,398 @@
+{
+ "attributed_edge_changes": 0,
+ "attributed_file_pairs": [],
+ "attributed_removed_edges": 0,
+ "candidates": {
+  "evidence_spread": {
+   "added": 0,
+   "base": 98,
+   "changed": 66,
+   "head": 66,
+   "removed": 32,
+   "samples": [
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.services.authentication#check_email_is_taken",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.core.settings.base#BaseAppSettings.Config",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.models.schemas.rwschema#RWSchema.Config",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.db.repositories.articles#ArticlesRepository.__init__",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.core.settings.base#BaseAppSettings",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 3,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.db.repositories.profiles#ProfilesRepository.__init__",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.models.domain.rwmodel#RWModel",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.core.settings.base",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.models.schemas.articles#ArticleForResponse",
+     "why": "R11"
+    },
+    {
+     "change": "removed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      null
+     ],
+     "target": "py:app.db.repositories.base",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.schemas.comments#ListOfCommentsInResponse",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 5,
+       "file_count": 5,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.domain.comments",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 4,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.domain.profiles#Profile",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 10,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.api.dependencies.database#get_repository",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 8,
+       "file_count": 12,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.domain.articles",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.schemas.profiles#ProfileInResponse",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 5,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.services.jwt",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 2,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.db.repositories.comments#CommentsRepository.create_comment_for_article",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 2,
+       "file_count": 6,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.domain.rwmodel",
+     "why": "R11"
+    },
+    {
+     "change": "changed",
+     "metrics": [
+      {
+       "file_count": 25,
+       "line_span": 0,
+       "line_threshold": 2000
+      },
+      {
+       "directory_count": 9,
+       "file_count": 25,
+       "line_span": 0,
+       "line_threshold": 2000
+      }
+     ],
+     "target": "py:app.models.domain.users",
+     "why": "R11"
+    }
+   ]
+  }
+ },
+ "constructor_fields": [],
+ "edges": {
+  "base": 1787,
+  "changes": {},
+  "head": 1787
+ },
+ "evidence_spread_recomputation": {
+  "base": {
+   "actual": 98,
+   "expected": 98,
+   "mismatch": 0,
+   "rule": "r5"
+  },
+  "head": {
+   "actual": 66,
+   "expected": 66,
+   "mismatch": 0,
+   "rule": "r11"
+  }
+ },
+ "flag_changes": {},
+ "geometry_changes": {},
+ "input": "fastapirw",
+ "key_paths": {
+  "+$.metrics.directory_count (allowed)": 66
+ },
+ "metadata_changes": {},
+ "mode": "symbol",
+ "nodes": {
+  "added": [],
+  "base": 601,
+  "head": 601,
+  "removed": []
+ },
+ "nontest_share": {
+  "base": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 35,
+    "share": 0.4667
+   },
+   "nontest_files": 75,
+   "unresolved_boundary": {
+    "files": 0,
+    "share": 0.0
+   }
+  },
+  "head": {
+   "basis": "files with a span in symbol mode",
+   "evidence_spread": {
+    "files": 26,
+    "share": 0.3467
+   },
+   "nontest_files": 75,
+   "unresolved_boundary": {
+    "files": 0,
+    "share": 0.0
+   }
+  }
+ },
+ "schema": "bottlenecks.v6",
+ "stage": "b",
+ "structural_metric_changes": {},
+ "unexplained": [],
+ "versions": [
+  {
+   "analysis": "5"
+  },
+  {
+   "analysis": "6"
+  }
+ ]
+}

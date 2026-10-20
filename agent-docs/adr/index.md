@@ -13,3 +13,8 @@ File: 07e12b7114048d41-json-baseline-ratchet.md
 Summary: 구조 회귀 비교(--baseline, --fail-on-new)는 이전 bottleneck JSON을 baseline으로 쓰고 git ref checkout 방식은 기각
 Related Files: bottlenecks/delta.py, code_analyzer/cli.py, analysis/structure.py, bottlenecks/core.py
 Related Symbols: load_baseline, compute_delta, regressions, package_dependencies, rules_digest
+---
+File: b8a976686050faf6-evidence-spread-by-directory.md
+Summary: evidence_spread는 대상 디렉터리 밖 디렉터리 2개 이상(또는 단일 파일 줄 범위 초과)으로 발동하고, 파일 수 임계 노출과 file 모드 제거는 기각
+Related Files: bottlenecks/core.py, report/bottlenecks/generate.py, renderers/html/static/app.js
+Related Symbols: _candidates, _file_candidates, evidence_spread, directory_count
