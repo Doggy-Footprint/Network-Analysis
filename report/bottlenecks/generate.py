@@ -27,8 +27,8 @@ KIND_LABELS = {
 }
 
 KIND_DESCRIPTIONS = {
-    "evidence_spread": "근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
-    "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘는 사례입니다.",
+    "evidence_spread": "대상 밖의 다른 파일에서 오는 근거가 여러 파일에 흩어져 있거나 임계 줄 수를 넘는 범위에 걸친 사례입니다.",
+    "large_node": "노드의 소스 범위가 large_node_line_threshold 줄을 넘거나 토큰 수가 large_node_token_threshold를 넘는 사례입니다.",
     "unresolved_boundary": "분석 경계에서 해결되지 않은 참조가 남은 사례입니다.",
     "dependency_cycle": "파일들이 서로 의존해 순환을 이루는 사례입니다. 같은 순환도 연결 확실성 tier(certain, resolved, all)별로 따로 나옵니다.",
     "package_cycle": "package들이 서로 의존해 순환을 이루는 사례입니다.",
@@ -41,7 +41,7 @@ KIND_DESCRIPTIONS = {
 METRIC_DEFINITIONS = [
     ("token_cost", "코드 조각을 읽는 데 드는 텍스트 양의 근사값입니다."),
     ("effective_token_cost", "token_cost에 배율을 곱한 값입니다. vendored 파일이나 /vendor/, /node_modules/ 경로는 0배, generated·migration 관련 파일이나 /migrations/, /alembic/versions/ 경로는 0.1배, 그 외는 1배입니다."),
-    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다. 확정되지 않은 edge는 edge_weights 설정만큼 할인됩니다."),
+    ("pagerank", "다른 node로부터 얼마나 많이 참조되는지를 나타내는 중요도 지표입니다. 확정되지 않은 edge는 edge_weights 설정만큼 할인되며, 할인된 몫은 모든 node에 고르게 분배됩니다."),
     ("weighted_centrality_cost", "pagerank × effective_token_cost로 계산됩니다."),
     ("fan_in", "들어오는 connection 수입니다."),
     ("fan_out", "나가는 connection 수입니다."),

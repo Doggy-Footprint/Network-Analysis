@@ -7,7 +7,7 @@ since Kotlin wildcard imports make exact resolution impossible from syntax alone
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
 
 from language_analyzers.core import flags as flag_names
 
@@ -280,13 +280,16 @@ def function_return_types(func_node, source: bytes) -> Tuple[Optional[str], Opti
     return None, None
 
 
-def call_expressions(node, source: bytes) -> List[Dict[str, Any]]:
+def call_expressions(node, source: bytes, exclude: Sequence[Any] = ()) -> List[Dict[str, Any]]:
     """Every call in a subtree, as [{"name": callee, "type_args": [...]}].
     Bare calls (`foo()`) and generic calls (`foo<Bar>()`) are named by their own identifier;
     method calls (`x.foo()`) are named by the method, not the receiver."""
     results: List[Dict[str, Any]] = []
+    skipped = {(item.start_byte, item.end_byte) for item in exclude}
 
     def walk(n):
+        if skipped and (n.start_byte, n.end_byte) in skipped:
+            return
         if n.type == "call_expression":
             callee_node = None
             for c in n.children:
@@ -321,12 +324,15 @@ def call_expressions(node, source: bytes) -> List[Dict[str, Any]]:
     return results
 
 
-def dynamic_call_flags(node, source: bytes) -> Set[str]:
+def dynamic_call_flags(node, source: bytes, exclude: Sequence[Any] = ()) -> Set[str]:
     """Reflective class loading and member lookups in a subtree. Only calls with a
     receiver count: a bare `forName(n)` is a user-defined function, not java.lang.Class."""
     found: Set[str] = set()
+    skipped = {(item.start_byte, item.end_byte) for item in exclude}
 
     def walk(n):
+        if skipped and (n.start_byte, n.end_byte) in skipped:
+            return
         if n.type == "call_expression":
             navigation = n.children[0] if n.children and n.children[0].type == "navigation_expression" else None
             suffixes = [c for c in navigation.children if c.type == "navigation_suffix"] if navigation else []

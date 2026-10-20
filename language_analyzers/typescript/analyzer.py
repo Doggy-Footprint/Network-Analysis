@@ -137,6 +137,7 @@ class TypeScriptAnalyzer:
         self._is_alias = typescript_alias_matcher(self._load_tsconfig_aliases(), self._modules)
         self._symbols: Dict[str, _Symbol] = {}
         self._by_simple_name: Dict[str, List[str]] = {}
+        self._closed_cache: Dict[str, bool] = {}
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
 
@@ -563,7 +564,6 @@ class TypeScriptAnalyzer:
         })
         metadata: Dict[str, Any] = {"kind": symbol.kind, "name": symbol.name}
         if collisions > 1:
-            flags.append(flag_names.AMBIGUOUS_NAME)
             metadata["name_collision_count"] = collisions
         self._nodes[symbol.id] = GraphNode(
             id=symbol.id,
@@ -725,6 +725,7 @@ class TypeScriptAnalyzer:
                     locals_.add(ts.node_text(module.source, name_node))
 
         unresolved: Counter = Counter()
+        external: Counter = Counter()
         unresolved_evidence: List[Dict[str, Any]] = []
         for node in nodes:
             if node.type not in ("call_expression", "new_expression"):
@@ -758,6 +759,9 @@ class TypeScriptAnalyzer:
                 module, symbol, name, receiver
             )
             if target is None:
+                if not self._is_boundary_call(module, symbol, name, receiver, locals_):
+                    external[name] += 1
+                    continue
                 unresolved[name] += 1
                 unresolved_evidence.append({
                     "name": name,
@@ -778,6 +782,10 @@ class TypeScriptAnalyzer:
         if unresolved:
             self._nodes[source_id].metadata["unresolved_calls"] = dict(unresolved.most_common(20))
             self._nodes[source_id].metadata["unresolved_references"] = unresolved_evidence[:20]
+            self._nodes[source_id].metadata["unresolved_reference_total"] = len(unresolved_evidence)
+        if external:
+            self._nodes[source_id].metadata["external_call_count"] = sum(external.values())
+            self._nodes[source_id].metadata["external_calls"] = dict(external.most_common(20))
 
         write_nodes: Set[Tuple[int, int]] = set()
         for node in nodes:
@@ -809,6 +817,49 @@ class TypeScriptAnalyzer:
             )
 
     # ---- resolution ----
+
+    def _is_boundary_call(self, module: _Module, symbol: Optional[_Symbol], name: str, receiver: Optional[str], locals_: Set[str]) -> bool:
+        """A call no project symbol matched is a boundary only if it was aimed at project code
+        (project namespace, project import, or a class whose whole ancestry is project code)."""
+        if receiver is None:
+            binding = module.imports.get(name)
+            return binding is not None and not binding.is_namespace and self._resolve_import(module.path, binding.specifier) is not None
+        if receiver == "this":
+            owner = self._symbols.get(symbol.parent) if symbol is not None and symbol.parent else None
+            return owner is not None and owner.kind == NodeKind.CLASS and self._closed_class(owner)
+        if receiver in locals_:
+            return False
+        binding = module.imports.get(receiver)
+        if binding is None:
+            owner = self._symbols.get(module.defines.get(receiver, ""))
+        elif binding.is_namespace:
+            return self._resolve_import(module.path, binding.specifier) is not None
+        else:
+            resolved = self._resolve_binding(module, binding)
+            owner = self._symbols.get(resolved) if resolved else None
+        return owner is not None and owner.kind == NodeKind.CLASS and self._closed_class(owner)
+
+    def _closed_class(self, owner: _Symbol) -> bool:
+        cache = self._closed_cache
+        if owner.id not in cache:
+            seen: Set[str] = set()
+            stack = [owner]
+            closed = True
+            while stack and closed:
+                current = stack.pop()
+                if current.id in seen:
+                    continue
+                seen.add(current.id)
+                current_module = self._modules.get(current.file_key)
+                for base_name, _relation, _line in current.heritage:
+                    base_id = self._resolve_name(current_module, base_name)[0] if current_module is not None else None
+                    base = self._symbols.get(base_id) if base_id else None
+                    if base is None or base.kind != NodeKind.CLASS:
+                        closed = False
+                        break
+                    stack.append(base)
+            cache[owner.id] = closed
+        return cache[owner.id]
 
     def _resolve_reference(self, module: _Module, symbol: Optional[_Symbol], name: str, receiver: Optional[str]):
         if receiver == "this" and symbol is not None and symbol.parent:

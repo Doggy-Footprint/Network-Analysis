@@ -29,8 +29,8 @@
     const core = Object.keys(definitions).slice(0, 6);
     const kinds = {
         unresolved_boundary: ['분석 미확정 참조', '분석으로 참조·호출 대상을 확정하지 못했거나, 실행 중 해석이 필요한 부분입니다.'],
-        evidence_spread: ['근거 분산', '참조 근거가 여러 파일 또는 넓은 줄 범위에 퍼져 있습니다.'],
-        large_node: ['큰 노드', '소스 범위가 설정한 줄 수 임계값을 넘습니다.'],
+        evidence_spread: ['근거 분산', '대상 밖의 다른 파일에서 오는 참조 근거가 여러 파일 또는 넓은 줄 범위에 퍼져 있습니다.'],
+        large_node: ['큰 노드', '소스 범위가 설정한 줄 수 또는 토큰 수 임계값을 넘습니다.'],
         untested_hub: ['테스트 미도달 허브', '연결이 많은 상위 파일인데 테스트 파일에서 직접 확정 연결이 닿지 않습니다.'],
         isolated_node: ['고립 파일', '다른 운영 코드 파일과 확정된 정적 연결이 없는 소스 파일입니다.'],
         dependency_cycle: ['의존 순환', '서로 의존해 한 바퀴 돌아오는 파일 묶음입니다. 같은 순환도 연결 확실성 단계별로 따로 표시됩니다.'],
@@ -722,6 +722,7 @@
                     addRow(group, item, value);
                 }
             if (weights.large_node_line_threshold !== undefined) addRow(term('큰 노드'), '줄 수 임계값', weights.large_node_line_threshold);
+            if (weights.large_node_token_threshold !== undefined) addRow(term('큰 노드'), '토큰 수 임계값', weights.large_node_token_threshold);
         }
         const guide = $('reading-guide');
         const item = (...parts) => {
@@ -947,7 +948,7 @@
         fileMode = arch?.granularity === 'file' || bottlenecks?.granularity === 'file';
         layers = data.layers || {};
         if (fileMode) {
-            kinds.large_node[1] = '파일 전체 줄 수가 설정한 임계값을 넘습니다.';
+            kinds.large_node[1] = '파일 전체 줄 수 또는 토큰 수가 설정한 임계값을 넘습니다.';
             $('node-search').placeholder = '파일 이름 또는 경로';
         }
         nodeMap = new Map(nodes.map(n => [n.id, n]));

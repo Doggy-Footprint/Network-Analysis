@@ -12,8 +12,9 @@ class EdgeWeightsError(ValueError):
 
 
 _KEYS = {"id", "version", "confidence", "resolution", "large_node_line_threshold"}
-_OPTIONAL_KEYS = {"untested_hub_top_n"}
+_OPTIONAL_KEYS = {"untested_hub_top_n", "large_node_token_threshold"}
 DEFAULT_UNTESTED_HUB_TOP_N = 10
+DEFAULT_LARGE_NODE_TOKEN_THRESHOLD = 24000
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,7 @@ class EdgeWeights:
     resolution: Mapping[str, float]
     large_node_line_threshold: int
     untested_hub_top_n: int = DEFAULT_UNTESTED_HUB_TOP_N
+    large_node_token_threshold: int = DEFAULT_LARGE_NODE_TOKEN_THRESHOLD
 
     def weight_for(self, edge: Any) -> float:
         if isinstance(edge, Mapping):
@@ -73,6 +75,9 @@ def load_edge_weights(path: Union[str, Path]) -> EdgeWeights:
     top_n = document.get("untested_hub_top_n", DEFAULT_UNTESTED_HUB_TOP_N)
     if not _is_int(top_n) or top_n < 1:
         raise EdgeWeightsError("edge weights untested_hub_top_n must be an int >= 1")
+    token_threshold = document.get("large_node_token_threshold", DEFAULT_LARGE_NODE_TOKEN_THRESHOLD)
+    if not _is_int(token_threshold) or token_threshold < 1:
+        raise EdgeWeightsError("edge weights large_node_token_threshold must be an int >= 1")
     return EdgeWeights(
         id=document["id"],
         version=document["version"],
@@ -80,4 +85,5 @@ def load_edge_weights(path: Union[str, Path]) -> EdgeWeights:
         resolution=_weight_table(document, "resolution", Resolution),
         large_node_line_threshold=threshold,
         untested_hub_top_n=top_n,
+        large_node_token_threshold=token_threshold,
     )

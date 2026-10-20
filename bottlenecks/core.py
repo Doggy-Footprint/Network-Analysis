@@ -106,18 +106,27 @@ def _weights(weights):
         raise BottleneckInputError("edge weight threshold is invalid")
     if not _valid_int(getattr(weights, "untested_hub_top_n", None), 1):
         raise BottleneckInputError("edge weight untested_hub_top_n is invalid")
+    if not _valid_int(getattr(weights, "large_node_token_threshold", None), 1):
+        raise BottleneckInputError("edge weight token threshold is invalid")
 
 
 def _candidate(identifier: str, kind: str, target: str, metrics: Mapping[str, Any], evidence: Any, coverage: str) -> Mapping[str, Any]:
     return {"id": "b:" + hashlib.sha256(identifier.encode()).hexdigest()[:16], "kind": kind, "target": target, "metrics": dict(metrics), "evidence": evidence, "coverage": coverage, "status": "static_candidate"}
 
 
-def _candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
+def _unresolved_count(metadata: Mapping[str, Any]) -> int:
+    total = metadata.get("unresolved_reference_total")
+    return total if _valid_int(total) else len(metadata.get("unresolved_references", []))
+
+
+def _candidates(architecture: Any, threshold: int, token_threshold: int, metrics: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    from analysis.file_graph import ownership_edge
     candidates = []
     by_target = {}
     evidence_records = {}
+    nodes_by_id = {node.id: node for node in architecture.nodes}
     for edge in architecture.edges:
-        if getattr(edge, "evidence", None) is not None:
+        if getattr(edge, "evidence", None) is not None and not ownership_edge(edge, nodes_by_id):
             for target in candidate_targets(edge):
                 by_target.setdefault(target, []).append(edge)
         if str(getattr(edge, "resolution", "")) == "unresolved" or str(getattr(edge, "confidence", "")) == "dynamic_required": candidates.append(_candidate(f"{edge.from_id}|{edge.to_id}|boundary", "unresolved_boundary", edge.to_id, {}, {"from_id": edge.from_id, "to_id": edge.to_id, "relation": str(getattr(edge, "relation", ""))}, "static_analyzer_relation"))
@@ -125,10 +134,11 @@ def _candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
         metadata = getattr(node, "metadata", {}) or {}
         unresolved = metadata.get("unresolved_references", [])
         if unresolved or any(str(flag).startswith("dynamic_") for flag in (getattr(node, "flags", ()) or ())):
-            candidates.append(_candidate(node.id + "|boundary", "unresolved_boundary", node.id, {"unresolved_count": len(unresolved)}, list(unresolved), "static_analyzer_relation"))
+            candidates.append(_candidate(node.id + "|boundary", "unresolved_boundary", node.id, {"unresolved_count": _unresolved_count(metadata)}, list(unresolved), "static_analyzer_relation"))
         span = getattr(node, "span", None)
-        if span is not None and span.end_line - span.start_line + 1 > threshold:
-            candidates.append(_candidate(node.id + "|large_node", "large_node", node.id, {"line_count": span.end_line - span.start_line + 1, "line_threshold": threshold}, {"path": span.file_path, "start_line": span.start_line, "end_line": span.end_line}, "architecture_node_span"))
+        tokens = metrics[node.id]["token_cost"]
+        if span is not None and (span.end_line - span.start_line + 1 > threshold or tokens > token_threshold):
+            candidates.append(_candidate(node.id + "|large_node", "large_node", node.id, {"line_count": span.end_line - span.start_line + 1, "line_threshold": threshold, "token_count": tokens, "token_threshold": token_threshold}, {"path": span.file_path, "start_line": span.start_line, "end_line": span.end_line}, "architecture_node_span"))
     def evidence_record(edge):
         key = id(edge)
         if key not in evidence_records:
@@ -137,12 +147,16 @@ def _candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
         return evidence_records[key]
 
     for target, edges in sorted(by_target.items()):
+        own = getattr(getattr(nodes_by_id[target], "span", None), "file_path", None)
+        edges = [edge for edge in edges if edge.evidence.file_path != own]
+        if not edges:
+            continue
         paths = {edge.evidence.file_path for edge in edges}; span = max(edge.evidence.end_line for edge in edges) - min(edge.evidence.start_line for edge in edges) + 1 if len(paths) == 1 else 0
         if len(paths) > 1 or span > threshold: candidates.append(_candidate(target + "|spread", "evidence_spread", target, {"file_count": len(paths), "line_span": span, "line_threshold": threshold}, [evidence_record(edge) for edge in edges], "static_analyzer_relation"))
     return sorted({item["id"]: item for item in candidates}.values(), key=lambda item: (item["kind"], item["id"]))
 
 
-def _file_candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any]]:
+def _file_candidates(architecture: Any, threshold: int, token_threshold: int, metrics: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     from analysis.file_graph import ownership_edge
     details = architecture.details
     node_files = details["node_files"]
@@ -169,10 +183,13 @@ def _file_candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any
         target = node_files[node["id"]]
         if target is None:
             continue
-        unresolved = node.get("metadata", {}).get("unresolved_references", [])
+        node_metadata = node.get("metadata", {})
+        unresolved = node_metadata.get("unresolved_references", [])
         dynamic = [flag for flag in node.get("flags", []) if str(flag).startswith("dynamic_")]
         if unresolved or dynamic:
             record = {"node_id": node["id"], "unresolved_references": unresolved, "flags": dynamic}
+            if "unresolved_reference_total" in node_metadata:
+                record["unresolved_reference_total"] = node_metadata["unresolved_reference_total"]
             if node.get("span"):
                 record.update(path=node["span"]["file_path"], start_line=node["span"]["start_line"], end_line=node["span"]["end_line"])
             boundaries.setdefault(target, []).append(record)
@@ -181,15 +198,17 @@ def _file_candidates(architecture: Any, threshold: int) -> list[Mapping[str, Any
         if node.id not in details["file_nodes"]:
             continue
         count = node.cost.line_count
-        if count > threshold:
+        tokens = metrics[node.id]["token_cost"]
+        if count > threshold or tokens > token_threshold:
             candidates.append(_candidate(node.id + "|large_node", "large_node", node.id,
-                {"line_count": count, "line_threshold": threshold},
+                {"line_count": count, "line_threshold": threshold, "token_count": tokens, "token_threshold": token_threshold},
                 {"path": node.metadata["file_path"], "start_line": 1, "end_line": count}, "architecture_node_span"))
         if node.id in boundaries:
             records = boundaries[node.id]
             candidates.append(_candidate(node.id + "|boundary", "unresolved_boundary", node.id,
-                {"unresolved_count": sum(len(record.get("unresolved_references", [])) for record in records)}, records, "static_analyzer_relation"))
-        records = incoming.get(node.id, [])
+                {"unresolved_count": sum(_unresolved_count(record) for record in records)}, records, "static_analyzer_relation"))
+        own = node.metadata["file_path"]
+        records = [record for record in incoming.get(node.id, []) if record["evidence"]["file_path"] != own]
         if records:
             paths = {record["evidence"]["file_path"] for record in records}
             span = max(record["evidence"]["end_line"] for record in records) - min(record["evidence"]["start_line"] for record in records) + 1 if len(paths) == 1 else 0
@@ -238,7 +257,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         rankings = {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted(ranked_ids, key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS}
         categories = {node.id: _category(node) for node in nodes}
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
-        candidates = _file_candidates(architecture, weights.large_node_line_threshold) if is_file else _candidates(architecture, weights.large_node_line_threshold)
+        candidates = _file_candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics) if is_file else _candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics)
         structure = None
         if is_file:
             from analysis.structure import analyze_structure
@@ -247,7 +266,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             reach = reach_candidates(architecture, metrics, weights.untested_hub_top_n)
             candidates = sorted(candidates + list(structure.candidates) + reach, key=lambda item: (item["kind"], item["id"]))
         candidate_groups = _intern_candidate_groups(candidates)
-        payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold}
+        payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold, "large_node_token_threshold": weights.large_node_token_threshold}
         if is_file:
             payload["untested_hub_top_n"] = weights.untested_hub_top_n
         fallback = any(getattr(node, "span", None) is None and getattr(node, "cost", None) is None for node in nodes); limitations = ["Token cost fallback applies to nodes without a source span or explicit cost."] if fallback else []
@@ -263,7 +282,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "4"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "5"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

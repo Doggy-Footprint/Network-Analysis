@@ -281,6 +281,7 @@ class PythonGraphAnalyzer:
     def build(self, sources: Sequence[PythonSourceFile]) -> Tuple[List[GraphNode], List[GraphEdge]]:
         table = build_symbol_table(sources, self.project_path, resolve_root=self.snapshot is None)
         self._table = table
+        self._closed_cache: Dict[str, bool] = {}
         self._nodes: Dict[str, GraphNode] = {}
         self._edges: Dict[Tuple[Any, ...], GraphEdge] = {}
 
@@ -351,7 +352,6 @@ class PythonGraphAnalyzer:
         collisions = table.collisions(symbol.name)
         metadata: Dict[str, Any] = {"module": symbol.module, "name": symbol.name}
         if collisions > 1:
-            flags.append(flag_names.AMBIGUOUS_NAME)
             metadata["name_collision_count"] = collisions
         self._add_node(GraphNode(
             id=symbol.id,
@@ -514,6 +514,7 @@ class PythonGraphAnalyzer:
         module = symbol.module if symbol else node.metadata.get("module", "")
         file_path = symbol.file_path if symbol else node.span.file_path
         unresolved: Counter = Counter()
+        external: Counter = Counter()
         unresolved_evidence: List[Dict[str, Any]] = []
 
         for target_module, line in scanner.dynamic_imports:
@@ -530,7 +531,9 @@ class PythonGraphAnalyzer:
                 reference, symbol, module, table
             )
             if target is None:
-                if reference.is_call:
+                if reference.is_call and not self._is_boundary_call(reference, symbol, module, table, scanner.rebound):
+                    external[reference.name] += 1
+                elif reference.is_call:
                     unresolved[reference.name] += 1
                     unresolved_evidence.append({
                         "name": reference.name,
@@ -570,12 +573,67 @@ class PythonGraphAnalyzer:
         if unresolved:
             node.metadata["unresolved_calls"] = dict(unresolved.most_common(20))
             node.metadata["unresolved_references"] = unresolved_evidence[:20]
+            node.metadata["unresolved_reference_total"] = len(unresolved_evidence)
             if len(unresolved_evidence) > 20:
-                node.metadata["unresolved_reference_total"] = len(unresolved_evidence)
                 node.metadata["unresolved_reference_limit"] = 20
                 node.metadata["unresolved_reference_truncated"] = True
 
+        if external:
+            node.metadata["external_call_count"] = sum(external.values())
+            node.metadata["external_calls"] = dict(external.most_common(20))
+
     # ---- resolution ----
+
+    def _is_boundary_call(
+        self, reference: _Reference, symbol: Optional[SymbolEntry], module: str, table: SymbolTable, rebound: Set[str]
+    ) -> bool:
+        """A call no project symbol matched is a boundary only if it was aimed at project code
+        (project module, project import, or a class whose whole ancestry is project code)."""
+        receiver = reference.receiver
+        entry = table.modules.get(module)
+        if receiver in ("self", "cls") and symbol is not None:
+            owner = self._owning_class(symbol, table)
+            return owner is not None and self._closed_class(owner, table)
+        if receiver is None:
+            binding = entry.bindings.get(reference.name) if entry else None
+            return binding is not None and binding.symbol is not None and self._module_index.is_internal(binding.module)
+        if receiver in rebound:
+            return False
+        binding = entry.bindings.get(receiver) if entry else None
+        if binding is None:
+            owner = table.by_id.get(entry.defines.get(receiver, "")) if entry else None
+            return owner is not None and owner.kind == NodeKind.CLASS and self._closed_class(owner, table)
+        if binding.symbol is None:
+            return self._module_index.is_internal(binding.module)
+        owner_id = table.resolve_binding(binding)
+        owner = table.by_id.get(owner_id) if owner_id else None
+        if owner is not None:
+            return owner.kind == NodeKind.CLASS and self._closed_class(owner, table)
+        target = table.modules.get(binding.module)
+        return (owner_id is not None or target is None or binding.symbol not in target.defines) and self._module_index.is_internal(f"{binding.module}.{binding.symbol}")
+
+    def _closed_class(self, owner: SymbolEntry, table: SymbolTable) -> bool:
+        cache = self._closed_cache
+        if owner.id not in cache:
+            seen: Set[str] = set()
+            stack = [owner]
+            closed = True
+            while stack and closed:
+                current = stack.pop()
+                if current.id in seen:
+                    continue
+                seen.add(current.id)
+                for base_name, _ in current.bases:
+                    if base_name == "object":
+                        continue
+                    base_id = self._resolve_name(base_name.rsplit(".", 1)[-1], current.module, table)[0]
+                    base = table.by_id.get(base_id) if base_id else None
+                    if base is None or base.kind != NodeKind.CLASS:
+                        closed = False
+                        break
+                    stack.append(base)
+            cache[owner.id] = closed
+        return cache[owner.id]
 
     def _resolve_reference(
         self,
