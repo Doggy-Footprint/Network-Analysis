@@ -15,6 +15,6 @@ Related Files: analysis/graph_metrics.py, language_analyzers/core/cost.py, repos
 Related Symbols: hop_2_token_cost, GraphNode.signature, RelationKind
 ---
 File: dad85e4830f21190-existing-signal-defects.md
-Summary: 기존 후보 신호(dynamic 플래그, unresolved_boundary, evidence_spread, ambiguous_name, Kotlin import, large_node, PageRank 가중치) 검수에서 나온 결함 F1–F10 수정 인계
-Related Files: language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/graph.py, bottlenecks/core.py, analysis/graph_metrics.py, analysis/file_graph.py
+Summary: 기존 후보 신호 결함 F1–F12 수정 인계; 3회차까지 구현 완료, V12 review evidence(review_diff 귀속 규칙) 정정만 남음(verifier limit)
+Related Files: tests/signal_defects_evidence/review_diff.py, language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/graph.py, bottlenecks/core.py, analysis/graph_metrics.py, analysis/file_graph.py
 Related Symbols: unresolved_boundary, evidence_spread, large_node, ambiguous_name, pagerank

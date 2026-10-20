@@ -8,14 +8,16 @@
 
 > 기존 신호 결함 수정할 계획 세워. /workflow-approach
 
+> handoff-existing signal defects에서 F3, F4, F5, F6, F9 토큰, F10, F12을 처리해야 해
+
 AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검수했고, 아래 결함이 나왔다. 이 문서는 그 수정 작업을 인계한다.
 
 ## State
 
 - Branch: `research/ai-friendly-code-structure`.
 - Base commit: `4c0d5ed`(검수 시점 HEAD는 `6444895451a89f4450b9123b7beb17b11506e534` + 문서 변경만).
-- 변경된 파일: 이 문서, `agent-docs/handoff/index.md`. 구현 변경은 없다.
-- 진행: 3회 분할 중 1회차(F11, F7, F8, F9 줄 수)와 2회차(F1, F2)를 완료했다(spec `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`, `agent-docs/spec-logs/f3972ebd2386454f-dynamic-flags.md`). 남은 것은 3회차(F3, F4, F5, F6, F9 토큰, F10, F12)다.
+- 3회차 종료 시점 HEAD: 이 문서 갱신 커밋(branch `research/ai-friendly-code-structure`). 3회차 구현 변경 파일: `bottlenecks/core.py`, `analysis/{graph_metrics,edge_weights,file_graph}.py`, `profiles/edge_weights.v1.yaml`, `language_analyzers/{core/flags,python/graph,typescript/analyzer,kotlin/analyzer,kotlin/ast}.py`, `report/bottlenecks/generate.py`, `renderers/html/static/app.js`. 테스트·증거: `tests/test_signal_defects.py`, `tests/signal_defects_support.py`, `tests/signal_defects_evidence/`, 이전 run base manifest 5개·O11 archive 재생성, 기존 테스트 조정(`existing-tests.diff`).
+- 진행: 1회차(F11, F7, F8, F9 줄 수)·2회차(F1, F2) 완료. 3회차(F3, F4, F5, F6, F9 토큰, F10, F12)는 구현·테스트가 끝났고 V1–V11·V13–V15가 verifier에서 accepted이지만, V12(실제 fixture 출력 review evidence)의 자동 비교 스크립트 귀속 규칙이 느슨하다는 verifier 2 지적(F2–F5)으로 verifier 예산이 소진되어 status `limit`으로 멈췄다.
 - 기존 테스트로는 아래 결함이 잡히지 않는다. 검수 당시 관련 테스트는 650 passed, Chromium이 필요한 browser 테스트 31개만 error였다.
 
 ### 결함 목록 (모두 실행으로 확인)
@@ -45,25 +47,33 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 | F11 원인 가설 "모듈 최상위 익명 함수 미스캔" | `_resolve_import('./tag.entity')`가 None. `with_suffix`가 `tag.entity`를 `tag.ts`로 바꿈 | verified: 실행 추적. 1회차에서 상대 import 해석을 고쳐 해결(nestjs IMPORTS 6→71). 모듈 최상위 코드 스캔은 하지 않았다 |
 | 1회차 workflow (F11, F7, F8, F9 줄 수) | 완료. verifier 2회(RETRY → PASS), 수정 4회 | verified: spec-logs/7ab6320d2eb56ccf |
 | 2회차 workflow (F1, F2) | 완료. verifier 2회(RETRY → PASS), 수정 1회(구문 오류 파일 검증 누락) | verified: spec-logs/f3972ebd2386454f |
+| 3회차 workflow (F3–F6, F9 토큰, F10, F12) | verifier 2회 모두 RETRY, 둘 다 V12만 open | verified: spec-logs/e91abc221d7deb2a ledger 10·11 |
+| 3회차 V12 review를 수작업 표본으로 작성 | verifier 1 F1: flags·edge·key 비교와 kind별 표본, 재현 산출물 없음 | verified |
+| 3회차 `review_diff.py`로 자동 비교, 규칙을 넓혀 unexplained 0 달성 | verifier 2 F2–F5: R4/R9 edge 규칙이 resolution·confidence·candidates 변화를 거르지 않음, file 모드 `*` relation 매핑, 구조 kind "changed only" 규칙이 문서보다 넓고 후보-edge 연결 없음, 후보 label 무조건(large_node 제거도 R8), key 허용 경로 위치 무관(node_metrics에 `external_call_count`가 새도 통과), non-test 비율 계산 미기록 | verified: 코드 검토(verifier 2) |
+| 3회차 R4 edge 귀속을 "member가 있는 class면 R4"로 판정 | 너무 느슨해 실제 손실(자기 member READS·TESTS 중복)을 가렸다가 member 동일 edge 조건으로 좁힘 | verified |
 | 2회차 mutation tool 첫 sanity check(`ast.unparse`만 적용한 파일로 145 failed) | 확인 명령이 `open(p,'w')`로 파일을 읽기 전에 비움 | verified: 읽은 뒤 쓰도록 고친 재실행 145 passed |
 
 ## Next Step
 
-1. 결함별로 의도된 동작인지 먼저 확인한다. F10과 F3 일부는 "recall 우선" 정책에서 나온 설계일 수 있다.
-2. 남은 순서: 3회차 F3·F4·F5·F6·F9(토큰)·F10·F12. F3은 "외부 호출 분리(`external_call_count`)", F5는 "외부 파일만 셈(이름 유지)"으로 사용자가 결정했다. F6·F10은 3회차에서 정한다. 앞의 것일수록 후보가 거꾸로 나오거나 대부분 파일에 나와 신호 가치를 잃는다.
-3. 각 수정은 `workflow-approach`로 진행한다. 재현 입력은 검수 agent가 만든 scratchpad fixture(세션 종료 시 사라짐) 대신 테스트 fixture로 다시 만든다.
+1. V12 evidence만 남았다. 구현·다른 obligation은 다시 열 필요가 없다(새 결함 증거가 없는 한). 새 run(spec 새 run id, 3회차 spec의 V12 행과 D1–D14를 이어받음)으로 `tests/signal_defects_evidence/review_diff.py`를 엄격하게 고친다.
+   - F2: R9는 IMPORTS·IMPORTS_SYMBOL의 `start_line`만 다를 때만, R4 re-key는 key 차이가 evidence 줄뿐일 때만 인정. file 모드는 relation이 같은 symbol 수준 R4 제거가 같은 파일 쌍에 있을 때만(`*` 제거). 추가 edge는 Kotlin으로 한정.
+   - F3: 구조 kind 규칙을 dependency_cycle·package_cycle·unstable_dependency로 한정하고, 변경된 후보의 구성 파일·패키지가 R4 제거 edge의 양 끝과 겹칠 때만 R4.
+   - F4: kind별 방향 확인(large_node는 추가·metric 키 추가만 R8, 제거는 unexplained; unresolved_boundary 제거는 HEAD 노드에서 해당 base 이름이 `external_calls`로 옮겨졌는지 확인; evidence_spread 제거·변경은 base evidence에 R5를 재적용해 결과가 HEAD와 같은지 확인). 허용 키 경로를 위치까지 고정(`external_*`는 노드 metadata만, `token_*`는 large_node metrics만).
+   - F5: non-test 비율 계산을 스크립트로 옮기고 `review-output/`에 기록.
+2. 고친 스크립트로 `review_run.sh`→`review_diff.py`를 다시 실행하고 unexplained가 생기면 원인을 R id로 설명하거나 결함으로 처리한다. 이후 verifier 1회로 V12만 감사한다.
+3. 완료 후 ADR `31d2dee6912427d5-consolidate-overlapping-metrics.md`의 PageRank 정의 갱신(w/outdeg, `versions.analysis` "5")을 사용자에게 제안한다(3회차 D12).
 
 ## Open Questions
 
-- F3: builtin·표준 라이브러리·외부 import 호출을 미확정에서 빼면 recall이 줄어든다. 빼는 대신 별도 metric으로 분리할지 정해야 한다.
-- F5: `evidence_spread`를 "다른 파일 수"로 다시 정의할지, 이름과 의미를 바꿀지 정해야 한다. baseline·HTML 소비자에 영향이 있다.
-- F10: PageRank에 절대 가중치를 반영하면 ADR `31d2dee6912427d5-consolidate-overlapping-metrics.md`의 지표 정의가 바뀐다.
+- file 모드 `evidence_spread`는 R5 뒤에도 non-test 파일의 51–75%에 발동한다("다른 파일 2개 이상에서 사용" ≈ file 모드 fan_in ≥ 2). 신호를 유지할지, 임계·정의를 바꿀지 사용자 결정이 필요하다.
+- Kotlin 한 줄 `object X { var y = 0 }`의 body property가 field로 수집되지 않는다(기존 동작, 3회차 범위 밖).
+- Kotlin primary constructor field 노드가 constructor 전체를 스캔해 호출을 중복 귀속한다(3회차 범위 밖).
 
 ## Spec
 
 - 1회차: `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`, v4, complete, run `7ab6320d2eb56ccf`.
 - 2회차: `agent-docs/spec-logs/f3972ebd2386454f-dynamic-flags.md`, v2, complete, run `f3972ebd2386454f`.
-- 3회차: 시작 전.
+- 3회차: `agent-docs/spec-logs/e91abc221d7deb2a-signal-defects-round3.md`, v5, limit, run `e91abc221d7deb2a`.
 
 ## Execution Ledger
 
@@ -72,3 +82,5 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 2회차: Test command 2894 passed, diff coverage 98.1%, fuzz 3×1,000 위반 0(구문 오류 파일·중복 검사 포함), hand mutation 14/14 killed, mutation tool 30/30 killed, 실제 fixture 5개 출력 변화 0(해당 구문 없음), verifier 2회, 수정 1회. F4 관련: Kotlin 동적 플래그도 기존 call 스캔 귀속을 따라 method와 class에 모두 붙는다(D4).
 
 검수 agent 실행 기록: 관련 테스트 650 passed, browser 31 error(Chromium 없음). 결함 F1–F10은 scratchpad fixture로 재현했다. mutation·fuzz 실행 없음.
+
+3회차: Test command 3098 passed(1 skipped), diff coverage 97.9%, fuzz 5,000회(언어별 1,000 + PageRank 2,000) 위반 0, hand mutation 11/11 killed(M8 첫 probe는 예외로 inconclusive → 변경 후 killed), mutation tool 30개 중 21 killed·9 survived → triage: 8·25·10·3 declared/undeclared gap을 테스트 보강으로 killed, 11·19·26·29 기존 suite가 kill, 22 equivalent. 성능 비율 0.78–0.98. verifier 2회(RETRY → RETRY, V12만 open), 정정 batch 4회. base manifest 5개·O11 archive 재생성(`tests/signal_defects_evidence/manifest-regeneration.md`). file 모드 non-test 비율: `unresolved_boundary` 72%→11%(이 저장소), `evidence_spread` 77%→75%.
