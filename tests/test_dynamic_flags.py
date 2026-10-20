@@ -1,6 +1,4 @@
-"""Evidence for spec f3972ebd2386454f v1 (dynamic_* flags, rules R1-R9; R10/Q1 automated part).
-Every expected flag set is written literally from the spec rule or Case table; no analyzer helper is called to compute it.
-Tests named *_characterization keep behaviour the spec says must not change."""
+"""Every expected flag set is written literally from the spec; no analyzer helper is called to compute it."""
 import itertools
 
 import pytest
@@ -20,8 +18,6 @@ def ts_flags(tmp_path, source, extra=None):
     files.update(extra or {})
     return build_ts(tmp_path, files)
 
-
-# ------------------------------------------------------------------ V1: TS import/require (R1, C1, C2, C15)
 
 V1_ARGS = {  # label -> (argument text, internal IMPORTS edge expected, dynamic external record names)
     'identifier': ('name', False, []),
@@ -66,8 +62,6 @@ def test_V1_flag_lands_on_module_node_even_when_call_is_inside_a_function(tmp_pa
     assert dyn_of(arch, 'ts:a.ts#g') == []
 
 
-# ------------------------------------------------------------------ V2: TS eval/Function (R2, C3, C4)
-
 V2_CASES = {
     'eval-call': ('eval(x);', EVA),
     'Function-call': ('Function(x);', EVA),
@@ -89,8 +83,6 @@ def test_V2_eval_partitions(tmp_path, label):
 def test_V2_C3_Function_with_several_arguments(tmp_path):
     assert dyn_of(ts_flags(tmp_path, "const f = Function('a', body);\n"), TS_MOD) == EVA
 
-
-# ------------------------------------------------------------------ V3: TS Reflect/defineProperty (R3, C5, C6)
 
 V3_FUNCS = ['Reflect.get', 'Reflect.set', 'Reflect.has', 'Reflect.defineProperty', 'Reflect.deleteProperty',
             'Object.defineProperty']
@@ -134,8 +126,6 @@ def test_V3_independent_triggers_in_one_file_combine(tmp_path):
     assert dyn_of(arch, TS_MOD) == sorted([FLAG_IMPORT, FLAG_EVAL, FLAG_ATTR])
 
 
-# ------------------------------------------------------------------ Kotlin helpers
-
 KT_FILE = 'a/X.kt'
 KT_TOP = 'kotlin:a/X.kt#run'
 
@@ -144,8 +134,6 @@ def kt_top(tmp_path, statement):
     source = f'package a\n\nfun run(cls: Class<*>, n: String) {{\n    {statement}\n}}\n\nfun other() {{}}\n'
     return build_kotlin(tmp_path, {KT_FILE: source})
 
-
-# ------------------------------------------------------------------ V4: Kotlin class loading (R4, C7, C9, C15)
 
 V4_CASES = {
     'Class.forName': ('Class.forName(n)', IMP),
@@ -190,8 +178,6 @@ def test_V4_C15_syntax_error_file_does_not_raise_and_other_files_still_analyzed(
     assert dyn_of(arch, 'kotlin:a/Y.kt#y') == IMP
 
 
-# ------------------------------------------------------------------ V5: Kotlin reflective member lookup (R5, C8, C9)
-
 V5_CASES = [('getMethod', 'identifier', 'n', True), ('getMethod', 'literal', '"run"', False),
             ('getMethod', 'interpolated', '"$n"', True), ('getMethod', 'no-argument', '', True),
             ('getMethod', 'literal-plus-extra', '"run", Int::class.java', False)]
@@ -217,8 +203,6 @@ def test_V5_attribution_includes_enclosing_class(tmp_path):
     assert dyn_of(arch, 'kotlin:a/X.kt#X') == []
 
 
-# ------------------------------------------------------------------ Python helpers
-
 PY_MOD = 'py:mod'
 PY_RUN = 'py:mod#run'
 
@@ -228,8 +212,6 @@ def py_arch(tmp_path, source, extra=None):
     files.update(extra or {})
     return build_python(tmp_path, files)
 
-
-# ------------------------------------------------------------------ V6: Python aliases (R6, C10, C14)
 
 V6_FORMS = {  # label -> (alias statement, call on a computed arg, call on literal "pkg.mod", flag, literal edge)
     'from-importlib-as': ('from importlib import import_module as im', 'im(n)', 'im("pkg.mod")', IMP, True),
@@ -272,7 +254,7 @@ def test_V6_literal_alias_argument_also_creates_dynamic_required_edge(tmp_path, 
     assert dynamic_edges(arch) == ([(PY_RUN, 'py:pkg.mod')] if edge else [])
 
 
-# A receiver call named import_module is already flagged by name before this spec, so that form cannot be a negative.
+# A receiver call named import_module is already flagged by name, so that form cannot be a negative.
 @pytest.mark.parametrize('form', sorted(set(V6_FORMS) - {'import-importlib-as'}))
 def test_V6_negative_alias_defined_in_another_function_body(tmp_path, form):
     alias, computed, _, _, _ = V6_FORMS[form]
@@ -310,8 +292,6 @@ def test_V6_unaliased_direct_calls_are_unchanged_characterization(tmp_path):
     assert dyn_of(py_arch(tmp_path, source), PY_RUN) == sorted([FLAG_EVAL, FLAG_IMPORT])
 
 
-# ------------------------------------------------------------------ V7: Python builtins receiver (R7, C11)
-
 V7_CASES = {
     'builtins.eval': ('builtins.eval(c)', EVA),
     'builtins.exec': ('builtins.exec(c)', EVA),
@@ -341,8 +321,6 @@ def test_V7_C11_from_builtins_alias_eval_and_receiver_alias_getattr_in_one_modul
     assert dyn_of(arch, 'py:mod#three') == []
 
 
-# ------------------------------------------------------------------ V8: Python __dict__[k] (R8, C12)
-
 V8_CASES = {
     'load-name': ('return o.__dict__[n]', ATT),
     'load-str-constant': ('return o.__dict__["x"]', []),
@@ -365,8 +343,6 @@ def test_V8_dunder_dict_subscript_partitions(tmp_path, label):
     source = f'def run(o, n, v):\n    {body}\n'
     assert dyn_of(py_arch(tmp_path, source), PY_RUN) == expected
 
-
-# ------------------------------------------------------------------ V9: Python attribute hooks (R9, C13)
 
 HOOK_RAISE = '        raise AttributeError(n)\n'
 
@@ -419,8 +395,6 @@ def test_V9_C13_class_and_module_hooks_together(tmp_path):
     assert flags['py:mod#A.__getattr__'] == [] and flags['py:mod#B.__setattr__'] == []
 
 
-# ------------------------------------------------------------------ V10 (automated part): output shape unchanged (Q1)
-
 # Independent source: language_analyzers/core/serialization.py field lists and the bottlenecks.v8/v6 shape recorded by
 # tests/test_fact_defects.py::EXPECTED_SHAPE; the schema must not change (spec Scope, Signatures).
 NODE_KEYS = ['category', 'color', 'cost', 'display_label', 'docstring', 'exported', 'flags', 'group', 'id', 'kind', 'label',
@@ -457,8 +431,6 @@ def test_V10_Q1_json_key_sets_and_schema_version_unchanged(tmp_path_factory, fix
     for candidate in payload['candidates']:
         assert CANDIDATE_BASE <= set(candidate) <= allowed, candidate['kind']
 
-
-# ------------------------------------------------------------------ spec v2 additions (Errors 1, R10 duplicates, R6 module call, R7 negatives)
 
 def test_V1_Errors1_syntax_error_ts_files_do_not_raise_and_well_formed_file_keeps_flags(tmp_path):
     files = {

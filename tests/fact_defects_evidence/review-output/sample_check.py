@@ -1,8 +1,3 @@
-"""Main-owned review helper for spec 7ab6320d2eb56ccf V8.
-
-Usage: python3 sample_check.py OUT_DIR NEST_ROOT ANDROID_ROOT SEED
-Reads <tag>-<fixture>-<granularity>.json written by run.sh.
-"""
 import json, random, re, sys
 from collections import Counter, defaultdict
 from pathlib import Path

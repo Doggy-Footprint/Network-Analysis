@@ -1,5 +1,5 @@
-"""Spec 3f70cc03aeae9c1a support. Oracles are written from rules R11-R15 and the Cases table: directory and file counts
-are computed here with posixpath on the generated paths, never read from the analyzer under test."""
+"""Directory and file counts are computed here with posixpath on the generated paths, never read from the analyzer
+under test."""
 import json
 import os
 import posixpath
@@ -15,8 +15,6 @@ from tests.fact_defects_support import write_tree
 REPO = Path(__file__).resolve().parents[1]
 BASE_COMMIT = '3b768a9b5e9b79c519bfe667b12b8e980cfa636b'
 
-
-# ---------------------------------------------------------------- R11 independent oracle
 
 def expected_spread(target_file, evidence_files, threshold, line_spans=None):
     """R11 from the rule text. evidence_files: file_path of every remaining (non-ownership) evidence row; the rows in
@@ -35,8 +33,6 @@ def expected_spread(target_file, evidence_files, threshold, line_spans=None):
         return None
     return {'file_count': len(files), 'directory_count': len(dirs), 'line_span': extent, 'line_threshold': threshold}
 
-
-# ---------------------------------------------------------------- Kotlin observations
 
 def kind_of(node):
     return getattr(node.kind, 'value', node.kind)
@@ -79,8 +75,6 @@ def shape(arch, file_id, skip_prefixes=('kotlin-package:',)):
              for e in arch.edges if (e.from_id in own or e.to_id in own)}
     return nodes, edges
 
-
-# ---------------------------------------------------------------- R15: comparison with the base commit
 
 def base_tree(tmp_path_factory):
     """Export BASE_COMMIT into a scratch directory with `git archive` (no worktree is registered in the repository)."""

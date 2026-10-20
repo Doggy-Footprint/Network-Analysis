@@ -1,6 +1,5 @@
-"""Evidence for spec 74b78d6823637a21 v1 (untested_hub / isolated_node). Expected values come from the spec text and
-the reference functions in tests/reach_support.py (full sort, per-file edge scans), never from product output; the
-only product values reused are the PageRank scores the spec orders by."""
+"""Expected values come from the reference functions in tests/reach_support.py, never from product output; the only
+product values reused are the PageRank scores the hub order depends on."""
 import collections
 import copy
 import dataclasses
@@ -42,8 +41,6 @@ def files_of(**by_category):
             result[path] = (category, lines)
     return result
 
-
-# ------------------------------------------------------------------ shared reference comparison
 
 def assert_candidates_match_reference(report, model, top_n, *, indexed_graph=None, isolation=True):
     """Both kinds against the independent references; rank is asserted wherever pool rank and global rank agree."""
@@ -103,8 +100,6 @@ def test_graph_builder_categories_agree_with_the_product_path_rules():
     expected = {'src/a.py': set(), 'tests/a.py': {'test'}, 'migrations/a.py': {'generated'}, 'vendor/a.py': {'vendored'}}
     assert {path: set(path_flags(path)) for path in expected} == expected
 
-
-# =================================================================== V1 boundary value analysis: hub set
 
 @pytest.mark.parametrize('delta', [-1, 0, 1], ids=['pool-1', 'pool', 'pool+1'])
 def test_V1_R1_C1_top_n_three_value_boundary(tmp_path, delta):
@@ -177,8 +172,6 @@ def test_V1_C1_tested_second_ranked_hub_is_the_only_untested_one(tmp_path):
     assert hubs[fid(names[1])]['metrics']['uncertain_test_edge_count'] == 0
 
 
-# =================================================================== V2 decision table: untested hub
-
 HUB = 'src/h.py'
 V2_EDGES = {
     'none': lambda origin: [],
@@ -188,7 +181,6 @@ V2_EDGES = {
     'ambiguous-candidate': lambda origin: [E(origin, 'src/o.py', 'TESTS', SC, AMBIGUOUS, candidates=(HUB,))],
     'unresolved': lambda origin: [E(origin, HUB, 'TESTS', SC, UNRESOLVED)],
 }
-# (candidate exists, uncertain_test_edge_count), written from R2/R3 (v3: only test-category origins count)
 V2_TABLE = {
     ('none', 'test'): (True, 0), ('none', 'production'): (True, 0),
     ('exact', 'test'): (False, None), ('exact', 'production'): (True, 0),
@@ -272,8 +264,6 @@ def test_V2_R2_confirmation_is_per_file(tmp_path):
     assert set(hubs) == {fid(HUB)}
 
 
-# =================================================================== V3 decision table: isolated node
-
 A = 'src/a.py'
 COUNTERPARTS = {
     'production': ('production', 'src/b.py'), 'test': ('test', 'tests/test_b.py'), 'generated': ('generated', 'migrations/g.py'),
@@ -342,7 +332,6 @@ def test_V3_R5_remaining_resolutions_supplementary(tmp_path, confidence, resolut
 
 B, C = 'src/b.py', 'src/c.py'
 TEST_F, VEND, EXT = 'tests/test_t.py', 'vendor/v.py', 'ext:lib'
-# (label, edges, expected A: (isolated, framework, dynamic, uncertain)) from R5/R6 + candidate_targets
 CANDIDATE_ROWS = [
     ('ambiguous-to-test-candidate-prod', [E(A, TEST_F, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))], (True, 0, 0, 1)),
     ('ambiguous-to-prod-candidate-test', [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(TEST_F,))], (True, 0, 0, 1)),
@@ -375,7 +364,6 @@ def test_V3_R5_R6_candidate_targets_rule(tmp_path, row):
         assert (item['framework_edge_count'], item['dynamic_edge_count'], item['uncertain_static_edge_count']) == (framework, dynamic, uncertain)
 
 
-# ---- V4 / R4: cost.line_count is the source of eligibility and of the metric, independent of span and content
 @pytest.mark.parametrize('content,cost,eligible', [(3, 0, False), (3, 5, True), (3, 1, True), (1, 7, True), (1, 0, False)],
                          ids=['cost0-content3', 'cost5-content3', 'cost1-content3', 'cost7-content1', 'cost0-content1'])
 def test_V4_R4_cost_line_count_is_the_eligibility_and_metric_source(tmp_path, content, cost, eligible):
@@ -386,7 +374,6 @@ def test_V4_R4_cost_line_count_is_the_eligibility_and_metric_source(tmp_path, co
         assert isolated[fid('src/a.py')]['metrics']['line_count'] == cost
 
 
-# ---- V14 / Errors 2
 def _unknown_endpoint(which):
     graph = Graph(files_of(production={A: 3, B: 3}), [E(A, B, 'IMPORTS', SC, AMBIGUOUS, candidates=(B,))])
     snap, arch = graph.snapshot_and_architecture()
@@ -432,8 +419,6 @@ def test_V3_counts_accumulate_per_edge(tmp_path):
     assert len(isolated[fid(A)]['evidence']['edges']) == 7
 
 
-# =================================================================== V4 equivalence partitioning: eligibility
-
 EXTENSIONS = ['py', 'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'kt', 'yaml', 'md']
 CATEGORY_PATH = {'production': 'src/a', 'test': 'tests/a', 'generated': 'migrations/a', 'vendored': 'vendor/a'}
 
@@ -468,8 +453,6 @@ def test_V4_line_count_metric_is_the_file_line_count(tmp_path, lines):
     assert isolated[fid('src/a.py')]['metrics']['line_count'] == lines
 
 
-# =================================================================== V5 candidate id and order
-
 def test_V5_R7_id_format_order_and_both_kinds_on_one_file(tmp_path):
     graph = Graph(files_of(production={'src/solo.py': 3, 'src/z.py': 2, 'src/y.py': 4, 'src/x.py': 5},
                            test={'tests/t.py': 2}),
@@ -495,8 +478,6 @@ def test_V5_ids_are_stable_across_runs_and_input_order(tmp_path):
     again = [(c['kind'], c['id']) for c in run_report(shuffled, weights_with(tmp_path))['candidates'] if c['kind'] in NEW_KINDS]
     assert first == again and first
 
-
-# =================================================================== V6 configuration
 
 KEY = 'untested_hub_top_n'
 
@@ -581,8 +562,6 @@ def test_V6_cli_accepts_existing_style_yaml_without_the_key(tmp_path):
     assert json.loads((out / 'b.json').read_text(encoding='utf-8'))['edge_weights'][KEY] == 10
 
 
-# =================================================================== fixtures: shared pipeline
-
 class Pipeline:
     def __init__(self, name, directory):
         self.name, self.directory, self.cache = name, directory, {}
@@ -640,8 +619,6 @@ def analyze_again(inputs, tmp_path, top_n, arch=None, snapshot=None):
     weights = load_weights(tmp_path, weights_data(**{KEY: top_n}))
     return json.loads(bottlenecks_to_json(analyze_bottlenecks(inputs['snapshot'] if snapshot is None else snapshot, arch, weights)))
 
-
-# =================================================================== V7 compatibility with base_commit
 
 def test_V7_manifest_is_for_the_declared_base_commit():
     manifest = load_manifest()
@@ -710,8 +687,6 @@ def test_V7_base_candidate_kinds_are_unchanged_when_baseline_has_no_new_kinds(tm
     payload = json.loads(pipe.output('file', extra=['--baseline', str(path)], tag='old'))
     assert canonical_sha(payload['delta']) == expected['delta']
 
-
-# =================================================================== V8 metamorphic relations on the fixtures
 
 N_LADDER = [1, 3, 10, 25, 100000]
 
@@ -796,8 +771,6 @@ def test_V8_M3_adding_a_certain_exact_edge_removes_the_isolated_candidate(inputs
     assert not remaining & set(chosen)
     assert remaining == set(isolated) - set(chosen)
 
-
-# =================================================================== V9 report rendering
 
 SENTINEL_RANK, SENTINEL_LINES = 4711, 8089
 
@@ -912,8 +885,6 @@ def test_V9_R10_C16_dashboard_modal_label_and_headline_number(open_report, tmp_p
     assert not any(LABELS[other] in line for line in text.splitlines())
     assert page.unhandled_errors == []
 
-
-# =================================================================== V10 performance (benchmark marker)
 
 def median_runtime(command, cwd, env, runs=3):
     samples = []

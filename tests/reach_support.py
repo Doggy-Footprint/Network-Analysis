@@ -1,6 +1,5 @@
-"""Reference functions for untested_hub / isolated_node use different algorithms from the product on purpose
-(brute-force per-file edge scans for isolation, a full sort for hubs), and categories are declared by the test
-builder, not derived from path rules. Expected values come from spec 74b78d6823637a21 v1 only."""
+"""Reference functions use different algorithms from the product on purpose (brute-force per-file edge scans for
+isolation, a full sort for hubs), and categories are declared by the test builder, not derived from path rules."""
 import copy
 import hashlib
 import json
@@ -25,7 +24,7 @@ STATIC = (SC, SI)
 CERTAIN_RESOLUTIONS = (EXACT, UNIQUE)
 ISOLATION_EXTENSIONS = ('py', 'ts', 'tsx', 'js', 'jsx', 'mjs', 'cjs', 'kt')
 
-# Paths whose category is declared here; the product's own path rules are cross-checked in test_reach_candidates.
+# Categories are declared here; the product's own path rules are cross-checked in test_reach_candidates.
 CATEGORY_DIRS = {'production': 'src', 'test': 'tests', 'generated': 'migrations', 'vendored': 'vendor'}
 
 
@@ -118,8 +117,6 @@ def pagerank_of(report):
     return {name: row['pagerank'] for name, row in metrics.items()}
 
 
-# ---------------------------------------------------------------- neutral model for the references
-
 @dataclass
 class Model:
     """files: {file id: (category, line_count)}; edges: [(source id, target id, relation, confidence, resolution,
@@ -162,8 +159,6 @@ def model_key(edge):
     return edge[:5]
 
 
-# ---------------------------------------------------------------- reference: hubs (full sort)
-
 def ref_hub_pool(model):
     return [ident for ident, (category, _) in model.files.items() if category == 'production']
 
@@ -203,8 +198,6 @@ def ref_untested_hubs(model, pagerank, top_n):
             found[ident] = (rank, uncertain)
     return found
 
-
-# ---------------------------------------------------------------- reference: isolation (per-file scan)
 
 def isolation_eligible(file_id, category, lines):
     name = file_id.rsplit('/', 1)[-1]

@@ -1,6 +1,5 @@
-"""Spec 7ab6320d2eb56ccf v1 support. Every oracle here is written from the spec text and uses a different algorithm
-from the product (character scan instead of split, explicit candidate list instead of suffix handling); none of it
-reads product output to derive an expected value."""
+"""Oracles use a different algorithm from the product (character scan instead of split, explicit candidate list
+instead of suffix handling) and never read product output to derive an expected value."""
 import json
 import posixpath
 import sys

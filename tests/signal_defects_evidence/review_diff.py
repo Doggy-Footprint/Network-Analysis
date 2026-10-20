@@ -1,31 +1,7 @@
-"""Review diff for spec 3f70cc03aeae9c1a (rules RV1-RV9). Compares the base and head outputs of one input and attributes
-every difference to an R id, or lists it under `unexplained`.
-
-Usage: review_diff.py <base_dir> <head_dir> <name> <mode> <out.json> --stage a|b
-Inputs are `<name>-<mode>.json` (architecture, --json) and `<name>-<mode>.b.json` (bottlenecks). A file-mode run also
-reads the same input's symbol-mode files, because file-mode edge removals are attributed through symbol mode (RV3).
-Stage a attributes R1-R10 (base cf0cf44, head 3b768a9); stage b attributes R11-R14 (base 3b768a9, head the new tree).
-A missing input file aborts with a non-zero exit code before any output file is written.
-
-Identifications that the JSON does not state directly (choices, not spec text):
-- primary-constructor field: kind == "field", CONTAINS parent is a class node, and in BASE its signature starts
-  with "(" or contains "constructor(" and its span lies inside the parent's span (3b768a9 gave every constructor field the
-  whole constructor's span and signature text; body fields get their own declaration head, e.g. "val d").
-- ownership edge (evidence_spread recomputation): relation in CONTAINS, DECLARES, EXPORTS, IMPLEMENTED_BY.
-- structure-candidate constituents: every string anywhere inside the candidate, normalised to a file path (`file:`,
-  `kotlin:`, `ts:`, `py:` prefixes and `#member` removed) or kept as a package id; edge endpoints are normalised the same
-  way and also contribute their containing package id.
-- stage b edge rules not spelled out in RV1-RV9 (R13 consequences): a removed edge leaving a constructor field with a scan
-  relation is R13 only if its evidence line lies outside that field's HEAD span; a CONTAINS edge to a constructor field
-  that differs only in evidence start_line is an R13 re-key; edges touching a node added in stage b are R12.
-- RV3 "to is a member of C" also holds when an ambiguous edge lists a member of C among its candidates (the original
-  ambiguous target and its alternatives are one relation; 3b768a9 android has such removals).
-- RV3 treats Kotlin interface nodes like class nodes (R4 covers class/object/interface).
-- RV8a details not spelled out: weighted_fan_* follow fan_*, effective_token_cost follows token_cost; in stage a pagerank and
-  rankings may change without attributed edges (R7) while betweenness needs them; stage b hop_2 also counts constructor
-  fields whose token_cost changed as changed nodes.
-- ENRICHMENT_RELATIONS (RV9) is {CONFIGURES}.
-"""
+"""A primary-constructor field is identified as kind "field" with a class or interface CONTAINS parent whose BASE
+signature starts with "(" or contains "constructor(" and whose span lies inside the parent's span: at 3b768a9 every
+constructor field carried the whole constructor's span and signature text, while body fields get their own
+declaration head (e.g. "val d")."""
 import collections
 import json
 import posixpath
@@ -51,8 +27,6 @@ DATA_KEYED = {"unresolved_calls", "external_calls", "node_metrics", "candidate_g
               "resolution"}
 SAMPLE = 10
 
-
-# ------------------------------------------------------------------ small helpers
 
 def file_of(node_id):
     """Path part of a node id: 'kotlin:a/B.kt#C.m' -> 'a/B.kt'; ids without a language prefix are returned unchanged."""
@@ -127,8 +101,6 @@ def strings_in(value):
             yield from strings_in(item)
 
 
-# ------------------------------------------------------------------ evidence_spread recomputation (RV5)
-
 def spread_expected(arch, threshold, mode, rule):
     """Candidate set recomputed from the architecture JSON alone. rule: 'pre3' | 'r5' | 'r11'.
     pre3: every evidence counts (own file and ownership edges included); r5: ownership edges and evidence in the target's
@@ -190,8 +162,6 @@ def spread_expected(arch, threshold, mode, rule):
 def spread_actual(bott):
     return {c["target"]: c["metrics"] for c in bott["candidates"] if c["kind"] == "evidence_spread"}
 
-
-# ------------------------------------------------------------------ the review
 
 class Side:
     def __init__(self, arch, bott):
@@ -747,8 +717,6 @@ def nontest_share(side, mode):
         result[kind] = {"files": len(hit), "share": round(len(hit) / len(scope), 4) if scope else None}
     return result
 
-
-# ------------------------------------------------------------------ CLI
 
 def load(directory, name, mode):
     with open(f"{directory}/{name}-{mode}.json") as a, open(f"{directory}/{name}-{mode}.b.json") as b:

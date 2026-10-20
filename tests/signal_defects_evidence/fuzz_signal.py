@@ -1,13 +1,4 @@
-"""Property fuzz for spec e91abc221d7deb2a. Surface A: random temp projects per language whose call
-forms each have a known R1 class (boundary or external), counted per node independently of the
-analyzers; each project gets a broken extra file with probability 0.1. Surface B: random weighted
-graphs checked against R7 properties and the pre-change definition for all-1.0 weights.
-Usage: fuzz_signal.py [--seed 20261020] [--budget 1000] [--graphs 2000] [--lang python,typescript,kotlin]
-Spec 3f70cc03aeae9c1a adds `--round4 [--budget 1000]`: surface C (R11) builds Python projects whose files sit in
-random directories and import-and-call one target function, so the expected evidence files and directories are known
-by construction; surface D (R12, R13) builds Kotlin files mixing one-line and multi-line object/class bodies and
-primary constructors whose default values call known project functions.
-"""
+"""Every expected count is known from how the generator built the project, never read from analyzer output."""
 import argparse
 import os
 import random

@@ -1,7 +1,4 @@
-"""Property fuzz for spec f3972ebd2386454f (R1-R9): random temp projects per language; the expected
-dynamic_* flag set of every target node is computed from the snippet catalogue below, independently of
-the analyzers; a repeated flag on one node is a violation. Each project gets a syntactically broken extra file with probability 0.1 (Errors 1). Usage: fuzz_dynamic.py [--seed 20261019] [--budget 1000] [--lang python,typescript,kotlin]
-"""
+"""Expected dynamic_* flag sets come from the snippet catalogue below, never from analyzer output."""
 import argparse
 import os
 import random
@@ -17,7 +14,6 @@ from language_analyzers.typescript.analyzer import TypeScriptAnalyzer  # noqa: E
 
 I, A, E = "dynamic_import", "dynamic_attr", "dynamic_eval"
 
-# (snippet, flags, requires-module-alias or None)
 PY_SNIPPETS = [
     ("import_module(n)", {I}, None), ("__import__(n)", {I}, None), ("importlib.import_module(n)", {I}, None),
     ("im(n)", {I}, "im"), ("il.import_module(n)", {I}, None), ("il.reload(n)", set(), None),

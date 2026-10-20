@@ -1,12 +1,5 @@
-"""Regenerates tests/reach_evidence/base_manifest.json from a checkout of the base commit.
-
-    git worktree add --detach <dir> 6444895451a89f4450b9123b7beb17b11506e534
-    uv run -q --with-requirements requirements-dev.txt python tests/reach_evidence/make_base_manifest.py <dir>
-    git worktree remove --force <dir>
-
-The CLI of the checkout analyzes the pinned fixtures of the current repository (positional project path), with
-PYTHONHASHSEED=0. Digests use canonical JSON (sorted keys, compact separators, ensure_ascii=False, UTF-8 sha256).
-"""
+"""Digests use canonical JSON (sorted keys, compact separators, ensure_ascii=False, UTF-8 sha256), the form the
+reach tests compare against."""
 import json
 import os
 import subprocess

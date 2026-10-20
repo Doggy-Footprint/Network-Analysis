@@ -1,6 +1,5 @@
-"""Evidence for spec e91abc221d7deb2a v1 (signal defects round 3, rules R1-R9).
-Expected values are written from the rule text and the Cases table; PageRank expectations come from closed forms
-and from an independent power iteration in tests/signal_defects_support.py."""
+"""PageRank expectations come from closed forms and from an independent power iteration in
+tests/signal_defects_support.py."""
 import dataclasses
 import copy
 import random
@@ -24,8 +23,6 @@ from tests.signal_defects_support import (analyze_files, assert_boundary, assert
 EXACT = GraphAnalysisConfig(max_iterations=10000)
 TOL = 1e-9
 
-
-# =============================================================== V1: Python classification (R1; C1-C4, C20)
 
 PKG_A = ('import unittest\n\nclass Closed:\n    pass\n\nclass Open(unittest.TestCase):\n    pass\n\n'
          'def real():\n    return 1\n')
@@ -127,7 +124,6 @@ class CycB(CycA):
 '''
 PY_FILES = {'pkg/__init__.py': '', 'pkg/a.py': PKG_A, 'pkg/broken.py': 'def broken(:\n', 'main.py': PY_MAIN}
 M = 'py:main#'
-# label -> (node id, 'ext'|'bnd', exact name->count dict or None)
 PY_CASES = {
     'builtin-bare': (M + 'f_builtin', 'ext', {'len': 1}),
     'external-import-bare': (M + 'f_ext_bare', 'ext', {'join': 1}),
@@ -206,8 +202,6 @@ def test_V1_C3_boundary_functions_have_candidates_and_external_ones_do_not(tmp_p
     assert 'py:main#run' not in targets
 
 
-# =============================================================== V2: TypeScript classification (R1; C5)
-
 TS_M = 'export function real() { return 1; }\nexport class Proj { base() { return 1; } }\n'
 TS_MAIN = '''import axios from 'axios';
 import * as lib from 'external-lib';
@@ -272,8 +266,6 @@ def test_V2_syntax_error_file_does_not_stop_analysis(tmp_path):
     assert_boundary(arch, T + 'f_named_gone', 1, {'gone': 1})
 
 
-# =============================================================== V3: Kotlin classification (R1; C6)
-
 KT_UTIL = 'package com.proj.util\n\nfun other() = 1\n'
 KT_MAIN = '''package com.proj.app
 
@@ -327,8 +319,6 @@ def test_V3_syntax_error_file_does_not_stop_analysis(tmp_path):
     assert_boundary(arch, K + 'f_proj_import', 1, {'helper': 1})
 
 
-# =============================================================== V4: file-node external_call_count (R2; C1)
-
 def test_V4_file_node_sums_constituent_external_counts_and_creates_no_candidate(tmp_path):
     files = {'a.py': 'def a(x):\n    len(x)\n    print(x)\n\n\ndef b(x):\n    str(x)\n    int(x)\n    abs(x)\n\n\n'
                      'class K:\n    def c(self, x):\n        return max(x)\n',
@@ -348,8 +338,6 @@ def test_V4_single_external_call_file_has_count_one(tmp_path):
     _, _, arch = run_pipeline(root, tmp_path, 'file', '-l', 'python')
     assert {n.id: n for n in arch.nodes}['file:only.py'].metadata['external_call_count'] == 1
 
-
-# =============================================================== V5: unresolved_reference_total (R3; C7, C8)
 
 def _many_files(language, n):
     names = [f'n{i:02d}' for i in range(n)]
@@ -423,8 +411,6 @@ def test_V5_node_without_total_key_falls_back_to_list_length(tmp_path):
     found = of_kind(run_payload(snap, arch, default_weights()), 'unresolved_boundary')
     assert [(c['target'], c['metrics']['unresolved_count']) for c in found] == [('a', 3)]
 
-
-# =============================================================== V6: Kotlin class scan excludes members (R4; C9)
 
 KT_SVC = '''package com.proj.app
 
@@ -576,8 +562,6 @@ def test_V6_control_file_mode_counts_class_plus_method(tmp_path):
     assert len(found) == 1 and found[0]['metrics']['unresolved_count'] == 3
 
 
-# =============================================================== V7: evidence_spread (R5; C10-C12)
-
 FILES7 = {name: 'x\n' * 12 for name in ('a/x.py', 'b/y.py', 'c/z.py', 'w.py')}
 LINE_T = 3
 
@@ -668,8 +652,6 @@ def test_V7_target_without_file_excludes_nothing(tmp_path):
     assert {r['path'] for r in evidence_rows(found[0])} == {'a/x.py', 'b/y.py'}
 
 
-# ---- file mode
-
 def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
     nodes = [file_node('t', 'a/x.py')]
     edges = []
@@ -713,8 +695,6 @@ def test_V7_file_mode_ownership_evidence_is_dropped(tmp_path, relation):
     assert found == []
 
 
-# =============================================================== V8: ambiguous_name flag removed (R6; C13)
-
 AMBIGUOUS_CROSS = {
     'python': ({'a.py': 'def shared():\n    return 1\n', 'b.py': 'def shared():\n    return 2\n',
                 'main.py': 'def caller():\n    return shared()\n'}, 'shared', 'CALLS'),
@@ -757,8 +737,6 @@ def test_V8_flags_module_has_no_ambiguous_name_constant():
     assert not hasattr(flags, 'AMBIGUOUS_NAME')
     assert 'ambiguous_name' not in {v for v in vars(flags).values() if isinstance(v, str)}
 
-
-# =============================================================== V9: PageRank R7 (C14, C15)
 
 def test_V9_C14_closed_form_single_edge_for_both_weights():
     # n=2, d=0.85: sa = 0.5 / (1 + 0.425 w), sb = 1 - sa  (derivation in the module docstring of the support helpers)
@@ -887,8 +865,6 @@ def test_V9_metamorphic_lowering_one_weight_never_raises_its_target_and_sums_sta
         assert after[t] <= base[t] + TOL, (s, t)
 
 
-# =============================================================== V10: token threshold (R8; C16-C18, Q2, Q6)
-
 BAD_VALUES = [0, -1, True, 1.5, 'x']
 
 
@@ -998,8 +974,6 @@ def test_V10_C16_real_one_line_168kb_python_file(tmp_path, mode):
     assert not [c for c in of_kind(payload, 'large_node') if 'small' in c['target']]
 
 
-# =============================================================== V11: Kotlin import line numbers (R9; C19)
-
 def _import_lines(tmp_path, use_text, extra=None):
     files = {'com/a/Foo.kt': 'package com.a\n\nclass Foo\n', 'com/a/Bar.kt': 'package com.a\n\nclass Bar\n',
              'Use.kt': use_text}
@@ -1040,8 +1014,6 @@ def test_V11_each_import_in_a_list_gets_its_own_line(tmp_path):
     assert rows[FOO_SYMBOL] == {('IMPORTS_SYMBOL', 3, 3)}
     assert rows['kotlin:com/a/Bar.kt#Bar'] == {('IMPORTS_SYMBOL', 6, 6)}
 
-
-# =============================================================== correction batch 3 (spec v4)
 
 KT_INIT_DYN = '''package com.proj.app
 

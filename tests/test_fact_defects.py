@@ -1,7 +1,5 @@
-"""Evidence for spec 7ab6320d2eb56ccf v1 (analyzer fact defects F11, F7, F8, F9-lines).
-Expected values come from the spec text: the reference line counter (R1/R2), the reference relative resolver (R5)
-and hand-written edge tables. Product output is never used to derive an expectation.
-Tests named *_characterization keep behaviour that the spec says must not change (R12)."""
+"""Expected values come from reference implementations and hand-written edge tables; product output is never used
+to derive an expectation."""
 import random
 
 import pytest
@@ -14,8 +12,6 @@ from tests.fact_defects_support import (CONTROL_CHARS, TS_EXTENSIONS, arch_edges
 
 NESTJS_ARGS = ('-l', 'typescript', '-f', 'nestjs')
 
-
-# ---------------------------------------------------------------- V1: SourceText.lines (R1, R2, C1-C4)
 
 V1_CASES = {
     'C1-five-lines-trailing-lf': ('a\nb\nc\nd\ne\n', 5),
@@ -79,8 +75,6 @@ def test_V1_seeded_random_agrees_with_reference():
         assert len(lines) == ref_line_count(text), repr(text)
         assert tuple(lines) == ref_lines(text), repr(text)
 
-
-# ---------------------------------------------------------------- V2: end_line / line_count (R2, R3, C5, C6)
 
 LANGUAGES = {
     'python': ('.py', python_analyze, lambda stem: f'py:{stem}', '# c\n'),
@@ -166,8 +160,6 @@ def test_V2_C6_single_168kb_line_counts_one_line(tmp_path, language):
     assert node.span.end_line == 1
 
 
-# ---------------------------------------------------------------- V3: large_node boundary (R4, C5)
-
 THRESHOLD = 5
 
 
@@ -208,8 +200,6 @@ def test_V3_threshold_value_file_is_not_a_candidate(tmp_path, language):
     assert ref_line_count(text) == THRESHOLD
     assert found == []
 
-
-# ---------------------------------------------------------------- V4: TypeScript relative resolution (R5, R6)
 
 def ts_project(tmp_path, files):
     write_tree(tmp_path / 'proj', files)
@@ -352,8 +342,6 @@ def test_V4_seeded_filename_dot_counts_match_reference_resolver(tmp_path, dots):
     assert imports_from(root, 'src/importer.ts') == [expected]
 
 
-# ---------------------------------------------------------------- V5: TESTS edge and untested_hub (R7, C7)
-
 def test_V5_C7_synthetic_project_imports_tests_edge_and_no_untested_hub(tmp_path):
     files = {'a/b.spec.ts': "import { X } from './x.entity';\nit('x', () => new X());\n",
              'a/x.entity.ts': 'export class X {}\n',
@@ -397,8 +385,6 @@ def test_V5_real_fixture_imports_edge_exists_for_dotted_specifier(nestjs_file_ru
     spec, entity = 'file:src/tag/tag.controller.spec.ts', 'file:src/tag/tag.entity.ts'
     assert any(e[0] == spec and e[1] == 'IMPORTS' and e[2] == entity and e[4] == 'exact' for e in arch_edges(arch))
 
-
-# ---------------------------------------------------------------- V6/V7: Kotlin import FQN resolution (R8-R11)
 
 USE_TEMPLATE = 'package com.c\n\nimport {imp}\n\nclass Use {{\n    fun make(): {name} = {name}()\n}}\n'
 C11_FILES = {
@@ -493,8 +479,6 @@ def test_V6_C13_nested_class_import_resolves_to_inner_symbol(tmp_path):
     assert import_rows(rows, 'IMPORTS') == [(USE, 'IMPORTS', 'kotlin:com/a/Outer.kt', 'static_certain', 'exact', ())]
 
 
-# ---------------------------------------------------------------- V7: references and package dependencies (R10, R11)
-
 REFERENCE_RELATIONS = ('INSTANTIATES', 'TYPE_USES', 'CALLS', 'READS')
 
 
@@ -540,8 +524,6 @@ def test_V7_member_resolution_without_import_is_unchanged_characterization(tmp_p
     rows = kotlin_rows(tmp_path, files)
     assert (f'{USE}#Use.run', 'CALLS', f'{USE}#Use.go', 'static_inferred', 'unique_name', ()) in rows
 
-
-# ---------------------------------------------------------------- V8: unchanged output shape (Q2, R12, C14)
 
 # Recorded from the base commit b590d54 analysis of typescript-nestjs-realworld (spec: field names and types unchanged).
 EXPECTED_SHAPE = {
@@ -611,8 +593,6 @@ def test_V8_C14_synthetic_unrelated_edges_unchanged_characterization(tmp_path):
                                                          ('ts:a/p.ts', 'static_certain', 'exact')]
 
 
-# ---------------------------------------------------------------- V12: configuration attribution (R13, C15)
-
 CONFIG_CASES = {
     'module-span-equals-single-function-span': ("def consume():\n    return 'KEY'\n", 'py:consumer#consume'),
     'function-strictly-smaller-than-module': ("import os\n\n\ndef consume():\n    return 'KEY'\n", 'py:consumer#consume'),
@@ -628,8 +608,6 @@ def test_V12_configures_target_by_smallest_covering_node(tmp_path, label):
     configures = [r for r in rows if r[1] == 'CONFIGURES']
     assert configures == [('config:.env:KEY', 'CONFIGURES', expected_target, 'static_inferred', 'exact', ())]
 
-
-# ---------------------------------------------------------------- comparator rule for F7 exact originals (spec v4)
 
 def _exact_split(retained_line=1):
     from tests.test_candidate_policy_transition import transition_edge, transition_node

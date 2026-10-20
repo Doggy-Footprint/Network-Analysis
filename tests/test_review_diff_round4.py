@@ -1,5 +1,4 @@
-"""V9 evidence (spec 3f70cc03aeae9c1a): synthetic base/head JSON pairs for each RV rule. Expected explained / unexplained
-outcomes come from the RV1-RV9 text; the pairs are hand-built and never produced by the product."""
+"""The base/head pairs are hand-built and never produced by the product."""
 import importlib.util
 import json
 import subprocess
@@ -82,8 +81,6 @@ def test_sanity_identical_pairs_have_no_unexplained():
     assert review(pair(nodes, [contains(), edge(MEM, TGT)], analysis='5'), p6, stage='b')['unexplained'] == []
 
 
-# ---------------------------------------------------------------- RV2
-
 IMP_SRC, IMP_DST = 'kotlin:u.kt', 'kotlin:b.kt#B'
 
 
@@ -126,8 +123,6 @@ def test_V9_RV2_pairs_are_consumed_one_to_one():
     found = review(base, head)['unexplained']
     assert len(found) == 1 and found[0].startswith('edge removed')
 
-
-# ---------------------------------------------------------------- RV3
 
 @pytest.mark.parametrize('relation', ['CALLS', 'INSTANTIATES', 'READS', 'WRITES'])
 def test_V9_RV3_class_edge_removed_with_member_holding_same_edge_is_explained(relation):
@@ -226,8 +221,6 @@ def test_V9_RV3_file_mode_removal_needs_same_file_pair():
     assert any(u.startswith('edge removed') for u in review(base, head, mode='file', symbol=sym)['unexplained'])
 
 
-# ---------------------------------------------------------------- RV4
-
 def _structure(kind, base_files, head_files, ident='s1'):
     nodes = class_nodes()
     edges_b = [contains(), edge(CLS, TGT, 'CALLS'), edge(MEM, TGT, 'CALLS')]
@@ -274,8 +267,6 @@ def test_V9_RV4_other_kind_change_is_unexplained():
     ch = [candidate('i1', 'isolated_node', MEM, {'n': 2})]
     assert review(pair(nodes, [contains()], cb), pair(nodes, [contains()], ch))['unexplained']
 
-
-# ---------------------------------------------------------------- RV5
 
 def test_V9_RV5_large_node_removal_is_unexplained_in_stage_a():
     nodes = class_nodes()
@@ -388,8 +379,6 @@ def test_V9_RV5_untested_hub_change_needs_pagerank_change_in_stage_a_only():
     assert any(u.startswith('untested_hub') for u in stage_b['unexplained'])
 
 
-# ---------------------------------------------------------------- RV6
-
 def test_V9_RV6_external_call_count_in_node_metrics_is_unexplained_but_node_metadata_is_not():
     nodes = class_nodes()
     base = pair(nodes, [contains()])
@@ -426,8 +415,6 @@ def test_V9_RV6_stage_b_allows_only_directory_count_on_spread_candidates():
     head[1]['edge_weights']['large_node_token_threshold'] = 24000
     assert any('large_node_token_threshold' in u for u in review(base, head, stage='b')['unexplained'])
 
-
-# ---------------------------------------------------------------- RV7
 
 CTOR_CLASS = 'kotlin:a.kt#K'
 F1, F2 = 'kotlin:a.kt#K.a', 'kotlin:a.kt#K.b'
@@ -490,8 +477,6 @@ def test_V9_RV7_metadata_value_change_rules():
     changed = [node(CLS, 'class', start=1, end=9, meta={'custom': 1}), node(MEM, 'method', start=2, end=2), node(TGT, 'class', 'b.kt', 1, 3)]
     assert review(pair(plain, [contains()]), pair(changed, [contains()]))['unexplained']
 
-
-# ---------------------------------------------------------------- RV8
 
 @pytest.mark.parametrize('path,expected', [
     ('src/main/Foo.kt', True), ('src/test/Foo.kt', False), ('tests/a.py', False), ('spec/a.rb', False),
@@ -558,8 +543,6 @@ def test_V9_RV8a_rankings_change_needs_attributed_edge_changes_in_stage_b():
     assert any('rankings' in u for u in review(base, head, stage='b')['unexplained'])
 
 
-# ---------------------------------------------------------------- RV3a
-
 def test_V9_RV3a_interface_source_is_treated_like_a_class():
     iface = 'kotlin:a.kt#I'
     nodes = [node(iface, 'interface', start=1, end=9), node('kotlin:a.kt#I.m', 'method', start=2, end=2), node(TGT, 'class', 'b.kt', 1, 3)]
@@ -579,8 +562,6 @@ def test_V9_RV3a_ambiguous_candidate_that_is_a_member_explains_the_removal():
     exact = edge(CLS, other, 'READS', candidates=[MEM])
     assert review(pair(nodes, [contains(), exact]), head)['unexplained']
 
-
-# ---------------------------------------------------------------- RV5a
 
 def _boundary_change(count_head, base_names=('foo', 'bar'), head_unresolved=('bar',), head_external=('foo',)):
     meta_b = {'unresolved_calls': {n: 1 for n in base_names}, 'unresolved_reference_total': len(base_names)}
@@ -641,8 +622,6 @@ def test_V9_RV5a_stage_b_mismatch_or_other_target_is_unexplained():
     assert any(u.startswith('unresolved_boundary changed') for u in review(base, head, stage='b')['unexplained'])
 
 
-# ---------------------------------------------------------------- RV6a
-
 def test_V9_RV6a_evidence_key_allowed_only_for_file_mode_unresolved_boundary():
     path = ('$', 'evidence[]', 'unresolved_reference_total')
     assert rd.key_added_allowed('a', 'candidate c1', 'unresolved_boundary', path, set(), 'file')
@@ -661,8 +640,6 @@ def test_V9_RV6a_whole_review_accepts_the_evidence_key_for_unresolved_boundary()
     found = review(pair(nodes, [contains()], before), pair(nodes, [contains()], after))['unexplained']
     assert any('unresolved_reference_total' in u for u in found)
 
-
-# ---------------------------------------------------------------- RV10
 
 TX = 'kotlin:b.kt#T'
 
@@ -749,8 +726,6 @@ def test_V9_RV10_holder_file_node_keys_follow_the_constructor_field():
     assert not rd.key_added_allowed('b', 'node file:z.kt', None, ('$', 'metadata', 'external_call_count'), {F1})
 
 
-# ---------------------------------------------------------------- RV11
-
 def test_V9_RV11_identification_rules():
     base, head = ctor_pair(False), ctor_pair(True)
     sides = [rd.Side(*base), rd.Side(*head)]
@@ -774,8 +749,6 @@ def test_V9_RV11_identification_rules():
     sides = [rd.Side(*base), rd.Side(*head)]
     assert rd.constructor_fields(sides[0], sides[1], parent) == set()
 
-
-# ---------------------------------------------------------------- RV12
 
 def _hub(indices, extra=None):
     ev = {'path': 'a.kt', 'uncertain_test_edges': [{'metadata': {'detail_edge_indices': indices, 'evidence_count': 1}}]}
@@ -816,8 +789,6 @@ def test_V9_RV8_stage_b_token_cost_only_on_constructor_fields():
     head[1]['dependency_network']['node_metrics'][CTOR_CLASS]['token_cost'] = 7
     assert any('token_cost changed' in u for u in review(base, head, stage='b')['unexplained'])
 
-
-# ---------------------------------------------------------------- RV9
 
 CFG = 'kotlin:a.kt#Cfg'
 OTHER_CLASS, OF1 = 'kotlin:a.kt#D', 'kotlin:a.kt#D.z'
@@ -867,8 +838,6 @@ def test_V9_RV9_pairs_are_consumed_one_to_one():
     # two identical base edges collapse to one multiset key with count 2; only one is paired
     assert review(base, head, stage='b')['unexplained']
 
-
-# ---------------------------------------------------------------- CLI and error handling
 
 def _write(directory, name, mode, payload):
     directory.mkdir(exist_ok=True)

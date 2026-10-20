@@ -1,7 +1,5 @@
-"""Evidence for spec 3f70cc03aeae9c1a (signal defects round 4, rules R11-R15). Expected values come from the rule text and
-the Cases table; counts are written out by hand in the tables and cross-checked by the independent oracle in
-tests/signal_defects_round4_support.py. Nothing derives an expectation from analyzer output.
-Parent ids are given in each test name: test_<obligation>_<coverage item>."""
+"""Counts are written out by hand in the tables and cross-checked by the independent oracle in
+tests/signal_defects_round4_support.py; nothing derives an expectation from analyzer output."""
 import json
 import re
 from pathlib import Path
@@ -21,8 +19,6 @@ from tests.signal_defects_support import (analyze_files, evidence_rows, flags_of
 LINE_T = 3
 REPO = Path(__file__).resolve().parents[1]
 
-
-# =============================================================== V1: symbol mode decision table (R11; C1-C4, C6)
 
 def S(path, a, b=None):
     return SourceSpan(path, a, a if b is None else b)
@@ -124,8 +120,6 @@ def test_V1_C6_project_root_target_root_caller_and_one_directory_no_candidate(tm
     assert _f_candidates(pipeline(root, tmp_path, 'symbol', 'python', name='c6'), 't') == []
 
 
-# =============================================================== V2: file mode (R11; C5)
-
 def _file_spread(tmp_path, target_path, evidence):
     nodes = [file_node('t', target_path)]
     edges = []
@@ -167,8 +161,6 @@ def test_V2_C5_file_mode_project_matches_symbol_mode(tmp_path):
     payload = pipeline(quiet, tmp_path, 'file', 'python', name='c5b')
     assert [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/t.py'] == []
 
-
-# =============================================================== V3: report text and app.js (R11r)
 
 APP_JS = (REPO / 'renderers' / 'html' / 'static' / 'app.js').read_text(encoding='utf-8')
 
@@ -219,8 +211,6 @@ def test_V3_app_js_description_text_is_directory_based():
     assert re.search(r'대상 디렉터리 밖.*둘 이상.*디렉터리', match.group(1))
     assert '여러 파일' not in match.group(1)
 
-
-# =============================================================== V4: Kotlin one-line bodies (R12, R12b; C7-C10)
 
 def kt(tmp_path, text, name='f.kt'):
     return analyze_files(tmp_path, 'kotlin', {name: text})
@@ -318,8 +308,6 @@ def test_V4_multi_line_contrast_has_the_same_structure(tmp_path):
     many = kt(tmp_path, 'object Q {\n    var y = 0\n    fun f() = g()\n    fun h() {\n        y = 1\n    }\n}\nfun g() = 1\n', name='f.kt')
     assert shape(one, 'f.kt') == shape(many, 'f.kt')
 
-
-# =============================================================== V5: primary constructor fields (R13; C11, C12)
 
 CTOR_ONE_LINE = ('class C(val a: Int = foo(), val b: Int = bar(), c: Int = baz())\n'
                  'fun foo() = 1\nfun bar() = 2\nfun baz() = 3\n')
@@ -423,8 +411,6 @@ def test_V5_same_name_body_field_keeps_the_first_collected(tmp_path):
     assert targets(arch, F + 'D.x', 'CALLS') == {F + 'foo'}
 
 
-# =============================================================== V6: syntax errors (C13, Q2)
-
 def test_V6_file_with_only_errors_does_not_raise(tmp_path):
     arch = analyze_files(tmp_path, 'kotlin', {'bad.kt': '}}} ((( class { fun\n@@@ object : : {\n'})
     assert 'kotlin:bad.kt' in ids_of(arch)
@@ -440,8 +426,6 @@ def test_V6_error_inside_a_valid_declaration_keeps_collectable_members(tmp_path)
     arch = analyze_files(tmp_path, 'kotlin', {'m.kt': 'object Q { fun f() = 1 ))) }\nclass K { val v = 1 }\n'})
     assert 'kotlin:m.kt#K.v' in ids_of(arch)
 
-
-# =============================================================== V7: versions.analysis and schema names (R14, C16, Q1)
 
 def test_V7_symbol_bottlenecks_json(tmp_path):
     snap, arch = make_subject({'w.py': 'x\n'}, [sym('t', 'w.py')], [])
@@ -464,8 +448,6 @@ def test_V7_cli_output_declares_version_six(tmp_path, granularity, schema):
     payload = pipeline(root, tmp_path, granularity, 'python', name=f'v7{granularity}')
     assert payload['versions'] == {'analysis': '6'} and payload['schema'] == schema
 
-
-# =============================================================== V8: android framework output unchanged (R15)
 
 C7_C11_INPUTS = {
     'c7': {'app/src/main/kotlin/p/X.kt': 'package p\n\nobject X { var y = 0 }\n'},

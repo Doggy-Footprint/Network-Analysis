@@ -1,6 +1,5 @@
-"""Spec e91abc221d7deb2a v1 support. Expected values in the tests come from rules R1-R9 and the Cases table;
-the PageRank references below are independent power-iteration implementations of the R7 formula and of the
-pre-change definition (normalise by outgoing weight sum). Nothing here reads analyzer output to derive an expectation."""
+"""The PageRank references are independent power iterations of the current formula and of the pre-change
+definition (normalise by outgoing weight sum); nothing here reads analyzer output to derive an expectation."""
 import json
 import sys
 from dataclasses import replace
@@ -18,8 +17,6 @@ from tests.fact_defects_support import kotlin_analyze, python_analyze, ts_analyz
 DAMPING = 0.85
 LANGS = {'python': (python_analyze, '.py'), 'typescript': (ts_analyze, '.ts'), 'kotlin': (kotlin_analyze, '.kt')}
 
-
-# ---------------------------------------------------------------- analyzer observations
 
 def analyze_files(tmp_path, language, files, name='proj'):
     root = write_tree(Path(tmp_path) / name, files)
@@ -92,8 +89,6 @@ def flags_of(arch, node_id):
     return list(node_of(arch, node_id).flags or [])
 
 
-# ---------------------------------------------------------------- CLI pipeline with token threshold
-
 def pipeline(root, tmp_path, granularity, language, name='run', **weight_options):
     import code_analyzer.cli as cli
     out = Path(tmp_path) / name
@@ -116,8 +111,6 @@ def evidence_rows(candidate):
     ev = candidate['evidence']
     return ev if isinstance(ev, list) else [ev]
 
-
-# ---------------------------------------------------------------- synthetic symbol-mode bottleneck input
 
 def make_subject(files, nodes, edges):
     """files: {path: text}; nodes: GraphNode list; edges: GraphEdge list (all spans must lie in files)."""
@@ -151,8 +144,6 @@ def default_weights():
 def weights_in(tmp_path, **options):
     return load_weights(tmp_path, weights_data(**options))
 
-
-# ---------------------------------------------------------------- independent PageRank references
 
 def _targets(value):
     return dict(value) if isinstance(value, dict) else {t: 1.0 for t in value}

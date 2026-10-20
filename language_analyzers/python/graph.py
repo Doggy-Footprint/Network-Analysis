@@ -40,7 +40,7 @@ _DYNAMIC_EVAL_NAMES = {"eval", "exec", "globals", "locals", "vars", "compile"}
 _ALIASED_MODULES = {"importlib", "builtins"}
 _ATTRIBUTE_HOOKS = {"__getattr__", "__getattribute__", "__setattr__", "__delattr__"}
 
-# alias -> (module, imported name); the name is None when the alias is the module itself
+# the imported name is None when the alias names the module itself
 _Aliases = Dict[str, Tuple[str, Optional[str]]]
 
 

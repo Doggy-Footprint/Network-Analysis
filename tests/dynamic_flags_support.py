@@ -1,5 +1,4 @@
-"""Spec f3972ebd2386454f v1 support. Expected values in the tests are written literally from rules R1-R9;
-nothing here derives an expectation from analyzer output."""
+"""Expected values are written from the spec rules; nothing here derives an expectation from analyzer output."""
 from pathlib import Path
 
 from tests.fact_defects_support import kotlin_analyze, python_analyze, ts_analyze, write_tree

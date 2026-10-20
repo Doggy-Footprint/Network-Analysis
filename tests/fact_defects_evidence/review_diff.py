@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Compare two analysis JSON outputs (code-analyzer --json) of the same project: base commit vs HEAD.
-
-Usage:
-  review_diff.py BASE.json HEAD.json [--root PROJECT] [--seed 20261019] [--sample 10]
-                 [--base-bottlenecks B.json --head-bottlenecks H.json]
-
-Prints (1) the (relation, resolution) count diff, (2) added/removed edges grouped by (relation, resolution),
-(3) nodes whose span end_line or cost.line_count changed, (4) candidate-kind count diff and top-level key diff when
-bottleneck files are given, (5) a seeded sample of added edges with the source line they cite (needs --root).
-Stdlib only. Exit code 0 always; the reviewer decides acceptance from the printed tables.
-"""
+"""Exit code is 0 always: the reviewer decides acceptance from the printed tables."""
 import argparse
 import json
 import random

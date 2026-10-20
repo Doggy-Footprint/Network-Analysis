@@ -1,4 +1,5 @@
-"""V11 fuzz harness (main-run). Usage: python -I fuzz_reach.py <repo root> <inputs>. Oracle (d) disables the feature by replacing bottlenecks.reach.reach_candidates with a function returning [] (analyze_bottlenecks imports it at call time) and compares the remaining candidates."""
+"""Oracle (d) disables the feature by replacing bottlenecks.reach.reach_candidates with a function returning []
+(analyze_bottlenecks imports it at call time) and compares the remaining candidates."""
 import json, random, sys, tempfile, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])

@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
-"""Q1 benchmark: file-granularity CLI wall time, HEAD median(5) / base median(5) per fixture, threshold <= 1.25.
-
-Usage: benchmark.py BASE_WORKTREE HEAD_WORKTREE [--runs 5] [--threshold 1.25] [--json OUT.json]
-
-BASE_WORKTREE and HEAD_WORKTREE are checkouts (e.g. `git worktree add --detach <dir> b590d5461c59d93db7800f9be451392f367b8db0`
-and the repository under test). Each run is a fresh subprocess of the CLI with PYTHONHASHSEED=0, started with the
-worktree as the working directory. Base and head runs are interleaved per repetition so machine drift hits both sides.
-Fixture checkouts are resolved by the HEAD worktree's fixtures.registry and shared by both sides. Exit code 1 if any ratio
-exceeds the threshold.
-"""
+"""Base and head runs are interleaved per repetition so machine drift hits both sides, and both sides read the
+fixture checkouts resolved by the HEAD worktree's fixtures.registry."""
 import argparse
 import json
 import os

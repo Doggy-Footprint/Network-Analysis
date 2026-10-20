@@ -1,4 +1,4 @@
-"""Q4 wall time: file-mode --bottlenecks, base worktree vs HEAD, interleaved base/head x3, median. Usage: perf.py <scratch dir containing basewt/>"""
+"""Base and head runs are interleaved so machine drift hits both sides."""
 import subprocess, sys, time, statistics, os
 S=sys.argv[1]; FX='/home/user/Network-Analysis/.fixtures'
 targets=[("android","kotlin",f"{FX}/android-nowinandroid"),("nestjs","typescript",f"{FX}/typescript-nestjs-realworld"),("self","python",f"{S}/basewt")]

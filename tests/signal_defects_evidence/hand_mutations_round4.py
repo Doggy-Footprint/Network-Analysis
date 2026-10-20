@@ -1,7 +1,4 @@
-"""Hand mutations for spec 3f70cc03aeae9c1a (round 4): each injects one strongest defect class, runs the round-4
-tests, and records which tests failed. A mutation counts as killed only when an expected obligation test fails.
-Files are backed up and restored with .harness/bin/seed.py. Usage: hand_mutations_round4.py <out.json> [ids]
-"""
+"""A mutation counts as killed only when a test of its expected obligation fails."""
 import json
 import subprocess
 import sys

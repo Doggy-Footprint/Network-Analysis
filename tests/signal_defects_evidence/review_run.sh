@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: review_run.sh <code_tree> <outdir>; analyses the base tree's own sources for "self" so input is identical
+# self is analysed from the base tree's own sources on both sides so the input is identical
 CODE=$1; OUT=$2; mkdir -p $OUT
 FX=/home/user/Network-Analysis/.fixtures
 SELF=${SELF:?set SELF to the base worktree path}
