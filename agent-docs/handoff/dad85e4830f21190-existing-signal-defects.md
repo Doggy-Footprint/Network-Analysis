@@ -15,7 +15,7 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 - Branch: `research/ai-friendly-code-structure`.
 - Base commit: `4c0d5ed`(검수 시점 HEAD는 `6444895451a89f4450b9123b7beb17b11506e534` + 문서 변경만).
 - 변경된 파일: 이 문서, `agent-docs/handoff/index.md`. 구현 변경은 없다.
-- 진행: 3회 분할 중 1회차(F11, F7, F8, F9 줄 수)를 완료했다(spec `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`). 남은 것은 2회차(F1, F2)와 3회차(F3, F4, F5, F6, F9 토큰, F10, F12)다.
+- 진행: 3회 분할 중 1회차(F11, F7, F8, F9 줄 수)와 2회차(F1, F2)를 완료했다(spec `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`, `agent-docs/spec-logs/f3972ebd2386454f-dynamic-flags.md`). 남은 것은 3회차(F3, F4, F5, F6, F9 토큰, F10, F12)다.
 - 기존 테스트로는 아래 결함이 잡히지 않는다. 검수 당시 관련 테스트는 650 passed, Chromium이 필요한 browser 테스트 31개만 error였다.
 
 ### 결함 목록 (모두 실행으로 확인)
@@ -44,11 +44,13 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 | 수정 시도 없음 | 검수 단계에서 사용자가 handoff를 선택함 | verified: 사용자 답변 |
 | F11 원인 가설 "모듈 최상위 익명 함수 미스캔" | `_resolve_import('./tag.entity')`가 None. `with_suffix`가 `tag.entity`를 `tag.ts`로 바꿈 | verified: 실행 추적. 1회차에서 상대 import 해석을 고쳐 해결(nestjs IMPORTS 6→71). 모듈 최상위 코드 스캔은 하지 않았다 |
 | 1회차 workflow (F11, F7, F8, F9 줄 수) | 완료. verifier 2회(RETRY → PASS), 수정 4회 | verified: spec-logs/7ab6320d2eb56ccf |
+| 2회차 workflow (F1, F2) | 완료. verifier 2회(RETRY → PASS), 수정 1회(구문 오류 파일 검증 누락) | verified: spec-logs/f3972ebd2386454f |
+| 2회차 mutation tool 첫 sanity check(`ast.unparse`만 적용한 파일로 145 failed) | 확인 명령이 `open(p,'w')`로 파일을 읽기 전에 비움 | verified: 읽은 뒤 쓰도록 고친 재실행 145 passed |
 
 ## Next Step
 
 1. 결함별로 의도된 동작인지 먼저 확인한다. F10과 F3 일부는 "recall 우선" 정책에서 나온 설계일 수 있다.
-2. 남은 순서: 2회차 F1·F2 → 3회차 F3·F4·F5·F6·F9(토큰)·F10·F12. F3은 "외부 호출 분리(`external_call_count`)", F5는 "외부 파일만 셈(이름 유지)"으로 사용자가 결정했다. F6·F10은 3회차에서 정한다. 앞의 것일수록 후보가 거꾸로 나오거나 대부분 파일에 나와 신호 가치를 잃는다.
+2. 남은 순서: 3회차 F3·F4·F5·F6·F9(토큰)·F10·F12. F3은 "외부 호출 분리(`external_call_count`)", F5는 "외부 파일만 셈(이름 유지)"으로 사용자가 결정했다. F6·F10은 3회차에서 정한다. 앞의 것일수록 후보가 거꾸로 나오거나 대부분 파일에 나와 신호 가치를 잃는다.
 3. 각 수정은 `workflow-approach`로 진행한다. 재현 입력은 검수 agent가 만든 scratchpad fixture(세션 종료 시 사라짐) 대신 테스트 fixture로 다시 만든다.
 
 ## Open Questions
@@ -60,10 +62,13 @@ AI agent 친화 코드 특성 중 이미 지원한다고 본 5개 항목을 검�
 ## Spec
 
 - 1회차: `agent-docs/spec-logs/7ab6320d2eb56ccf-analyzer-fact-defects.md`, v4, complete, run `7ab6320d2eb56ccf`.
-- 2·3회차: 시작 전.
+- 2회차: `agent-docs/spec-logs/f3972ebd2386454f-dynamic-flags.md`, v2, complete, run `f3972ebd2386454f`.
+- 3회차: 시작 전.
 
 ## Execution Ledger
 
 1회차: Test command 2738 passed, diff coverage 100%, fuzz 20,500회 위반 0, hand mutation 13/13 killed, mutation tool 29개 중 27 killed·2 equivalent, 성능 비율 0.79–1.05, verifier 2회, 수정 4회. 자세한 내용은 spec-logs.
+
+2회차: Test command 2894 passed, diff coverage 98.1%, fuzz 3×1,000 위반 0(구문 오류 파일·중복 검사 포함), hand mutation 14/14 killed, mutation tool 30/30 killed, 실제 fixture 5개 출력 변화 0(해당 구문 없음), verifier 2회, 수정 1회. F4 관련: Kotlin 동적 플래그도 기존 call 스캔 귀속을 따라 method와 class에 모두 붙는다(D4).
 
 검수 agent 실행 기록: 관련 테스트 650 passed, browser 31 error(Chromium 없음). 결함 F1–F10은 scratchpad fixture로 재현했다. mutation·fuzz 실행 없음.

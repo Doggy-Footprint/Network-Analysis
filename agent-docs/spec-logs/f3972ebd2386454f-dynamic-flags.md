@@ -1,7 +1,7 @@
 ---
 version: 2
 run_id: f3972ebd2386454f
-status: active
+status: complete
 base_commit: 963d70018442629e55c0b7415882357e77e152ae
 max_verifier_invocations: 2
 handoff: none
@@ -184,29 +184,30 @@ Mutation tool:
 | --- | --- |
 | correction batches used | 1 |
 | verifier invocations | 2 |
-| open finding ids | VF1-1 (pending verifier 2) |
+| open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1 | 2 | tests/test_dynamic_flags.py::test_V1_* @3804f10 | invalidated → pending | v1 accepted (verifier 1); v2 adds Errors 1 items; hand M1, M12 killed | VF1-1 |
+| V1 | 2 | tests/test_dynamic_flags.py::test_V1_* @3804f10 | accepted (verifier 2) | v1 accepted (verifier 1); v2 adds Errors 1 items; hand M1, M12 killed | VF1-1 |
 | V2 | 2 | test_V2_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M4 killed | — |
 | V3 | 2 | test_V3_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M2, M3 killed | — |
-| V4 | 2 | test_V4_* @3804f10 | invalidated → pending | v1 accepted; v2 adds Errors 1 + R10 duplicate items; hand M6, M11 killed | VF1-1, VF1-2 |
+| V4 | 2 | test_V4_* @3804f10 | accepted (verifier 2) | v1 accepted; v2 adds Errors 1 + R10 duplicate items; hand M6, M11 killed | VF1-1, VF1-2 |
 | V5 | 2 | test_V5_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M5 killed | — |
-| V6 | 2 | test_V6_* @3804f10 | invalidated → pending | v1 accepted; v2 adds module-level call + Errors 1 items; hand M7, M8, M14 killed | VF1-1, VF1-4 |
-| V7 | 2 | test_V7_* @3804f10 | invalidated → pending | v1 accepted; v2 adds non-builtins negatives; hand M13 killed | VF1-3 |
+| V6 | 2 | test_V6_* @3804f10 | accepted (verifier 2) | v1 accepted; v2 adds module-level call + Errors 1 items; hand M7, M8, M14 killed | VF1-1, VF1-4 |
+| V7 | 2 | test_V7_* @3804f10 | accepted (verifier 2) | v1 accepted; v2 adds non-builtins negatives; hand M13 killed | VF1-3 |
 | V8 | 2 | test_V8_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M9 killed | — |
 | V9 | 2 | test_V9_* @3804f10 | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | hand M10 killed | — |
 | V10 | 2 | test_V10_Q1_*; tests/dynamic_flags_evidence/review.md, review-output/flagdiff.txt | accepted (verifier 1; unaffected by v2 — no change to its tests' expectations or dependencies) | 0 changes in 10 fixture runs | — |
-| V11 | 2 | tests/dynamic_flags_evidence/fuzz_dynamic.py, fuzz-run.log: 3×1,000 execs with 10% broken extra files and duplicate check, 0 crashes, 0 violations; base 963d700 detects 97/120 at budget 40 | pending | — | — |
-| V12 | 2 | Test command @3804f10: 2894 passed, 1 skipped; diff coverage 208/212 = 98.1% | pending | — | — |
+| V11 | 2 | tests/dynamic_flags_evidence/fuzz_dynamic.py, fuzz-run.log: 3×1,000 execs with 10% broken extra files and duplicate check, 0 crashes, 0 violations; base 963d700 detects 97/120 at budget 40 | accepted (verifier 2) | — | — |
+| V12 | 2 | Test command @3804f10: 2894 passed, 1 skipped; diff coverage 208/212 = 98.1% | accepted (verifier 2) | — | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
 | 0 | — | — | implementer + test-implementer v1; no spec challenges; no existing test changed | Test command pass |
-| 2 | verifier 1 RETRY: VF1-1 (Errors 1 parse-error signal has no obligation for TS/Python; Kotlin error-shaped call nodes) blocking; advisories VF1-2 (duplicate flags), VF1-3 (non-builtins receiver negative), VF1-4 (module-level alias call), VF1-5 (M10 description) | spec gap: Errors row approved but not mapped to coverage items | v2: coverage items added to V1, V4, V6, V7, V11; VF1-2..4 adopted as declared items (R10 and R6 already require them); VF1-5 fixed in hand-mutations.json | 진행 중 |
+| 3 | verifier 2 PASS; VF1-1 closed, VF1-2–5 adopted and covered; advisories A1 (same-file partial-parse flag not asserted; spec leaves it as existing handling), A2 (Kotlin flag pre-existing from another source untested; scenario undefined) | — | — | complete |
+| 2 | verifier 1 RETRY: VF1-1 (Errors 1 parse-error signal has no obligation for TS/Python; Kotlin error-shaped call nodes) blocking; advisories VF1-2 (duplicate flags), VF1-3 (non-builtins receiver negative), VF1-4 (module-level alias call), VF1-5 (M10 description) | spec gap: Errors row approved but not mapped to coverage items | v2: coverage items added to V1, V4, V6, V7, V11; VF1-2..4 adopted as declared items (R10 and R6 already require them); VF1-5 fixed in hand-mutations.json | Test command 2894 passed, diff coverage 98.1%; fuzz rerun 0; hand 14/14 killed | 재검증 |
 | 1 | mutation tool first sanity check: ast.unparse-only files failed 145 tests | main's sanity command truncated the file before reading it (verified: `open(p,'w')` evaluated before `open(p).read()`) | re-ran with read-then-write: 145 passed; tool kills 30/30 stand | valid |
 
 # Version Log
