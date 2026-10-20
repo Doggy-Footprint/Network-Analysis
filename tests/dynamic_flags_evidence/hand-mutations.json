@@ -1,0 +1,132 @@
+[
+ {
+  "id": "M1",
+  "defect": "R1 flag only for literal specifiers",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "selector": "test_V1",
+  "killed": true,
+  "summary": "14 failed, 6 passed, 125 deselected in 5.16s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[empty-string-import]",
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[empty-string-require]",
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[external-literal-import]",
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[external-literal-require]",
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[identifier-import]",
+   "tests/test_dynamic_flags.py::test_V1_call_and_argument_partitions[identifier-require]"
+  ]
+ },
+ {
+  "id": "M2",
+  "defect": "R3 checks first instead of second argument",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "selector": "test_V3",
+  "killed": true,
+  "summary": "9 failed, 15 passed, 121 deselected in 4.58s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.get-string]",
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.set-string]",
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.has-string]",
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.defineProperty-string]",
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.deleteProperty-string]",
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Object.defineProperty-string]"
+  ]
+ },
+ {
+  "id": "M3",
+  "defect": "R3 template with ${} treated as literal",
+  "file": "language_analyzers/typescript/ast.py",
+  "selector": "test_V3",
+  "killed": true,
+  "summary": "1 failed, 23 passed, 121 deselected in 4.50s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V3_second_argument_decision_table[Reflect.get-substituted-template]"
+  ]
+ },
+ {
+  "id": "M4",
+  "defect": "R2 new Function missed",
+  "file": "language_analyzers/typescript/analyzer.py",
+  "selector": "test_V2",
+  "killed": true,
+  "summary": "1 failed, 7 passed, 137 deselected in 0.27s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V2_eval_partitions[new-Function]"
+  ]
+ },
+ {
+  "id": "M5",
+  "defect": "R5 interpolated string treated as literal",
+  "file": "language_analyzers/kotlin/ast.py",
+  "selector": "test_V5",
+  "killed": true,
+  "summary": "1 failed, 12 passed, 132 deselected in 0.27s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V5_member_lookup_argument_partitions[getMethod-interpolated]"
+  ]
+ },
+ {
+  "id": "M6",
+  "defect": "D4 class attribution dropped",
+  "file": "language_analyzers/kotlin/analyzer.py",
+  "selector": "test_V4",
+  "killed": true,
+  "summary": "1 failed, 9 passed, 135 deselected in 0.25s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V4_attribution_method_and_enclosing_class_both_flagged"
+  ]
+ },
+ {
+  "id": "M7",
+  "defect": "C14 rebound guard removed",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V6",
+  "killed": true,
+  "summary": "2 failed, 40 passed, 103 deselected in 0.66s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V6_C14_alias_name_reassigned_locally_is_not_an_alias[import-alias]",
+   "tests/test_dynamic_flags.py::test_V6_C14_alias_name_reassigned_locally_is_not_an_alias[eval-alias]"
+  ]
+ },
+ {
+  "id": "M8",
+  "defect": "R6 if/try blocks ignored",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V6",
+  "killed": true,
+  "summary": "12 failed, 30 passed, 103 deselected in 0.57s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-builtins-as-if]",
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-builtins-as-try]",
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-importlib-as-if]",
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[from-importlib-as-try]",
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[import-builtins-as-if]",
+   "tests/test_dynamic_flags.py::test_V6_alias_form_by_position_flags_scanning_symbol[import-builtins-as-try]"
+  ]
+ },
+ {
+  "id": "M9",
+  "defect": "R8 only Load context",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V8",
+  "killed": true,
+  "summary": "4 failed, 8 passed, 133 deselected in 0.32s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[del-fstring]",
+   "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[del-name]",
+   "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[store-int-constant]",
+   "tests/test_dynamic_flags.py::test_V8_dunder_dict_subscript_partitions[store-name]"
+  ]
+ },
+ {
+  "id": "M10",
+  "defect": "R9 module hook set includes __setattr__",
+  "file": "language_analyzers/python/graph.py",
+  "selector": "test_V9",
+  "killed": true,
+  "summary": "2 failed, 8 passed, 135 deselected in 0.22s",
+  "failed_tests": [
+   "tests/test_dynamic_flags.py::test_V9_module_level_setattr_and_dir_do_not_flag[__setattr__]",
+   "tests/test_dynamic_flags.py::test_V9_module_level_setattr_and_dir_do_not_flag[__dir__]"
+  ]
+ }
+]

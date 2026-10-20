@@ -182,17 +182,30 @@ Mutation tool:
 | item | value |
 | --- | --- |
 | correction batches used | 0 |
-| verifier invocations | 0 |
+| verifier invocations | 1 |
 | open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V1–V12 | 1 | — | pending | — | — |
+| V1 | 1 | tests/test_dynamic_flags.py::test_V1_* @1efd6bb | pending | hand M1 killed | — |
+| V2 | 1 | test_V2_* @1efd6bb | pending | hand M4 killed | — |
+| V3 | 1 | test_V3_* @1efd6bb | pending | hand M2, M3 killed | — |
+| V4 | 1 | test_V4_* @1efd6bb | pending | hand M6 killed | — |
+| V5 | 1 | test_V5_* @1efd6bb | pending | hand M5 killed | — |
+| V6 | 1 | test_V6_* @1efd6bb | pending | hand M7, M8 killed | — |
+| V7 | 1 | test_V7_* @1efd6bb | pending | — | — |
+| V8 | 1 | test_V8_* @1efd6bb | pending | hand M9 killed | — |
+| V9 | 1 | test_V9_* @1efd6bb | pending | hand M10 killed | — |
+| V10 | 1 | test_V10_Q1_*; tests/dynamic_flags_evidence/review.md, review-output/flagdiff.txt | pending | 0 changes in 10 fixture runs | — |
+| V11 | 1 | tests/dynamic_flags_evidence/fuzz_dynamic.py, fuzz-run.log: 3×1,000 execs, 0 crashes, 0 violations; base 963d700 detects 97/120 at budget 40 | pending | — | — |
+| V12 | 1 | Test command: 2883 passed, 1 skipped; diff coverage 204/212 = 96.2% | pending | — | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 0 | — | — | implementer + test-implementer v1; no spec challenges; no existing test changed | Test command pass |
+| 1 | mutation tool first sanity check: ast.unparse-only files failed 145 tests | main's sanity command truncated the file before reading it (verified: `open(p,'w')` evaluated before `open(p).read()`) | re-ran with read-then-write: 145 passed; tool kills 30/30 stand | valid |
 
 # Version Log
 ## v1
