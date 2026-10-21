@@ -1,5 +1,5 @@
 """Expected CLI hashes come from tests/architecture_rules_evidence/base_manifest.json, produced at the pre-feature commit.
-Size and time checks are deliberately not benchmark-marked so they run in the default selection."""
+Size checks are deliberately not benchmark-marked so they run in the default selection; the 20k-node time budget runs with -m benchmark."""
 import hashlib
 import json
 import statistics
@@ -263,6 +263,12 @@ def test_V11_synthetic_time():
     result = analyze_structure(arch, weights(), rules)
     _, expected, coverage = ref_rule_evaluation(spec, arch, weights())
     assert without_digest(result.coverage['architecture_rules'])['violation_count'] == coverage['violation_count'] == len(expected) > 1000
+
+
+@pytest.mark.benchmark
+def test_V11_synthetic_time_budget():
+    arch, spec = synthetic_input()
+    rules = to_rules(spec)
     ids = [node.id for node in arch.nodes]
     packages = package_assignments(arch)
     assert median_time(lambda: layer_assignments(rules, ids, packages)) <= TIME_LIMIT
