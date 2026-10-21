@@ -4,6 +4,7 @@ Generalizes the `futuramaapi_root` pattern that used to live in
 tests/test_m3_futuramaapi_acceptance.py so multiple fixtures can reuse the same
 acquire/verify/cache logic. See contracts/fixture-unification.md.
 """
+import fcntl
 import hashlib
 import os
 import shutil
@@ -189,15 +190,15 @@ def fixture_root(
 
     base = fixtures_dir if fixtures_dir is not None else (REPO_ROOT / ".fixtures")
     path = base / name
+    base.mkdir(parents=True, exist_ok=True)
 
-    if path.exists():
-        if _matches(spec, path, run):
-            return path
-        shutil.rmtree(path)
+    # pytest-xdist workers acquire concurrently; unlocked, one worker's rmtree-and-reclone deletes another's in-progress clone.
+    with open(base / f".{name}.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if path.exists():
+            if _matches(spec, path, run):
+                return path
+            shutil.rmtree(path)
         _clone(spec, path, run)
         _require_match(spec, path, run)
         return path
-
-    _clone(spec, path, run)
-    _require_match(spec, path, run)
-    return path
