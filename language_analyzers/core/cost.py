@@ -2,6 +2,8 @@ import math
 import re
 from typing import Optional
 
+from repository.models import split_source_lines
+
 from .graph_models import NodeCost, SourceSpan
 
 CHARACTERS_PER_TOKEN = 4.0
@@ -22,6 +24,11 @@ def estimate_tokens(
         non_digit_chars -= len(run)
         digit_tokens += math.ceil(len(run) / digit_group_size)
     return max(1, math.ceil(non_digit_chars / characters_per_token) + digit_tokens)
+
+
+def module_end_line(text: str) -> int:
+    lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
+    return max(1, lines)
 
 
 def cost_for_text(
@@ -50,7 +57,7 @@ def text_for_span(source: str, span: SourceSpan) -> str:
     end = max(start, span.end_line)
     if hasattr(source, "span_text"):
         return source.span_text(start, end)
-    return "\n".join(source.splitlines()[start:end])
+    return "\n".join(split_source_lines(source)[start:end])
 
 
 def cost_for_node_lines(

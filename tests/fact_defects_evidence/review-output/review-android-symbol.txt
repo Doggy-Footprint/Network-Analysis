@@ -1,0 +1,153 @@
+== (relation, resolution) count diff: base -> head
+relation        resolution      base    head   delta
+CALLS           ambiguous        252     251      -1
+CALLS           exact              0       5      +5
+CALLS           unique_name       81      77      -4
+IMPLEMENTS      exact              0       3      +3
+IMPLEMENTS      unique_name       17      14      -3
+IMPORTS         ambiguous         17      14      -3
+IMPORTS         exact              0     103    +103
+IMPORTS         unique_name      102       0    -102
+IMPORTS_SYMBOL  ambiguous         17      14      -3
+IMPORTS_SYMBOL  exact              0     112    +112
+IMPORTS_SYMBOL  unique_name      109       0    -109
+INHERITS        exact              0       2      +2
+INHERITS        unique_name        4       2      -2
+INSTANTIATES    exact              0      31     +31
+INSTANTIATES    unique_name       62      31     -31
+READS           ambiguous        901     896      -5
+READS           exact              0     263    +263
+READS           unique_name      671     413    -258
+TESTS           ambiguous        521     517      -4
+TESTS           exact              0     124    +124
+TESTS           unique_name      287     166    -121
+TYPE_USES       exact              0     145    +145
+TYPE_USES       unique_name      223      78    -145
+WRITES          exact              0      12     +12
+WRITES          unique_name      142     130     -12
+total edges: base=4160 head=4157
+== added edges by (relation, resolution, confidence): 820
+  CALLS           exact       static_certain           5
+  IMPLEMENTS      exact       static_certain           3
+  IMPORTS         ambiguous   static_inferred          7
+  IMPORTS         exact       static_certain         103
+  IMPORTS_SYMBOL  ambiguous   static_inferred          7
+  IMPORTS_SYMBOL  exact       static_certain         112
+  INHERITS        exact       static_certain           2
+  INSTANTIATES    exact       static_certain          31
+  READS           exact       static_certain         263
+  TESTS           ambiguous   static_inferred          6
+  TESTS           exact       static_certain         124
+  TYPE_USES       exact       static_certain         145
+  WRITES          exact       static_certain          12
+== removed edges by (relation, resolution, confidence): 823
+  CALLS           ambiguous   static_inferred          1
+  CALLS           unique_name static_inferred          4
+  IMPLEMENTS      unique_name static_inferred          3
+  IMPORTS         ambiguous   static_inferred         10
+  IMPORTS         unique_name static_inferred        102
+  IMPORTS_SYMBOL  ambiguous   static_inferred         10
+  IMPORTS_SYMBOL  unique_name static_inferred        109
+  INHERITS        unique_name static_inferred          2
+  INSTANTIATES    unique_name static_inferred         31
+  READS           ambiguous   static_inferred          5
+  READS           unique_name static_inferred        258
+  TESTS           ambiguous   static_inferred         10
+  TESTS           unique_name static_inferred        121
+  TYPE_USES       unique_name static_inferred        145
+  WRITES          unique_name static_inferred         12
+== nodes with changed span end_line / cost.line_count (F8/F9)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/SyncUtilities.kt: (end_line, line_count) (105, 104) -> (104, 104)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/di/DataModule.kt: (end_line, line_count) (75, 74) -> (74, 74)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/di/UserNewsResourceRepositoryModule.kt: (end_line, line_count) (34, 33) -> (33, 33)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/NewsResource.kt: (end_line, line_count) (74, 73) -> (73, 73)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/RecentSearchQuery.kt: (end_line, line_count) (32, 31) -> (31, 31)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/Topic.kt: (end_line, line_count) (30, 29) -> (29, 29)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/AnalyticsExtensions.kt: (end_line, line_count) (85, 84) -> (84, 84)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt: (end_line, line_count) (70, 69) -> (69, 69)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultRecentSearchRepository.kt: (end_line, line_count) (47, 46) -> (46, 46)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt: (end_line, line_count) (93, 92) -> (92, 92)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/NewsRepository.kt: (end_line, line_count) (51, 50) -> (50, 50)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt: (end_line, line_count) (147, 146) -> (146, 146)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt: (end_line, line_count) (67, 66) -> (66, 66)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepository.kt: (end_line, line_count) (76, 75) -> (75, 75)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/RecentSearchRepository.kt: (end_line, line_count) (42, 41) -> (41, 41)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/SearchContentsRepository.kt: (end_line, line_count) (39, 38) -> (38, 38)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt: (end_line, line_count) (34, 33) -> (33, 33)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserDataRepository.kt: (end_line, line_count) (71, 70) -> (70, 70)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/UserNewsResourceRepository.kt: (end_line, line_count) (46, 45) -> (45, 45)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/ConnectivityManagerNetworkMonitor.kt: (end_line, line_count) (96, 95) -> (95, 95)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/NetworkMonitor.kt: (end_line, line_count) (27, 26) -> (26, 26)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/SyncManager.kt: (end_line, line_count) (28, 27) -> (27, 27)
+  kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/util/TimeZoneMonitor.kt: (end_line, line_count) (108, 107) -> (107, 107)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/CompositeUserNewsResourceRepositoryTest.kt: (end_line, line_count) (192, 191) -> (191, 191)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/UserNewsResourceTest.kt: (end_line, line_count) (106, 105) -> (105, 105)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/model/NetworkEntityTest.kt: (end_line, line_count) (141, 140) -> (140, 140)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt: (end_line, line_count) (379, 378) -> (378, 378)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepositoryTest.kt: (end_line, line_count) (175, 174) -> (174, 174)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstUserDataRepositoryTest.kt: (end_line, line_count) (260, 259) -> (259, 259)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TestSynchronizer.kt: (end_line, line_count) (36, 35) -> (35, 35)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNewsResourceDao.kt: (end_line, line_count) (139, 138) -> (138, 138)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNiaNetworkDataSource.kt: (end_line, line_count) (123, 122) -> (122, 122)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestTopicDao.kt: (end_line, line_count) (61, 60) -> (60, 60)
+  kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResourceKtTest.kt: (end_line, line_count) (75, 74) -> (74, 74)
+  kotlin:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/DatabaseTest.kt: (end_line, line_count) (48, 47) -> (47, 47)
+  kotlin:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDaoTest.kt: (end_line, line_count) (289, 288) -> (288, 288)
+  kotlin:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDaoTest.kt: (end_line, line_count) (127, 126) -> (126, 126)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/DatabaseMigrations.kt: (end_line, line_count) (64, 63) -> (63, 63)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/NiaDatabase.kt: (end_line, line_count) (73, 72) -> (72, 72)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt: (end_line, line_count) (121, 120) -> (120, 120)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt: (end_line, line_count) (40, 39) -> (39, 39)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/RecentSearchQueryDao.kt: (end_line, line_count) (39, 38) -> (38, 38)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt: (end_line, line_count) (77, 76) -> (76, 76)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicFtsDao.kt: (end_line, line_count) (40, 39) -> (39, 39)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DaosModule.kt: (end_line, line_count) (58, 57) -> (57, 57)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DatabaseModule.kt: (end_line, line_count) (42, 41) -> (41, 41)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt: (end_line, line_count) (54, 53) -> (53, 53)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt: (end_line, line_count) (39, 38) -> (38, 38)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceTopicCrossRef.kt: (end_line, line_count) (55, 54) -> (54, 54)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt: (end_line, line_count) (58, 57) -> (57, 57)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/RecentSearchQueryEntity.kt: (end_line, line_count) (36, 35) -> (35, 35)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt: (end_line, line_count) (52, 51) -> (51, 51)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicFtsEntity.kt: (end_line, line_count) (49, 48) -> (48, 48)
+  kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/util/InstantConverter.kt: (end_line, line_count) (31, 30) -> (30, 30)
+  kotlin:feature/topic/api/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/api/navigation/TopicNavKey.kt: (end_line, line_count) (31, 30) -> (30, 30)
+  kotlin:feature/topic/impl/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreenTest.kt: (end_line, line_count) (146, 145) -> (145, 145)
+  kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicScreen.kt: (end_line, line_count) (359, 358) -> (358, 358)
+  kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModel.kt: (end_line, line_count) (172, 171) -> (171, 171)
+  kotlin:feature/topic/impl/src/main/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/navigation/TopicEntryProvider.kt: (end_line, line_count) (49, 48) -> (48, 48)
+  kotlin:feature/topic/impl/src/test/kotlin/com/google/samples/apps/nowinandroid/feature/topic/impl/TopicViewModelTest.kt: (end_line, line_count) (261, 260) -> (260, 260)
+  changed nodes: 60; only in base: 0; only in head: 0
+== bottleneck payload
+  schema: base=bottlenecks.v6 head=bottlenecks.v6
+  top-level keys only in base: []; only in head: []
+  dependency_network keys only in base: []; only in head: []
+  edge_weights keys only in base: []; only in head: []
+  coverage keys only in base: []; only in head: []
+  candidate kind counts (base -> head)
+    evidence_spread          295   294    -1
+    unresolved_boundary      195   195    +0
+  new candidates: 0
+  gone candidates: 1
+    evidence_spread     kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNewsResourceDao.kt#TestNewsResourceDao.topicCrossReferences
+== 10 sampled added edges (seed=20261019); verify each against the cited source line
+[1] kotlin:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDaoTest.kt#testNewsResource -TYPE_USES-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt#NewsResourceEntity  (static_certain, exact, candidates=[])
+[2] kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt -TESTS-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt#PopulatedNewsResource  (static_certain, exact, candidates=[])
+[3] kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DaosModule.kt#DaosModule.providesRecentSearchQueryDao -READS-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/NiaDatabase.kt#NiaDatabase  (static_certain, exact, candidates=[])
+[4] kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt -IMPORTS_SYMBOL-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt#NewsResourceFtsDao  (static_certain, exact, candidates=[])
+[5] kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt#OfflineFirstNewsRepository.network -READS-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDao.kt#TopicDao  (static_certain, exact, candidates=[])
+[6] kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNewsResourceDao.kt -IMPORTS-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt  (static_certain, exact, candidates=[])
+[7] kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestTopicDao.kt#TestTopicDao.upsertTopics -TESTS-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt#TopicEntity  (static_certain, exact, candidates=[])
+[8] kotlin:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt -TESTS-> kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/SyncUtilities.kt  (static_certain, exact, candidates=[])
+[9] kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt -IMPORTS_SYMBOL-> kotlin:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/SyncUtilities.kt#Syncable  (static_certain, exact, candidates=[])
+[10] kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DaosModule.kt#DaosModule.providesNewsResourceDao -TYPE_USES-> kotlin:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/NiaDatabase.kt#NiaDatabase  (static_certain, exact, candidates=[])
+[1] core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDaoTest.kt:277: private fun testNewsResource(
+[2] core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt:31: import com.google.samples.apps.nowinandroid.core.database.model.PopulatedNewsResource
+[3] core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DaosModule.kt:55: database: NiaDatabase,
+[4] core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt:22: import com.google.samples.apps.nowinandroid.core.database.dao.NewsResourceFtsDao
+[5] core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt:51: private val topicDao: TopicDao,
+[6] core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestNewsResourceDao.kt:23: import com.google.samples.apps.nowinandroid.core.database.model.TopicEntity
+[7] core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestTopicDao.kt:51: override suspend fun upsertTopics(entities: List<TopicEntity>) {
+[8] core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepositoryTest.kt:18: 
+[9] core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TopicsRepository.kt:18: 
+[10] core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/di/DaosModule.kt:38: @Provides

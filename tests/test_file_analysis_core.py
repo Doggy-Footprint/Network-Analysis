@@ -135,9 +135,9 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
     assert all('analysis' not in n['metadata'] for n in serialize(result)['details']['nodes'])
     unicode_snap,unicode_file=converted({'a.py':'value = "a\u2028b"'},[node('value','a.py','constant')])
     unicode_data=serialize(unicode_file)
-    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':2}
+    assert unicode_data['nodes'][0]['cost']=={'token_estimate':4,'char_count':13,'line_count':1}
     file_span=unicode_data['nodes'][0]['span']
-    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,2)
+    assert (file_span['file_path'],file_span['start_line'],file_span['end_line'])==('a.py',1,1)
     original_span=unicode_data['details']['nodes'][0]['span']
     assert (original_span['file_path'],original_span['start_line'],original_span['end_line'])==('a.py',1,1)
     unicode_report=payload(unicode_snap,unicode_file,tmp_path)
@@ -187,13 +187,14 @@ def test_V06_spread_three_value_boundary(tmp_path, span, expected):
 
 
 def test_V06_two_files_spread(tmp_path):
-    nodes = [node('a','a.py'),node('b','c.py'),node('c','c.py')]
-    edges = [edge('a','c',evidence=SourceSpan('a.py',1,1)),edge('b','c',evidence=SourceSpan('c.py',1,1))]
-    snap, result = converted({'a.py':'x','c.py':'z'}, nodes, edges)
+    nodes = [node('a','p/a.py'),node('b','q/d.py'),node('c','c.py')]
+    edges = [edge('a','c',evidence=SourceSpan('p/a.py',1,1)),edge('b','c',evidence=SourceSpan('q/d.py',1,1))]
+    snap, result = converted({'p/a.py':'x','c.py':'z','q/d.py':'w'}, nodes, edges)
     candidates = [c for c in payload(snap,result,tmp_path)['candidates'] if c['kind']=='evidence_spread']
     assert len(candidates)==1
     assert candidates[0]['metrics']['file_count']==2
-    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('a.py',1,1),('c.py',1,1)}
+    assert candidates[0]['metrics']['directory_count']==2
+    assert {(item['path'],item['start_line'],item['end_line']) for item in candidates[0]['evidence']}=={('p/a.py',1,1),('q/d.py',1,1)}
     assert candidates[0]['status']=='static_candidate'
 
 

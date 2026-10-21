@@ -236,7 +236,7 @@ class TestPythonGraphEdges(PythonProjectFixture):
 
         nodes, _, _ = self.graph()
 
-        self.assertIn(flag_names.AMBIGUOUS_NAME, nodes["py:a#shared"].flags)
+        self.assertNotIn("ambiguous_name", nodes["py:a#shared"].flags)
         self.assertEqual(nodes["py:a#shared"].metadata["name_collision_count"], 2)
 
     def test_local_variable_shadowing_a_symbol_creates_no_edge(self):
@@ -401,9 +401,11 @@ class TestFrictionSignals(PythonProjectFixture):
         nodes, _, _ = self.graph()
 
         self.assertEqual(
-            nodes["py:mod#run"].metadata["unresolved_calls"],
+            nodes["py:mod#run"].metadata["external_calls"],
             {"dumps": 1, "len": 1, "str": 1},
         )
+        self.assertEqual(nodes["py:mod#run"].metadata["external_call_count"], 3)
+        self.assertNotIn("unresolved_calls", nodes["py:mod#run"].metadata)
 
 
 class TestArchitectureShape(PythonProjectFixture):

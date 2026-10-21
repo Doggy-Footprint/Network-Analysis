@@ -46,7 +46,7 @@ def modal_report():
     for i, path in enumerate(OUTBOUND):
         relations.append((HUB, path, 'CALLS', *TIERS[OUT_TIER[i]], 200 + i))
     candidates = [candidate(0, 'large_node', HUB, {'line_count': 2417, 'line_threshold': 2000}), candidate(1, 'unresolved_boundary', HUB, {'unresolved_count': 7}),
-                  candidate(2, 'evidence_spread', SPREAD, {'file_count': 6, 'line_span': 1234, 'line_threshold': 2000})]
+                  candidate(2, 'evidence_spread', SPREAD, {'file_count': 6, 'directory_count': 5, 'line_span': 1234, 'line_threshold': 2000})]
     return build_report(files, relations, weights=WEIGHT_TABLE, candidates=candidates)
 
 
@@ -225,12 +225,12 @@ def test_V04_connection_click_switches_modal_target(open_report):
 
 
 def test_V04_candidate_headline_numbers_per_kind(open_report):
-    """A12: unresolved_count / file_count / line_count."""
+    """A12: unresolved_count / directory_count (evidence_spread, spec 3f70cc03aeae9c1a R11r) / line_count."""
     arch, bn = modal_report()
     page = open_report(arch, bn)
     open_modal(page, 'list', SPREAD)
     lines = [l for l in dialog_text(page).splitlines() if kind_label(page, 'evidence_spread') in l]
-    assert lines and has_number(lines[0], 6)
+    assert lines and has_number(lines[0], 5) and not has_number(lines[0], 6)
     assert kind_label(page, 'large_node') not in dialog_text(page)
 
 

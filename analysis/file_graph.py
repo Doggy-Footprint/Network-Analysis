@@ -105,6 +105,7 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
         item["metadata"].pop("analysis", None)
     file_nodes = {}
     external_records: Dict[str, List[Any]] = {}
+    external_calls: Dict[str, int] = {}
     output_nodes = []
     for node in nodes:
         path = files[node.id]
@@ -125,7 +126,9 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
             ))
         file_nodes[file_id].append(node.id)
         file_node = next(item for item in output_nodes if item.id == file_id)
-        external_records.setdefault(file_id, []).extend((getattr(node, "metadata", None) or {}).get("external_imports", ()))
+        node_metadata = getattr(node, "metadata", None) or {}
+        external_records.setdefault(file_id, []).extend(node_metadata.get("external_imports", ()))
+        external_calls[file_id] = external_calls.get(file_id, 0) + (node_metadata.get("external_call_count") or 0)
         for flag in getattr(node, "flags", []) or []:
             if flag in {"generated", "migration", "vendored"} and flag not in file_node.flags:
                 file_node.flags.append(flag)
@@ -133,6 +136,8 @@ def to_file_architecture(architecture: Any, snapshot: RepositorySnapshot) -> Fil
         merged = normalize_external_imports(external_records.get(file_node.id, ()))
         if merged:
             file_node.metadata["external_imports"] = merged
+        if external_calls.get(file_node.id):
+            file_node.metadata["external_call_count"] = external_calls[file_node.id]
     node_files = {node_id: "file:" + path if path is not None else None for node_id, path in files.items()}
     dependency_edges = [(index, edge) for index, edge in enumerate(edges) if not ownership_edge(edge, by_id)]
     boundary_ids = {endpoint for _, edge in dependency_edges for endpoint in (edge.from_id, *candidate_targets(edge)) if node_files[endpoint] is None}

@@ -1,0 +1,81 @@
+== (relation, resolution) count diff: base -> head
+relation        resolution      base    head   delta
+IMPORTS         exact              6      71     +65
+IMPORTS_SYMBOL  exact              1      70     +69
+INSTANTIATES    ambiguous          2       0      -2
+INSTANTIATES    exact              0       4      +4
+INSTANTIATES    unique_name        3       0      -3
+READS           ambiguous        125     124      -1
+READS           exact              0       9      +9
+READS           unique_name       17      12      -5
+RE_EXPORTS      exact              1       5      +4
+TESTS           exact              0       3      +3
+TYPE_USES       ambiguous          4       0      -4
+TYPE_USES       exact              1      33     +32
+TYPE_USES       unique_name       30       0     -30
+total edges: base=289 head=430
+== added edges by (relation, resolution, confidence): 186
+  IMPORTS         exact       static_certain          65
+  IMPORTS_SYMBOL  exact       static_certain          69
+  INSTANTIATES    exact       static_certain           4
+  READS           exact       static_certain           9
+  RE_EXPORTS      exact       static_certain           4
+  TESTS           exact       static_certain           3
+  TYPE_USES       exact       static_certain          32
+== removed edges by (relation, resolution, confidence): 45
+  INSTANTIATES    ambiguous   static_inferred          2
+  INSTANTIATES    unique_name static_inferred          3
+  READS           ambiguous   static_inferred          1
+  READS           unique_name static_inferred          5
+  TYPE_USES       ambiguous   static_inferred          4
+  TYPE_USES       unique_name static_inferred         30
+== nodes with changed span end_line / cost.line_count (F8/F9)
+  changed nodes: 0; only in base: 0; only in head: 0
+== bottleneck payload
+  schema: base=bottlenecks.v8 head=bottlenecks.v8
+  top-level keys only in base: []; only in head: []
+  dependency_network keys only in base: []; only in head: []
+  edge_weights keys only in base: []; only in head: []
+  coverage keys only in base: []; only in head: []
+  candidate kind counts (base -> head)
+    dependency_cycle           2     3    +1
+    evidence_spread           32    33    +1
+    isolated_node              1     1    +0
+    package_cycle              3     4    +1
+    unresolved_boundary       21    21    +0
+    unstable_dependency       11    10    -1
+    untested_hub              10     9    -1
+  new candidates: 6
+    unstable_dependency pkg:dir:src/profile
+    dependency_cycle    cycle:file:resolved:2ab69fbd99ce67ac
+    evidence_spread     file:src/shared/pipes/validation.pipe.ts
+    package_cycle       cycle:language:certain:c755ef192458d35b
+    dependency_cycle    cycle:file:certain:f7b3551f5e994998
+    dependency_cycle    cycle:file:all:f8f2127fa57aa030
+  gone candidates: 5
+    untested_hub        file:src/tag/tag.entity.ts
+    dependency_cycle    cycle:file:all:42360671fd10bd28
+    unstable_dependency pkg:dir:src/user
+    unstable_dependency pkg:dir:src/user
+    dependency_cycle    cycle:file:resolved:ac80687e3decd129
+== 10 sampled added edges (seed=20261019); verify each against the cited source line
+[1] file:src/user/user.controller.ts -TYPE_USES-> file:src/user/dto/update-user.dto.ts  (static_certain, exact, candidates=[])
+[2] file:src/profile/profile.controller.ts -IMPORTS-> file:src/user/user.decorator.ts  (static_certain, exact, candidates=[])
+[3] file:src/user/user.service.ts -TYPE_USES-> file:src/user/user.interface.ts  (static_certain, exact, candidates=[])
+[4] file:src/article/article.module.ts -IMPORTS-> file:src/article/article.controller.ts  (static_certain, exact, candidates=[])
+[5] file:src/article/article.service.ts -TYPE_USES-> file:src/article/article.interface.ts  (static_certain, exact, candidates=[])
+[6] file:src/tag/tag.controller.ts -IMPORTS-> file:src/tag/tag.service.ts  (static_certain, exact, candidates=[])
+[7] file:src/user/dto/index.ts -RE_EXPORTS-> file:src/user/dto/create-user.dto.ts  (static_certain, exact, candidates=[])
+[8] file:src/main.ts -IMPORTS_SYMBOL-> file:src/app.module.ts  (static_certain, exact, candidates=[])
+[9] file:src/article/comment.entity.ts -IMPORTS-> file:src/article/article.entity.ts  (static_certain, exact, candidates=[])
+[10] file:src/user/user.service.ts -IMPORTS-> file:src/user/user.interface.ts  (static_certain, exact, candidates=[])
+[1] None:None: (no evidence location)
+[2] None:None: (no evidence location)
+[3] None:None: (no evidence location)
+[4] None:None: (no evidence location)
+[5] None:None: (no evidence location)
+[6] None:None: (no evidence location)
+[7] None:None: (no evidence location)
+[8] None:None: (no evidence location)
+[9] None:None: (no evidence location)
+[10] None:None: (no evidence location)

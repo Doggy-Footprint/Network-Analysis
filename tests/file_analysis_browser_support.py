@@ -71,7 +71,7 @@ def file_bottlenecks(arch, candidate_count=3):
     for i in range(candidate_count if arch['nodes'] else 0):
         kind = ('large_node', 'evidence_spread', 'unresolved_boundary')[i % 3]
         candidates.append({'id': f'b:{i:016x}', 'kind': kind, 'target': arch['nodes'][i % len(arch['nodes'])]['id'],
-                           'metrics': {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2},
+                           'metrics': {'line_count': 2001, 'line_threshold': 2000} if kind == 'large_node' else {'file_count': 2, 'directory_count': 2, 'line_span': 9, 'line_threshold': 2000} if kind == 'evidence_spread' else {'unresolved_count': 2},
                            'evidence': [{'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29}] if kind == 'evidence_spread' else {'path': f'candidate-{i}.py', 'start_line': 13, 'end_line': 29},
                            'coverage': 'ORACLE_COVERAGE', 'status': 'static_candidate'})
     return {'schema': 'bottlenecks.v8', 'granularity': 'file', 'snapshot': {}, 'versions': {}, 'coverage': {},

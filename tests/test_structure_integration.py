@@ -83,7 +83,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     manifest = run.manifest['file']
     network = payload['dependency_network']
     assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
-    assert payload['versions']['analysis'] == '4'
+    assert payload['versions']['analysis'] == '6'
     assert canonical_sha(network['rankings']) == manifest['rankings']
     assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']
     assert canonical_sha(network['node_metrics']) == manifest['node_metrics']
@@ -93,7 +93,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     assert canonical_sha(base) == manifest['candidates']
     assert network['structure_policy'] == 'structure.v1'
     assert 'language' in network['package_metrics']
-    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS)
+    assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS) | {'untested_hub', 'isolated_node'}
 
 
 def test_V08_candidates_are_sorted_by_kind_then_id(run):
@@ -244,12 +244,18 @@ TIME_LIMIT = 1.0
 CHAIN_LIMIT = 5.0
 
 
+PRE_RUN3_BASE_BYTES = {'android-nowinandroid': 7430385, 'fastapi-realworld': 851949, 'futuramaapi': 1726473,
+                       'typescript-nestjs-realworld': 645354}
+
+
 def test_V11_size_ratio_per_fixture(run):
     payload = run.payload('file')
     payload['dependency_network'].pop('package_dependencies', None)
     size = len(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')) + 1
     ratio = size / run.manifest['file']['bytes']
-    assert ratio <= SIZE_LIMIT, f'{run.name}: v8 is {ratio:.3f}x the base v7 size'
+    # spec e91abc221d7deb2a D13: base outputs shrank (R1, R5), so the allowance is the absolute budget of the earlier run
+    added = size - run.manifest['file']['bytes']
+    assert added <= 0.25 * PRE_RUN3_BASE_BYTES[run.name], f'{run.name}: structure adds {added} bytes'
     assert ratio >= 1.0 - 0.05, 'v8 only adds fields; a large shrink means base parts were lost'
 
 

@@ -437,9 +437,10 @@ class TestNeutralContracts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "main.py").write_text(
-                "def target():\n    return 1\n\ndef caller():\n    target()\n    missing()\n",
+                "from helpers import missing\ndef target():\n    return 1\n\ndef caller():\n    target()\n    missing()\n",
                 encoding="utf-8",
             )
+            (root / "helpers.py").write_text("def other():\n    return 1\n", encoding="utf-8")
 
             architecture = PythonGraphAnalyzer(root).analyze()
             caller = next(node for node in architecture.nodes if node.label == "caller")
@@ -449,7 +450,7 @@ class TestNeutralContracts(unittest.TestCase):
 
             self.assertEqual(unresolved["resolution"], "unresolved")
             self.assertEqual(unresolved["confidence"], "dynamic_required")
-            self.assertEqual(unresolved["evidence"], {"file_path": "main.py", "start_line": 6, "end_line": 6})
+            self.assertEqual(unresolved["evidence"], {"file_path": "main.py", "start_line": 7, "end_line": 7})
             self.assertEqual((by_id[call.from_id].label, by_id[call.to_id].label), ("caller", "target"))
             self.assertTrue(all(edge.confidence and edge.resolution and edge.evidence for edge in architecture.edges))
 
@@ -587,6 +588,7 @@ class TestLanguageRelations(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "main.ts").write_text(
+                "import { missing } from './helpers';\n"
                 "export function target() {}\n"
                 "export function caller() {\n"
                 "  target();\n"
@@ -594,6 +596,7 @@ class TestLanguageRelations(unittest.TestCase):
                 "}\n",
                 encoding="utf-8",
             )
+            (root / "helpers.ts").write_text("export function other() {}\n", encoding="utf-8")
 
             architecture = TypeScriptAnalyzer(root).analyze()
             caller = next(node for node in architecture.nodes if node.label == "caller")
@@ -602,7 +605,7 @@ class TestLanguageRelations(unittest.TestCase):
             self.assertEqual(unresolved["name"], "missing")
             self.assertEqual(unresolved["resolution"], "unresolved")
             self.assertEqual(unresolved["confidence"], "dynamic_required")
-            self.assertEqual(unresolved["evidence"], {"file_path": "main.ts", "start_line": 4, "end_line": 4})
+            self.assertEqual(unresolved["evidence"], {"file_path": "main.ts", "start_line": 5, "end_line": 5})
 
     def test_kotlin_core_relations_and_unresolved_evidence(self):
         from language_analyzers.kotlin import KotlinAnalyzer
@@ -611,6 +614,7 @@ class TestLanguageRelations(unittest.TestCase):
             root = Path(directory)
             (root / "main.kt").write_text(
                 "package demo\n"
+                "import other.external\n"
                 "class State\n"
                 "open class Base\n"
                 "class Service(var state: State): Base() {\n"
@@ -620,6 +624,7 @@ class TestLanguageRelations(unittest.TestCase):
                 "fun make(): Service { helper(); external(); return Service(State()) }\n",
                 encoding="utf-8",
             )
+            (root / "other.kt").write_text("package other\nfun unrelated() = 1\n", encoding="utf-8")
 
             architecture = KotlinAnalyzer(root).analyze()
             by_id = {node.id: node for node in architecture.nodes}
@@ -641,7 +646,7 @@ class TestLanguageRelations(unittest.TestCase):
             self.assertEqual(make.metadata["unresolved_references"][0]["resolution"], "unresolved")
             self.assertEqual(make.metadata["unresolved_references"][0]["confidence"], "dynamic_required")
             self.assertEqual(make.metadata["unresolved_references"][0]["evidence"], {
-                "file_path": "main.kt", "start_line": 8, "end_line": 8,
+                "file_path": "main.kt", "start_line": 9, "end_line": 9,
             })
             self.assertTrue(any(by_id[edge.to_id].label == "helper" and edge.relation == RelationKind.CALLS for edge in architecture.edges))
             endpoints = {(by_id[edge.from_id].label, by_id[edge.to_id].label, edge.relation) for edge in architecture.edges}

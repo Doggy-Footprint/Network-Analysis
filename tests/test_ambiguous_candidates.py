@@ -9,6 +9,7 @@ from language_analyzers.core.graph_models import NodeCost, Resolution, SourceSpa
 from tests.edge_weights_support import edge, load_weights, symbol_nodes, weights_data
 from tests.file_analysis_support import architecture, converted, node, serialize, snapshot
 from tests.candidate_group_storage_support import recovered_candidate_evidence
+from tests.signal_defects_support import ref_pagerank
 
 POLICY = 'equal-symbol-share.v1'
 TOL = 1e-9
@@ -36,10 +37,10 @@ def test_VO1_independent_closed_form_star(tmp_path, case, count, alternatives, p
     weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
     result = metrics(nodes, edges, weights)
     assert result['ambiguity_policy'] == POLICY
-    n = count + 1
-    teleport = (1 - .85) / n
-    source_rank = (teleport + .85) / 1.85
-    target_rank = teleport + .85 * source_rank / count
+    # R7 (spec e91abc221d7deb2a): per-target share is d * score * w / outdeg, the undelivered part is spread uniformly
+    expected_rank = ref_pagerank({'S': {t: total / count for t in targets}, **{t: {'S': 1.0} for t in targets}})
+    source_rank = expected_rank['S']
+    target_rank = expected_rank[targets[0]]
     for ident in ['S', *targets]:
         m = result['node_metrics'][ident]
         is_source = ident == 'S'
@@ -82,11 +83,9 @@ def test_VO1_pagerank_competing_exact_edge_independent_allocation(tmp_path, prof
     edges += [edge(target, 'S') for target in 'ABC']
     weights = None if profile == 'no-profile' else load_edge_weights(default_edge_weights_path()) if profile == 'default-profile' else load_weights(tmp_path, weights_data(resolution={'ambiguous': .6}))
     observed = metrics(nodes, edges, weights)['node_metrics']
-    damping = .85
-    teleport = .15 / 4
-    source = (teleport + damping) / (1 + damping)
-    candidate = teleport + damping * source * (total / 2) / (1 + total)
-    exact = teleport + damping * source / (1 + total)
+    # R7: weights S->A, S->B are total/2 each, S->C is 1.0, outdeg(S) = 3
+    expected_rank = ref_pagerank({'S': {'A': total / 2, 'B': total / 2, 'C': 1.0}, 'A': {'S': 1.0}, 'B': {'S': 1.0}, 'C': {'S': 1.0}})
+    source, candidate, exact = expected_rank['S'], expected_rank['A'], expected_rank['C']
     for ident, expected in {'S': source, 'A': candidate, 'B': candidate, 'C': exact}.items():
         assert observed[ident]['pagerank'] == pytest.approx(expected, abs=TOL, rel=0)
     assert observed['S']['weighted_fan_out'] == pytest.approx(1 + total, abs=TOL, rel=0)
@@ -195,11 +194,11 @@ def test_VO6_unknown_candidate_rejected(tmp_path, boundary):
 @pytest.mark.parametrize('granularity', ['symbol', 'file', 'collapsed-target-file', 'internal-file-evidence'])
 def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity):
     import json
-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('b', 'b.py'), node('c', 'b.py' if granularity == 'collapsed-target-file' else 'c.py')]
+    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('b', 'tb/b.py'), node('c', 'tb/b.py' if granularity == 'collapsed-target-file' else 'tc/c.py')]
     if granularity == 'internal-file-evidence':
-        nodes[0].span = SourceSpan('b.py', 1, 1)
+        nodes[0].span = SourceSpan('tb/b.py', 1, 1)
     edges = [edge('s', 'b', resolution=Resolution.AMBIGUOUS, candidates=['c', 'c'], evidence=SourceSpan(nodes[0].span.file_path, 1, 1)), edge('u', 'c', resolution=Resolution.AMBIGUOUS, candidates=['b'], evidence=SourceSpan('u.py', 1, 1))]
-    files = {'a.py': 'x', 'u.py': 'u', 'b.py': 'b', 'c.py': 'c'}
+    files = {'sa/a.py': 'x', 'su/u.py': 'u', 'tb/b.py': 'b', 'tc/c.py': 'c'}
     snap = snapshot(files)
     arch = architecture(nodes, edges)
     if granularity != 'symbol':
@@ -211,10 +210,11 @@ def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity
     assert report['dependency_network']['ambiguity_policy'] == POLICY
     assert report['dependency_network']['edge_count'] == {'symbol': 4, 'file': 4, 'collapsed-target-file': 2, 'internal-file-evidence': 3}[granularity]
     spread = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
-    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:b.py'} if granularity == 'collapsed-target-file' else {'file:b.py', 'file:c.py'}
+    expected_targets = {'b', 'c'} if granularity == 'symbol' else {'file:tb/b.py'} if granularity == 'collapsed-target-file' else {'file:tc/c.py'} if granularity == 'internal-file-evidence' else {'file:tb/b.py', 'file:tc/c.py'}
     assert set(spread) == expected_targets
     for c in spread.values():
         assert c['metrics']['file_count'] == 2
+        assert c['metrics']['directory_count'] == 2
         assert len(c['evidence']) == 2
         assert {r['start_line'] for r in c['evidence']} == {1}
         assert 'ambiguous' in json.dumps(c['evidence'])
@@ -399,18 +399,19 @@ def test_VO3_enrichment_TESTS_each_candidate(tmp_path):
 
 def test_VO4_overlapping_original_evidence_count_once_per_target(tmp_path):
     import json
-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('b1', 'b.py'), node('b2', 'b.py'), node('c', 'c.py')]
-    edges = [edge('s', 'b1', resolution=Resolution.AMBIGUOUS, candidates=['b2', 'c'], evidence=SourceSpan('a.py', 1, 2)),
-             edge('u', 'b2', resolution=Resolution.AMBIGUOUS, candidates=['b1', 'c'], evidence=SourceSpan('u.py', 3, 4))]
-    snap, arch = converted({'a.py': 'a\na', 'u.py': 'u\nu\nu\nu', 'b.py': 'b', 'c.py': 'c'}, nodes, edges)
+    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('b1', 'tb/b.py'), node('b2', 'tb/b.py'), node('c', 'tc/c.py')]
+    edges = [edge('s', 'b1', resolution=Resolution.AMBIGUOUS, candidates=['b2', 'c'], evidence=SourceSpan('sa/a.py', 1, 2)),
+             edge('u', 'b2', resolution=Resolution.AMBIGUOUS, candidates=['b1', 'c'], evidence=SourceSpan('su/u.py', 3, 4))]
+    snap, arch = converted({'sa/a.py': 'a\na', 'su/u.py': 'u\nu\nu\nu', 'tb/b.py': 'b', 'tc/c.py': 'c'}, nodes, edges)
     report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
     report = recovered_candidate_evidence(report)
     candidates = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
-    assert set(candidates) == {'file:b.py', 'file:c.py'}
+    assert set(candidates) == {'file:tb/b.py', 'file:tc/c.py'}
     for c in candidates.values():
         assert c['metrics']['file_count'] == 2
+        assert c['metrics']['directory_count'] == 2
         assert len(c['evidence']) == 2
-        assert {(e['path'], e['start_line'], e['end_line']) for e in c['evidence']} == {('a.py', 1, 2), ('u.py', 3, 4)}
+        assert {(e['path'], e['start_line'], e['end_line']) for e in c['evidence']} == {('sa/a.py', 1, 2), ('su/u.py', 3, 4)}
 
 
 def test_VO7_characterization_exact_unique_unresolved_targets_and_repeat():
@@ -468,10 +469,10 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
     import json
     from collections import Counter
     groups = [('b', ['c', 'd', 'c']), ('b', ['c', 'd', 'c']), ('b', ['d', 'c', 'c']), ('c', ['b', 'd', 'c']), ('b', ['c', 'd'])]
-    nodes = [node(f's{i}', f's{i}.py') for i in range(len(groups))] + [node(ident, 'target.py') for ident in 'bcd']
-    edges = [edge(f's{i}', target, resolution=Resolution.AMBIGUOUS, candidates=alternatives, weight=i + 7, evidence=SourceSpan(f's{i}.py', 1, 1), metadata={'original_marker': i}) for i, (target, alternatives) in enumerate(groups)]
-    files = {f's{i}.py': f's{i}()\n' for i in range(len(groups))}
-    files['target.py'] = 'target\n'
+    nodes = [node(f's{i}', f'd{i}/s{i}.py') for i in range(len(groups))] + [node(ident, 'tgt/target.py') for ident in 'bcd']
+    edges = [edge(f's{i}', target, resolution=Resolution.AMBIGUOUS, candidates=alternatives, weight=i + 7, evidence=SourceSpan(f'd{i}/s{i}.py', 1, 1), metadata={'original_marker': i}) for i, (target, alternatives) in enumerate(groups)]
+    files = {f'd{i}/s{i}.py': f's{i}()\n' for i in range(len(groups))}
+    files['tgt/target.py'] = 'target\n'
     snap = snapshot(files)
     arch = architecture(nodes, edges)
     raw = serialize(arch)['edges']
@@ -492,7 +493,7 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
         for ordinal, record in enumerate(expected_records):
             record['detail_edge_index'] = ordinal
     candidates = [c for c in recovered['candidates'] if c['kind'] == 'evidence_spread']
-    assert {c['target'] for c in candidates} == ({'b', 'c', 'd'} if granularity == 'symbol' else {'file:target.py'})
+    assert {c['target'] for c in candidates} == ({'b', 'c', 'd'} if granularity == 'symbol' else {'file:tgt/target.py'})
     for candidate in candidates:
         assert Counter(fingerprint(record) for record in candidate['evidence']) == Counter(fingerprint(record) for record in expected_records)
     references = {i: set() for i in range(len(groups))}
@@ -519,10 +520,10 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
 
 def test_VO4_registry_omitted_for_unchanged_nonambiguous_evidence(tmp_path):
     import json
-    nodes = [node('s', 'a.py'), node('u', 'u.py'), node('t', 'target.py')]
-    edges = [edge('s', 't', evidence=SourceSpan('a.py', 1, 1)), edge('u', 't', evidence=SourceSpan('u.py', 2, 2))]
-    report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot({'a.py': 'a', 'u.py': 'u\nu', 'target.py': 't'}), architecture(nodes, edges), load_weights(tmp_path, weights_data()))))
+    nodes = [node('s', 'sa/a.py'), node('u', 'su/u.py'), node('t', 'tg/target.py')]
+    edges = [edge('s', 't', evidence=SourceSpan('sa/a.py', 1, 1)), edge('u', 't', evidence=SourceSpan('su/u.py', 2, 2))]
+    report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot({'sa/a.py': 'a', 'su/u.py': 'u\nu', 'tg/target.py': 't'}), architecture(nodes, edges), load_weights(tmp_path, weights_data()))))
     assert 'candidate_groups' not in report['dependency_network']
     assert recovered_candidate_evidence(report) == report
     candidate = next(c for c in report['candidates'] if c['kind'] == 'evidence_spread')
-    assert candidate['evidence'] == [{'path': 'a.py', 'start_line': 1, 'end_line': 1}, {'path': 'u.py', 'start_line': 2, 'end_line': 2}]
+    assert candidate['evidence'] == [{'path': 'sa/a.py', 'start_line': 1, 'end_line': 1}, {'path': 'su/u.py', 'start_line': 2, 'end_line': 2}]

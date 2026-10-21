@@ -21,7 +21,7 @@ from repository import build_snapshot, default_scan_policy_path, load_scan_polic
 from tests.edge_weights_support import edge, load_weights, weights_data
 
 TOP_LEVEL_KEYS = {"schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations"}
-EDGE_WEIGHT_KEYS = {"confidence", "resolution", "large_node_line_threshold"}
+EDGE_WEIGHT_KEYS = {"confidence", "resolution", "large_node_line_threshold", "large_node_token_threshold"}
 V2_RANKINGS = {
     "pagerank", "betweenness_centrality", "weighted_centrality_cost", "fan_in", "fan_out", "hop_2_token_cost",
 }
@@ -83,6 +83,7 @@ def test_V6_edge_weights_section_echoes_the_loaded_configuration(tmp_path):
         "confidence": dict(weights.confidence),
         "resolution": dict(weights.resolution),
         "large_node_line_threshold": 7,
+        "large_node_token_threshold": 24000,
     }
     assert section["confidence"]["static_inferred"] == 0.5
 
@@ -135,7 +136,7 @@ def test_V6_C7_large_node_boundary(tmp_path, label, end_line, expected_count):
     found = candidates_of(payload_of(snapshot, architecture, weights), "large_node")
     assert len(found) == expected_count
     if expected_count:
-        assert found[0]["metrics"] == {"line_count": 4, "line_threshold": 3}
+        assert found[0]["metrics"] == {"line_count": 4, "line_threshold": 3, "token_count": 10, "token_threshold": 24000}
         assert found[0]["evidence"] == {"path": "a.py", "start_line": 1, "end_line": 4}
 
 
@@ -144,7 +145,7 @@ def test_V6_F13_large_node_uses_the_configured_threshold_not_a_constant(tmp_path
     assert candidates_of(payload_of(snapshot, architecture, default_weights()), "large_node") == []
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=1))
     found = candidates_of(payload_of(snapshot, architecture, weights), "large_node")
-    assert [item["metrics"] for item in found] == [{"line_count": 5, "line_threshold": 1}]
+    assert [item["metrics"] for item in found] == [{"line_count": 5, "line_threshold": 1, "token_count": 10, "token_threshold": 24000}]
 
 
 def test_V6_F13_unresolved_boundary_is_emitted_for_dynamic_relations_only():
@@ -157,7 +158,8 @@ def test_V6_F13_unresolved_boundary_is_emitted_for_dynamic_relations_only():
 
 def evidence_subject(evidences):
     """Edges n1->n2, n3->n2 (one target n2), each carrying one evidence span."""
-    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6})
+    snapshot, architecture = subject({"a.py": "x\n" * 6, "b.py": "x\n" * 6, "c.py": "x\n" * 6,
+                                      "b/b.py": "x\n" * 6, "c/c.py": "x\n" * 6})
     nodes = [
         GraphNode(item, item, "g", "c", span=SourceSpan("a.py", 1, 1), cost=NodeCost(10, 10, 1))
         for item in ("n1", "n2", "n3")
@@ -169,23 +171,24 @@ def evidence_subject(evidences):
 @pytest.mark.parametrize("threshold", [1, 2000])
 def test_V6_F13_evidence_spread_two_files_is_a_candidate_at_any_threshold(tmp_path, threshold):
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
-    snapshot, architecture = evidence_subject([SourceSpan("a.py", 1, 1), SourceSpan("b.py", 1, 1)])
+    snapshot, architecture = evidence_subject([SourceSpan("b/b.py", 1, 1), SourceSpan("c/c.py", 1, 1)])
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == 1
-    assert set(found[0]["metrics"]) == {"file_count", "line_span", "line_threshold"}
+    assert set(found[0]["metrics"]) == {"file_count", "directory_count", "line_span", "line_threshold"}
     assert found[0]["metrics"]["file_count"] == 2
+    assert found[0]["metrics"]["directory_count"] == 2
     assert found[0]["metrics"]["line_threshold"] == threshold
 
 
 @pytest.mark.parametrize(("threshold", "expected_count"), [(4, 0), (3, 1)])
 def test_V6_F13_evidence_spread_single_file_boundary(tmp_path, threshold, expected_count):
-    """Evidence a.py:2-3 and a.py:4-5 -> line_span = 5 - 2 + 1 = 4; candidate only when 4 > threshold."""
+    """Evidence b.py:2-3 and b.py:4-5 (target is in a.py) -> line_span = 5 - 2 + 1 = 4; candidate only when 4 > threshold."""
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
-    snapshot, architecture = evidence_subject([SourceSpan("a.py", 2, 3), SourceSpan("a.py", 4, 5)])
+    snapshot, architecture = evidence_subject([SourceSpan("b.py", 2, 3), SourceSpan("b.py", 4, 5)])
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == expected_count
     if expected_count:
-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 4, "line_threshold": 3}
+        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 4, "line_threshold": 3}
 
 
 def test_V6_duplicate_and_self_edges_are_ignored():
@@ -234,8 +237,10 @@ def test_V6_equivalent_inputs_have_byte_identical_compact_json():
     assert outputs[0].endswith("\n") and "\n" not in outputs[0][:-1]
 
 
-def custom_subject(nodes, edges, lines=12):
-    snapshot, architecture = subject({"a.py": "x\n" * lines, "b.py": "x\n" * lines})
+def custom_subject(nodes, edges, lines=12, extra_files=()):
+    files = {"a.py": "x\n" * lines, "b.py": "x\n" * lines, "c.py": "x\n" * lines}
+    files.update({path: "x\n" * lines for path in extra_files})
+    snapshot, architecture = subject(files)
     return snapshot, replace(architecture, nodes=nodes, edges=list(edges))
 
 
@@ -254,12 +259,12 @@ def three_kind_subject():
     edges = [
         edge("n1", "n2", Confidence.DYNAMIC_REQUIRED),
         edge("n3", "n4", Confidence.DYNAMIC_REQUIRED),
-        edge("n5", "n6", evidence=SourceSpan("a.py", 1, 1)),
-        edge("n7", "n6", evidence=SourceSpan("b.py", 1, 1)),
-        edge("n5", "n8", evidence=SourceSpan("a.py", 1, 1)),
-        edge("n7", "n8", evidence=SourceSpan("b.py", 1, 1)),
+        edge("n5", "n6", evidence=SourceSpan("b/b.py", 1, 1)),
+        edge("n7", "n6", evidence=SourceSpan("c/c.py", 1, 1)),
+        edge("n5", "n8", evidence=SourceSpan("b/b.py", 1, 1)),
+        edge("n7", "n8", evidence=SourceSpan("c/c.py", 1, 1)),
     ]
-    return custom_subject(nodes, edges)
+    return custom_subject(nodes, edges, extra_files=("b/b.py", "c/c.py"))
 
 
 def test_V6_E3_candidate_ids_are_unique_stable_and_sorted_by_kind_then_id(tmp_path):
@@ -285,25 +290,25 @@ def test_V6_E3_large_node_follows_span_lines_not_cost_line_count(tmp_path):
     ]
     snapshot, architecture = custom_subject(nodes, [])
     found = candidates_of(payload_of(snapshot, architecture, weights), "large_node")
-    assert [item["metrics"] for item in found] == [{"line_count": 10, "line_threshold": 5}]
+    assert [item["metrics"] for item in found] == [{"line_count": 10, "line_threshold": 5, "token_count": 10, "token_threshold": 24000}]
     assert found[0]["evidence"] == {"path": "a.py", "start_line": 1, "end_line": 10}
 
 
 @pytest.mark.parametrize(("threshold", "expected_count"), [(10, 0), (9, 1)])
 def test_V6_E3_evidence_spread_line_span_is_extent_not_sum(tmp_path, threshold, expected_count):
-    """Evidence a.py:1-1 and a.py:10-10: extent 10, summed lines 2."""
+    """Evidence b.py:1-1 and b.py:10-10 (target is in a.py): extent 10, summed lines 2."""
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
     nodes = [plain_node(item) for item in ("n1", "n2", "n3")]
     edges = [
-        edge("n1", "n2", evidence=SourceSpan("a.py", 1, 1)),
-        edge("n3", "n2", evidence=SourceSpan("a.py", 10, 10)),
+        edge("n1", "n2", evidence=SourceSpan("b.py", 1, 1)),
+        edge("n3", "n2", evidence=SourceSpan("b.py", 10, 10)),
     ]
     snapshot, architecture = custom_subject(nodes, edges)
     found = candidates_of(payload_of(snapshot, architecture, weights), "evidence_spread")
     assert len(found) == expected_count
     if expected_count:
-        assert found[0]["metrics"] == {"file_count": 1, "line_span": 10, "line_threshold": 9}
+        assert found[0]["metrics"] == {"file_count": 1, "directory_count": 0, "line_span": 10, "line_threshold": 9}
         evidence = found[0]["evidence"]
         rows = evidence if isinstance(evidence, list) else [evidence]
         assert all(set(row) == {"path", "start_line", "end_line"} for row in rows)
-        assert {(row["path"], row["start_line"], row["end_line"]) for row in rows} == {("a.py", 1, 1), ("a.py", 10, 10)}
+        assert {(row["path"], row["start_line"], row["end_line"]) for row in rows} == {("b.py", 1, 1), ("b.py", 10, 10)}

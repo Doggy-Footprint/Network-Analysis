@@ -1,3 +1,4 @@
+import os
 import copy
 from pathlib import Path
 
@@ -33,7 +34,13 @@ def document(arch, bottlenecks=None, **kwargs):
 @pytest.fixture(scope='session')
 def chromium():
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel="chrome")
+        try:
+            browser = playwright.chromium.launch(channel="chrome")
+        except Exception:
+            bundled = sorted(Path(os.environ.get("PLAYWRIGHT_BROWSERS_PATH", "/opt/pw-browsers")).glob("chromium-*/chrome-linux/chrome"))
+            if not bundled:
+                raise
+            browser = playwright.chromium.launch(executable_path=str(bundled[-1]))
         yield browser
         browser.close()
 
@@ -104,7 +111,7 @@ def bottleneck_fixture(directory,nodes,edges=(),candidate_count=3):
     for i in range(candidate_count if nodes else 0):
         kind=('large_node','evidence_spread','unresolved_boundary')[i%3]
         target=nodes[min(i,len(nodes)-1)]['id']
-        payload['candidates'].append({'id':f'b:{i:016x}','kind':kind,'target':target,'metrics':{'line_count':2001,'line_threshold':2000} if kind=='large_node' else {'file_count':2,'line_span':9,'line_threshold':2000} if kind=='evidence_spread' else {'unresolved_count':2},'evidence':[{'path':f'candidate-{i}.py','start_line':13,'end_line':29},{'path':f'candidate-{i}-other.py','start_line':31,'end_line':39}] if kind=='evidence_spread' else {'path':f'candidate-{i}.py','start_line':13,'end_line':29},'coverage':'ORACLE_COVERAGE','status':'static_candidate'})
+        payload['candidates'].append({'id':f'b:{i:016x}','kind':kind,'target':target,'metrics':{'line_count':2001,'line_threshold':2000} if kind=='large_node' else {'file_count':2,'directory_count':2,'line_span':9,'line_threshold':2000} if kind=='evidence_spread' else {'unresolved_count':2},'evidence':[{'path':f'candidate-{i}.py','start_line':13,'end_line':29},{'path':f'candidate-{i}-other.py','start_line':31,'end_line':39}] if kind=='evidence_spread' else {'path':f'candidate-{i}.py','start_line':13,'end_line':29},'coverage':'ORACLE_COVERAGE','status':'static_candidate'})
     return payload
 
 

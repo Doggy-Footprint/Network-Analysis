@@ -7,7 +7,11 @@ since Kotlin wildcard imports make exact resolution impossible from syntax alone
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
+
+from language_analyzers.core import flags as flag_names
+
+_MEMBER_LOOKUPS = {"getMethod", "getDeclaredMethod", "getField", "getDeclaredField"}
 
 _PARSER = None
 
@@ -79,6 +83,43 @@ def nested_declarations(node) -> List[Any]:
         child for child in body.children
         if child.type in ("function_declaration", "class_declaration", "object_declaration")
     ]
+
+
+_MEMBER_TYPES = ("function_declaration", "class_declaration", "object_declaration", "property_declaration")
+
+
+def body_members(node) -> List[Any]:
+    """Direct declarations of a class body. tree-sitter-kotlin misparses a one-line body
+    such as `class K { val v = 1 }` by wrapping the trailing declarations in an ERROR child
+    of class_body, so those are read as if they were direct children."""
+    body = class_body(node)
+    if body is None:
+        return []
+    members = []
+    for child in body.children:
+        if child.type == "ERROR":
+            members.extend(grandchild for grandchild in child.children if grandchild.type in _MEMBER_TYPES)
+        elif child.type in _MEMBER_TYPES:
+            members.append(child)
+    return members
+
+
+def recovered_object_members(node) -> Optional[List[Any]]:
+    """tree-sitter-kotlin parses a top-level one-line `object X { ... }` as the infix
+    expression `object` `X` `{lambda}`; returns the lambda's declarations, None for any other infix."""
+    if node.type != "infix_expression" or [child.type for child in node.children] != ["object_literal", "simple_identifier", "lambda_literal"]:
+        return None
+    if class_body(node.children[0]) is not None:
+        return None
+    members = []
+    for statements in node.children[2].children:
+        if statements.type == "statements":
+            members.extend(child for child in statements.children if child.type in _MEMBER_TYPES or recovered_object_members(child) is not None)
+    return members
+
+
+def class_parameter_nodes(ctor_node) -> List[Any]:
+    return [child for child in ctor_node.children if child.type == "class_parameter"]
 
 
 def class_body(node) -> Optional[Any]:
@@ -276,13 +317,16 @@ def function_return_types(func_node, source: bytes) -> Tuple[Optional[str], Opti
     return None, None
 
 
-def call_expressions(node, source: bytes) -> List[Dict[str, Any]]:
+def call_expressions(node, source: bytes, exclude: Sequence[Any] = ()) -> List[Dict[str, Any]]:
     """Every call in a subtree, as [{"name": callee, "type_args": [...]}].
     Bare calls (`foo()`) and generic calls (`foo<Bar>()`) are named by their own identifier;
     method calls (`x.foo()`) are named by the method, not the receiver."""
     results: List[Dict[str, Any]] = []
+    skipped = {(item.start_byte, item.end_byte) for item in exclude}
 
     def walk(n):
+        if skipped and (n.start_byte, n.end_byte) in skipped:
+            return
         if n.type == "call_expression":
             callee_node = None
             for c in n.children:
@@ -315,3 +359,54 @@ def call_expressions(node, source: bytes) -> List[Dict[str, Any]]:
 
     walk(node)
     return results
+
+
+def dynamic_call_flags(node, source: bytes, exclude: Sequence[Any] = ()) -> Set[str]:
+    """Reflective class loading and member lookups in a subtree. Only calls with a
+    receiver count: a bare `forName(n)` is a user-defined function, not java.lang.Class."""
+    found: Set[str] = set()
+    skipped = {(item.start_byte, item.end_byte) for item in exclude}
+
+    def walk(n):
+        if skipped and (n.start_byte, n.end_byte) in skipped:
+            return
+        if n.type == "call_expression":
+            navigation = n.children[0] if n.children and n.children[0].type == "navigation_expression" else None
+            suffixes = [c for c in navigation.children if c.type == "navigation_suffix"] if navigation else []
+            names = [c for c in suffixes[-1].children if c.type == "simple_identifier"] if suffixes else []
+            if names:
+                method = node_text(source, names[-1])
+                receiver = source[navigation.start_byte:suffixes[-1].start_byte].decode("utf-8", "replace")
+                owner = receiver.strip().rstrip("?!").strip().rsplit(".", 1)[-1].strip()
+                if (method == "forName" and owner == "Class") or (method == "load" and owner == "ServiceLoader") \
+                        or method == "loadClass":
+                    found.add(flag_names.DYNAMIC_IMPORT)
+                elif method in _MEMBER_LOOKUPS and not _is_literal_name(_first_value_argument(n)):
+                    found.add(flag_names.DYNAMIC_ATTR)
+        for c in n.children:
+            walk(c)
+
+    walk(node)
+    return found
+
+
+def _first_value_argument(call):
+    for suffix in call.children:
+        if suffix.type != "call_suffix":
+            continue
+        for arguments in suffix.children:
+            if arguments.type == "value_arguments":
+                for argument in arguments.children:
+                    if argument.type == "value_argument":
+                        values = argument.named_children
+                        return values[-1] if values else None
+                return None
+    return None
+
+
+def _is_literal_name(expression) -> bool:
+    return (
+        expression is not None
+        and expression.type == "string_literal"
+        and not any(c.type.startswith("interpolat") for c in expression.children)
+    )

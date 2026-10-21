@@ -1,0 +1,314 @@
+# Base manifest regeneration (workflow run e91abc221d7deb2a, signal defects round 3)
+
+The characterization manifests of earlier runs pin CLI outputs of their own base commit. This run changes analyzer
+and bottleneck output (external vs unresolved call classification in Python/TypeScript/Kotlin, Kotlin member
+exclusion and import regex, `unresolved_reference_total`, `external_call_count`, PageRank residual distribution,
+token-based `large_node`, self-file evidence excluded from `evidence_spread`, ownership edges excluded from symbol
+`evidence_spread`, `versions.analysis` "4" -> "5"). Each manifest was rebuilt from its base commit with the earlier
+runs' code fixes plus this run's code fixes applied.
+
+## Patches
+
+- `patch-old`: `git diff b590d54..cf0cf44` restricted to non-test code (9 files: `core/cost.py`,
+  `core/enrichment.py`, `kotlin/analyzer.py`, `kotlin/ast.py`, `python/graph.py`, `python/symbols.py`,
+  `typescript/analyzer.py`, `typescript/ast.py`, `repository/models.py`). The committed manifests already contained
+  these changes (`tests/fact_defects_evidence/manifest-regeneration.md`).
+- `patch-r3`: `cf0cf44..<working tree>` restricted to code: `analysis/edge_weights.py`, `analysis/file_graph.py`,
+  `analysis/graph_metrics.py`, `bottlenecks/core.py`, `core/flags.py`, `kotlin/analyzer.py`, `kotlin/ast.py`,
+  `python/graph.py`, `typescript/analyzer.py`, `profiles/edge_weights.v1.yaml`, `report/bottlenecks/generate.py`
+  (Korean description strings in the HTML renderer only; no JSON effect). Before the test run,
+  `git diff cf0cf44 -- language_analyzers analysis bottlenecks profiles` of the main tree had the same `+`/`-` lines
+  as `patch-r3`, and `git diff --stat -- language_analyzers analysis bottlenecks` was empty.
+
+## Common procedure
+
+- Worktree: `git worktree add --detach <dir> <base_commit>`, `git apply -3 patch-old`, conflicts resolved by hand,
+  then `git apply -3 patch-r3`, conflicts resolved by hand. Patches stay uncommitted, so `HEAD == base_commit`.
+- After `patch-old`, the `+`/`-` lines of `git diff --cached HEAD` equal the patch's in all five worktrees.
+  Conflict in `kotlin/analyzer.py` for ef8adb3, 2627174 and 6fda6d5 (`self._import_statements` does not exist
+  there): resolved as in the fact-defects run, keeping only the added `self._file_package` / `self._exact_imports`
+  fields.
+- After `patch-r3`, the `+`/`-` lines of `diff -u <old-patched> <r3-patched>` were compared with `patch-r3` per file.
+  Only the deviations listed under "Per manifest" remain.
+- Generators: `regen_manifest.py` (architecture_rules, delta, external_rules, structure), recreated from the code in
+  `tests/fact_defects_evidence/manifest-regeneration.md` with a `main()` that loads the committed manifest as the
+  skeleton and writes `json.dumps(indent=2, ensure_ascii=False)` with the original trailing-newline convention; and
+  the committed `tests/reach_evidence/make_base_manifest.py`. CLI runs use `cwd=<worktree>`, `PYTHONHASHSEED=0`, and
+  the current repo's fixtures. `base_commit` fields are unchanged.
+- Reproduction check: each generator run on the old-patched worktree (before `patch-r3`) reproduced the committed
+  manifest byte for byte, all five including external_rules (its `architecture_bytes` already use the current
+  fixture path since the fact-defects regeneration).
+
+## Hunk adaptations common to all five base commits
+
+All five base commits predate b590d54 (`untested_hub_top_n`, optional edge-weight keys).
+
+- `analysis/edge_weights.py`: `_OPTIONAL_KEYS` line skipped (the optional-key mechanism does not exist; the old loader
+  requires the exact key set `_KEYS`). Kept: `DEFAULT_LARGE_NODE_TOKEN_THRESHOLD = 24000`, the
+  `large_node_token_threshold` dataclass field, its `document.get(..., default)` read and validation, and the
+  constructor argument. The `untested_hub_top_n` context lines were not added.
+- `profiles/edge_weights.v1.yaml`: hunk skipped. The old loader rejects any key outside `_KEYS`; the skipped value
+  (24000) equals the default, so `weights.large_node_token_threshold` is 24000 either way.
+- `bottlenecks/core.py` `_weights`: added only the `large_node_token_threshold` check (no `untested_hub_top_n` check).
+- `bottlenecks/core.py` final `return`: `{"analysis": "4"}` -> `"5"` applied to the base commit's own line (which
+  lacks `package_dependencies` / `ArchitectureRulesError` before f5ab529/6444895, and returns `bottlenecks.v7` at
+  6fda6d5).
+- `bottlenecks/core.py` edge-weights payload: `"large_node_token_threshold"` added after
+  `large_node_line_threshold` (the `if is_file: payload["untested_hub_top_n"]` lines not added) for reach and
+  structure. For architecture_rules, delta and external_rules the payload key was NOT added, see below.
+
+## Per manifest
+
+| manifest | base commit | reproduction (old-patched) | patch-r3 conflicts |
+|---|---|---|---|
+| `tests/architecture_rules_evidence/base_manifest.json` | ef8adb352c32936b102ed06d8dcb3ad2f28e6bdd | byte-equal | edge_weights.py, yaml, core.py, file_graph.py, kotlin/analyzer.py |
+| `tests/delta_evidence/base_manifest.json` | f5ab529bd2cdd8a084d66e2759d172fc3579cfd5 | byte-equal | edge_weights.py, yaml, core.py |
+| `tests/external_rules_evidence/base_manifest.json` | 2627174d8a454a427965b5becee666c295454435 | byte-equal | edge_weights.py, yaml, core.py, file_graph.py, kotlin/analyzer.py |
+| `tests/reach_evidence/base_manifest.json` | 6444895451a89f4450b9123b7beb17b11506e534 | byte-equal | edge_weights.py, yaml, core.py |
+| `tests/structure_evidence/base_manifest.json` | 6fda6d5a91eee508088292ad8b428694ee70b32f | byte-equal | edge_weights.py, yaml, core.py (also the candidates/payload block), file_graph.py, kotlin/analyzer.py |
+
+f5ab529 and 6444895: only the common adaptations. All other `patch-r3` hunks applied with identical `+`/`-` lines.
+
+ef8adb3, 2627174 and 6fda6d5 predate f5ab529 (external imports: `external_records`, `normalize_external_imports`,
+`kotlin_is_internal`, `PythonModuleIndex`, `_record_external_imports`, `_import_statements`). Additional adaptations:
+
+- `analysis/file_graph.py`: `external_records` lines skipped (feature absent; no output there). Kept
+  `external_calls` with its accumulation from `node_metadata` and a new `for file_node in output_nodes:` loop setting
+  `metadata["external_call_count"]`, so file-granularity nodes carry `external_call_count` as in `patch-r3`.
+- `kotlin/analyzer.py`: the `_record_external_imports` hunk only adds the `self._project_imports[key] = ...` line, and
+  the call classification `if target is None and name not in self._project_imports...` depends on it. Added
+  `_record_project_imports()` (same `packages` expression; iterates `self._imports`; inline
+  `any(raw == package or raw.startswith(package + ".") or package.startswith(raw + ".") ...)`, the body of
+  `kotlin_is_internal` at cf0cf44), called after the file loop where cf0cf44 calls `_record_external_imports()`.
+  `self._imports` is used because, after `patch-r3` changes its regex to `^[^\S\n]*import\s+([\w.*]+)`, it has the same
+  regex and line formula as `_import_statements` at cf0cf44. No `external_imports` metadata is emitted.
+- `python/graph.py`: `_is_boundary_call` calls `self._module_index.is_internal`, which does not exist before f5ab529.
+  Added `PythonModuleIndex` (verbatim from `language_analyzers/core/external_imports.py` at cf0cf44, placed in
+  `python/graph.py`, `Iterable` added to the typing import) and the `self._module_index = PythonModuleIndex(...)`
+  construction verbatim from cf0cf44 `build()`. `getattr(self, "_unparsed_modules", [])` is `[]` at these commits.
+- 6fda6d5 `bottlenecks/core.py`: the block that at later commits adds structure/reach candidates does not exist; the
+  `_file_candidates` / `_candidates` call got the `large_node_token_threshold, metrics` arguments.
+
+### Edge-weights payload key for architecture_rules, delta, external_rules
+
+`tests/delta_support.py::base_form_bytes` (used by `test_V07_no_rules_byte_equal_to_base`,
+`test_V11_bottleneck_json_byte_equal_to_base`, `test_V14_bottleneck_size_ratio_realworld`) and
+`tests/test_delta_integration.py` (`test_V06_C27_...`) pop `edge_weights.large_node_token_threshold` (with
+`untested_hub_top_n`) from the current output before comparing it with the base bytes. With the key added to the
+base payload, all 16 of those comparisons were exactly 35 bytes short (`"large_node_token_threshold":24000,`). These
+three manifests were therefore generated without the payload key. `tests/reach_support.py::without_reach` does not
+pop it and `test_V08_symbol_mode_is_byte_identical_to_base` compares raw bytes, so reach and structure keep it.
+
+## Entries changed (committed -> regenerated)
+
+- architecture_rules (file bytes + sha256): android-nowinandroid 7803572 -> 5200039; fastapi-realworld 943448 ->
+  782266; futuramaapi 2134318 -> 1632809; typescript-nestjs-realworld 725096 -> 559719.
+- delta (bottleneck_bytes + sha256): futuramaapi 2134318 -> 1632809; fastapi-realworld 943448 -> 782266;
+  fastapi-official-template 490343 -> 354930; android-nowinandroid 7803572 -> 5200039; typescript-nestjs-realworld
+  (`-l typescript`) 678170 -> 529311; fastapi-realworld+rules 948864 -> 787682.
+- external_rules (all architecture canonical hashes and bottleneck hashes changed): android-nowinandroid file
+  architecture_bytes 8832368 -> 7359757, bottleneck_bytes 7803572 -> 5200039; fastapi-official-template file
+  1475804 -> 1303503, 490343 -> 354930; fastapi-realworld file 3004525 -> 2851724, 943448 -> 782266, symbol
+  2649377 -> 2504202; futuramaapi file 6794814 -> 6397487, 2134318 -> 1632809; typescript-nestjs-realworld file
+  1465756 -> 1413409, 725096 -> 559719, symbol 1279736 -> 1229393.
+- reach: every fixture changes in `bytes`, `sha256`, `canonical` and sections `candidates`, `dependency_network`,
+  `edge_weights`, `versions`. android-nowinandroid file 7813747 -> 5210249, candidate_count 108 -> 67, symbol
+  6641877 -> 4290069, 489 -> 218 (`unresolved_boundary` gone from `candidate_kinds` in both); fastapi-realworld file
+  951189 -> 790042, 120 -> 68, symbol 535904 -> 362814, 335 -> 98 (`unresolved_boundary` gone in both); futuramaapi
+  file 2170810 -> 1669336, 278 -> 169, symbol 1435879 -> 994640, 677 -> 200; typescript-nestjs-realworld file
+  729707 -> 564365, 71 -> 46, symbol 568427 -> 436952, 210 -> 103. delta: `canonical` and sections `candidates`,
+  `dependency_network`, `edge_weights`, `versions` changed; the `delta` hash is unchanged.
+- structure (file: bytes, sha256, candidate_count, candidates, node_metrics, rankings, rankings_by_category; symbol:
+  bytes, sha256): android-nowinandroid file 7430385 -> 4832704, 87 -> 46, symbol 6641877 -> 4290069;
+  fastapi-realworld file 851949 -> 690802, 94 -> 42, symbol 535904 -> 362814; futuramaapi file 1726473 -> 1224999,
+  192 -> 83 (`candidate_groups` also changed), symbol 1435879 -> 994640; typescript-nestjs-realworld file 645354 ->
+  480012, 54 -> 29, symbol 568427 -> 436952. `candidate_groups` is unchanged for the other three fixtures.
+
+## Test outcome
+
+`pytest tests/test_architecture_rules_integration.py tests/test_delta_integration.py tests/test_external_rules_integration.py tests/test_reach_candidates.py tests/test_structure_integration.py`:
+`5 failed, 345 passed, 2 deselected`. All failures are in `tests/test_structure_integration.py`:
+
+- `test_V08_file_mode_keeps_base_parts_and_adds_v8_fields[*]` (4 fixtures): `assert payload['versions']['analysis']
+  == '4'` fails on `'5'`, which this run sets in `bottlenecks/core.py`. Run separately, the remaining assertions of
+  that test (rankings, rankings_by_category, node_metrics, candidate_groups, base candidate count and hash) match the
+  regenerated manifest for all four fixtures.
+- `test_V11_size_ratio_per_fixture[futuramaapi]`: ratio 1.334 > 1.25. The bytes structure adds on top of the base
+  are 407845 both before (2134318 - 1726473) and after (1632809 + 35 - 1224999) regeneration; the ratio rose because
+  this run removed about 500 KB of `unresolved_boundary` candidates from the base output.
+
+## Standalone originals archive (test_nestjs_quality O11)
+
+Files: `tests/ambiguous_candidates_evidence/standalone-originals.json.gz` (`base_commit`
+5737113df15f6ed1705c1adadcf6b9c86bf9523e unchanged) and the `hashes` / `raw_hashes` of
+`tests/nestjs_evidence/baselines.json`. All other fields of both files are unchanged, including `base_commit`,
+`captured_root` and the case fields. Generators: `standalone_driver.py` and `gen_standalone.py` as described in
+`tests/fact_defects_evidence/manifest-regeneration.md` (same code, session scratchpad).
+
+Procedure:
+- Worktree of 5737113 with `git apply -3 patch-old`. Same `kotlin/analyzer.py` conflict as before, resolved the same
+  way (only `self._file_package` / `self._exact_imports` kept). The `+`/`-` lines of `git diff --cached HEAD` equal
+  `patch-old`.
+- Reproduction check on that worktree: decompressed archive bytes, `.gz` bytes and `baselines.json` bytes identical to
+  the committed files; all 8 cases equal in `outputs`, `snapshot_contents` and `category_members`.
+- Then `git apply -3 patch-r3` with the adaptations used for ef8adb3/2627174/6fda6d5 (edge_weights without
+  `_OPTIONAL_KEYS`, yaml hunk skipped, `_weights` token check only, `file_graph.py` `external_calls` without
+  `external_records`, Kotlin `_record_project_imports()` from `self._imports`, Python `PythonModuleIndex` copied from
+  cf0cf44). New at 5737113:
+  - `python/graph.py`: the `PythonModuleIndex` construction was placed after
+    `self._edges: Dict[Tuple[str, str, str], GraphEdge] = {}` (the annotation differs at 5737113).
+  - `bottlenecks/core.py` `_candidates`: 5737113 keys `by_target` by `edge.to_id` and records spread evidence as plain
+    `{path, start_line, end_line}`. Kept: `nodes_by_id` and the `not ownership_edge(edge, nodes_by_id)` filter on that
+    single-target loop, the token-based `large_node` lines, and the merged own-file filter of the spread loop. Skipped:
+    `evidence_records`, the `candidate_targets` loop and the `evidence_record()` helper (later features, not changed by
+    `patch-r3`).
+  - `bottlenecks/core.py` `analyze_bottlenecks`: the `_file_candidates` / `_candidates` call got the new arguments.
+    Not applied: the edge-weights payload key and the `versions.analysis` bump. 5737113 emits `"analysis": "3"` (the
+    hunk changes `"4"`), and `tests/standalone_candidate_policy_support.py` asserts the archived value is `'3'`. It
+    also drops `large_node_token_threshold` from the current `edge_weights` before comparing with the archive.
+    The structure/reach block and the `network` assembly of later commits were not added.
+  - After resolution, the `+`/`-` lines of the old-patched -> r3-patched diff equal `patch-r3`, apart from the items above.
+
+Changes (old archive -> regenerated):
+- `snapshot_contents` and `category_members`: unchanged in all 8 cases. Every top-level bottlenecks key except
+  `candidates` and `dependency_network` is unchanged (`schema`, `versions`, `edge_weights`, `coverage`,
+  `limitations`, `snapshot`).
+- Python cases (fastapi-futuramaapi, fastapi-realworld, fastapi-template, python, sqlalchemy): node and edge counts
+  and edge records unchanged. Node metadata gains `external_call_count` / `external_calls` and loses the calls now
+  classified as external. `unresolved_boundary` candidates 325 -> 5 / 144 -> 0 / 127 -> 0 / 144 -> 0 / 144 -> 0,
+  `evidence_spread` 315 -> 165 / 189 -> 94 / 65 -> 32 / 180 -> 86 / 180 -> 86.
+- android / kotlin: edges 4510 -> 3747 / 4389 -> 3626 (864 edge records removed, 101 added; class bodies no longer
+  include member bodies). `unresolved_boundary` 195 -> 0, `evidence_spread` 219 -> 155 / 217 -> 153.
+- typescript: edges unchanged (637). `unresolved_boundary` 68 -> 4, `evidence_spread` 94 -> 60.
+- All 16 `hashes` and all 16 `raw_hashes` changed.
+
+Test outcome: `tests/test_nestjs_quality.py` gives `8 failed, 12 passed, 4 subtests passed`. All 8 O11 subtests fail
+in `assert_standalone_candidate_policy_transition` at `tests/standalone_candidate_policy_support.py:238`
+(`spread.keys() == expected_spread.keys()`). The archive hash checks and the earlier comparator checks pass, among
+them the equality of all non-`evidence_spread` candidates with the archive. The comparator's `_spread` restates the
+pre-round-3 rule: every edge with evidence counts for every target. This run excludes ownership edges and evidence
+located in the target's own file. Run against the current CLI output, the test's `_spread` yields more targets than
+the output (futuramaapi 354 vs 197, fastapi-realworld 200 vs 106, template 67 vs 36, python and sqlalchemy 191 vs 98,
+android 296 vs 220, kotlin 294 vs 218, typescript 137 vs 94), and no output target is missing from it. Recomputed with
+those two exclusions, the target sets and `metrics` equal the output in all 8 cases.
+
+Worktrees used for both sections were removed after generation.
+
+## Round 4 (workflow run 3f70cc03aeae9c1a)
+
+This run changes `evidence_spread` (new `directory_count` metric; trigger is more than one evidence directory
+outside the target's own directory, or a single evidence file whose span exceeds the line threshold), Kotlin
+primary-constructor fields (the field node is the `class_parameter` node: span, cost, signature, scans), recovery of
+tree-sitter-kotlin one-line body misparses (`body_members`, `recovered_object_members`), and `versions.analysis`
+"5" -> "6". All five manifests and the O11 archive were rebuilt on top of the round-3 state.
+
+### Patches
+
+- `patch-old` and `patch-r3` as defined above: `git diff b590d54 cf0cf44` over the 9 listed files, and
+  `git diff cf0cf4446106f44026dc40d00ba09df977d61ecc 3b768a9b5e9b79c519bfe667b12b8e980cfa636b` over the 11 listed
+  files. All round-3 implementation changes are in 726e76e; no implementation file changed between 726e76e and
+  3b768a9, so 3b768a9 is the code the round-3 manifests were generated from.
+- `patch-r4`: `git diff 3b768a9 -- bottlenecks/core.py language_analyzers/kotlin/analyzer.py language_analyzers/kotlin/ast.py report/bottlenecks/generate.py`
+  of the working tree (4 files; `report/bottlenecks/generate.py` changes Korean description strings and the
+  `evidence_spread` score field of the HTML report only, no JSON effect). These four files at dcd5457 equal
+  3b768a9 + `patch-r4`.
+
+### Procedure and reproduction
+
+- Base commits were fetched with `git fetch --depth=1 origin <sha>` (the clone is shallow), then
+  `git worktree add --detach`, `git apply -3 patch-old`, `git apply -3 patch-r3`, `git apply -3 patch-r4`, all
+  uncommitted (`HEAD == base_commit`). `.fixtures` of the main repo was symlinked into each worktree.
+- `patch-old`: same `kotlin/analyzer.py` conflict for ef8adb3, 2627174, 6fda6d5 and 5737113, resolved as before. The
+  `+`/`-` lines of `git diff --cached HEAD` equal `patch-old` in all six worktrees.
+- `patch-r3`: all round-3 adaptations above re-applied as written (edge_weights without `_OPTIONAL_KEYS`, yaml hunk
+  skipped, `_weights` token check only, payload key only for reach and structure, `"4"` -> `"5"` on each base's own
+  return line, `file_graph.py` `external_calls` without `external_records`, Kotlin `_record_project_imports()` from
+  `self._imports`, `PythonModuleIndex` copied from cf0cf44, 6fda6d5 and 5737113 specifics). The O11 `by_target` loop
+  keeps the base's one-line form:
+  `if getattr(edge, "evidence", None) is not None and not ownership_edge(edge, nodes_by_id): by_target.setdefault(edge.to_id, []).append(edge)`.
+  The old-patched -> r3-patched `+`/`-` lines equal `patch-r3` apart from those adaptations.
+- Reproduction check on the r3-patched worktrees, against the files committed at dcd5457: all five manifests
+  byte-equal (`regen_manifest.py` for architecture_rules, delta, external_rules and structure; a copy of
+  `tests/reach_evidence/make_base_manifest.py` with only the `REPO` constant and the output path changed). O11:
+  decompressed archive, `.gz` bytes and `baselines.json` byte-equal (`standalone_driver.py` / `gen_standalone.py`).
+- Generator scripts: session scratchpad `regen/` (not in the repo).
+
+### patch-r4 conflicts and adaptations
+
+After resolution, the r3-patched -> r4-patched `+`/`-` lines equal `patch-r4` per file in all six worktrees, except
+the items below.
+
+| manifest | base commit | reproduction (r3-patched) | patch-r4 conflicts |
+|---|---|---|---|
+| architecture_rules | ef8adb352c32936b102ed06d8dcb3ad2f28e6bdd | byte-equal | core.py (return), kotlin/analyzer.py |
+| delta | f5ab529bd2cdd8a084d66e2759d172fc3579cfd5 | byte-equal | core.py (return) |
+| external_rules | 2627174d8a454a427965b5becee666c295454435 | byte-equal | core.py (return), kotlin/analyzer.py |
+| reach | 6444895451a89f4450b9123b7beb17b11506e534 | byte-equal | none (applied cleanly) |
+| structure | 6fda6d5a91eee508088292ad8b428694ee70b32f | byte-equal | core.py (return), kotlin/analyzer.py |
+| O11 archive | 5737113df15f6ed1705c1adadcf6b9c86bf9523e | byte-equal | core.py (spread line, return), kotlin/analyzer.py |
+
+- `bottlenecks/core.py` final `return`: `{"analysis": "5"}` -> `"6"` applied to the base's own line (no
+  `package_dependencies`/`ArchitectureRulesError` at ef8adb3, f5ab529, 2627174 and 6fda6d5; `bottlenecks.v7` at
+  6fda6d5). For structure this makes the `+`/`-` pair differ from `patch-r4` only in `v7`.
+- `kotlin/analyzer.py` (ef8adb3, 2627174, 6fda6d5, 5737113): the hunk's context line `self._import_statements[key] = [...]`
+  does not exist (see above); the three `+` lines replacing `for declaration in ka.top_level_declarations(root):`
+  were applied without it. The `+`/`-` lines equal `patch-r4`.
+- O11 `bottlenecks/core.py` `_candidates`: 5737113 records spread evidence as plain `{path, start_line, end_line}`
+  instead of `evidence_record(edge)`. The `directories` line and the new trigger condition with `directory_count`
+  were applied to the base's line, keeping its evidence list. `own` there is the same expression as at 3b768a9
+  (added by `patch-r3`). The `_file_candidates` hunk and `import posixpath` applied cleanly.
+- O11 `versions.analysis`: not bumped, the base emits `"3"` (as in round 3). Its return-line conflict was resolved
+  to the base line.
+- `kotlin/ast.py` of every r4-patched worktree is identical to 3b768a9 + `patch-r4`. `kotlin/analyzer.py` differs
+  from it only in the round-3 adaptations and in pre-existing base differences (edge keying).
+
+### Entries changed (committed -> regenerated)
+
+- architecture_rules (bytes + sha256): android-nowinandroid 5200039 -> 4969819; fastapi-realworld 782266 -> 736528;
+  futuramaapi 1632809 -> 1573297; typescript-nestjs-realworld 559719 -> 502709.
+- delta (bottleneck_bytes + sha256): futuramaapi 1632809 -> 1573297; fastapi-realworld 782266 -> 736528;
+  fastapi-official-template 354930 -> 355130; android-nowinandroid 5200039 -> 4969819; typescript-nestjs-realworld
+  (`-l typescript`) 529311 -> 474018; fastapi-realworld+rules 787682 -> 741944.
+- external_rules: android-nowinandroid file architecture_bytes 7359757 -> 7253245 (canonical hash changed). Python
+  and TypeScript architecture entries (file and symbol) are unchanged. Bottleneck bytes + sha256: android-nowinandroid
+  5200039 -> 4969819, fastapi-official-template 354930 -> 355130, fastapi-realworld 782266 -> 736528, futuramaapi
+  1632809 -> 1573297, typescript-nestjs-realworld 559719 -> 502709.
+- reach: every fixture changes in `bytes`, `sha256`, `canonical`, `candidate_count` and sections `candidates`,
+  `versions`; symbol entries of futuramaapi, android-nowinandroid and typescript-nestjs-realworld also change in
+  `dependency_network`. `candidate_kinds` unchanged everywhere. android-nowinandroid file 5210249 -> 4980029,
+  67 -> 62, symbol 4290069 -> 3804645, 218 -> 175; fastapi-realworld file 790042 -> 744304, 68 -> 59, symbol
+  362814 -> 327335, 98 -> 66; futuramaapi file 1669336 -> 1609824, 169 -> 150, symbol 994640 -> 932538, 200 -> 130;
+  typescript-nestjs-realworld file 564365 -> 507355, 46 -> 37, symbol 436952 -> 368074, 103 -> 46. delta:
+  `canonical` and sections `candidates`, `versions` changed; the `delta` hash is unchanged.
+- structure (file: bytes, sha256, candidate_count, candidates; symbol: bytes, sha256): android-nowinandroid file
+  4832704 -> 4603515, 46 -> 41, symbol 4290069 -> 3804645; fastapi-realworld file 690802 -> 645064, 42 -> 33, symbol
+  362814 -> 327335; futuramaapi file 1224999 -> 1165487, 83 -> 64, symbol 994640 -> 932538;
+  typescript-nestjs-realworld file 480012 -> 423002, 29 -> 20, symbol 436952 -> 368074. `rankings`,
+  `rankings_by_category`, `node_metrics`, `candidate_groups` and `schema` are unchanged for all four fixtures.
+- fastapi-official-template grows by 200 bytes: the `directory_count` key is added to its spread candidates and no
+  candidate is removed.
+
+O11 archive (old -> regenerated):
+- `base_commit`, `snapshot_contents` and `category_members`: unchanged in all 8 cases.
+- Python cases (fastapi-futuramaapi, fastapi-realworld, fastapi-template, python, sqlalchemy) and typescript:
+  json output unchanged. Bottlenecks change only in `candidates`: `evidence_spread` 165 -> 100 / 94 -> 69 / 32 -> 28 /
+  86 -> 64 / 86 -> 64, typescript 60 -> 17.
+- android / kotlin: node count unchanged (950 / 885). 57 field nodes change `signature`, 54 of them also `span` and
+  `cost`; all nodes change in `metadata.analysis` (graph metrics). Edges 3747 -> 3645 / 3626 -> 3524 (194 edge
+  records removed, 92 added). Bottlenecks change in `candidates` and `dependency_network`; `evidence_spread`
+  155 -> 127 / 153 -> 125.
+- `baselines.json`: 20 of 32 hashes changed (`hashes.bottlenecks` and `raw_hashes.bottlenecks` of all 8 cases,
+  `hashes.json` and `raw_hashes.json` of android and kotlin). All other fields unchanged.
+
+### Test check (in a worktree, not the main tree)
+
+Worktree of 3b768a9 + `patch-r4`, with `tests/` and `fixtures/` checked out from dcd5457, `renderers/html/static/app.js`
+from dcd5457, and the regenerated files copied in:
+- `tests/test_architecture_rules_integration.py tests/test_delta_integration.py tests/test_external_rules_integration.py tests/test_reach_candidates.py tests/test_structure_integration.py`:
+  all passed.
+- `tests/test_nestjs_quality.py`: `12 passed, 12 subtests passed`. This requires `.fixtures` to be a real copy. With
+  a symlinked `.fixtures`, the CLI resolves `project_path` to the symlink target outside the worktree, so it is not
+  replaced by `<REPO_ROOT>` and all 8 O11 subtests fail at `tests/standalone_candidate_policy_support.py:235`
+  (top-level architecture keys). This failure comes from the test environment, not from the archive.
+
+Worktrees were removed after generation.

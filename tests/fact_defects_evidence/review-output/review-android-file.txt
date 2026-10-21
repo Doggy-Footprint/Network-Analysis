@@ -1,0 +1,94 @@
+== (relation, resolution) count diff: base -> head
+relation        resolution      base    head   delta
+CALLS           ambiguous        137     136      -1
+CALLS           exact              0       3      +3
+CALLS           unique_name       12      10      -2
+IMPLEMENTS      exact              0       3      +3
+IMPLEMENTS      unique_name       10       7      -3
+IMPORTS         ambiguous         52      38     -14
+IMPORTS         exact              0     103    +103
+IMPORTS         unique_name      102       0    -102
+IMPORTS_SYMBOL  ambiguous         52      38     -14
+IMPORTS_SYMBOL  exact              0     103    +103
+IMPORTS_SYMBOL  unique_name      102       0    -102
+INHERITS        exact              0       2      +2
+INHERITS        unique_name        4       2      -2
+INSTANTIATES    exact              0      20     +20
+INSTANTIATES    unique_name       33      13     -20
+READS           ambiguous        392     391      -1
+READS           exact              0      97     +97
+READS           unique_name      169      88     -81
+TESTS           exact              0      25     +25
+TESTS           unique_name       52      37     -15
+TYPE_USES       exact              0      82     +82
+TYPE_USES       unique_name      109      27     -82
+WRITES          exact              0       6      +6
+WRITES          unique_name       44      38      -6
+total edges: base=1621 head=1620
+== added edges by (relation, resolution, confidence): 444
+  CALLS           exact       static_certain           3
+  IMPLEMENTS      exact       static_certain           3
+  IMPORTS         exact       static_certain         103
+  IMPORTS_SYMBOL  exact       static_certain         103
+  INHERITS        exact       static_certain           2
+  INSTANTIATES    exact       static_certain          20
+  READS           exact       static_certain          97
+  TESTS           exact       static_certain          25
+  TYPE_USES       exact       static_certain          82
+  WRITES          exact       static_certain           6
+== removed edges by (relation, resolution, confidence): 445
+  CALLS           ambiguous   static_inferred          1
+  CALLS           unique_name static_inferred          2
+  IMPLEMENTS      unique_name static_inferred          3
+  IMPORTS         ambiguous   static_inferred         14
+  IMPORTS         unique_name static_inferred        102
+  IMPORTS_SYMBOL  ambiguous   static_inferred         14
+  IMPORTS_SYMBOL  unique_name static_inferred        102
+  INHERITS        unique_name static_inferred          2
+  INSTANTIATES    unique_name static_inferred         20
+  READS           ambiguous   static_inferred          1
+  READS           unique_name static_inferred         81
+  TESTS           unique_name static_inferred         15
+  TYPE_USES       unique_name static_inferred         82
+  WRITES          unique_name static_inferred          6
+== nodes with changed span end_line / cost.line_count (F8/F9)
+  changed nodes: 0; only in base: 0; only in head: 0
+== bottleneck payload
+  schema: base=bottlenecks.v8 head=bottlenecks.v8
+  top-level keys only in base: []; only in head: []
+  dependency_network keys only in base: []; only in head: []
+  edge_weights keys only in base: []; only in head: []
+  coverage keys only in base: []; only in head: []
+  candidate kind counts (base -> head)
+    dependency_cycle           4     4    +0
+    evidence_spread           47    47    +0
+    isolated_node              1     1    +0
+    package_cycle              2     4    +2
+    unresolved_boundary       40    40    +0
+    unstable_dependency       13    13    +0
+    untested_hub               4     4    +0
+  new candidates: 2
+    package_cycle       cycle:language:certain:eb839c936bbc9f35
+    package_cycle       cycle:language:certain:f28f64612762d01b
+  gone candidates: 0
+== 10 sampled added edges (seed=20261019); verify each against the cited source line
+[1] file:core/database/src/androidTest/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicDaoTest.kt -IMPORTS-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt  (static_certain, exact, candidates=[])
+[2] file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/CompositeUserNewsResourceRepositoryTest.kt -TESTS-> file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/CompositeUserNewsResourceRepository.kt  (static_certain, exact, candidates=[])
+[3] file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceFtsDao.kt -TYPE_USES-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceFtsEntity.kt  (static_certain, exact, candidates=[])
+[4] file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/model/NewsResource.kt -IMPORTS_SYMBOL-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/NewsResourceEntity.kt  (static_certain, exact, candidates=[])
+[5] file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/DefaultSearchContentsRepository.kt -READS-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/TopicFtsDao.kt  (static_certain, exact, candidates=[])
+[6] file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/TestSynchronizer.kt -TYPE_USES-> file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/SyncUtilities.kt  (static_certain, exact, candidates=[])
+[7] file:core/data/src/test/kotlin/com/google/samples/apps/nowinandroid/core/data/testdoubles/TestTopicDao.kt -READS-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt  (static_certain, exact, candidates=[])
+[8] file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstTopicsRepository.kt -IMPORTS-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/TopicEntity.kt  (static_certain, exact, candidates=[])
+[9] file:core/data/src/main/kotlin/com/google/samples/apps/nowinandroid/core/data/repository/OfflineFirstNewsRepository.kt -READS-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt  (static_certain, exact, candidates=[])
+[10] file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/dao/NewsResourceDao.kt -TYPE_USES-> file:core/database/src/main/kotlin/com/google/samples/apps/nowinandroid/core/database/model/PopulatedNewsResource.kt  (static_certain, exact, candidates=[])
+[1] None:None: (no evidence location)
+[2] None:None: (no evidence location)
+[3] None:None: (no evidence location)
+[4] None:None: (no evidence location)
+[5] None:None: (no evidence location)
+[6] None:None: (no evidence location)
+[7] None:None: (no evidence location)
+[8] None:None: (no evidence location)
+[9] None:None: (no evidence location)
+[10] None:None: (no evidence location)

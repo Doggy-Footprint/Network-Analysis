@@ -50,13 +50,17 @@ def pagerank(
 
     for _ in range(settings.max_iterations):
         dangling = sum(scores[node_id] for node_id, targets in weighted.items() if not targets)
-        updated = {node_id: base + settings.damping * dangling / count for node_id in outgoing}
+        residual = 0.0
+        for source, targets in weighted.items():
+            if targets:
+                residual += settings.damping * scores[source] * (1.0 - totals[source] / len(targets))
+        updated = {node_id: base + (settings.damping * dangling + residual) / count for node_id in outgoing}
         for source, targets in weighted.items():
             if not targets:
                 continue
-            share = settings.damping * scores[source]
+            share = settings.damping * scores[source] / len(targets)
             for target, weight in targets.items():
-                updated[target] += share * weight / totals[source]
+                updated[target] += share * weight
         if sum(abs(updated[item] - scores[item]) for item in scores) <= settings.tolerance:
             scores = updated
             break
