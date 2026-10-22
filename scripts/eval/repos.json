@@ -1,10 +1,10 @@
 {
-  "mealie":       {"cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["mealie"]},
-  "lnbits":       {"cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["lnbits"]},
-  "CTFd":         {"cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["CTFd"]},
-  "flask-admin":  {"cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["flask_admin"]},
-  "ghostfolio":   {"cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.base.json", "roots": ["apps", "libs"]},
-  "vendure":      {"cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.json", "roots": ["packages"]},
-  "nowinandroid": {"cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]},
-  "bitwarden":    {"cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]}
+  "mealie":       {"github": "mealie-recipes/mealie", "commit": "204bffd468c8601a911310c15cb1e303eb0a0347", "cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["mealie"]},
+  "lnbits":       {"github": "lnbits/lnbits", "commit": "04b37f0d761222561bc8606cfe7edc86cabcce35", "cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["lnbits"]},
+  "CTFd":         {"github": "CTFd/CTFd", "commit": "d21c9cd3bb154e0e285aba2a20e176777b5f7d5d", "cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["CTFd"]},
+  "flask-admin":  {"github": "pallets-eco/flask-admin", "commit": "4f8be4580b082c6047492baa801f3f08642c9a75", "cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["flask_admin"]},
+  "ghostfolio":   {"github": "ghostfolio/ghostfolio", "commit": "eaa4c3e6efc84298a20e5fdbe1116f67798b0d70", "cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.base.json", "roots": ["apps", "libs"]},
+  "vendure":      {"github": "vendurehq/vendure", "commit": "99bdc303cddcef64e52077b082ff5e6a562c95f2", "cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.json", "roots": ["packages"]},
+  "nowinandroid": {"github": "android/nowinandroid", "commit": "2982e63cb691ad49cd009aab43dc206fee6699c2", "cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]},
+  "bitwarden":    {"github": "bitwarden/android", "commit": "6d08ab550eb69efda46b9cd4616a63aedf71ccb7", "cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]}
 }
