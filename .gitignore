@@ -47,3 +47,6 @@ agent-docs/specs/.seed/
 /tests/file_analysis_evidence/compat-diagnostic/
 
 /eval/
+
+# Rewritten by every test run; the tracked performance.json files are the evidence cited by archived specs
+/tests/*_evidence/performance.latest.json
