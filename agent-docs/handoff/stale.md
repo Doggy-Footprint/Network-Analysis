@@ -115,3 +115,8 @@ File: dad85e4830f21190-existing-signal-defects.md
 Summary: 기존 후보 신호 결함 F1–F12 수정 인계; 3회차까지 구현 완료, V12 review evidence(review_diff 귀속 규칙) 정정만 남음(verifier limit)
 Related Files: tests/signal_defects_evidence/review_diff.py, language_analyzers/typescript/analyzer.py, language_analyzers/kotlin/analyzer.py, language_analyzers/python/graph.py, bottlenecks/core.py, analysis/graph_metrics.py, analysis/file_graph.py
 Related Symbols: unresolved_boundary, evidence_spread, large_node, ambiguous_name, pagerank
+---
+File: 0c3bcfad9643613b-report-graph-modal-redesign.md
+Summary: 보고서 그래프·modal·용어 tooltip 개편, verifier 한도 도달(E07 미해결)
+Related Files: report/unified.py, renderers/html/static/app.js, renderers/html/templates/dashboard.html, tests/test_report_modal.py
+Related Symbols: file_layers, openModal, contribution
