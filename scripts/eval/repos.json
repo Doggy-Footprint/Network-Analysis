@@ -1,0 +1,10 @@
+{
+  "mealie":       {"cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["mealie"]},
+  "lnbits":       {"cell": "python/fastapi",     "language": "python",     "analyzers": ["-f", "fastapi"],    "packages": ["lnbits"]},
+  "CTFd":         {"cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["CTFd"]},
+  "flask-admin":  {"cell": "python/sqlalchemy",  "language": "python",     "analyzers": ["-f", "sqlalchemy"], "packages": ["flask_admin"]},
+  "ghostfolio":   {"cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.base.json", "roots": ["apps", "libs"]},
+  "vendure":      {"cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.json", "roots": ["packages"]},
+  "nowinandroid": {"cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]},
+  "bitwarden":    {"cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]}
+}
