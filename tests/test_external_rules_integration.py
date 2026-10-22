@@ -1,5 +1,6 @@
 """Expected hashes and byte counts come from tests/external_rules_evidence/base_manifest.json, produced at the pre-feature
-commit. Size and time checks are deliberately not benchmark-marked so they run in the default selection."""
+commit. Size checks are deliberately not benchmark-marked so they run in the default selection; the 20k-file external rules
+time budget runs with -m benchmark because wall-clock medians are unreliable under the parallel default run."""
 import fnmatch
 import hashlib
 import json
@@ -394,14 +395,13 @@ def median_time(function):
     return statistics.median(samples)
 
 
-def test_V14_C29_synthetic_time_and_correctness():
+def test_V14_C29_synthetic_correctness():
     files, spec = synthetic_external_input()
     assert len(files) == 20000 and all(len(r) == 20 for r in files.values()) and len(spec['layers']) == 10
     assert all(len(set(i['to_external'])) == 10 for i in spec['forbid']) and all(len(v) == 10 for v in spec['allow_external'].values())
     assert len(spec['external']) == 5 and all(len(v) == 5 for v in spec['external'].values())
     arch = ext_arch(files)
     rules = to_rules_ext(spec)
-    plain_rules = to_rules_ext({'version': 1, 'layers': spec['layers']})
     result = analyze_structure(arch, weights(), rules)
     actual = external_violations(result.candidates)
     sample = {path: records for index, (path, records) in enumerate(files.items()) if index % 10 == 0}
@@ -410,6 +410,14 @@ def test_V14_C29_synthetic_time_and_correctness():
     assert_external_equal([c for c in actual if c['target'] in targets], expected)
     assert 1000 < len(actual) <= 40000 and without_digest(result.coverage['architecture_rules'])['external_violation_count'] == len(actual)
     assert without_digest(result.coverage['architecture_rules'])['external_import_count'] == 20000 * 20
+
+
+@pytest.mark.benchmark
+def test_V14_C29_synthetic_time_budget():
+    files, spec = synthetic_external_input()
+    arch = ext_arch(files)
+    rules = to_rules_ext(spec)
+    plain_rules = to_rules_ext({'version': 1, 'layers': spec['layers']})
     with_external = median_time(lambda: analyze_structure(arch, weights(), rules))
     without = median_time(lambda: analyze_structure(arch, weights(), plain_rules))
     assert with_external - without <= 5.0, (with_external, without)

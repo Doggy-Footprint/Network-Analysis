@@ -1,5 +1,6 @@
 """Expected hashes come from tests/structure_evidence/base_manifest.json, generated at the pre-feature commit.
-Size/time checks are deliberately not benchmark-marked so they run in the default selection."""
+Size and per-fixture time checks are deliberately not benchmark-marked so they run in the default selection; the 20k-file chain
+time budget runs with -m benchmark because a single wall-clock sample is unreliable under the parallel default run."""
 import hashlib
 import json
 import os
@@ -276,10 +277,20 @@ def test_V11_analyze_structure_median_time_per_fixture(run, pipeline):
     assert statistics.median(samples) <= TIME_LIMIT, f'{run.name}: samples {samples}'
 
 
-def test_V11_chain_of_20000_files_time():
+def chain_of_20000_files():
     count = 20000
     paths = [f'f{i:05}.py' for i in range(count)]
-    arch = architecture(paths, [fedge(paths[i], paths[(i + 1) % count], indices=[i]) for i in range(count)])
+    return architecture(paths, [fedge(paths[i], paths[(i + 1) % count], indices=[i]) for i in range(count)])
+
+
+def test_V11_chain_of_20000_files():
+    result = analyze_structure(chain_of_20000_files(), default_weights())
+    assert len(of_kind(result.candidates, 'dependency_cycle')) == 3
+
+
+@pytest.mark.benchmark
+def test_V11_chain_of_20000_files_time():
+    arch = chain_of_20000_files()
     started = time.perf_counter()
     result = analyze_structure(arch, default_weights())
     elapsed = time.perf_counter() - started
