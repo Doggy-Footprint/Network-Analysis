@@ -117,7 +117,8 @@ def assert_architecture_changes_are_build_only(architecture):
 def without_build_parts(payload):
     """Drops what a build module adds to a file-mode report, so size-style checks keep their original threshold and context."""
     base = golden()['file']
-    result = json.loads(json.dumps(payload))
+    from tests.doc_references_support import without_doc_references
+    result = without_doc_references(payload)
     network = result['dependency_network']
     for key in [k for k in network['node_metrics'] if is_build_artifact(k) and k not in base['node_metrics']]:
         del network['node_metrics'][key]

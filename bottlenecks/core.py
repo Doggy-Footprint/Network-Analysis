@@ -277,12 +277,16 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _file_candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics) if is_file else _candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics)
         structure = None
+        doc_summary = None
         if is_file:
             from analysis.structure import analyze_structure
             structure = analyze_structure(architecture, weights, rules)
             from bottlenecks.reach import reach_candidates
             reach = reach_candidates(architecture, metrics, weights.untested_hub_top_n)
-            candidates = sorted(candidates + list(structure.candidates) + reach, key=lambda item: (item["kind"], item["id"]))
+            from analysis.doc_references import analyze_doc_references
+            doc_table, doc_candidates, doc_summary = analyze_doc_references(snapshot, architecture.details)
+            architecture.details["doc_references"] = doc_table
+            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates, key=lambda item: (item["kind"], item["id"]))
             _compact_structure_evidence(candidates, sorted(metrics))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold, "large_node_token_threshold": weights.large_node_token_threshold}
@@ -300,10 +304,12 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             network["candidate_groups"] = candidate_groups
         if is_file:
             network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS)
+        if doc_summary is not None:
+            coverage["doc_references"] = doc_summary
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "6"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

@@ -121,6 +121,8 @@ def test_V08_symbol_mode_is_byte_identical_to_base(run):
         assert_symbol_changes_are_build_only(json.loads(data))
         assert json.loads(data)['schema'] == manifest['schema'] == 'bottlenecks.v6'
         return
+    from tests.doc_references_support import base_symbol_bytes
+    data = base_symbol_bytes(data)
     assert hashlib.sha256(data).hexdigest() == manifest['sha256']
     assert len(data) == manifest['bytes']
     assert json.loads(data)['schema'] == manifest['schema'] == 'bottlenecks.v6'

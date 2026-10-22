@@ -353,8 +353,8 @@ def file_pair_view(record):
 
 def without_structure_facts(payload):
     """Drops everything bottlenecks.v8 adds so legacy comparisons keep their original meaning."""
-    import copy
-    result = copy.deepcopy(payload)
+    from tests.doc_references_support import without_doc_references
+    result = without_doc_references(payload)
     if 'candidates' in result:
         result['candidates'] = [c for c in result['candidates'] if c.get('kind') not in NEW_KINDS]
     network = result.get('dependency_network')
@@ -372,8 +372,8 @@ def without_structure_facts(payload):
 
 def with_base_policy(payload):
     """Copy of a bottleneck payload with both structure policy strings set back to the base commit's structure.v1."""
-    import copy
-    result = copy.deepcopy(payload)
+    from tests.doc_references_support import without_doc_references
+    result = without_doc_references(payload)
     network = result.get('dependency_network')
     if isinstance(network, dict) and 'structure_policy' in network:
         network['structure_policy'] = 'structure.v1'

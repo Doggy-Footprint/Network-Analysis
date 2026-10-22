@@ -217,8 +217,9 @@ def test_V02_R1_details_file_is_the_full_compact_architecture_details(r1):
     text = (r1 / 'report.details.json').read_text(encoding='utf-8')
     assert is_compact(text)
     details = json.loads(text)
-    assert set(details) == {'nodes', 'edges', 'node_files', 'node_owners', 'file_nodes'}
-    assert details == V8_DETAILS == fixture_architecture_dict()['details']
+    assert set(details) == {'nodes', 'edges', 'node_files', 'node_owners', 'file_nodes', 'doc_references'}
+    assert details.pop('doc_references')['columns'][:2] == ['doc', 'line']
+    assert details == V8_DETAILS == {k: v for k, v in fixture_architecture_dict()['details'].items() if k != 'doc_references'}
 
 
 def test_V02_R1_bottlenecks_details_file_is_relative_to_the_bottlenecks_directory(r1):

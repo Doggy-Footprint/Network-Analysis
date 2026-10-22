@@ -15,6 +15,7 @@ _SORTS = {
     "isolated_node": lambda c: (-_metric(c, "line_count"),),
     "untested_hub": lambda c: (_metric(c, "pagerank_rank"),),
     "rule_violation": lambda c: (-_metric(c, "evidence_count"),),
+    "dangling_doc_reference": lambda c: (-_metric(c, "dangling_count"),),
 }
 _EDGE_ITEM_KEYS = ("uncertain_test_edges", "edges")
 

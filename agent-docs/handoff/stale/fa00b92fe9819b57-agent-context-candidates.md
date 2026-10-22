@@ -29,10 +29,14 @@
 | attempt | failure evidence | cause |
 | --- | --- | --- |
 | 구현 시도 없음 | 범위 결정 단계에서 사용자가 handoff를 선택함 | verified: 사용자 답변 |
+| C 사전 측정 후 종료 | fixture 4개에서 기존 `hop_2_token_cost`를 오차 0으로 재현한 뒤 시그니처 기반 2-hop 비용과 비교: symbol Spearman 0.95–0.99·top-10 일치 5–8/10, file(소속 symbol 시그니처 합) 0.87–1.00·7–9/10. file 단위 노드별 비율 p10–p90이 0.12–0.24 범위로 좁음(fastapi-realworld만 0.20–0.63) | verified: 순위 정보가 겹치고 비율이 저장소별 상수에 가까움. 사용자 결정으로 spec `5b0e19017d8b5a79` aborted |
 
 ## Next Step
 
-1. C
+완료. C는 구현하지 않고 종료했고, D는 spec `agent-docs/spec-logs/64deae051d59caac-doc-code-references.md` v6 complete로 구현했다(`analysis/doc_references.py`, `bottlenecks/core.py`, `bottlenecks/handout.py`; details `doc_references`, candidate `dangling_doc_reference`, `coverage.doc_references`, versions.analysis "7"). 아래는 시작 시점 계획 기록이다.
+
+
+1. C — 종료(구현하지 않음). spec-log `agent-docs/spec-logs/5b0e19017d8b5a79-signature-context-cost.md` v2 aborted. 이전 계획:
    - `language_analyzers/core/cost.py`의 비용 정책과 `analysis/graph_metrics.py`의 `_node_token_cost`, `hop_2_token_cost` 계산을 확인한다.
    - 시그니처 비용을 언어별로 얻을 수 있는지 확인한다. Python은 `language_analyzers/python/symbols.py`, TypeScript와 Kotlin은 각 analyzer에서 `signature`를 채우는지 본다.
    - file granularity에서는 파일의 시그니처 비용을 소속 symbol 시그니처의 합으로 볼지 결정한다.
@@ -50,7 +54,8 @@
 
 ## Spec
 
-없음. C와 D에 대한 workflow는 시작하지 않았다.
+- C: `agent-docs/spec-logs/5b0e19017d8b5a79-signature-context-cost.md` v2, aborted(승인 전), run 5b0e19017d8b5a79.
+- D: `agent-docs/spec-logs/64deae051d59caac-doc-code-references.md` v6, complete, run 64deae051d59caac.
 
 ## Execution Ledger
 

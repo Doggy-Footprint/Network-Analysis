@@ -675,6 +675,8 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
     if pipe.name == ANDROID:
         assert_symbol_changes_are_build_only(payload)
         return
+    from tests.doc_references_support import base_symbol_bytes
+    data = base_symbol_bytes(data)
     assert len(data) == expected['bytes']
     import hashlib
     assert hashlib.sha256(data).hexdigest() == expected['sha256']

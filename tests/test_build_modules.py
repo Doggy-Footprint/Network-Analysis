@@ -592,7 +592,8 @@ NORMALIZED = ('candidates', 'coverage', 'package_metrics', 'package_dependencies
 
 def normalized(payload):
     """Same four parts as the golden; both policy strings are replaced so only the policy value itself may differ."""
-    data = json.loads(json.dumps(payload))
+    from tests.doc_references_support import without_doc_references
+    data = without_doc_references(payload)
     network = data['dependency_network']
     result = {'candidates': data['candidates'], 'coverage': data['coverage'],
               'package_metrics': network['package_metrics'], 'package_dependencies': network['package_dependencies']}

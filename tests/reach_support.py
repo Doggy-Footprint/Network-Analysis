@@ -8,6 +8,7 @@ from pathlib import Path
 
 from analysis.file_graph import FileArchitecture
 from language_analyzers.core.graph_models import GraphEdge, GraphNode, NodeCost, SourceSpan
+from tests.doc_references_support import without_doc_references
 from tests.edge_weights_support import load_weights, weights_data
 from tests.file_analysis_support import snapshot
 
@@ -244,7 +245,7 @@ def ref_base_candidates(candidates):
 
 def without_reach(payload):
     """Drops what the feature adds so legacy comparisons keep their original meaning."""
-    result = copy.deepcopy(payload)
+    result = without_doc_references(payload)
     result['candidates'] = ref_base_candidates(result.get('candidates', []))
     network = result.get('dependency_network')
     if isinstance(network, dict) and isinstance(network.get('edge_weights'), dict):

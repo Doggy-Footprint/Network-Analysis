@@ -18,6 +18,7 @@ from analysis.file_graph import to_file_architecture
 from bottlenecks import analyze_bottlenecks, bottlenecks_to_json
 from language_analyzers.core.serialization import architecture_to_dict
 from language_analyzers.python.graph import PythonGraphAnalyzer
+from tests.doc_references_support import without_doc_references
 from repository import build_snapshot, default_scan_policy_path, load_scan_policy
 
 REPO = Path(__file__).resolve().parents[1]
@@ -136,7 +137,7 @@ def to_v9_payload(payload, details_file=None):
 
 def to_v8_payload(payload, details):
     """Inverse of to_v9_payload given the details: decodes v9 evidence back to base-commit records."""
-    result = copy.deepcopy(payload)
+    result = without_doc_references(payload)
     network = result['dependency_network']
     file_ids = network.pop('file_ids')
     network.pop('evidence_columns')
@@ -230,7 +231,7 @@ def legacy_architecture_text(report_text, details_text):
     report = json.loads(report_text)
     report.pop('details_file')
     report['schema_version'] = '6'
-    report['details'] = json.loads(details_text)
+    report['details'] = without_doc_references(json.loads(details_text))
     return json.dumps(report, indent=2, ensure_ascii=False)
 
 

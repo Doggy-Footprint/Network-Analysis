@@ -536,7 +536,7 @@ EXPECTED_SHAPE = {
                                'rankings', 'rankings_by_category', 'structure_policy'],
         'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution',
                          'untested_hub_top_n'],
-        'coverage': ['analysis_coverage', 'limitations', 'source_file_count', 'structure'],
+        'coverage': ['analysis_coverage', 'doc_references', 'limitations', 'source_file_count', 'structure'],
         'snapshot': ['file_count', 'ignore_source'],
         'versions': ['analysis'],
     },

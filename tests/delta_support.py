@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from tests.architecture_rules_support import init_git
+from tests.doc_references_support import without_doc_references
 
 REPO = Path(__file__).resolve().parents[1]
 EVIDENCE = Path(__file__).parent / 'delta_evidence'
@@ -270,7 +271,7 @@ def without_digest(coverage):
 
 
 def base_form_bytes(data):
-    obj = json.loads(data)
+    obj = without_doc_references(json.loads(data))
     obj['dependency_network'].pop('package_dependencies', None)
     obj['dependency_network']['structure_policy'] = 'structure.v1'   # base hashes predate the structure.v2 bump (build scheme)
     obj.get('coverage', {}).get('structure', {})['policy'] = 'structure.v1'
