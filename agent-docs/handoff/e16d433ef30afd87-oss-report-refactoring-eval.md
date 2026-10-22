@@ -1,4 +1,4 @@
-# OSS 저장소로 리포트 기반 리팩토링 효과 평가
+# OSS 저장소로 리포트 기반 리팩토링 효과 평가 → 리팩토링 전후 동일 태스크 비용 비교로 전환
 
 ## User Query
 
@@ -22,9 +22,17 @@
 - "분석기는 나중에 천천히 돌려도 되니까 서브 에이전트 병렬로 실행하자. 평가 대상에서 git remote 등으로 체크 못하게 해줘. 나한테 pid 알려줘"
 - 실험 루트 이동(`mv`)은 사용자가 실행 직전에 중단시켰다. 이후 run 폴더만 저장소 밖에 두는 방식으로 바꿨다.
 - "다른 handoff랑 그 무거운 것부터 어떻게 해결을 해야겠네.. -> 핸들오프 추가 / 핸드오프 정리해서 다른 핸드오프, 그리고 LLM 에게 제공할 보고서 경량화 과정을 거치게 하고 기존 데이터는 싹 폐기해 그냥." → 폐기 범위 질문에 "./eval 전부 폐기".
+- (2026-10-22~23 세션) "eval을 진행해보자 (handoff 체크) gcloud 써서 VM 이용해서 CPU/memory intensive한 작업 수행하고 sonnet-5-medium으로 5회 반복 수행해. 실험군과 대조군의 프롬프트를 내게 먼저 보여줘. (english prompt) LLM에게 제공하는 보고서는 LLM handout 전용으로 나온 걸 써."
+  - 실험군 `evidence`는 handout 항목 인용 필수(A안)로 결정("A로 진행하자").
+  - Claude Code 인증은 사용자가 가진 장기 토큰을 VM `~/.eval-secrets/claude.env`(700/600)에 직접 넣기로 안내했다. 넣었는지는 확인하지 않았다.
+  - "근데, 생각해보니까 잘 관리되는 코드를 리팩토링하는 건 의미가 없지 않나?" → 대안(과거 리팩토링 복원, 병목 주입, 대상 교체) 제시 → "관련 bench나 dataset은.. 없겠지?" → "(a)부터 해보자"(SmellBench 라벨 대조).
+  - "리팩토링이 있는 것도 좋지만, 그 품질도 좋아야 해. 그리고 sonnet-5.5 모델의 knowedge cutoff 이후 여야해." → "응 후보 수 조사 시작해".
+  - "vm은 꺼두자. 필요할 때 켜고, 다쓰면 꺼줘"
+  - "포기. 실험 방향을 동일 코드에서 리팩토링 전 후 같은 태스크에 소비되는 토큰 양, 태스크 결과 등으로 바꾼다. 이걸로 handoff update 하고 커밋해"
 
 ## State
 
+- **실험 방향 전환(사용자 결정, 2026-10-23).** "리포트로 리팩토링 포인트를 찾아 구현하고 지표 개선을 잰다"는 설계와 "과거 메인테이너 리팩토링 복원" 설계를 모두 포기했다. 새 질문: **같은 코드의 리팩토링 전(before)과 후(after)에서 같은 태스크를 에이전트에게 주고, 소비 토큰과 태스크 결과(성공 여부, 테스트 통과 등)를 비교한다.** 아래 State의 run 격리·gate·VM 준비물은 재사용할 수 있다. 실험군/대조군 프롬프트(`TASK_PROMPT.md` + handout `{report_section}`)는 옛 설계용이라 그대로 쓰지 않는다.
 - 브랜치 `test/modal-sum-ranking`. **평가 대상 분석기 commit은 `0224570`으로 고정한다**(선행 작업 3개 완료; 이후 commit은 테스트·문서 정리뿐). 이전 기록: HEAD `a8a3012` 시점에 `scripts/eval/` 최초 커밋은 `5ddd426`, run 격리 초안(`repos.json`의 `github`·`commit`, `prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`)은 `abd1df2`, 리포트 경량화는 `3373b36`에 커밋했다. 작업 트리는 깨끗하다.
 - **`./eval`은 사용자 지시로 전부 삭제했다.** 삭제한 것: clone, 테스트 환경(`envs`, `node`, `.venv`), 기준선(`test-baseline.json`), 분석기 리포트, 파일럿 결과, raw transcript. `~/toy-projects/network-analysis-eval/`은 만들지 않았다. 아무 run도 실행하지 않았다.
 - 선행 작업(이 실험보다 먼저 한다. Next Step 0):
@@ -37,10 +45,11 @@
     - R1 실측(GCP `na-eval`): 시간·RSS 증가 없음. nowinandroid는 dangling 8건(문서 3개), vendure는 dangling 56건(문서 32개, 튜토리얼 예시 경로 오탐 포함)과 site_route 2405건이다.
   - 선행 작업 3개가 끝났다. 분석기 commit `0224570`으로 리포트를 새로 만든다.
 - **실행 위치는 GCP다(사용자 결정: "추천안으로 한다 (gcp, f9)").** 무거운 작업인 분석기 R1과 eval 실험(16 run 병렬)을 GCP VM에서 돌린다. 코드 수정과 subagent 작업은 로컬 맥에서 한다.
-  - VM: `na-eval`, project `playground-472408`(billing "My Billing Account" 연결, Compute API 활성), zone `asia-northeast3-a`, `n2-highmem-16`(16 vCPU, 125GB RAM; 사용자 요청으로 `e2-highmem-8`에서 상향), Ubuntu 24.04, 디스크 200GB(사용 6GB), 외부 IP 34.64.165.101(임시). 상태 RUNNING이다. 사용자가 요청할 때만 중지하고, 삭제는 사용자가 명시할 때만 한다.
+  - VM: `na-eval`, project `playground-472408`(billing "My Billing Account" 연결, Compute API 활성), zone `asia-northeast3-a`, `n2-highmem-16`(16 vCPU, 125GB RAM; 사용자 요청으로 `e2-highmem-8`에서 상향), Ubuntu 24.04, 디스크 200GB(사용 6GB), 외부 IP는 임시라 시작할 때마다 바뀐다. **상태 TERMINATED(2026-10-23 중지). 사용자 지시: 필요할 때 켜고(`gcloud compute instances start na-eval ...`), 작업이 끝나면 바로 끈다(`... stop ...`).** 삭제는 사용자가 명시할 때만 한다.
   - 접속: 로컬 `gcloud`(계정 khs1903b@gmail.com, 기본 project 설정이 없는 `autonomous-agent-00001`이므로 항상 `--project playground-472408 --zone asia-northeast3-a`를 붙인다). `gcloud compute ssh na-eval ... --command '...'`, `gcloud compute scp`. zsh에서 플래그를 변수에 담으면 분리되지 않으니 직접 쓴다.
   - VM에 있는 것: `~/venv`(Python 3.12.3, 분석기 requirements), `~/nowinandroid`, `~/vendure`(eval 고정 commit, depth 1), `~/r1.sh`·`~/r1d.sh`(base·cur 분석기 비교 스크립트), 이전 R1 산출물 `~/out`, `~/dout`, `~/dbase`, `~/dcur`(지워도 됨), `~/pin`(분석기 `0224570` 사본), `~/bitwarden`(eval 고정 commit), `~/bw`(3차 실행 log·`prof.txt`; 지워도 됨), venv의 `py-spy`. 분석기는 `git archive`/tar로 올려 `.venv`를 `~/venv` symlink로 두고 실행했다.
-  - VM에 없는 것: node, Java/JDK, Android SDK, uv, Claude Code(`claude`). eval run은 VM 안에서 `claude -p`를 실행하므로 **Claude Code 설치와 인증(API key 또는 로그인)은 사용자가 직접 해야 한다.** Android gate용 Linux JDK 21·Android SDK, Python용 uv, Node 22·bun도 새로 설치해야 한다.
+  - 2026-10-22에 설치한 것: apt `bubblewrap`, `socat`, `openjdk-21-jdk-headless`(21.0.12), `unzip`, `ripgrep`, `jq`; `~/.local/bin/uv`(0.13.5), `~/.local/bin/claude`(Claude Code 2.1.308, 네이티브 설치); `~/tools/node-v22.23.4-linux-x64`, `~/tools/bun-linux-x64`(1.3.10); `~/android-sdk`(cmdline-tools latest, platform-tools, 라이선스 수락; platform·build-tools는 Gradle 첫 빌드 때 받을 것으로 예상, 미확인). 그 밖에 `~/sklearn`(scikit-learn 1.7.2 depth 1)과 `~/smell`(그 분석기 출력)이 있다.
+  - 인증: `~/.eval-secrets/claude.env`에 `CLAUDE_CODE_OAUTH_TOKEN=`(sk-ant-oat01) 또는 `ANTHROPIC_API_KEY=`(sk-ant-api03)를 사용자가 넣기로 했다. 존재 여부·`claude -p` 동작은 미확인. launcher는 이 파일을 run 프로세스 환경에만 넣고, settings `denyRead`와 `run_hook.py`에 `~/.eval-secrets`, `env`/`printenv`/`/proc/*/environ` 차단을 추가해야 한다(미구현).
   - 아래 Next Step의 경로·명령은 macOS 로컬 기준으로 쓰였다. VM으로 옮길 때 바꿔야 할 것:
     - `~/toy-projects/network-analysis-eval/` → VM 홈 아래 실험 루트(이 저장소 사본은 VM에 없음; 분석기 commit `0224570`을 tar로 올리거나 VM에서 clone).
     - `cp -c`(APFS clonefile) → `cp -a` 또는 `cp --reflink=auto`.
@@ -131,8 +140,17 @@
 | 실험 루트를 `~/toy-projects/network-analysis-eval/`로 `mv` | 사용자가 실행을 중단했다(이유는 말하지 않음). 앞서 파일럿 nx daemon(`eval/repos/ghostfolio`) `kill`은 auto mode classifier가 거부했다 | verified: 사용자 중단. 이후 `./eval`을 통째로 폐기했으므로 이동할 대상이 없다 |
 | 실험군 리포트를 key별·candidate별 JSONL로 분할해서 제공 | vendure `bottlenecks.json` 684MB(`candidates` 699MB), `json.load` RSS 5.07GB | verified: 리포트 직렬화 크기 문제. 분할하지 않고 경량화(`85aa37516a23897d`)를 먼저 하기로 사용자가 결정 |
 | bitwarden 분석기 3차(GCP `na-eval`, commit `0224570`, `py-spy record`) | 13분 실행 후 대체 저장소를 찾기로 해서 중단. 샘플 7897개 중 96.8%가 `_add_symbol_edges` → `NamePositions.candidate_names` fallback 루프(`language_analyzers/core/positions.py:40-41`) → `matches`. RSS 3분에 2.2GB | verified(병목 위치): `\w+`가 아닌 이름(Kotlin backtick 함수명)을 심볼마다 전부 검사한다. bitwarden 고유 backtick 함수명 8118개(nowinandroid 7개), .kt 2579개 17.3MB. hypothesis: 비용이 심볼 수 × backtick 이름 수로 커져 끝나지 않는다. 1차의 "메모리 압박" 가설은 주원인이 아닐 가능성이 크다 |
+| 설계: 잘 관리되는 OSS 8개에서 에이전트가 포인트 3개를 골라 리팩토링하고 독립 지표 개선으로 판정, 실험군(handout 제공)·대조군 × 5회(sonnet-5.5 medium, 80 run). 프롬프트 초안까지 작성, 실행 안 함 | 사용자: "잘 관리되는 코드를 리팩토링하는 건 의미가 없지 않나?" | hypothesis: 천장 효과(진짜 병목이 적어 양 군 모두 표면 변경), `ccn_max`·`long_functions`는 아무 함수나 쪼개도 개선돼 "개선"이 "가치 있는 리팩토링"을 뜻하지 않음, 정답 기준 부재. 파일럿 16/21 improved도 같은 이유로 의심 |
+| 기존 벤치마크·데이터셋 조사(2026-10-22 웹 검색) | 맞는 것 없음: RefactorBench(ICLR 2025, 위치를 지시로 줌), SWE-Refactor(Java), ROSE corpus(Java, smell→refactoring 휴리스틱 라벨), DependEval·DI-Bench(리팩토링 아님), SmellBench injected(arXiv 2606.05574, 코드 수준 smell 주입) | verified: "리포트가 고칠 곳을 짚는가"를 정답과 대조하는 Python/TS/Kotlin + 프레임워크 관계 데이터셋은 찾지 못함 |
+| (a) SmellBench architectural(arXiv 2605.07001, Zenodo 10.5281/zenodo.19247588, CC-BY-4.0; scikit-learn 1.7.2, PyExamine hard smell 65개 전문가 라벨) 대조. VM에서 분석기 `0224570`으로 sklearn 실행(1:25, RSS 2.5GB) | 대응 가능한 라벨 16개뿐(Unstable Dependency 14, God Object 2; 나머지 49개는 이름 중복·클래스 유사도·API 오용이라 분석기 개념 밖). 결과는 Execution Ledger | verified: 표본이 작고(오탐 3개), Sonnet 5.5 컷오프(2026-06) 이전 데이터라 에이전트 실험에는 못 씀. 분석기 단독 대조로만 의미 |
+| (b) 과거 메인테이너 구조 리팩토링 PR 수집(2026-07-01 이후 merge = Sonnet 5.5 컷오프 이후, 품질 조건 포함) | 후보 206건(Kotlin 8건/5저장소)까지 줄었으나 사용자 "포기". 깔때기는 Execution Ledger | verified(사용자 결정). 관찰: 대부분 "extract X into module" 국소 분리, 순환·결합 해소형은 소수, trailer 없는 AI 작성 시리즈 의심(dify, cline), 저장소마다 테스트 환경 구축 비용 큼. revert 검사는 도중 중단 |
 
 ## Next Step
+
+새 방향(리팩토링 전후 동일 태스크 비교)의 설계는 아직 없다. 아래 0~6은 옛 설계 단계이며, 1(VM 환경·gate 기준선)·3(settings·hook·launcher)·4(격리 시험)는 새 설계에서도 재사용할 수 있다.
+
+A. 새 설계 초안을 사용자에게 제안하고 Open Questions의 "새 방향" 항목을 결정받는다. 실행 전에 실험군·대조군(after·before) 프롬프트를 영어로 먼저 보여준다(이전 세션 지시).
+B. VM은 작업할 때만 켜고 끝나면 끈다. 인증 파일과 `claude -p` 동작을 먼저 확인한다.
 
 0. (완료) 선행 작업 3개를 끝내고 분석기 commit `0224570`을 평가 대상으로 고정했다.
 0.5. (완료) bitwarden 대체로 `tasks/tasks`를 골랐다(State의 후보 측정 참고). 기준선은 Next Step 1에서 다른 저장소와 함께 만든다.
@@ -160,6 +178,14 @@
 
 ## Open Questions
 
+- 새 방향(리팩토링 전후 동일 태스크 비교)에서 정할 것:
+  - after 버전을 누가 만드는가: 리포트 candidate 기반 에이전트 리팩토링, 사람(메인테이너) 리팩토링, 또는 둘 다. 리포트의 기여를 보려면 "리포트 기반 after"와 "리포트 없는 after"를 나누는 설계가 필요한지.
+  - 태스크는 무엇인가: 버그 수정, 기능 추가, 코드 이해 질의 등. 출처(직접 작성, 저장소 이슈, 변이 주입한 버그)와 태스크가 리팩토링된 영역을 지나야 하는지.
+  - 태스크 결과 판정: 숨긴 테스트 통과, gate 통과, 정답 diff 대조 중 무엇.
+  - 오염: before 코드는 컷오프 이전 공개 코드다. after와 태스크는 새로 만들므로 컷오프 영향이 작지만, 태스크 정답이 upstream 이력에 있으면 안 된다.
+  - 반복 수·모델: 이전 지시는 sonnet-5.5 medium 5회. 새 설계에도 유지할지.
+  - 대상 저장소: 기존 8개(repos.json)를 유지할지.
+- (a)에서 드러난 분석기 결함을 실험 전에 고칠지(고치면 평가 고정 commit이 바뀐다): 거대 순환 포화(sklearn all tier 순환 1개에 730파일, certain 286파일)로 `dependency_cycle`·`unstable_dependency`(2531건)·`evidence_spread`(673건)가 거의 모든 파일을 덮음; `sklearn/externals/array_api_compat/`(vendored)가 production으로 분류되어 `untested_hub` 2건 전부와 production 랭킹 top10 9칸을 차지.
 - 대조군의 독립 지표 도구(lizard, measure.py) 사용 허용 여부. 이번 설계의 기본값은 양 군 모두 불허이고, 지표 정의만 프롬프트로 준다.
 - Tusky·wikipedia에서 나온 `architecture node ids are invalid`(분석기 버그 추정)를 조사할지.
 - backtick 이름 fallback 병목을 분석기에서 고칠지(제품 작업, workflow-approach 대상). 방향: 파일별 `` `...` `` 구간을 한 번만 모아 그 안의 이름만 검사한다. 고치면 평가 고정 commit도 바뀐다.
@@ -196,4 +222,28 @@
 - 파일럿 토큰(폐기 데이터, 참고용; 원본 파일은 `./eval`과 함께 삭제됨):
   - 찾기 에이전트, 저장소당: output 1.7만~3.5만, 캐시 포함 210만~450만.
   - 리팩토링 21개 합: output 13.7만, 캐시 포함 1401만.
+- (a) SmellBench 대조(분석기 `0224570`, scikit-learn 1.7.2 `25dee604`, production 근사 323파일 = tests·benchmarks·doc·examples 등 제외). 라벨: Invalid FP = 진짜 smell, Partially Valid = 부분, Valid FP = 오탐.
+
+  | 라벨 | 판정 | fan_out 순위 | handout 등장 |
+  |---|---|---|---|
+  | utils.estimator_checks (God Object, Unstable 중복) | 진짜 | 2 | Y |
+  | ensemble._gb | 진짜 | 12 | Y |
+  | feature_extraction.text | 진짜 | 14 | Y |
+  | cluster._kmeans | 진짜 | 23 | - |
+  | ensemble._bagging | 진짜 | 38 | - |
+  | datasets._openml | 진짜 | 145 | - |
+  | linear_model._ridge | 부분 | 1 | Y |
+  | model_selection._search | 부분 | 6 | Y |
+  | neural_network._multilayer_perceptron | 부분 | 10 | - |
+  | _hist_gradient_boosting.gradient_boosting | 부분 | 30 | - |
+  | linear_model._logistic | 부분 | 58 | Y |
+  | compose._column_transformer | 부분 | 109 | Y |
+  | sklearn.metrics (`__init__.py`, God Object) | 오탐 | 199 | Y(cut 후보) |
+  | common._helpers (vendored) | 오탐 | 231 | Y(untested_hub) |
+  | doc.conf | 오탐 | 분석 대상 아님 | - |
+
+  - fan_out 순위로 진짜·부분 12개가 오탐 전부보다 위(AUC 1.0, 오탐 3개라 약한 근거; PyExamine Unstable Dependency도 fan-out 기반이라 상관이 당연한 면).
+  - candidate 소속은 구분력 없음: 16개 전부 `dependency_cycle`·`unstable_dependency`·`evidence_spread`에 걸림.
+  - 원본 데이터(SmellBench 패키지, 분석기 출력)는 세션 scratchpad에만 있었고 저장하지 않았다. VM `~/smell`에 분석기 출력이 남아 있다.
+- (b) PR 수집 깔때기(GitHub 검색 API, 2026-07-01~10-22 merge, `review:approved`, 제목 키워드 14종 × python/typescript/kotlin × 월별, bot 제외): 4141 → 별 1k+·non-fork 1449(py 628, ts 777, kt 44) → 작성자 외 OWNER/MEMBER/COLLABORATOR 승인 751 → 변경 50~1500줄 485 → AI trailer 없음 377 → 비테스트 소스 2개 이상 + 파일 추가·이동·삭제 206(py 93/43저장소, ts 105/49저장소, kt 8/5저장소). 원본 목록은 저장하지 않았다.
 - fuzz, mutation: 해당 없음. correction 및 verifier 카운터: 해당 없음(workflow-approach 미사용).
