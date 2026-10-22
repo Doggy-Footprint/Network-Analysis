@@ -33,7 +33,17 @@
     - D(문서→코드 참조)는 완료했다(spec `agent-docs/spec-logs/64deae051d59caac-doc-code-references.md` v6 complete, commit `0224570`). file granularity의 details 파일에 `doc_references` 표, bottleneck JSON에 `dangling_doc_reference` candidate(문서당 1개)와 `coverage.doc_references`가 생기고 `versions.analysis`가 "7"이 됐다. 그래프와 기존 지표는 바뀌지 않는다. 실험군 `{report_section}`에 이 candidate 설명을 넣어야 한다.
     - R1 실측(GCP `na-eval`): 시간·RSS 증가 없음. nowinandroid는 dangling 8건(문서 3개), vendure는 dangling 56건(문서 32개, 튜토리얼 예시 경로 오탐 포함)과 site_route 2405건이다.
   - 선행 작업 3개가 끝났다. 분석기 commit `0224570`으로 리포트를 새로 만든다.
-- GCP VM `na-eval`(playground-472408, asia-northeast3-a, n2-highmem-16)이 켜져 있다. nowinandroid·vendure clone과 venv가 있다. 실험 환경을 GCP에서 만들지는 결정하지 않았다.
+- **실행 위치는 GCP다(사용자 결정: "추천안으로 한다 (gcp, f9)").** 무거운 작업인 분석기 R1과 eval 실험(14 run 병렬)을 GCP VM에서 돌린다. 코드 수정과 subagent 작업은 로컬 맥에서 한다.
+  - VM: `na-eval`, project `playground-472408`(billing "My Billing Account" 연결, Compute API 활성), zone `asia-northeast3-a`, `n2-highmem-16`(16 vCPU, 125GB RAM; 사용자 요청으로 `e2-highmem-8`에서 상향), Ubuntu 24.04, 디스크 200GB(사용 6GB), 외부 IP 34.64.165.101(임시). 상태 RUNNING이다. 사용자가 요청할 때만 중지하고, 삭제는 사용자가 명시할 때만 한다.
+  - 접속: 로컬 `gcloud`(계정 khs1903b@gmail.com, 기본 project 설정이 없는 `autonomous-agent-00001`이므로 항상 `--project playground-472408 --zone asia-northeast3-a`를 붙인다). `gcloud compute ssh na-eval ... --command '...'`, `gcloud compute scp`. zsh에서 플래그를 변수에 담으면 분리되지 않으니 직접 쓴다.
+  - VM에 있는 것: `~/venv`(Python 3.12.3, 분석기 requirements), `~/nowinandroid`, `~/vendure`(eval 고정 commit, depth 1), `~/r1.sh`·`~/r1d.sh`(base·cur 분석기 비교 스크립트), 이전 R1 산출물 `~/out`, `~/dout`, `~/dbase`, `~/dcur`(지워도 됨). 분석기는 `git archive`/tar로 올려 `.venv`를 `~/venv` symlink로 두고 실행했다.
+  - VM에 없는 것: node, Java/JDK, Android SDK, uv, Claude Code(`claude`). eval run은 VM 안에서 `claude -p`를 실행하므로 **Claude Code 설치와 인증(API key 또는 로그인)은 사용자가 직접 해야 한다.** Android gate용 Linux JDK 21·Android SDK, Python용 uv, Node 22·bun도 새로 설치해야 한다.
+  - 아래 Next Step의 경로·명령은 macOS 로컬 기준으로 쓰였다. VM으로 옮길 때 바꿔야 할 것:
+    - `~/toy-projects/network-analysis-eval/` → VM 홈 아래 실험 루트(이 저장소 사본은 VM에 없음; 분석기 commit `0224570`을 tar로 올리거나 VM에서 clone).
+    - `cp -c`(APFS clonefile) → `cp -a` 또는 `cp --reflink=auto`.
+    - 기준선 표의 환경(homebrew Python, Android Studio JBR의 `JAVA_HOME`, `local.properties`의 `sdk.dir`) → Linux 경로.
+    - `run_hook.py`·settings의 deny 경로(`/private/tmp/claude-501`, `~/.claude`) → VM의 Claude Code 경로.
+    - 샌드박스(`sandbox.enabled`, `failIfUnavailable`)는 Linux에서 bubblewrap 기반이므로 VM에 설치·동작을 먼저 확인한다.
 - 대상 저장소와 고정 commit(별 1k+, 소스 150~3000 파일). `scripts/eval/repos.json`에 `github`와 `commit`으로 기록했다.
 
   | cell | repo | commit |
@@ -107,7 +117,7 @@
 ## Next Step
 
 0. (완료) 선행 작업 3개를 끝내고 분석기 commit `0224570`을 평가 대상으로 고정했다.
-1. 실험 루트를 저장소 밖 `~/toy-projects/network-analysis-eval/`에 새로 만든다(이 저장소 CLAUDE.md/AGENTS.md 오염 방지).
+1. 실험 루트를 GCP VM `na-eval`에 새로 만든다(State의 "실행 위치" 참고; 이 저장소 CLAUDE.md/AGENTS.md 오염 방지를 위해 분석기 사본과 분리). 먼저 사용자에게 VM의 Claude Code 설치·인증을 요청한다.
    - `envs`(저장소별 테스트 환경), `node`(dependency-cruiser 18.7.0, typescript 5.9.3), `.venv`(lizard, grimp), seed(node_modules, local.properties)를 다시 만든다.
    - 저장소별 gate를 2회 돌려 State의 기준선 표와 통과 수가 같은지 확인하고 `test-baseline.json`을 다시 쓴다.
    - `scripts/eval/*`의 `ROOT/eval` 하드코딩을 `EVAL_ROOT`와 run별 clone 경로 인자로 바꾼다. `run_hook.py`의 `ROOT_ALLOWED`와 `prepare_runs.py`의 경로도 함께 바꾼다.
