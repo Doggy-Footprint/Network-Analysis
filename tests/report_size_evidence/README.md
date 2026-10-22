@@ -6,3 +6,4 @@ Command, cwd = a `git worktree` of the base commit, `P` = `tests/report_size_evi
 
 Files: `v8_bottlenecks.json` (as written), `v8_details.json` (`details` of the v8 report.json), `v8_report_without_details.json` (v8 report.json minus `details`), `v8_symbol_report.json` (symbol report.json). The last three are re-serialised compact with sorted keys.
 `project/` holds the fixture: a core<->util file and package cycle, an unstable core->util dependency, two evidence_spread targets, and untested_hub candidates (unchanged kind).
+The goldens must be produced with `project/` git-tracked: analysis coverage and the snapshot record the file collection mode (`git-tracked` vs filesystem), so regenerating them from an untracked copy breaks the V02 equality checks.
