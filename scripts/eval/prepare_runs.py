@@ -60,7 +60,7 @@ def seed(repo, clone):
 def gate_script(repo, run_dir, locks):
     baseline = json.loads((EVAL / 'results' / repo / 'test-baseline.json').read_text())
     command = baseline['test_command']
-    gradle = repo in ('nowinandroid', 'bitwarden')
+    gradle = repo in ('nowinandroid', 'tasks')
     env = []
     if MANIFEST[repo]['language'] == 'python':
         # flask-admin/lnbits venvs carry editable .pth entries into the pilot clones; PYTHONPATH puts this clone first

@@ -17,7 +17,7 @@ EXTRA = {
     'ghostfolio': ['npx tsc --noEmit -p apps/api/tsconfig.app.json', 'npx tsc --noEmit -p apps/api/tsconfig.spec.json'],
     'vendure': ['cd packages/core && npx tsc -p ./build/tsconfig.build.json --noEmit'],
 }
-GRADLE_PREFIX = {'nowinandroid': 'rm -rf */build/test-results */*/build/test-results && ', 'bitwarden': ''}
+GRADLE_PREFIX = {'nowinandroid': 'rm -rf */build/test-results */*/build/test-results && ', 'tasks': 'rm -rf */build/test-results && '}
 
 
 def counts_from_junit(paths):

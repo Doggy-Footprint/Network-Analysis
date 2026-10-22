@@ -6,5 +6,5 @@
   "ghostfolio":   {"github": "ghostfolio/ghostfolio", "commit": "eaa4c3e6efc84298a20e5fdbe1116f67798b0d70", "cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.base.json", "roots": ["apps", "libs"]},
   "vendure":      {"github": "vendurehq/vendure", "commit": "99bdc303cddcef64e52077b082ff5e6a562c95f2", "cell": "typescript/nestjs",  "language": "typescript", "analyzers": ["-f", "nestjs"],     "ts_config": "tsconfig.json", "roots": ["packages"]},
   "nowinandroid": {"github": "android/nowinandroid", "commit": "2982e63cb691ad49cd009aab43dc206fee6699c2", "cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]},
-  "bitwarden":    {"github": "bitwarden/android", "commit": "6d08ab550eb69efda46b9cd4616a63aedf71ccb7", "cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]}
+  "tasks":        {"github": "tasks/tasks", "commit": "225e6c49d0eb16a1cc49f74a20f05c2136a14882", "cell": "kotlin/android",     "language": "kotlin",     "analyzers": ["-f", "android"]}
 }

@@ -16,6 +16,9 @@
 - 리포트를 주는 run에는 리포트가 무엇인지 설명해 줄 것.
 - 샌드박스 실행 희망; hook은 샌드박스 보완용.
 - (이번 세션) "oss-report-refactoring-eval handoff에 따라 테스트를 진행하려는데, 다른 handoff 보다 먼저 해도 될까?" → "커밋하고 진행하자".
+- "그거 내가 끈거라서 일단 작용하도록 해놔" → 확인 질문에 "제외만 해제" → bitwarden을 평가 대상(8개)에 다시 넣었다. 분석기는 아직 다시 돌리지 않았다.
+- "한번 테스트 해봐" → VM에서 3차 실행·프로파일(Failed Attempts 참고). "그럼 대체제를 찾자" → bitwarden 대신 kotlin/android 저장소를 새로 고른다. "handoff업데이트 해줘".
+- 후보 측정 후 "검색해줘 ㅋㅋ 난 잘 몰라" → `tasks/tasks` 추천 → "반영해줘". bitwarden을 `tasks`로 교체했다.
 - "분석기는 나중에 천천히 돌려도 되니까 서브 에이전트 병렬로 실행하자. 평가 대상에서 git remote 등으로 체크 못하게 해줘. 나한테 pid 알려줘"
 - 실험 루트 이동(`mv`)은 사용자가 실행 직전에 중단시켰다. 이후 run 폴더만 저장소 밖에 두는 방식으로 바꿨다.
 - "다른 handoff랑 그 무거운 것부터 어떻게 해결을 해야겠네.. -> 핸들오프 추가 / 핸드오프 정리해서 다른 핸드오프, 그리고 LLM 에게 제공할 보고서 경량화 과정을 거치게 하고 기존 데이터는 싹 폐기해 그냥." → 폐기 범위 질문에 "./eval 전부 폐기".
@@ -33,10 +36,10 @@
     - D(문서→코드 참조)는 완료했다(spec `agent-docs/spec-logs/64deae051d59caac-doc-code-references.md` v6 complete, commit `0224570`). file granularity의 details 파일에 `doc_references` 표, bottleneck JSON에 `dangling_doc_reference` candidate(문서당 1개)와 `coverage.doc_references`가 생기고 `versions.analysis`가 "7"이 됐다. 그래프와 기존 지표는 바뀌지 않는다. 실험군 `{report_section}`에 이 candidate 설명을 넣어야 한다.
     - R1 실측(GCP `na-eval`): 시간·RSS 증가 없음. nowinandroid는 dangling 8건(문서 3개), vendure는 dangling 56건(문서 32개, 튜토리얼 예시 경로 오탐 포함)과 site_route 2405건이다.
   - 선행 작업 3개가 끝났다. 분석기 commit `0224570`으로 리포트를 새로 만든다.
-- **실행 위치는 GCP다(사용자 결정: "추천안으로 한다 (gcp, f9)").** 무거운 작업인 분석기 R1과 eval 실험(14 run 병렬)을 GCP VM에서 돌린다. 코드 수정과 subagent 작업은 로컬 맥에서 한다.
+- **실행 위치는 GCP다(사용자 결정: "추천안으로 한다 (gcp, f9)").** 무거운 작업인 분석기 R1과 eval 실험(16 run 병렬)을 GCP VM에서 돌린다. 코드 수정과 subagent 작업은 로컬 맥에서 한다.
   - VM: `na-eval`, project `playground-472408`(billing "My Billing Account" 연결, Compute API 활성), zone `asia-northeast3-a`, `n2-highmem-16`(16 vCPU, 125GB RAM; 사용자 요청으로 `e2-highmem-8`에서 상향), Ubuntu 24.04, 디스크 200GB(사용 6GB), 외부 IP 34.64.165.101(임시). 상태 RUNNING이다. 사용자가 요청할 때만 중지하고, 삭제는 사용자가 명시할 때만 한다.
   - 접속: 로컬 `gcloud`(계정 khs1903b@gmail.com, 기본 project 설정이 없는 `autonomous-agent-00001`이므로 항상 `--project playground-472408 --zone asia-northeast3-a`를 붙인다). `gcloud compute ssh na-eval ... --command '...'`, `gcloud compute scp`. zsh에서 플래그를 변수에 담으면 분리되지 않으니 직접 쓴다.
-  - VM에 있는 것: `~/venv`(Python 3.12.3, 분석기 requirements), `~/nowinandroid`, `~/vendure`(eval 고정 commit, depth 1), `~/r1.sh`·`~/r1d.sh`(base·cur 분석기 비교 스크립트), 이전 R1 산출물 `~/out`, `~/dout`, `~/dbase`, `~/dcur`(지워도 됨). 분석기는 `git archive`/tar로 올려 `.venv`를 `~/venv` symlink로 두고 실행했다.
+  - VM에 있는 것: `~/venv`(Python 3.12.3, 분석기 requirements), `~/nowinandroid`, `~/vendure`(eval 고정 commit, depth 1), `~/r1.sh`·`~/r1d.sh`(base·cur 분석기 비교 스크립트), 이전 R1 산출물 `~/out`, `~/dout`, `~/dbase`, `~/dcur`(지워도 됨), `~/pin`(분석기 `0224570` 사본), `~/bitwarden`(eval 고정 commit), `~/bw`(3차 실행 log·`prof.txt`; 지워도 됨), venv의 `py-spy`. 분석기는 `git archive`/tar로 올려 `.venv`를 `~/venv` symlink로 두고 실행했다.
   - VM에 없는 것: node, Java/JDK, Android SDK, uv, Claude Code(`claude`). eval run은 VM 안에서 `claude -p`를 실행하므로 **Claude Code 설치와 인증(API key 또는 로그인)은 사용자가 직접 해야 한다.** Android gate용 Linux JDK 21·Android SDK, Python용 uv, Node 22·bun도 새로 설치해야 한다.
   - 아래 Next Step의 경로·명령은 macOS 로컬 기준으로 쓰였다. VM으로 옮길 때 바꿔야 할 것:
     - `~/toy-projects/network-analysis-eval/` → VM 홈 아래 실험 루트(이 저장소 사본은 VM에 없음; 분석기 commit `0224570`을 tar로 올리거나 VM에서 clone).
@@ -55,8 +58,22 @@
   | typescript/nestjs | ghostfolio/ghostfolio | eaa4c3e6efc84298a20e5fdbe1116f67798b0d70 |
   | typescript/nestjs | vendurehq/vendure | 99bdc303cddcef64e52077b082ff5e6a562c95f2 |
   | kotlin/android | android/nowinandroid | 2982e63cb691ad49cd009aab43dc206fee6699c2 |
-  | kotlin/android | bitwarden/android | 6d08ab550eb69efda46b9cd4616a63aedf71ccb7 (분석기 실패 → 제외) |
+  | kotlin/android | tasks/tasks | 225e6c49d0eb16a1cc49f74a20f05c2136a14882 (bitwarden/android 대체; bitwarden은 backtick 이름 병목으로 분석기가 끝나지 않음) |
 
+- kotlin/android 대체 후보 측정(GCP `na-eval`, 분석기 `0224570`, 각 20분 제한, 2026-10-22 HEAD를 depth 1 clone; `~/cand`, `~/candout`). backtick = 고유 backtick 함수명 수.
+
+  | repo | .kt | backtick | 분석기 | RSS | 비고 |
+  |---|---|---|---|---|---|
+  | tasks/tasks | 1539 | 131 | 2:44 | 4.2GB | 선택. DI 바인딩 696, ViewModel 86, Room entity 20, migration 47. 일부 KMP(`kmp`, `composeApp`) |
+  | nextcloud/android | 1111 | 190 | 1:40 | 1.9GB | Java 258개 혼재 |
+  | google/iosched | 419 | 24 | 0:14 | 0.45GB | 2023 archived, nowinandroid와 규모 겹침 |
+  | mihonapp/mihon | 919 | 102 | 0:58 | 1.3GB | Room 0 |
+  | kiwix/kiwix-android | 693 | 1342 | 4:25 | 1.7GB | backtick 영향으로 느림 |
+  | home-assistant/android | 1276 | 2878 | 15분 넘게 미완료 후 사용자 지시로 중단 | — | bitwarden과 같은 병목 위치 |
+  | tuskyapp/Tusky | 417 | 83 | 0:12 실패 | — | `architecture node ids are invalid`(`bottlenecks/core.py:74`), 원인 미조사 |
+  | wikimedia/apps-android-wikipedia | 1092 | 98 | 2:46 실패 | — | 같은 에러 |
+
+  분석기를 돌리지 않고 수치만 센 후보: sdmaid-se(.kt 2347, backtick 5883), duckduckgo(6238, 4532), thunderbird(3480, 3329), pocket-casts(2386, 3439), element-x(4352, 4159), streetcomplete(1693, 1857)는 backtick이 많다. 나머지(kickstarter, Metrolist, KeePassDX, Droid-ify, Amaze, OuterTune, openfoodfacts, talk-android, tivi)는 규모가 작거나 Room/DI가 없거나 별 1k 미만이다.
 - 삭제 전 테스트 gate 기준선. 환경을 다시 만들 때의 기대값이다. 모두 사전 실패 0이었다.
 
   | repo | 환경 | 명령(clone 루트에서) | passed |
@@ -68,7 +85,7 @@
   | ghostfolio | 시스템 node, `npm` 설치 node_modules | `NX_DAEMON=false NX_NO_CLOUD=true CI=true npx dotenv-cli -e .env.example -- npx nx run-many --target=test --projects=api,common --parallel=1 --skip-nx-cache --outputStyle=stream` + `npx tsc --noEmit -p apps/api/tsconfig.app.json`, `npx tsc --noEmit -p apps/api/tsconfig.spec.json` | 710 |
   | vendure | Node 22.23.4 + bun 1.3.10 로컬 다운로드, `bun install`, `packages/common` 빌드(`lib/`) | `cd packages/core && npx vitest --config vitest.config.mts --run --typecheck --hookTimeout=60000` + `cd packages/core && npx tsc -p ./build/tsconfig.build.json --noEmit` | 1753 |
   | nowinandroid | Android Studio JBR(JDK 21), `local.properties`의 `sdk.dir` | `rm -rf */build/test-results */*/build/test-results && JAVA_HOME=".../jbr/Contents/Home" ./gradlew --no-build-cache testDemoDebugUnitTest :core:common:test :lint:test -Proborazzi.test.verify=false --continue` | 173 |
-  | bitwarden | 위와 같음, `:app`/`:authenticator` 제외(GitHub Packages 토큰 필요) | `./gradlew --no-build-cache --continue :core:testDebugUnitTest :network:testDebugUnitTest :cxf:testStandardDebugUnitTest :cxf:testFdroidDebugUnitTest :authenticatorbridge:testDebugUnitTest :testharness:testDebugUnitTest :data:testDebugUnitTest :ui:testDebugUnitTest` | 911 |
+  | tasks | 미확인(JDK·Android SDK 필요). upstream CI `check.yml`의 unit test 단계는 비밀값 없이 돈다(비밀값은 release·서명 단계뿐), `app/google-services.json`은 저장소에 있다 | 후보: `./gradlew --no-build-cache --continue app:testGoogleplayDebugUnitTest app:testGenericDebugUnitTest jvmTest kmp:testDebugUnitTest composeApp:desktopTest` (CI는 coverage report task로 실행) | 미측정 |
 
   주의점(삭제 전 확인):
   - CTFd는 바깥 `pytest.ini`를 집어오므로 `-c setup.cfg --rootdir=.`가 필수다.
@@ -113,10 +130,12 @@
 | `measure.py --skip-analyzer` | 기존 summary의 analyzer, agreement 소실 | verified: 기존 결과를 유지하도록 수정 완료 |
 | 실험 루트를 `~/toy-projects/network-analysis-eval/`로 `mv` | 사용자가 실행을 중단했다(이유는 말하지 않음). 앞서 파일럿 nx daemon(`eval/repos/ghostfolio`) `kill`은 auto mode classifier가 거부했다 | verified: 사용자 중단. 이후 `./eval`을 통째로 폐기했으므로 이동할 대상이 없다 |
 | 실험군 리포트를 key별·candidate별 JSONL로 분할해서 제공 | vendure `bottlenecks.json` 684MB(`candidates` 699MB), `json.load` RSS 5.07GB | verified: 리포트 직렬화 크기 문제. 분할하지 않고 경량화(`85aa37516a23897d`)를 먼저 하기로 사용자가 결정 |
+| bitwarden 분석기 3차(GCP `na-eval`, commit `0224570`, `py-spy record`) | 13분 실행 후 대체 저장소를 찾기로 해서 중단. 샘플 7897개 중 96.8%가 `_add_symbol_edges` → `NamePositions.candidate_names` fallback 루프(`language_analyzers/core/positions.py:40-41`) → `matches`. RSS 3분에 2.2GB | verified(병목 위치): `\w+`가 아닌 이름(Kotlin backtick 함수명)을 심볼마다 전부 검사한다. bitwarden 고유 backtick 함수명 8118개(nowinandroid 7개), .kt 2579개 17.3MB. hypothesis: 비용이 심볼 수 × backtick 이름 수로 커져 끝나지 않는다. 1차의 "메모리 압박" 가설은 주원인이 아닐 가능성이 크다 |
 
 ## Next Step
 
 0. (완료) 선행 작업 3개를 끝내고 분석기 commit `0224570`을 평가 대상으로 고정했다.
+0.5. (완료) bitwarden 대체로 `tasks/tasks`를 골랐다(State의 후보 측정 참고). 기준선은 Next Step 1에서 다른 저장소와 함께 만든다.
 1. 실험 루트를 GCP VM `na-eval`에 새로 만든다(State의 "실행 위치" 참고; 이 저장소 CLAUDE.md/AGENTS.md 오염 방지를 위해 분석기 사본과 분리). 먼저 사용자에게 VM의 Claude Code 설치·인증을 요청한다.
    - `envs`(저장소별 테스트 환경), `node`(dependency-cruiser 18.7.0, typescript 5.9.3), `.venv`(lizard, grimp), seed(node_modules, local.properties)를 다시 만든다.
    - 저장소별 gate를 2회 돌려 State의 기준선 표와 통과 수가 같은지 확인하고 `test-baseline.json`을 다시 쓴다.
@@ -134,7 +153,7 @@
    - hook이 `--setting-sources project`에서도 로드되는가(stream의 hook event).
    - 금지 경로 Read/`cat`, `git remote -v`, `curl https://github.com`, `points.json` 재작성이 막히는가.
    - gate가 통과하는가.
-5. 저장소 7개 × (실험 1 + 대조 1) = 14 run을 병렬로 띄우고 PID를 보고한다.
+5. 저장소 8개 × (실험 1 + 대조 1) = 16 run을 병렬로 띄우고 PID를 보고한다.
    - 끝나면 run별로 `verify.sh`(clone 경로 기반으로 수정 후)를 돌리고, stream-json 원본과 토큰을 `results/raw/<run>/`에 보관한다.
    - 실험군·대조군 비교표를 만든다: 판정, 예측 적중, 회귀, 토큰, 대조군 포인트 중 리포트 후보 파일의 비율.
 6. 결과를 사용자에게 보고하고 추가 run(3+3)과 opus 진행 여부를 결정받는다.
@@ -142,7 +161,8 @@
 ## Open Questions
 
 - 대조군의 독립 지표 도구(lizard, measure.py) 사용 허용 여부. 이번 설계의 기본값은 양 군 모두 불허이고, 지표 정의만 프롬프트로 준다.
-- bitwarden 분석기 규모 문제(경량화 후 재시도할지, 계속 제외할지).
+- Tusky·wikipedia에서 나온 `architecture node ids are invalid`(분석기 버그 추정)를 조사할지.
+- backtick 이름 fallback 병목을 분석기에서 고칠지(제품 작업, workflow-approach 대상). 방향: 파일별 `` `...` `` 구간을 한 번만 모아 그 안의 이름만 검사한다. 고치면 평가 고정 commit도 바뀐다.
 - 파일럿에서 관찰된 리포트 결함을 제품 작업으로 넘길지:
   - TS: 루트 `tsconfig.json`만 읽고 `tsconfig.base.json` path alias 미해석(`language_analyzers/typescript/analyzer.py:184`, ghostfolio import recall 0.224).
   - DECORATES edge가 정의 파일 → 사용 파일 방향이라 가짜 순환이 생김.
