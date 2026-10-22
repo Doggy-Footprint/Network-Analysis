@@ -94,7 +94,11 @@ def run_cli(tree, project, out_dir, *args):
     result = subprocess.run([sys.executable, '-m', 'code_analyzer', str(project), *args, '-o', str(out_dir / 'r.html'),
                              '--json'], cwd=str(tree), env=env, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr[-2000:]
-    return json.loads((out_dir / 'r.json').read_text(encoding='utf-8'))
+    text = (out_dir / 'r.json').read_text(encoding='utf-8')
+    if 'details_file' in json.loads(text):
+        from tests.report_size_support import legacy_architecture_text
+        text = legacy_architecture_text(text, (out_dir / 'r.details.json').read_text(encoding='utf-8'))
+    return json.loads(text)
 
 
 FRAMEWORK_DUMP = '''

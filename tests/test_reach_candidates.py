@@ -572,14 +572,22 @@ class Pipeline:
             target = self.directory / f'{granularity}-{seed}-{len(self.cache)}'
             target.mkdir()
             command = [sys.executable, '-c', MAIN, str(fixture_root(self.name).resolve()), *load_manifest()['commands'][self.name],
-                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json'), *extra]
+                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json'), '--json', *extra]
             done = subprocess.run(command, cwd=REPO, env=dict(os.environ, PYTHONHASHSEED=seed), capture_output=True, text=True)
             assert done.returncode == 0, done.stderr[-2000:]
             self.cache[key] = (target / 'b.json').read_bytes()
+            if granularity == 'file':
+                from tests.report_size_support import legacy_bottlenecks_text
+                self.cache[key, 'legacy'] = legacy_bottlenecks_text(target / 'b.json', target / 'report.json').encode('utf-8')
         return self.cache[key]
 
     def payload(self, granularity='file', **kwargs):
-        return json.loads(self.output(granularity, **kwargs))
+        """File mode: the report in the base-commit (bottlenecks.v8) layout, rebuilt from v9 + details."""
+        data = self.output(granularity, **kwargs)
+        if granularity != 'file':
+            return json.loads(data)
+        key = (granularity, kwargs.get('seed', '0'), tuple(kwargs.get('extra', ())), kwargs.get('tag'))
+        return json.loads(self.cache[key, 'legacy'])
 
 
 @pytest.fixture(scope='module', params=FIXTURES)
@@ -668,7 +676,7 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     pipe = Pipeline(expected['fixture'], tmp_path_factory.mktemp('delta'))
     first = pipe.directory / 'baseline.json'
     first.write_bytes(pipe.output('file'))
-    payload = json.loads(pipe.output('file', extra=['--baseline', str(first)], tag='delta'))
+    payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
     assert canonical_sha(payload['delta']) == expected['delta']
     stripped = without_reach(payload)
     assert sorted(k for k, v in stripped.items() if canonical_sha(v) != expected['sections'][k]) == []
@@ -791,7 +799,8 @@ def real_payload(tmp_path):
 
 
 def payload_with_sentinels(tmp_path):
-    payload = real_payload(tmp_path)
+    from tests.report_size_support import legacy_v8
+    payload = legacy_v8(real_payload(tmp_path))
     assert {c['kind'] for c in payload['candidates']} == set(NEW_KINDS)
     payload['candidates'] = [c for c in payload['candidates'] if c['kind'] not in NEW_KINDS]
     hub, iso = sentinel_candidates()

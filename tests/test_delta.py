@@ -705,7 +705,7 @@ def build_report(delta=None):
 def test_V10_F04_delta_key_is_absent_without_baseline_and_present_with_it():
     from bottlenecks import bottlenecks_to_json
     plain = json.loads(bottlenecks_to_json(build_report()))
-    assert 'delta' not in plain and plain['schema'] == 'bottlenecks.v8'
+    assert 'delta' not in plain and plain['schema'] == 'bottlenecks.v9'
     delta = delta_api().compute_delta(plain, plain)
     with_delta = json.loads(bottlenecks_to_json(build_report(delta)))
     assert with_delta['delta'] == wire(delta)
@@ -715,9 +715,11 @@ def test_V10_F04_delta_key_is_absent_without_baseline_and_present_with_it():
 def test_V10_F15_validator_accepts_delta_on_v8():
     from bottlenecks import bottlenecks_to_json
     from report.bottlenecks import render_report
-    plain = json.loads(bottlenecks_to_json(build_report()))
+    from tests.report_size_support import legacy_v8
+    current = json.loads(bottlenecks_to_json(build_report()))
+    plain = legacy_v8(current)
     with_delta = copy.deepcopy(plain)
-    with_delta['delta'] = wire(delta_api().compute_delta(plain, plain))
+    with_delta['delta'] = wire(delta_api().compute_delta(current, current))
     assert render_report(plain) and render_report(with_delta)
 
 
@@ -725,7 +727,8 @@ def test_V10_F15_delta_must_be_an_object_on_v8():
     from bottlenecks import bottlenecks_to_json
     from report.bottlenecks import render_report
     from report.shared.document import ReportInputError
-    broken = json.loads(bottlenecks_to_json(build_report()))
+    from tests.report_size_support import legacy_v8
+    broken = legacy_v8(json.loads(bottlenecks_to_json(build_report())))
     broken['delta'] = []
     with pytest.raises(ReportInputError):
         render_report(broken)

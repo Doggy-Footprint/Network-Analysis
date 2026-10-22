@@ -5,6 +5,7 @@ Command-line interface for the FastAPI Visualizer.
 import argparse
 import dataclasses
 import json
+import os
 import sys
 import time
 import webbrowser
@@ -26,6 +27,7 @@ from analysis.architecture_rules import load_architecture_rules
 from analysis.file_graph import to_file_architecture
 from analysis.candidate_projection import AMBIGUITY_POLICY
 from bottlenecks.core import _snapshot, _validate
+from bottlenecks.handout import render_handout
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
@@ -467,19 +469,36 @@ def main(
             print("[!] Warning: architecture rules differ from the baseline", file=sys.stderr)
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")
 
+    is_file = args.granularity == "file"
+    details_path = output_html_path.with_name(f"{output_html_path.stem}.details.json") if is_file and (args.json or args.bottlenecks) else None
+    architecture_dict = architecture_to_dict(arch) if args.json or (args.bottlenecks and is_file) else None
+    if details_path is not None:
+        _write_text(details_path, json.dumps(architecture_dict["details"], separators=(",", ":"), ensure_ascii=False, default=str), file_writer)
+        print(f"[✓] Exported architecture details: {details_path}")
+
+    def _relative(target: Path, base: Path) -> str:
+        return Path(os.path.relpath(target, base)).as_posix()
+
     if args.json:
         json_output_path = output_html_path.with_suffix(".json")
-        _write_text(
-            json_output_path,
-            json.dumps(architecture_to_dict(arch), indent=2, ensure_ascii=False, default=str),
-            file_writer,
-        )
+        exported = architecture_dict
+        if is_file:
+            exported = {key: value for key, value in architecture_dict.items() if key != "details"}
+            exported.update(schema_version="7", details_file=_relative(details_path, json_output_path.parent))
+        _write_text(json_output_path, json.dumps(exported, separators=(",", ":"), ensure_ascii=False, default=str), file_writer)
         print(f"[✓] Exported architecture JSON: {json_output_path}")
 
     if args.bottlenecks:
         bottleneck_path = Path(args.bottlenecks).resolve()
+        if is_file:
+            bottleneck_report = dataclasses.replace(bottleneck_report, details_file=_relative(details_path, bottleneck_path.parent))
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
+        if is_file:
+            name = bottleneck_path.name
+            handout_path = bottleneck_path.with_name((name[:-5] if name.endswith(".json") else name) + ".handout.md")
+            _write_text(handout_path, render_handout(json.loads(bottlenecks_to_json(bottleneck_report)), architecture_dict), file_writer)
+            print(f"[✓] Exported bottleneck handout: {handout_path}")
 
     stats = arch.stats
     print(f"\n📊 Summary Statistics:")

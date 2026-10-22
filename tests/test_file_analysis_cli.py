@@ -52,6 +52,11 @@ def run(monkeypatch,*args):
     return 0
 
 
+def details_of(output):
+    """F08: the details live in <HTML stem>.details.json (written when --json or --bottlenecks is given)."""
+    return json.loads(output.with_name(output.stem+'.details.json').read_text())
+
+
 def inline(path):
     found=re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>',path.read_text(),re.S)
     assert found
@@ -77,12 +82,14 @@ def test_V01_single_cli_order_one_final_metrics(monkeypatch,file_project,tmp_pat
     assert len(calls)==1
     assert observations[0][0]=='snapshot'
     data=inline(output)
-    assert data['architecture']['schema_version']=='6'
+    assert data['architecture']['schema_version']=='6' and 'details_file' not in data['architecture'] and 'details_file' not in data['bottlenecks']
     assert data['architecture']['granularity']=='file'
     assert all(n.startswith('file:') or n in {row['id'] for row in data['architecture']['nodes'] if row.get('span') is None} for n in calls[0])
-    assert data['architecture']==json.loads(output.with_suffix('.json').read_text())
-    assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
-    assert all('analysis' not in row.get('metadata',{}) for row in data['architecture']['details']['nodes'])
+    report=json.loads(output.with_suffix('.json').read_text())
+    assert report['schema_version']=='7' and 'details' not in report and 'details' not in data['architecture']
+    assert {k:v for k,v in data['architecture'].items() if k not in ('schema_version','details_file')}=={k:v for k,v in report.items() if k not in ('schema_version','details_file')}
+    assert {k:v for k,v in data['bottlenecks'].items() if k!='details_file'}=={k:v for k,v in json.loads((tmp_path/'b.json').read_text()).items() if k!='details_file'}
+    assert all('analysis' not in row.get('metadata',{}) for row in details_of(output)['nodes'])
 
 
 @pytest.mark.parametrize(('name','analyzer_path','builder_path'),[
@@ -132,8 +139,8 @@ def test_V01_exclusions_applied_before_details(monkeypatch,file_project,tmp_path
         language_calls.append(1); return original(self,*args,**kwargs)
     monkeypatch.setattr(cli.PythonGraphAnalyzer,'build',language)
     output=tmp_path/'excluded.html'
-    assert run(monkeypatch,file_project,'-f','fastapi',option,'-o',output)==0
-    details=inline(output)['architecture']['details']
+    assert run(monkeypatch,file_project,'-f','fastapi',option,'-o',output,'--json')==0
+    details=details_of(output)
     rows=details['nodes']
     ids={n['id'] for n in rows}
     if option=='--no-language-graph':
@@ -157,9 +164,9 @@ def test_V07_combinations_preserve_semantic_details(monkeypatch,file_project,tmp
     from scripts.benchmark_file_analysis import raw_relations
     output=tmp_path/'file.html'; symbol=tmp_path/'symbol.html'
     flags=COMBINATIONS[combination]
-    assert run(monkeypatch,file_project,*flags,'-o',output)==0
+    assert run(monkeypatch,file_project,*flags,'-o',output,'--json')==0
     assert run(monkeypatch,file_project,*flags,'--granularity','symbol','-o',symbol)==0
-    file_data=inline(output)['architecture']; symbol_data=inline(symbol)['architecture']
+    file_data={**inline(output)['architecture'],'details':details_of(output)}; symbol_data=inline(symbol)['architecture']
     assert raw_relations(file_data['details'])==raw_relations(symbol_data)
     relations={e['relation'] for e in file_data['details']['edges']}
     if combination in ('fastapi-ts','android-fastapi','fastapi-sqlalchemy-ts','nestjs-ts'):
@@ -225,10 +232,12 @@ def test_V08_schemas_and_json(monkeypatch,file_project,tmp_path,granularity):
     data=inline(path)
     if granularity=='file':
         assert calls==[1]
-    assert data['architecture']['schema_version']==('6' if granularity=='file' else '5')
-    assert data['bottlenecks']['schema']==('bottlenecks.v8' if granularity=='file' else 'bottlenecks.v6')
-    assert data['architecture']==json.loads(path.with_suffix('.json').read_text())
-    assert data['bottlenecks']==json.loads((tmp_path/'b.json').read_text())
+    report=json.loads(path.with_suffix('.json').read_text())
+    assert report['schema_version']==('7' if granularity=='file' else '5')
+    assert data['architecture']['schema_version']==('6' if granularity=='file' else '5') and 'details_file' not in data['architecture'] and 'details_file' not in data['bottlenecks']
+    assert data['bottlenecks']['schema']==('bottlenecks.v9' if granularity=='file' else 'bottlenecks.v6')
+    assert {k:v for k,v in data['architecture'].items() if k not in ('schema_version','details_file')}=={k:v for k,v in report.items() if k not in ('schema_version','details_file')}
+    assert {k:v for k,v in data['bottlenecks'].items() if k!='details_file'}=={k:v for k,v in json.loads((tmp_path/'b.json').read_text()).items() if k!='details_file'}
     if granularity=='symbol':
         assert 'details' not in data['architecture']
         return

@@ -190,10 +190,10 @@ def _strings(value: Any, path: str) -> None:
         _string(item, f"{path}[{index}]")
 
 
-def _evidence_rows(value: Any, path: str) -> None:
+def _evidence_rows(value: Any, path: str, compact: bool = False) -> None:
     for index, item in enumerate(_array(value, path)):
         item_path = f"{path}[{index}]"
-        if isinstance(item, str):
+        if isinstance(item, str) or (compact and (isinstance(item, list) or (isinstance(item, int) and not isinstance(item, bool)))):
             continue
         evidence = _object(item, item_path)
         if "path" in evidence:
@@ -225,16 +225,19 @@ def _validate(payload: Any) -> Mapping[str, Any]:
     fields = ("schema", "snapshot", "edge_weights", "versions", "coverage", "dependency_network", "candidates", "limitations")
     _required(root, "$", fields)
     schema = _string(root["schema"], "$.schema")
-    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v7", "bottlenecks.v8"):
-        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r}, 'bottlenecks.v7' or 'bottlenecks.v8'")
+    if schema not in (SUPPORTED_SCHEMA, "bottlenecks.v7", "bottlenecks.v8", "bottlenecks.v9"):
+        _error("$.schema", f"must equal {SUPPORTED_SCHEMA!r}, 'bottlenecks.v7', 'bottlenecks.v8' or 'bottlenecks.v9'")
     if schema != SUPPORTED_SCHEMA:
         _required(root, "$", ("granularity",))
         if _string(root["granularity"], "$.granularity") != "file":
             _error("$.granularity", "must equal 'file'")
         fields = (*fields, "granularity")
-    if schema == "bottlenecks.v8" and "delta" in root:
+    if schema in ("bottlenecks.v8", "bottlenecks.v9") and "delta" in root:
         _object(root["delta"], "$.delta")
         fields = (*fields, "delta")
+    if schema == "bottlenecks.v9" and "details_file" in root:
+        _string(root["details_file"], "$.details_file")
+        fields = (*fields, "details_file")
     if set(root) != set(fields):
         _error("$", "contains unknown fields")
     for field in ("snapshot", "edge_weights", "versions", "coverage", "dependency_network"):
@@ -275,7 +278,7 @@ def _validate(payload: Any) -> Mapping[str, Any]:
             _number(value, f"{path}.metrics.{key}")
         evidence = entry["evidence"]
         if isinstance(evidence, list):
-            _evidence_rows(evidence, f"{path}.evidence")
+            _evidence_rows(evidence, f"{path}.evidence", schema == "bottlenecks.v9")
         else:
             _evidence_rows([evidence], f"{path}.evidence")
     return root

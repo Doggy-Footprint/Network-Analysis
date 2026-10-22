@@ -15,16 +15,22 @@
 - sonnet-medium으로 **실험 1회 + 대조 1회**를 먼저 돌리고, 그 결과로 추가 run 여부와 opus 여부를 결정.
 - 리포트를 주는 run에는 리포트가 무엇인지 설명해 줄 것.
 - 샌드박스 실행 희망; hook은 샌드박스 보완용.
+- (이번 세션) "oss-report-refactoring-eval handoff에 따라 테스트를 진행하려는데, 다른 handoff 보다 먼저 해도 될까?" → "커밋하고 진행하자".
+- "분석기는 나중에 천천히 돌려도 되니까 서브 에이전트 병렬로 실행하자. 평가 대상에서 git remote 등으로 체크 못하게 해줘. 나한테 pid 알려줘"
+- 실험 루트 이동(`mv`)은 사용자가 실행 직전에 중단시켰다. 이후 run 폴더만 저장소 밖에 두는 방식으로 바꿨다.
+- "다른 handoff랑 그 무거운 것부터 어떻게 해결을 해야겠네.. -> 핸들오프 추가 / 핸드오프 정리해서 다른 핸드오프, 그리고 LLM 에게 제공할 보고서 경량화 과정을 거치게 하고 기존 데이터는 싹 폐기해 그냥." → 폐기 범위 질문에 "./eval 전부 폐기".
 
 ## State
 
-- 브랜치 `test/modal-sum-ranking`, HEAD `5cbfbc1` (E07 테스트 커밋, 미푸시). 분석기(평가 대상) 버전 = 이 HEAD.
-- 미커밋: `.gitignore`(`/eval/` 추가 — 처음엔 `eval/`이라 `scripts/eval/`까지 무시되던 것을 루트 고정으로 수정), `scripts/eval/` 전체(신규), `tests/*_evidence/performance.json` 2개(테스트 실행 부산물, 커밋 제외 대상).
-- 실험 루트는 아직 저장소 안 `./eval/`(gitignored). 이동 예정지 `~/toy-projects/network-analysis-eval/`.
-  - `eval/repos/<repo>`: 고정 commit의 depth-1 clone(파일럿 브랜치 `eval/p1..p3`이 남아 있음 — 새 실험은 새 clone 사용).
-  - `eval/envs/<repo>`: 저장소별 테스트 환경(venv, node, bun). `eval/.venv`: lizard, grimp. `eval/node`: dependency-cruiser 18.7.0, typescript 5.9.3.
-  - `eval/results/<repo>/test-baseline.json`: 테스트 gate 기준선(유효). `eval/results/<repo>/before/`: 분석기 리포트(`report.html`, `report.json`, `bottlenecks.json`)와 독립 지표(유효, 재활용 대상). 그 외 `eval/results/*`는 버린 파일럿(`DISCARDED-report-informed-pilot.txt`).
-- 대상 저장소와 고정 commit(별 1k+, 소스 150~3000 파일):
+- 브랜치 `test/modal-sum-ranking`, HEAD `5ddd426`(`scripts/eval/` 최초 커밋). 미커밋: `scripts/eval/repos.json`(`github`, `commit` 필드 추가), 신규 `scripts/eval/prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`, 이 문서, `agent-docs/handoff/index.md`, 신규 `85aa37516a23897d-report-size-for-llm.md`. `tests/*_evidence/performance.json` 2개는 테스트 부산물이라 커밋에서 뺀다.
+- **`./eval`은 사용자 지시로 전부 삭제했다.** 삭제한 것: clone, 테스트 환경(`envs`, `node`, `.venv`), 기준선(`test-baseline.json`), 분석기 리포트, 파일럿 결과, raw transcript. `~/toy-projects/network-analysis-eval/`은 만들지 않았다. 아무 run도 실행하지 않았다.
+- 선행 작업(이 실험보다 먼저 한다. Next Step 0):
+  - `85aa37516a23897d-report-size-for-llm.md`: LLM용 리포트 경량화. vendure `bottlenecks.json`이 684MB이고 `json.load`에 RSS 5GB가 필요하다. 병렬 run이 불가능한 크기다.
+    - 완료(spec `agent-docs/spec-logs/ee17484a52af182c-report-size-for-llm.md` v4, complete; handoff는 `stale/`). file granularity `bottlenecks.json`은 `bottlenecks.v9`(evidence_spread는 details edge index, 순환·unstable은 `file_ids` index 행), `report.json`은 schema "7" compact이고 details는 `<stem>.details.json`으로 분리, `--bottlenecks`이면 `<stem>.handout.md`가 생긴다. 실측: vendure bottlenecks 684→77MB, json.load RSS 3.8GB→0.68GB, handout 70KB; 나머지 6개 bottlenecks 1.2~14.2MB, handout 28~58KB. 실험군에는 handout을 1차 자료로 주고 `prepare_runs.py`의 `REPORT_FILES`에 details 파일과 handout을 추가해야 한다.
+  - `b6db876d7191e86d-gradle-module-package-scheme.md`: `package_metrics`가 바뀐다(nowinandroid 리포트와 실험군 설명에 영향).
+  - `fa00b92fe9819b57-agent-context-candidates.md`: 지표와 relation이 추가된다.
+  - 이 셋을 끝낸 분석기 commit을 평가 대상으로 고정하고 리포트를 새로 만든다.
+- 대상 저장소와 고정 commit(별 1k+, 소스 150~3000 파일). `scripts/eval/repos.json`에 `github`와 `commit`으로 기록했다.
 
   | cell | repo | commit |
   |---|---|---|
@@ -35,26 +41,49 @@
   | typescript/nestjs | ghostfolio/ghostfolio | eaa4c3e6efc84298a20e5fdbe1116f67798b0d70 |
   | typescript/nestjs | vendurehq/vendure | 99bdc303cddcef64e52077b082ff5e6a562c95f2 |
   | kotlin/android | android/nowinandroid | 2982e63cb691ad49cd009aab43dc206fee6699c2 |
-  | kotlin/android | bitwarden/android | 6d08ab550eb69efda46b9cd4616a63aedf71ccb7 (리포트 없음 → 이번 실험 제외) |
+  | kotlin/android | bitwarden/android | 6d08ab550eb69efda46b9cd4616a63aedf71ccb7 (분석기 실패 → 제외) |
 
-- 테스트 gate(8개 모두 실행 가능, 사전 실패 0): 정확한 명령은 각 `test-baseline.json`. 주의점:
-  - CTFd: 바깥 `pytest.ini`를 집어오므로 `-c setup.cfg --rootdir=.` 필수(실험 폴더를 저장소 밖으로 옮기는 이유 중 하나).
-  - lnbits: `rm -rf tests/data` 선행 필수, 단일 파일 실행 불가, `test_notification_for_internal_payment`는 네트워크 flaky. 인터넷 필요.
-  - mealie: warning을 error로 취급.
-  - flask-admin, lnbits venv는 원래 clone을 editable로 가리킴 → 새 clone에서는 `PYTHONPATH=<clone>` 필요(미검증).
-  - ghostfolio: nx 출력 줄에 `api: ` 접두사(gate.py에서 처리됨), api typecheck 2개 포함.
-  - vendure: Node 22.23.4(`eval/envs/vendure`), `--hookTimeout=60000`, packages/common 수정 시 재빌드, core typecheck 포함. 새 clone은 `node_modules`를 `cp -c`로 복제하거나 `bun install` 재실행 필요.
-  - nowinandroid, bitwarden: `local.properties`(untracked) 필요, `--no-build-cache` + test-results 삭제로 재실행 보장, 새 clone은 전체 재컴파일. bitwarden은 `:app`/`:authenticator` 제외(GitHub Packages 토큰 필요) — bitwarden 기준선 에이전트의 마지막 종료 알림은 사용자가 잔여 작업을 끈 것이며 기준선(911 passed)은 유효.
+- 삭제 전 테스트 gate 기준선. 환경을 다시 만들 때의 기대값이다. 모두 사전 실패 0이었다.
+
+  | repo | 환경 | 명령(clone 루트에서) | passed |
+  |---|---|---|---|
+  | mealie | Python 3.14(homebrew) venv, `uv export --frozen --group dev --no-emit-project` | `<venv>/bin/python -m pytest -n auto --dist loadfile -p no:cacheprovider` | 3583(skip 18) |
+  | lnbits | uv Python 3.12 venv(editable 설치였음) | `rm -rf tests/data && env -u LNBITS_DATABASE_URL LNBITS_DATA_FOLDER=./tests/data LNBITS_BACKEND_WALLET_CLASS=FakeWallet PYTHONUNBUFFERED=1 DEBUG=true <venv>/bin/python -m pytest tests/unit tests/api tests/wallets -q --no-cov` | 2423(skip 20) |
+  | CTFd | uv 관리 CPython 3.11.11, uv.lock 전체 그룹 | `env AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY TESTING_DATABASE_URL='sqlite://' <venv>/bin/python -m pytest -c setup.cfg --rootdir=. -p no:randomly -p no:sugar -p no:cacheprovider -q -rfE --ignore-glob='**/node_modules/' -W ignore::sqlalchemy.exc.SADeprecationWarning -W ignore::sqlalchemy.exc.SAWarning -n 8 tests` (AWS 값은 upstream CI의 더미) | 725 |
+  | flask-admin | uv Python 3.12.9 venv, uv.lock group `tests` + extra `all`(editable 설치였음) | `<venv>/bin/python -m pytest -p no:cacheprovider -q -rsx --ignore=flask_admin/tests/geoa --ignore=flask_admin/tests/mongoengine --ignore=flask_admin/tests/pymongo --ignore=flask_admin/tests/sqla/test_postgres.py --ignore=flask_admin/tests/fileadmin/test_fileadmin_azure.py` | 391(skip 83, xfail 13) |
+  | ghostfolio | 시스템 node, `npm` 설치 node_modules | `NX_DAEMON=false NX_NO_CLOUD=true CI=true npx dotenv-cli -e .env.example -- npx nx run-many --target=test --projects=api,common --parallel=1 --skip-nx-cache --outputStyle=stream` + `npx tsc --noEmit -p apps/api/tsconfig.app.json`, `npx tsc --noEmit -p apps/api/tsconfig.spec.json` | 710 |
+  | vendure | Node 22.23.4 + bun 1.3.10 로컬 다운로드, `bun install`, `packages/common` 빌드(`lib/`) | `cd packages/core && npx vitest --config vitest.config.mts --run --typecheck --hookTimeout=60000` + `cd packages/core && npx tsc -p ./build/tsconfig.build.json --noEmit` | 1753 |
+  | nowinandroid | Android Studio JBR(JDK 21), `local.properties`의 `sdk.dir` | `rm -rf */build/test-results */*/build/test-results && JAVA_HOME=".../jbr/Contents/Home" ./gradlew --no-build-cache testDemoDebugUnitTest :core:common:test :lint:test -Proborazzi.test.verify=false --continue` | 173 |
+  | bitwarden | 위와 같음, `:app`/`:authenticator` 제외(GitHub Packages 토큰 필요) | `./gradlew --no-build-cache --continue :core:testDebugUnitTest :network:testDebugUnitTest :cxf:testStandardDebugUnitTest :cxf:testFdroidDebugUnitTest :authenticatorbridge:testDebugUnitTest :testharness:testDebugUnitTest :data:testDebugUnitTest :ui:testDebugUnitTest` | 911 |
+
+  주의점(삭제 전 확인):
+  - CTFd는 바깥 `pytest.ini`를 집어오므로 `-c setup.cfg --rootdir=.`가 필수다.
+  - lnbits는 `test_notification_for_internal_payment`가 네트워크 의존 flaky이고 인터넷이 필요하며, 단일 파일 실행이 안 된다.
+  - mealie는 warning을 error로 취급한다.
+  - ghostfolio는 nx 출력 줄에 `api: ` 접두사가 붙는다(`gate.py`에서 처리).
+  - Gradle은 `--no-build-cache`와 test-results 삭제가 있어야 재실행이 보장된다.
+  - CTFd venv는 interpreter가 환경 폴더 안에 있었다. 환경 폴더를 옮기면 `pyvenv.cfg`와 `bin/python` 링크가 깨진다.
 - `scripts/eval/`:
-  - `repos.json`: 저장소와 분석기 플래그.
-  - `measure.py <repo> <label> --rev`: git archive 스냅샷, 분석기, lizard, 독립 import 그래프(Python grimp / TS dependency-cruiser / Kotlin 자체 regex 해석기), 분석기-독립그래프 agreement.
-  - `compare.py`: 전후 비교(touched files 기준 + 전역).
-  - `gate.py <repo> --cwd`: 테스트 gate와 통과 수 비교.
-  - `judge.py`: 사전 예측 지표 대비 판정. 방향성 예측 적중 + 전역 가드 무악화일 때만 improved.
-  - `verify.sh`: gate, measure, compare, judge 일괄.
-  - `collect_agents.py`: transcript 보관과 토큰 집계.
-  - `FINDER_PROMPT.md`, `REFACTOR_PROMPT.md`: 파일럿용(분리 구조), 새 설계에 맞게 교체 필요.
-  - 경로가 `ROOT/eval`로 하드코딩됨 → `EVAL_ROOT` 환경변수와 clone 경로 인자로 바꿔야 함.
+  - 측정·판정(파일럿용, 경로가 `ROOT/eval`과 `eval/repos/<repo>` 단일 clone으로 하드코딩됨. run별 clone 경로 인자로 바꿔야 함):
+    - `measure.py <repo> <label> --rev`: git archive 스냅샷, 분석기, lizard, 독립 import 그래프(Python grimp / TS dependency-cruiser 18.7.0 / Kotlin 자체 regex 해석기), 분석기-독립그래프 agreement.
+    - `compare.py`: 전후 비교(touched files 기준 + 전역).
+    - `gate.py`: 테스트 gate와 통과 수 비교.
+    - `judge.py`: 사전 예측 지표 대비 판정. 방향성 예측 적중 + 전역 가드 무악화일 때만 improved.
+    - `verify.sh`, `collect_agents.py`.
+    - `FINDER_PROMPT.md`, `REFACTOR_PROMPT.md`: 파일럿용(분리 구조). `TASK_PROMPT.md`로 대체 예정이라 지워도 된다.
+  - run 격리(이번 세션, 미커밋, 미실행):
+    - `prepare_runs.py`: `~/toy-projects/network-analysis-eval/runs/<arm>-<n>/<repo>/`에 run을 만든다.
+      - clone: remote 없이 URL로 고정 sha를 `fetch --depth 1`해서 `base` 브랜치를 만들고, `FETCH_HEAD`와 reflog를 지운다.
+      - seed 복사: ghostfolio `node_modules`, vendure `node_modules`·`packages/*/node_modules`·`packages/common/lib`, nowinandroid `local.properties`를 `cp -c`로 넣는다. seed 원본이던 `eval/repos`가 삭제됐으므로 seed 원천을 새로 정해야 한다.
+      - gate wrapper `<run>/gate`: 공유 slot 2개, Gradle slot 1개(mkdir lock), RAM free+inactive ≥ 2GB 대기, Python은 `PYTHONPATH=<clone>`, Gradle은 끝나고 `--stop`.
+      - 실험군에는 리포트 3개를 `report/`로 복사한다. 경량화 후 형식에 맞게 고쳐야 한다.
+      - `run.json`에 arm, base, 분석기 commit을 기록한다.
+    - `run_hook.py <run_dir>`: PreToolUse에서 다음을 deny한다.
+      - git 원격 조회(`remote`, `fetch`, `pull`, `push`, `ls-remote`, `clone`, `submodule`), `gh`, `github.com` 등.
+      - `../..`와 `.claude`가 들어간 명령.
+      - 이 저장소(`eval/envs`, `eval/node`, `eval/.venv` 제외), 다른 run, `~/.claude`, `/private/tmp/claude-501` 경로.
+      - `points.json` 재작성과 Edit.
+    - `TASK_PROMPT.md`: 단일 에이전트 공통 프롬프트(gate on base → `points.json` 1회 선언 → 포인트별 `eval/pN` 구현·gate·커밋 → `result.json`). `{report_section}`(실험군 리포트 설명)은 아직 작성 전이다. `prepare_runs.py`에 settings 생성, 프롬프트 렌더, launcher도 아직 없다.
 
 ## Failed Attempts
 
@@ -68,34 +97,48 @@
 | judge 판정 | "unchanged" 예측 적중만으로 improved 가능 | verified: 방향성 예측만 인정하도록 수정 완료 |
 | finder 예측 지표 지정 | lnbits p3: `max_file_fan_out`이 touched 전체 최대(app.py 31)라 logger.py 3→2 미반영. 존재하지 않는 지표명은 None | verified: 프롬프트에 compare 키와 `(file)` 단일 파일 표기를 정확히 제시해야 함. 크기는 판정에 반영되지 않음(방향만) |
 | `measure.py --skip-analyzer` | 기존 summary의 analyzer, agreement 소실 | verified: 기존 결과를 유지하도록 수정 완료 |
+| 실험 루트를 `~/toy-projects/network-analysis-eval/`로 `mv` | 사용자가 실행을 중단했다(이유는 말하지 않음). 앞서 파일럿 nx daemon(`eval/repos/ghostfolio`) `kill`은 auto mode classifier가 거부했다 | verified: 사용자 중단. 이후 `./eval`을 통째로 폐기했으므로 이동할 대상이 없다 |
+| 실험군 리포트를 key별·candidate별 JSONL로 분할해서 제공 | vendure `bottlenecks.json` 684MB(`candidates` 699MB), `json.load` RSS 5.07GB | verified: 리포트 직렬화 크기 문제. 분할하지 않고 경량화(`85aa37516a23897d`)를 먼저 하기로 사용자가 결정 |
 
 ## Next Step
 
-1. 실험 루트를 `~/toy-projects/network-analysis-eval/`로 이동한다(`envs`, `node`, `.venv`, `results/<repo>/{test-baseline.json,before/}`). `scripts/eval/*`를 `EVAL_ROOT`와 clone 경로 인자 기반으로 수정한다. 이동 후 Python venv(`python -m` 호출), vendure node 경로, `PYTHONPATH` 덮어쓰기를 저장소별 gate 1회로 검증한다.
-2. run 단위 격리: run마다 `runs/<treatment|control>-<n>/<repo>/clone`(고정 commit에 새 `git clone --depth 1` + `fetch --depth 1 origin <sha>`)에서 headless `claude -p --model sonnet --effort medium --settings <run별 settings.json> --output-format stream-json`을 실행한다. cwd는 run 폴더로 둔다(이 저장소 CLAUDE.md 오염 방지).
-   - settings에 넣을 것: Read/Grep/Glob/Edit/Write deny(실험 결과 루트, 이 저장소, 다른 run, 대조군이면 리포트 경로), Bash 샌드박스 파일 제한(필드명은 문서로 확인), 네트워크는 허용(테스트에 필요).
-   - PreToolUse hook: `points.json`은 최초 1회만 Write 허용하고 이후 Write/Edit deny, Bash 명령에 금지 경로 문자열이 있으면 deny.
-   - 본 실험 전에 금지 경로 접근이 실제로 막히는지 시험 run 1개로 확인한다.
-3. 단일 에이전트 프롬프트(두 군 공통, 리포트 유무만 다름): 병목 확인 → 포인트 3개를 `points.json`에 선언(근거·계획·예측 지표, 예측 지표는 compare 키 목록에서 정확히 선택) → 포인트마다 base에서 `eval/pN` 브랜치 → 구현 → gate → 커밋. 실험군에는 리포트 설명을 포함한다.
-   - 설명 대상: `bottlenecks.json`의 candidates kind, `rankings_by_category.production`, `package_metrics`, `candidate_groups`, `report.json` file graph의 relation, confidence, resolution, 크기 경고(JSON 수십 MB, jq/python 질의).
-   - 리포트는 `results/<repo>/before/`를 run 폴더 `report/`로 복사하고, 분석기 commit을 함께 기록한다.
-4. 저장소 7개 × (실험 1 + 대조 1) = 14 run을 실행한다. 동시 실행 전에 메모리 대기(RAM free+inactive ≥ 2GB, swap free ≥ 1GB), Gradle 동시 1개 + 종료 후 `--stop`. 끝나면 run마다 `verify.sh`, stream-json 원본, 토큰을 `results/raw/<run>/`에 보관하고 실험군·대조군 비교표를 만든다(판정, 예측 적중, 회귀, 토큰, 대조군 포인트의 리포트 후보 파일 비율).
-5. 결과를 사용자에게 보고하고 추가 run(3+3)과 opus 진행 여부를 결정받는다.
+0. 선행 작업을 끝낸다: `85aa37516a23897d-report-size-for-llm.md`(리포트 경량화), `b6db876d7191e86d-gradle-module-package-scheme.md`, `fa00b92fe9819b57-agent-context-candidates.md`. 끝난 분석기 commit을 평가 대상으로 고정한다.
+1. 실험 루트를 저장소 밖 `~/toy-projects/network-analysis-eval/`에 새로 만든다(이 저장소 CLAUDE.md/AGENTS.md 오염 방지).
+   - `envs`(저장소별 테스트 환경), `node`(dependency-cruiser 18.7.0, typescript 5.9.3), `.venv`(lizard, grimp), seed(node_modules, local.properties)를 다시 만든다.
+   - 저장소별 gate를 2회 돌려 State의 기준선 표와 통과 수가 같은지 확인하고 `test-baseline.json`을 다시 쓴다.
+   - `scripts/eval/*`의 `ROOT/eval` 하드코딩을 `EVAL_ROOT`와 run별 clone 경로 인자로 바꾼다. `run_hook.py`의 `ROOT_ALLOWED`와 `prepare_runs.py`의 경로도 함께 바꾼다.
+2. 고정 분석기로 저장소별 before 리포트를 만든다(`measure.py`). 분석기는 병렬 run과 겹치지 않게 따로 천천히 돌려도 된다(사용자 지시).
+3. `prepare_runs.py`를 마저 작성한다.
+   - 실험군 `{report_section}`: 경량화된 출력의 candidate kind, rankings, `package_metrics`, `candidate_groups`, edge의 relation·confidence·resolution·weight를 저장소별 실제 값으로 설명한다.
+   - run별 settings: `sandbox.enabled`, `failIfUnavailable: true`, `allowUnsandboxedCommands: false`, `network.allowedDomains` 비움(원격 조회를 OS 수준에서 차단), `filesystem.denyRead`(이 저장소의 환경 폴더 외, 다른 run, `~/.claude`, `/private/tmp/claude-501`), `denyWrite`(`gate`, `report/`, `run.json`, `gates/`).
+   - gate만 `excludedCommands`와 `Bash(<run>/gate)` allow로 샌드박스 밖에서 실행한다(테스트가 네트워크와 `~/.gradle` 쓰기를 쓴다). 남는 구멍: gate가 실행하는 테스트 코드는 에이전트가 고칠 수 있다.
+   - Read/Edit permission은 `//abs/**` 형식으로 쓴다. Edit/Write allow는 `<run>/clone/**`와 `<run>/points.json`, `<run>/result.json`만 둔다.
+   - `env`: `BASH_DEFAULT_TIMEOUT_MS=600000`, `BASH_MAX_TIMEOUT_MS=5400000`.
+   - hook: `python3 <repo>/scripts/eval/run_hook.py <run>`.
+   - launcher(병렬, 사용자 지시): run 폴더를 cwd로 둔다. `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1 CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 nohup claude -p "<TASK>" --model sonnet --effort medium --permission-mode dontAsk --setting-sources project --strict-mcp-config --settings <run>/settings.json --disallowedTools WebFetch WebSearch Agent --output-format stream-json --verbose --include-hook-events > stream.jsonl`. PID를 `pid` 파일과 사용자 보고에 남긴다(사용자 지시).
+4. 시험 run 1개(flask-admin, gate 약 20초)로 확인할 것:
+   - hook이 `--setting-sources project`에서도 로드되는가(stream의 hook event).
+   - 금지 경로 Read/`cat`, `git remote -v`, `curl https://github.com`, `points.json` 재작성이 막히는가.
+   - gate가 통과하는가.
+5. 저장소 7개 × (실험 1 + 대조 1) = 14 run을 병렬로 띄우고 PID를 보고한다.
+   - 끝나면 run별로 `verify.sh`(clone 경로 기반으로 수정 후)를 돌리고, stream-json 원본과 토큰을 `results/raw/<run>/`에 보관한다.
+   - 실험군·대조군 비교표를 만든다: 판정, 예측 적중, 회귀, 토큰, 대조군 포인트 중 리포트 후보 파일의 비율.
+6. 결과를 사용자에게 보고하고 추가 run(3+3)과 opus 진행 여부를 결정받는다.
 
 ## Open Questions
 
-- Bash 샌드박스 settings 필드명과, deny 규칙이 headless `-p` run의 Read/Grep에 그대로 적용되는지(문서와 시험 run으로 확인).
-- bitwarden 분석기 규모 문제(별도 제품 이슈로 다룰지, 단독 재실행으로 원인 확정할지).
+- 대조군의 독립 지표 도구(lizard, measure.py) 사용 허용 여부. 이번 설계의 기본값은 양 군 모두 불허이고, 지표 정의만 프롬프트로 준다.
+- bitwarden 분석기 규모 문제(경량화 후 재시도할지, 계속 제외할지).
 - 파일럿에서 관찰된 리포트 결함을 제품 작업으로 넘길지:
   - TS: 루트 `tsconfig.json`만 읽고 `tsconfig.base.json` path alias 미해석(`language_analyzers/typescript/analyzer.py:184`, ghostfolio import recall 0.224).
   - DECORATES edge가 정의 파일 → 사용 파일 방향이라 가짜 순환이 생김.
   - ambiguous CALLS로 fan-in이 40~120배 부풀려짐.
   - `hop_2_token_cost` 포화.
   - JSON, 설정, 테스트 파일이 production 순위와 large_node에 섞임.
-  - 같은 순환이 tier별로 중복 보고됨.
+  - 같은 순환이 tier별로 중복 보고됨(경량화 handoff에서 일부 다룸).
   - `unresolved_count` 0인 unresolved_boundary.
   - 함수 복잡도 신호 없음.
-- 대조군의 독립 지표 도구(lizard, measure.py) 사용 허용 여부. 파일럿에서는 실험군 찾기 에이전트에게도 지표 목록을 줬음.
+- 파일럿 독립 지표 baseline(Execution Ledger)은 원본 데이터가 삭제됐다. 새 분석기로 다시 잰다.
 
 ## Spec
 
@@ -116,8 +159,7 @@
   | nowinandroid | 6s | 0.759 | 0.716(Kotlin 독립 해석기 자체 한계 포함) |
   | bitwarden | 실패 | — | — |
 
-- 파일럿 토큰(폐기 데이터, 참고용):
+- 파일럿 토큰(폐기 데이터, 참고용; 원본 파일은 `./eval`과 함께 삭제됨):
   - 찾기 에이전트, 저장소당: output 1.7만~3.5만, 캐시 포함 210만~450만.
   - 리팩토링 21개 합: output 13.7만, 캐시 포함 1401만.
-  - 원본: `eval/results/raw/report-informed/agents/`, `eval/results/agents-report-informed.json`.
 - fuzz, mutation: 해당 없음. correction 및 verifier 카운터: 해당 없음(workflow-approach 미사용).

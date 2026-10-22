@@ -12,6 +12,7 @@ import pytest
 
 from analysis.structure import analyze_structure, package_assignments
 from fixtures.registry import fixture_root
+from tests.report_size_support import legacy_bottlenecks_text
 from tests.structure_support import (BASE_KINDS, FIXTURES, NEW_KINDS, REPO, TIERS, canonical_sha, cycle_id, cycle_target, default_weights,
                                      fedge, load_manifest, of_kind, ref_framework, ref_language, ref_pairs, ref_structure, architecture,
                                      unstable_id)
@@ -35,13 +36,20 @@ class Run:
             target = self.directory / f'{granularity}-{seed}'
             target.mkdir()
             command = [sys.executable, '-c', MAIN, str(fixture_root(self.name).resolve()), *command_args(self.name),
-                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json')]
+                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json'), '--json']
             done = subprocess.run(command, cwd=REPO, env=dict(os.environ, PYTHONHASHSEED=seed), capture_output=True, text=True)
             assert done.returncode == 0, done.stderr[-2000:]
             self.cache[key] = (target / 'b.json').read_bytes()
+            if granularity == 'file':
+                self.cache[key, 'legacy'] = legacy_bottlenecks_text(target / 'b.json', target / 'report.json').encode('utf-8')
         return self.cache[key]
 
     def payload(self, granularity='file'):
+        """File mode: the report in the base-commit (bottlenecks.v8) layout, rebuilt from v9 + details (see raw_payload for v9)."""
+        self.output(granularity)
+        return json.loads(self.cache[(granularity, '0'), 'legacy'] if granularity == 'file' else self.output(granularity))
+
+    def raw_payload(self, granularity='file'):
         return json.loads(self.output(granularity))
 
     @property
@@ -82,7 +90,7 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     payload = run.payload('file')
     manifest = run.manifest['file']
     network = payload['dependency_network']
-    assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
+    assert run.raw_payload('file')['schema'] == 'bottlenecks.v9' and payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
     assert payload['versions']['analysis'] == '6'
     assert canonical_sha(network['rankings']) == manifest['rankings']
     assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']

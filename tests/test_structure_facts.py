@@ -370,7 +370,7 @@ def test_V03_F17_repeat_and_input_order_independence():
     assert first == analyze_structure(architecture(paths, edges), default_weights())
 
 
-def v8_payload(tmp_path):
+def v8_payload(tmp_path, with_arch=False):
     """A bottlenecks.v8 payload with all three new kinds, produced by the product pipeline on a hand-made graph."""
     from bottlenecks import analyze_bottlenecks, bottlenecks_to_json
     from tests.edge_weights_support import edge, load_weights, weights_data
@@ -379,12 +379,13 @@ def v8_payload(tmp_path):
     nodes = [node('a', 'p/a.py'), node('b', 'q/b.py'), node('c', 'r/c.py')]
     edges = [edge('a', 'b'), edge('b', 'a'), edge('c', 'a')]
     snap, arch = converted(files, nodes, edges)
-    return json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
+    payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
+    return (payload, arch) if with_arch else payload
 
 
 def test_V09_pipeline_payload_is_v8_with_all_new_kinds(tmp_path):
     payload = v8_payload(tmp_path)
-    assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
+    assert payload['schema'] == 'bottlenecks.v9' and payload['granularity'] == 'file'
     assert {c['kind'] for c in payload['candidates']} >= {'dependency_cycle', 'package_cycle', 'unstable_dependency'}
     assert payload['dependency_network']['structure_policy'] == 'structure.v1'
     assert set(payload['dependency_network']['package_metrics']) == {'language'}
@@ -408,7 +409,9 @@ def test_V09_bottleneck_json_coverage_structure_is_the_f13_object(tmp_path):
 def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):
     from report.bottlenecks import render_report
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
-    payload = v8_payload(tmp_path)
+    from tests.report_size_support import legacy_v8
+    payload, arch = v8_payload(tmp_path, with_arch=True)
+    payload = legacy_v8(payload, arch)
     for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency', 'untested_hub', 'isolated_node'):
         assert isinstance(KIND_LABELS[kind], str) and KIND_LABELS[kind].strip()
         assert isinstance(KIND_DESCRIPTIONS[kind], str) and KIND_DESCRIPTIONS[kind].strip()
@@ -452,7 +455,7 @@ def test_V09_unknown_kind_is_rejected(tmp_path):
 def test_V09_unknown_schema_version_is_rejected(tmp_path):
     from tests.test_search_mimicry_schema_and_structure import rejected_by_render
     payload = v8_payload(tmp_path)
-    payload['schema'] = 'bottlenecks.v9'
+    payload['schema'] = 'bottlenecks.v10'
     assert '$.schema' in rejected_by_render(payload)
 
 

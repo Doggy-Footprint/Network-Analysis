@@ -528,11 +528,11 @@ def test_V7_member_resolution_without_import_is_unchanged_characterization(tmp_p
 # Recorded from the base commit b590d54 analysis of typescript-nestjs-realworld (spec: field names and types unchanged).
 EXPECTED_SHAPE = {
     'file': {
-        'schema': 'bottlenecks.v8',
-        'top': ['candidates', 'coverage', 'dependency_network', 'edge_weights', 'granularity', 'limitations', 'schema',
-                'snapshot', 'versions'],
-        'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy', 'candidate_groups',
-                               'edge_count', 'node_count', 'node_metrics', 'package_dependencies', 'package_metrics',
+        'schema': 'bottlenecks.v9',
+        'top': ['candidates', 'coverage', 'dependency_network', 'details_file', 'edge_weights', 'granularity', 'limitations',
+                'schema', 'snapshot', 'versions'],
+        'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy',
+                               'edge_count', 'evidence_columns', 'file_ids', 'node_count', 'node_metrics', 'package_dependencies', 'package_metrics',
                                'rankings', 'rankings_by_category', 'structure_policy'],
         'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution',
                          'untested_hub_top_n'],

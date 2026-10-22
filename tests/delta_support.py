@@ -88,14 +88,24 @@ def payload(candidates=(), package_dependencies=None, package_metrics=None, rule
     return result
 
 
+def _pair(item, evidence, file_ids):
+    """(from, to) of one cycle evidence entry: a v8 record, or a bottlenecks.v9 row (file indexes for file pairs)."""
+    if isinstance(evidence, dict):
+        return [evidence['from_id'], evidence['to_id']]
+    if item['kind'] == 'dependency_cycle':
+        return [file_ids[evidence[0]], file_ids[evidence[1]]]
+    return [evidence[0], evidence[1]]
+
+
 def _cycles(data):
     found = []
+    file_ids = data['dependency_network'].get('file_ids')
     for item in data['candidates']:
         if item['kind'] in CYCLE_KINDS:
             structure = item['structure']
             found.append({'id': item['id'], 'kind': item['kind'], 'scheme': structure['scheme'], 'tier': structure['tier'],
                           'members': list(structure['members']),
-                          'pairs': [[e['from_id'], e['to_id']] for e in item['evidence']]})
+                          'pairs': [_pair(item, e, file_ids) for e in item['evidence']]})
     return found
 
 

@@ -39,7 +39,12 @@ def run_cli(name, directory, granularity='file', rules=None, seed='0', root=None
         args += ['--architecture-rules', rules]
     done = cli(args, seed=seed)
     assert done.returncode == 0, done.stderr[-2000:]
-    return {'arch': (directory / 'r.json').read_bytes(), 'bn': (directory / 'b.json').read_bytes() if granularity == 'file' else None}
+    from tests.report_size_support import legacy_architecture_text, legacy_bottlenecks_text
+    if granularity == 'symbol':
+        return {'arch': (directory / 'r.json').read_bytes(), 'bn': None}
+    arch = legacy_architecture_text((directory / 'r.json').read_text(encoding='utf-8'), (directory / 'r.details.json').read_text(encoding='utf-8'))
+    return {'arch': arch.encode('utf-8'), 'bn': (directory / 'b.json').read_bytes(),
+            'bn_v8': legacy_bottlenecks_text(directory / 'b.json', directory / 'r.json').encode('utf-8')}
 
 
 @pytest.fixture(scope='module', params=SYMBOL_FIXTURES)
@@ -108,10 +113,10 @@ def realworld_arch(tmp_path_factory):
 def test_V11_bottleneck_json_byte_equal_to_base(plain):
     name, run, _ = plain
     expected = MANIFEST['fixtures'][name]['file']
-    base_form = base_form_bytes(run['bn'])
+    base_form = base_form_bytes(run['bn_v8'])
     assert len(base_form) == expected['bottleneck_bytes']
     assert hashlib.sha256(base_form).hexdigest() == expected['bottleneck_sha256']
-    assert json.loads(run['bn'])['schema'] == 'bottlenecks.v8'
+    assert json.loads(run['bn'])['schema'] == 'bottlenecks.v9'
 
 
 def test_V11_architecture_file_canonical_equal_to_base(plain):
@@ -221,7 +226,7 @@ def test_V12_C22_independent_ast_reading_of_the_fixture_sources(realworld_rules)
 def test_V12_C22_example_profile_loaded_through_cli_has_the_f15_coverage(realworld_rules):
     coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
     assert set(coverage) == INTERNAL_COVERAGE_KEYS | EXTERNAL_COVERAGE_KEYS
-    assert realworld_rules['schema'] == 'bottlenecks.v8'
+    assert realworld_rules['schema'] == 'bottlenecks.v9'
 
 
 def test_V12_C23_official_template_backend_root(by_name):
@@ -281,7 +286,7 @@ def test_V14_bottleneck_size_ratio_realworld(realworld_rules_run, by_name):
     plain_bytes = by_name('fastapi-realworld')[0]['bn']
     ratio = len(realworld_rules_run['bn']) / len(plain_bytes)
     assert 1.0 <= ratio <= 1.25, ratio
-    assert len(base_form_bytes(plain_bytes)) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
+    assert len(base_form_bytes(by_name('fastapi-realworld')[0]['bn_v8'])) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
 
 
 MINI_PY = {'app/__init__.py': '', 'app/x.py': 'import os\nfrom app import y\n', 'app/y.py': 'Y = 1\n'}
@@ -303,7 +308,8 @@ def test_V07_cli_file_mode_projects_to_file_nodes_and_details_keep_key(tmp_path)
     assert done.returncode == 0, done.stderr
     payload = json.loads((out / 'report.json').read_text(encoding='utf-8'))
     assert records_by_file(payload) == {'app/x.py': [rec('os', 1)]}
-    held = {d['id']: d['metadata']['external_imports'] for d in payload['details']['nodes'] if 'external_imports' in d['metadata']}
+    details = json.loads((out / 'report.details.json').read_text(encoding='utf-8'))
+    held = {d['id']: d['metadata']['external_imports'] for d in details['nodes'] if 'external_imports' in d['metadata']}
     assert held == {'py:app.x': [rec('os', 1)]}
 
 

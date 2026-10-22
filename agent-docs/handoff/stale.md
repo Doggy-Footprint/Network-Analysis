@@ -120,3 +120,8 @@ File: 0c3bcfad9643613b-report-graph-modal-redesign.md
 Summary: 보고서 그래프·modal·용어 tooltip 개편, verifier 한도 도달(E07 미해결)
 Related Files: report/unified.py, renderers/html/static/app.js, renderers/html/templates/dashboard.html, tests/test_report_modal.py
 Related Symbols: file_layers, openModal, contribution
+---
+File: 85aa37516a23897d-report-size-for-llm.md
+Summary: LLM에 제공할 리포트 경량화 — candidate evidence의 edge 전체 복사·순환 내부 pair 전체 나열·symbol details·indent로 vendure bottlenecks.json 684MB(json.load 5GB), 평가 실험의 선행 작업
+Related Files: bottlenecks/core.py, analysis/structure.py, bottlenecks/reach.py, language_analyzers/core/serialization.py, code_analyzer/cli.py, bottlenecks/delta.py
+Related Symbols: evidence_record, _cycle_candidates, edge_to_dict, architecture_to_dict
