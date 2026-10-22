@@ -16,8 +16,6 @@ from language_analyzers.core.graph_models import (
 from language_analyzers.typescript.http_calls import HttpCallSite
 from tests.edge_weights_support import edge, load_weights, symbol_nodes, weights_data
 
-# ---------------------------------------------------------------- VO3
-
 NORMALIZE_CASES = [
     # id, input, expected
     ("scheme_host", "https://example.com/api/users", "/api/users"),
@@ -57,9 +55,6 @@ def test_VO3_normalize_route_path(raw, expected):
 @pytest.mark.parametrize("raw", ["", None, 5], ids=["empty", "none", "non_str"])
 def test_VO3_empty_or_non_string_input_is_none(raw):
     assert normalize_route_path(raw) is None
-
-
-# ---------------------------------------------------------------- VO4
 
 SPAN = SourceSpan("client.ts", 3, 3, 2, 30)
 RETROFIT_SPAN = SourceSpan("Api.kt", 7, 8, 0, 1)
@@ -266,9 +261,6 @@ def test_VO4_mixed_outcomes_are_counted_per_class():
     assert pairs(edges) == [("s1", "a:one"), ("s2", "a:dup")]
     assert stats["unmatched"] == 1 and stats["unresolvable"] == 1 and stats["ambiguous"] == 1
 
-
-# ---------------------------------------------------------------- VO8
-
 def route_edge(source, target, resolution):
     return edge(
         source, target, Confidence.FRAMEWORK_INFERRED, resolution, relation=RelationKind.CALLS_ROUTE,
@@ -314,9 +306,6 @@ def test_VO8_weight_is_min_of_confidence_and_resolution_of_the_loaded_profile(
     metrics = fan_in_metrics(profile)
     assert metrics["server_u"]["weighted_fan_in"] == pytest.approx(expected_unique, abs=1e-12)
     assert metrics["server_a"]["weighted_fan_in"] == pytest.approx(expected_ambiguous, abs=1e-12)
-
-
-# ---------------------------------------------------------------- VO4 stats (spec v2)
 
 def total(stats):
     return sum(stats[key] for key in STATS_KEYS)

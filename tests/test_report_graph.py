@@ -151,9 +151,6 @@ def test_V02_candidate_border_same_style_for_every_kind_and_distinct_from_plain(
         return false; })""")
     assert marker, 'the legend block holding the layer entries must also carry a 후보 marker'
 
-
-# ------------------------------------------------------------------------------------------ V03
-
 def selected(page):
     return page.evaluate('ReportGraph.getSelectedNodes()')
 

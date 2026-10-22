@@ -136,9 +136,6 @@ def build_report(files, relations=(), roles=None, framework='fastapi', weights=N
 def render(arch, bn=None, **kwargs):
     return document(arch, bn, **kwargs)
 
-
-# ---------------------------------------------------------------- page observation helpers
-
 def tab(page, name):
     return page.get_by_role('tab', name=name, exact=True).or_(page.get_by_role('button', name=name, exact=True)).first
 

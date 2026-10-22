@@ -91,9 +91,6 @@ def targets_of(arch, tail):
 def project(revision_source, rel="alembic/versions/0001_x.py", models=MODELS):
     return {"app/models.py": models, rel: revision_source}
 
-
-# ---------------------------------------------------------------- op kinds, O1-O14 / P1-P2 / R1
-
 OP_CASES = [
     ("O1_create_table_positional", 'op.create_table("alpha", sa.Column("id", sa.Integer()))', ["Alpha"]),
     ("O1_create_table_keyword", 'op.create_table(table_name="alpha")', ["Alpha"]),
@@ -147,9 +144,6 @@ def test_VO3_R2_downgrade_only_reference(tmp_path):
     arch, _ = build(tmp_path, project(revision("pass", 'op.drop_table("beta")')))
     assert targets_of(arch, "0001_x.py") == ["Beta"]
     assert arch.stats["migration_matching"] == {"matched": 1, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
-
-
-# ---------------------------------------------------------------- T1/T2 literal vs non-literal, stats
 
 def test_VO3_C1_unique_edge_fields_and_stats(tmp_path):
     arch, _ = build(tmp_path, project(revision('op.create_table("alpha")')))
@@ -231,9 +225,6 @@ def test_VO3_table_match_is_case_insensitive(tmp_path):
     assert targets_of(arch, "0001_x.py") == ["Account"]
     assert arch.stats["migration_matching"] == {"matched": 1, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
 
-
-# ---------------------------------------------------------------- model forms M1-M6
-
 MODEL_FORMS = """\
 from sqlalchemy import Column, Integer
 from sqlalchemy.orm import declarative_base
@@ -309,9 +300,6 @@ def test_VO3_model_table_names_drive_matching(tmp_path, table, expected):
         "matched": len(expected), "ambiguous": 0, "unmatched": 1 - len(expected), "unresolvable": 0,
     }
 
-
-# ---------------------------------------------------------------- locations L1-L4
-
 def test_VO3_L1_L2_both_versions_dirs_and_nested_path_are_migrations(tmp_path):
     files = {
         "app/models.py": MODELS,
@@ -361,9 +349,6 @@ def test_VO3_unparseable_python_file_is_skipped_and_others_analyzed(tmp_path):
     assert targets_of(arch, "0001_x.py") == ["Alpha"]
     assert arch.stats["migration_matching"] == {"matched": 1, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
 
-
-# ---------------------------------------------------------------- FR11 collections / FR10 builder flag
-
 def test_VO3_FR11_report_collection_labels(tmp_path):
     arch, _ = build(tmp_path, project(revision('op.create_table("alpha")')))
     labels = {c.label for c in arch.report_collections}
@@ -381,9 +366,6 @@ def test_VO3_C2_rename_edges_carry_each_table_name(tmp_path):
     arch, _ = build(tmp_path, project(revision('op.rename_table("alpha", "beta")')))
     assert {(model_name(e.to_id), e.metadata["table"]) for e in migrates(arch)} == {("Alpha", "alpha"), ("Beta", "beta")}
     assert arch.stats["migration_matching"] == {"matched": 2, "ambiguous": 0, "unmatched": 0, "unresolvable": 0}
-
-
-# ---------------------------------------------------------------- VO6 alembic part
 
 def test_VO6_C18_alembic_migration_effective_cost_is_a_tenth_of_token_cost(tmp_path):
     arch, root = build(tmp_path, project(revision('op.create_table("alpha")')))
