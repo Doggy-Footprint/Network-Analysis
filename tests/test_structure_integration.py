@@ -14,8 +14,9 @@ import pytest
 from analysis.structure import analyze_structure, package_assignments
 from fixtures.registry import fixture_root
 from tests.report_size_support import legacy_bottlenecks_text
+from tests.android_build_support import NAME as ANDROID, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only
 from tests.structure_support import (BASE_KINDS, FIXTURES, NEW_KINDS, REPO, TIERS, canonical_sha, cycle_id, cycle_target, default_weights,
-                                     fedge, load_manifest, of_kind, ref_framework, ref_language, ref_pairs, ref_structure, architecture,
+                                     fedge, load_manifest, of_kind, ref_build, ref_framework, ref_language, ref_pairs, ref_structure, architecture,
                                      unstable_id)
 
 MANIFEST = load_manifest()
@@ -93,14 +94,17 @@ def test_V08_file_mode_keeps_base_parts_and_adds_v8_fields(run):
     network = payload['dependency_network']
     assert run.raw_payload('file')['schema'] == 'bottlenecks.v9' and payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
     assert payload['versions']['analysis'] == '6'
-    assert canonical_sha(network['rankings']) == manifest['rankings']
-    assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']
-    assert canonical_sha(network['node_metrics']) == manifest['node_metrics']
-    assert canonical_sha(network['candidate_groups']) == manifest['candidate_groups']
-    base = [c for c in payload['candidates'] if c['kind'] in BASE_KINDS]
-    assert len(base) == manifest['candidate_count']
-    assert canonical_sha(base) == manifest['candidates']
-    assert network['structure_policy'] == 'structure.v1'
+    if run.name == ANDROID:
+        assert_file_changes_are_build_only(run.raw_payload('file'))
+    else:
+        assert canonical_sha(network['rankings']) == manifest['rankings']
+        assert canonical_sha(network['rankings_by_category']) == manifest['rankings_by_category']
+        assert canonical_sha(network['node_metrics']) == manifest['node_metrics']
+        assert canonical_sha(network['candidate_groups']) == manifest['candidate_groups']
+        base = [c for c in payload['candidates'] if c['kind'] in BASE_KINDS]
+        assert len(base) == manifest['candidate_count']
+        assert canonical_sha(base) == manifest['candidates']
+    assert network['structure_policy'] == 'structure.v2'
     assert 'language' in network['package_metrics']
     assert {c['kind'] for c in payload['candidates']} <= set(BASE_KINDS) | set(NEW_KINDS) | {'untested_hub', 'isolated_node'}
 
@@ -113,6 +117,10 @@ def test_V08_candidates_are_sorted_by_kind_then_id(run):
 def test_V08_symbol_mode_is_byte_identical_to_base(run):
     data = run.output('symbol')
     manifest = run.manifest['symbol']
+    if run.name == ANDROID:
+        assert_symbol_changes_are_build_only(json.loads(data))
+        assert json.loads(data)['schema'] == manifest['schema'] == 'bottlenecks.v6'
+        return
     assert hashlib.sha256(data).hexdigest() == manifest['sha256']
     assert len(data) == manifest['bytes']
     assert json.loads(data)['schema'] == manifest['schema'] == 'bottlenecks.v6'
@@ -191,13 +199,15 @@ def test_V08_coverage_structure_matches_f13_from_reference(run, pipeline):
     ref = {'language': ref_language(arch)}
     if ref_framework(arch) is not None:
         ref['framework'] = ref_framework(arch)
+    if ref_build(arch) is not None:
+        ref['build'] = ref_build(arch)
     schemes = {}
     for scheme, assignment in ref.items():
         assigned = [f for f in files if assignment.get(f)]
         schemes[scheme] = {'assigned_file_count': len(assigned), 'unassigned_file_count': len(files) - len(assigned),
                            'unassigned_files': [f for f in files if not assignment.get(f)], 'shared_file_count': sum(len(assignment[f]) > 1 for f in assigned),
                            'shared_files': [f for f in assigned if len(assignment[f]) > 1]}
-    expected = {'policy': 'structure.v1', 'schemes': schemes}
+    expected = {'policy': 'structure.v2', 'schemes': schemes}
     assert run.payload('file')['coverage']['structure'] == expected
     assert analyze_structure(arch, pipeline['weights']).coverage == {'structure': expected}
 

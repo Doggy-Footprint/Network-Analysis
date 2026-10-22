@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from repository.models import RepositorySnapshot
 
 from analysis.candidate_projection import candidate_relation_key, candidate_targets, has_external_candidate
+from .build_modules import build_module_graph
 from .cost import cost_for_text
 from .flags import is_test_path
 from .graph_models import (
@@ -59,7 +60,16 @@ def enrich_repository(
             continue
     _add_test_relations(nodes, edges)
     _add_configuration_relations(nodes, edges, contents)
+    _add_build_modules(nodes, edges, contents)
     return architecture
+
+
+def _add_build_modules(nodes: List[GraphNode], edges: List[GraphEdge], contents: Mapping[str, str]) -> None:
+    module_nodes, module_edges = build_module_graph(contents)
+    node_ids = {node.id for node in nodes}
+    nodes.extend(node for node in module_nodes if node.id not in node_ids)
+    edge_keys = {(edge.from_id, edge.to_id, edge.metadata.get("configuration")) for edge in edges if edge.relation == RelationKind.DECLARES_DEPENDENCY}
+    edges.extend(edge for edge in module_edges if (edge.from_id, edge.to_id, edge.metadata["configuration"]) not in edge_keys)
 
 
 def _repository_files(root: Path) -> Iterable[str]:

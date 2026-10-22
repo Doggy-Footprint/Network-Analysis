@@ -73,7 +73,7 @@ def pmetrics(instabilities):
 
 
 def payload(candidates=(), package_dependencies=None, package_metrics=None, rules_sha='absent', file_count=3,
-            policy='structure.v1'):
+            policy='structure.v2'):
     """rules_sha: 'absent' omits coverage.architecture_rules; None keeps the section without a digest."""
     result = {
         'schema': 'bottlenecks.v8', 'granularity': 'file', 'snapshot': {'file_count': file_count},
@@ -272,6 +272,8 @@ def without_digest(coverage):
 def base_form_bytes(data):
     obj = json.loads(data)
     obj['dependency_network'].pop('package_dependencies', None)
+    obj['dependency_network']['structure_policy'] = 'structure.v1'   # base hashes predate the structure.v2 bump (build scheme)
+    obj.get('coverage', {}).get('structure', {})['policy'] = 'structure.v1'
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj.get('edge_weights', {}).pop('untested_hub_top_n', None)
     obj.get('edge_weights', {}).pop('large_node_token_threshold', None)

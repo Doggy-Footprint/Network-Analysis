@@ -23,6 +23,8 @@ from tests.external_rules_support import (KOTLIN_PACKAGE, ALLOW_EXT, EXAMPLE_EXT
                                           ref_kotlin_external_names, ref_normalize, ref_python_external_names, ref_ts_scan,
                                           to_rules_ext)
 
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
+
 MANIFEST = load_manifest()
 EXAMPLE_PROFILE = Path(__file__).resolve().parents[1] / 'profiles' / 'architecture_rules.example.yaml'
 
@@ -113,6 +115,9 @@ def realworld_arch(tmp_path_factory):
 
 def test_V11_bottleneck_json_byte_equal_to_base(plain):
     name, run, _ = plain
+    if name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(run['bn']))
+        return
     expected = MANIFEST['fixtures'][name]['file']
     base_form = base_form_bytes(run['bn_v8'])
     assert len(base_form) == expected['bottleneck_bytes']
@@ -122,6 +127,9 @@ def test_V11_bottleneck_json_byte_equal_to_base(plain):
 
 def test_V11_architecture_file_canonical_equal_to_base(plain):
     name, _, payload = plain
+    if name == ANDROID:
+        assert_architecture_changes_are_build_only(payload)
+        return
     assert canonical_architecture_sha(payload) == MANIFEST['fixtures'][name]['file']['architecture_canonical_sha256']
 
 

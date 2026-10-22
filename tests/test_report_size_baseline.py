@@ -7,6 +7,8 @@ import json
 
 import pytest
 
+from tests.structure_support import with_base_policy
+
 from bottlenecks.delta import BaselineError, compute_delta, load_baseline
 from tests.delta_support import ref_delta, wire
 from tests.report_size_support import golden, project_files, snapshot_of, to_payload, to_v8_payload, to_v9_payload
@@ -45,7 +47,7 @@ def write(tmp_path, data, name='baseline.json'):
 
 
 def test_V07_v8_and_v9_baselines_give_the_same_delta(tmp_path, current):
-    cur_v9, cur_v8 = current
+    cur_v9, cur_v8 = (with_base_policy(item) for item in current)
     v8_path = write(tmp_path, V8, 'v8.json')
     v9_path = write(tmp_path, to_v9_payload(V8, details_file='x.details.json'), 'v9.json')
     base8, base9 = load_baseline(v8_path), load_baseline(v9_path)
@@ -62,7 +64,7 @@ def test_V07_v8_and_v9_baselines_give_the_same_delta(tmp_path, current):
 
 def test_V07_identical_analysis_has_an_empty_delta_for_both_baseline_schemas(tmp_path):
     from tests.report_size_support import fixture_payload
-    cur = fixture_payload()
+    cur = with_base_policy(fixture_payload())
     for name, data in (('v8', V8), ('v9', to_v9_payload(V8))):
         result = wire(compute_delta(cur, load_baseline(write(tmp_path, data, name + '.json'))))
         assert result['counts'] == {key: 0 for key in result['counts']}, name

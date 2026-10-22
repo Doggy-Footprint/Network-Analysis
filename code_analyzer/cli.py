@@ -22,7 +22,7 @@ from repository import (ScanPolicyError, build_snapshot, default_scan_policy_pat
                         list_repository_files, load_scan_policy, read_file)
 from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
-from language_analyzers.core.serialization import architecture_to_dict
+from language_analyzers.core.serialization import architecture_to_dict, edge_to_dict, node_to_dict
 from analysis.architecture_rules import load_architecture_rules
 from analysis.file_graph import to_file_architecture
 from analysis.candidate_projection import AMBIGUITY_POLICY
@@ -314,6 +314,9 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
     return arch, builder, http_calls
 
 
+_SNAPSHOT_DERIVED_PROVENANCE = {"repository-enrichment", "gradle", "npm-workspace"}
+
+
 def _run_merged(args, project_path, repository_snapshot, analysis_config, results=None) -> MergedArchitecture:
     results = results if results is not None else [
         _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single=False)
@@ -324,15 +327,23 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config, result
         project_path=results[0][0].project_path,
     )
     http_calls = []
-    seen = set()
+    seen = {}
+    seen_edges = set()
     for arch, _builder, calls in results:
+        nodes = []
         for node in arch.nodes:
             if node.id in seen:
+                # Enrichment runs once per analyzer over the same snapshot, so these nodes repeat verbatim.
+                if node.provenance in _SNAPSHOT_DERIVED_PROVENANCE and seen[node.id].provenance == node.provenance and node_to_dict(seen[node.id]) == node_to_dict(node):
+                    continue
                 print(f"[!] Error: duplicate node id across analyzers: {node.id}", file=sys.stderr)
                 raise SystemExit(1)
-            seen.add(node.id)
-        merged.nodes.extend(arch.nodes)
-        merged.edges.extend(arch.edges)
+            seen[node.id] = node
+            nodes.append(node)
+        edge_keys = [json.dumps([str(getattr(edge, name)) for name in ("from_id", "to_id", "relation", "confidence", "resolution")] + [list(edge.candidates), edge_to_dict(edge).get("evidence"), edge.metadata], sort_keys=True, default=str) for edge in arch.edges]
+        merged.nodes.extend(nodes)
+        merged.edges.extend(edge for edge, key in zip(arch.edges, edge_keys) if key not in seen_edges)
+        seen_edges.update(edge_keys)
         merged.report_collections.extend(arch.report_collections)
         http_calls.extend(calls)
         for key, item in arch.stats.items():

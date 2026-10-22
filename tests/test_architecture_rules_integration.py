@@ -16,6 +16,8 @@ from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, FIX
                                               copy_fixture, init_git, load_manifest, mini_project, ref_rule_evaluation, synthetic_input,
                                               to_rules, violations_of, weights, write_rules)
 
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
+
 MANIFEST = load_manifest()
 
 
@@ -49,6 +51,9 @@ def plain(request, tmp_path_factory):
 
 def test_V07_no_rules_byte_equal_to_base(plain):
     name, data = plain
+    if name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(data))
+        return
     expected = MANIFEST['fixtures'][name]
     base_form = base_form_bytes(data.legacy)
     assert len(base_form) == expected['bytes']

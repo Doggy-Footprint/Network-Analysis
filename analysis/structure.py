@@ -2,7 +2,7 @@ import hashlib
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
-STRUCTURE_POLICY = "structure.v1"
+STRUCTURE_POLICY = "structure.v2"
 TIERS = ("certain", "resolved", "all")
 _RANK = {tier: index for index, tier in enumerate(TIERS)}
 _CUT_LIMIT = 10
@@ -106,11 +106,33 @@ def _framework_packages(files: list[str], details: Mapping[str, Any]) -> dict[st
     return {file_id: sorted(packages) for file_id, packages in result.items() if packages}
 
 
+def _build_packages(files: list[str], details: Mapping[str, Any]) -> dict[str, list[str]] | None:
+    node_files = details.get("node_files") or {}
+    modules: dict[str, list[tuple[str, str]]] = {}
+    for node in details.get("nodes") or []:
+        metadata = node.get("metadata") or {}
+        system = metadata.get("build_system")
+        if node.get("provenance") in {"gradle", "npm-workspace"} and system in {"gradle", "npm"} and isinstance(metadata.get("module_dir"), str) and isinstance(metadata.get("module_path"), str):
+            modules.setdefault(system, []).append((metadata["module_dir"], metadata["module_path"]))
+    if not modules: return None
+    result = {}
+    for file_id in files:
+        directory = _file_path(file_id).rpartition("/")[0]
+        for system in sorted(modules):
+            matches = [(module_dir, path) for module_dir, path in modules[system] if not module_dir or directory == module_dir or directory.startswith(module_dir + "/")]
+            if matches:
+                best = min(matches, key=lambda item: (-len(item[0]), item[1]))
+                result.setdefault(file_id, []).append("pkg:%s:%s" % (system, best[1]))
+    return result
+
+
 def _assignments(architecture: Any) -> tuple[list[str], dict[str, dict[str, list[str]]]]:
     files, details = _file_ids(architecture), _details(architecture)
     schemes = {"language": _language_packages(files, details)}
     framework = _framework_packages(files, details)
     if framework is not None: schemes["framework"] = framework
+    build = _build_packages(files, details)
+    if build is not None: schemes["build"] = build
     return files, schemes
 
 

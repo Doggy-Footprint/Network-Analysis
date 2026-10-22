@@ -10,6 +10,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.structure_support import with_base_policy
+
 from tests.report_size_support import (CHANGED_KINDS, EVIDENCE_COLUMNS, PROJECT, cli_fixture_run, decode_evidence, fixture_architecture_dict,
                                        fixture_payload, fixture_pipeline, golden, inline_data, is_compact, of_kind, run_cli, run_cli_ok,
                                        weights)
@@ -148,6 +150,7 @@ def test_V01_EP5_F06_unchanged_kinds_are_identical_to_v8(v9):
 
 
 def test_V01_EP6_F06_dependency_network_and_top_level_keys_are_unchanged(v9):
+    v9 = with_base_policy(v9)
     network = {k: v for k, v in v9['dependency_network'].items() if k not in ('file_ids', 'evidence_columns')}
     assert network == V8['dependency_network']
     assert set(v9) - set(V8) <= {'details_file'}
@@ -230,7 +233,7 @@ def test_V02_R1_cli_bottlenecks_decode_to_the_v8_golden(r1):
     payload = json.loads((r1 / 'bn' / 'b.json').read_text(encoding='utf-8'))
     details = json.loads((r1 / 'report.details.json').read_text(encoding='utf-8'))
     from tests.report_size_support import to_v8_payload
-    restored = to_v8_payload(payload, details)
+    restored = with_base_policy(to_v8_payload(payload, details))
     expected = copy.deepcopy(V8['candidates'])
     for item in expected:
         for record in item['evidence'] if isinstance(item['evidence'], list) else ():

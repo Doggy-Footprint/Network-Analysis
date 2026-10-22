@@ -32,7 +32,7 @@ def key(tier, *paths, scheme='file'):
 
 
 def test_V01_policy_constants():
-    assert STRUCTURE_POLICY == 'structure.v1'
+    assert STRUCTURE_POLICY == 'structure.v2'
     assert TIERS == ('certain', 'resolved', 'all')
 
 
@@ -350,7 +350,7 @@ def test_V03_candidates_are_sorted_by_kind_then_id():
 def test_V03_result_coverage_is_exactly_the_structure_object():
     result = run(['a/x.py', 'b/y.py'], [])
     empty = {'assigned_file_count': 2, 'unassigned_file_count': 0, 'unassigned_files': [], 'shared_file_count': 0, 'shared_files': []}
-    assert result.coverage == {'structure': {'policy': 'structure.v1', 'schemes': {'language': empty}}}
+    assert result.coverage == {'structure': {'policy': 'structure.v2', 'schemes': {'language': empty}}}
 
 
 def test_V03_result_is_frozen_dataclass_with_declared_fields():
@@ -387,7 +387,7 @@ def test_V09_pipeline_payload_is_v8_with_all_new_kinds(tmp_path):
     payload = v8_payload(tmp_path)
     assert payload['schema'] == 'bottlenecks.v9' and payload['granularity'] == 'file'
     assert {c['kind'] for c in payload['candidates']} >= {'dependency_cycle', 'package_cycle', 'unstable_dependency'}
-    assert payload['dependency_network']['structure_policy'] == 'structure.v1'
+    assert payload['dependency_network']['structure_policy'] == 'structure.v2'
     assert set(payload['dependency_network']['package_metrics']) == {'language'}
 
 
@@ -403,7 +403,7 @@ def generate_to_text(payload):
 def test_V09_bottleneck_json_coverage_structure_is_the_f13_object(tmp_path):
     payload = v8_payload(tmp_path)
     language = {'assigned_file_count': 3, 'unassigned_file_count': 0, 'unassigned_files': [], 'shared_file_count': 0, 'shared_files': []}
-    assert payload['coverage']['structure'] == {'policy': 'structure.v1', 'schemes': {'language': language}}
+    assert payload['coverage']['structure'] == {'policy': 'structure.v2', 'schemes': {'language': language}}
 
 
 def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):

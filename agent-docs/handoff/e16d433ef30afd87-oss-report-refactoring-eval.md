@@ -22,12 +22,12 @@
 
 ## State
 
-- 브랜치 `test/modal-sum-ranking`, HEAD `5ddd426`(`scripts/eval/` 최초 커밋). 미커밋: `scripts/eval/repos.json`(`github`, `commit` 필드 추가), 신규 `scripts/eval/prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`, 이 문서, `agent-docs/handoff/index.md`, 신규 `85aa37516a23897d-report-size-for-llm.md`. `tests/*_evidence/performance.json` 2개는 테스트 부산물이라 커밋에서 뺀다.
+- 브랜치 `test/modal-sum-ranking`, HEAD `a8a3012`. `scripts/eval/` 최초 커밋은 `5ddd426`, run 격리 초안(`repos.json`의 `github`·`commit`, `prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`)은 `abd1df2`, 리포트 경량화는 `3373b36`에 커밋했다. 작업 트리는 깨끗하다.
 - **`./eval`은 사용자 지시로 전부 삭제했다.** 삭제한 것: clone, 테스트 환경(`envs`, `node`, `.venv`), 기준선(`test-baseline.json`), 분석기 리포트, 파일럿 결과, raw transcript. `~/toy-projects/network-analysis-eval/`은 만들지 않았다. 아무 run도 실행하지 않았다.
 - 선행 작업(이 실험보다 먼저 한다. Next Step 0):
   - `85aa37516a23897d-report-size-for-llm.md`: LLM용 리포트 경량화. vendure `bottlenecks.json`이 684MB이고 `json.load`에 RSS 5GB가 필요하다. 병렬 run이 불가능한 크기다.
     - 완료(spec `agent-docs/spec-logs/ee17484a52af182c-report-size-for-llm.md` v4, complete; handoff는 `stale/`). file granularity `bottlenecks.json`은 `bottlenecks.v9`(evidence_spread는 details edge index, 순환·unstable은 `file_ids` index 행), `report.json`은 schema "7" compact이고 details는 `<stem>.details.json`으로 분리, `--bottlenecks`이면 `<stem>.handout.md`가 생긴다. 실측: vendure bottlenecks 684→77MB, json.load RSS 3.8GB→0.68GB, handout 70KB; 나머지 6개 bottlenecks 1.2~14.2MB, handout 28~58KB. 실험군에는 handout을 1차 자료로 주고 `prepare_runs.py`의 `REPORT_FILES`에 details 파일과 handout을 추가해야 한다.
-  - `b6db876d7191e86d-gradle-module-package-scheme.md`: `package_metrics`가 바뀐다(nowinandroid 리포트와 실험군 설명에 영향).
+  - `b6db876d7191e86d-gradle-module-package-scheme.md`: 완료(spec `agent-docs/spec-logs/09e1bf05d439475e-build-module-packages.md` v6, complete; handoff는 `stale/`). `build` 체계(`pkg:gradle:<path>`, `pkg:npm:<name>`)와 `DECLARES_DEPENDENCY` relation이 추가되고 `structure_policy`가 `structure.v2`가 됐다. 실험군 `{report_section}`에 build 체계 설명을 넣어야 한다. R1 실측(GCP `na-eval`): nowinandroid build 36 package·DECLARES exact 106·package_cycle 5(Gradle은 선언 순환 불가라 코드 edge 기원 추정), vendure build 19 package·DECLARES exact 42.
   - `fa00b92fe9819b57-agent-context-candidates.md`: 지표와 relation이 추가된다.
   - 이 셋을 끝낸 분석기 commit을 평가 대상으로 고정하고 리포트를 새로 만든다.
 - 대상 저장소와 고정 commit(별 1k+, 소스 150~3000 파일). `scripts/eval/repos.json`에 `github`와 `commit`으로 기록했다.
@@ -71,7 +71,7 @@
     - `judge.py`: 사전 예측 지표 대비 판정. 방향성 예측 적중 + 전역 가드 무악화일 때만 improved.
     - `verify.sh`, `collect_agents.py`.
     - `FINDER_PROMPT.md`, `REFACTOR_PROMPT.md`: 파일럿용(분리 구조). `TASK_PROMPT.md`로 대체 예정이라 지워도 된다.
-  - run 격리(이번 세션, 미커밋, 미실행):
+  - run 격리(커밋됨, 미실행):
     - `prepare_runs.py`: `~/toy-projects/network-analysis-eval/runs/<arm>-<n>/<repo>/`에 run을 만든다.
       - clone: remote 없이 URL로 고정 sha를 `fetch --depth 1`해서 `base` 브랜치를 만들고, `FETCH_HEAD`와 reflog를 지운다.
       - seed 복사: ghostfolio `node_modules`, vendure `node_modules`·`packages/*/node_modules`·`packages/common/lib`, nowinandroid `local.properties`를 `cp -c`로 넣는다. seed 원본이던 `eval/repos`가 삭제됐으므로 seed 원천을 새로 정해야 한다.

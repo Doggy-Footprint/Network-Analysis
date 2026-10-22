@@ -13,7 +13,9 @@ from fixtures.registry import fixture_root
 from tests.delta_support import (EXAMPLE_PROFILE, FIXTURE_ARGS, cid, cli, cycle, independent_digest, internal_violation,
                                  load_manifest, payload, pdep, ref_delta, run_bottlenecks, wire)
 from tests.report_size_support import legacy_bottlenecks_canonical
-from tests.structure_support import default_weights, ref_framework, ref_language, ref_package_pairs, ref_pairs
+from tests.structure_support import default_weights, ref_build, ref_framework, ref_language, ref_package_pairs, ref_pairs
+
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
 
 MANIFEST = load_manifest()
 RUNS = MANIFEST['runs']
@@ -87,8 +89,13 @@ def plain_entry(request):
 
 
 def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by_id):
+    if entry['fixture'] == ANDROID:
+        assert_file_changes_are_build_only(json.loads(outputs_by_id.raw(entry)))
+        return
     data = outputs_by_id(entry)
     obj = json.loads(data)
+    obj['dependency_network']['structure_policy'] = 'structure.v1'
+    obj['coverage']['structure']['policy'] = 'structure.v1'
     del obj['dependency_network']['package_dependencies']
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj['edge_weights'].pop('untested_hub_top_n', None)
@@ -111,6 +118,9 @@ def expected_package_dependencies(arch):
     framework = ref_framework(arch)
     if framework is not None:
         files['framework'] = framework
+    build = ref_build(arch)
+    if build is not None:
+        files['build'] = build
     pairs = ref_pairs(arch, default_weights(), 'all')
     result = {}
     for scheme, assignment in files.items():
@@ -158,7 +168,10 @@ def test_V06_F01_symbol_granularity_has_no_package_dependencies(tmp_path):
 
 
 def test_V13_Q04_size_ratio(plain_entry, outputs_by_id):
-    ratio = len(outputs_by_id(plain_entry)) / plain_entry['bottleneck_bytes']
+    data = outputs_by_id(plain_entry)
+    if plain_entry['fixture'] == ANDROID:
+        data = json.dumps(without_build_parts(json.loads(data)), **CANON).encode('utf-8') + b'\n'
+    ratio = len(data) / plain_entry['bottleneck_bytes']
     assert 1.0 <= ratio <= 1.03, ratio
 
 

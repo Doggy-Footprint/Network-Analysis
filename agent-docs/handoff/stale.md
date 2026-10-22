@@ -125,3 +125,8 @@ File: 85aa37516a23897d-report-size-for-llm.md
 Summary: LLM에 제공할 리포트 경량화 — candidate evidence의 edge 전체 복사·순환 내부 pair 전체 나열·symbol details·indent로 vendure bottlenecks.json 684MB(json.load 5GB), 평가 실험의 선행 작업
 Related Files: bottlenecks/core.py, analysis/structure.py, bottlenecks/reach.py, language_analyzers/core/serialization.py, code_analyzer/cli.py, bottlenecks/delta.py
 Related Symbols: evidence_record, _cycle_candidates, edge_to_dict, architecture_to_dict
+---
+File: b6db876d7191e86d-gradle-module-package-scheme.md
+Summary: Phase 1에서 제외한 Android Gradle module(및 npm workspace)을 framework package 체계에 추가하는 후속 작업
+Related Files: language_analyzers/core/enrichment.py, analysis/structure.py, agent-docs/adr/58424b9754efe9a2-package-grouping-schemes.md
+Related Symbols: package_metrics, enrich_repository

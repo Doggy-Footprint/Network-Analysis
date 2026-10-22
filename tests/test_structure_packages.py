@@ -143,7 +143,7 @@ def test_V05_C11_module_controller_provider_membership():
 def test_V05_C11_framework_coverage_and_metrics():
     result = analyze_structure(single_module_arch(), default_weights())
     schemes = result.coverage['structure']['schemes']
-    assert result.coverage['structure']['policy'] == 'structure.v1'
+    assert result.coverage['structure']['policy'] == 'structure.v2'
     assert set(result.coverage) == {'structure'} and set(result.coverage['structure']) == {'policy', 'schemes'}
     assert list(result.candidates) == sorted(result.candidates, key=lambda c: (c['kind'], c['id']))
     assert schemes['framework'] == {'assigned_file_count': 3, 'unassigned_file_count': 2,

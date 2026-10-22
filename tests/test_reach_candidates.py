@@ -23,6 +23,8 @@ from tests.edge_weights_support import load_weights, weights_data, write_weights
 from tests.reach_support import (AMBIGUOUS, BASE_COMMIT, CONFIDENCES, DR, E, EXACT, FI, FIXTURES, ISOLATION_EXTENSIONS, NEW_KINDS,
                                  REPO, SC, SI, UNIQUE, UNRESOLVED, Graph, architecture_model, candidate_id, canonical_sha,
                                  fid, graph_model, load_manifest, model_key, of_kind, pagerank_of, record_key, ref_incoming_tests, ref_isolated, ref_untested_hubs, run_report, weights_with, without_reach)
+from tests.android_build_support import NAME as ANDROID, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only
+from tests.structure_support import with_base_policy
 
 MAIN = 'from code_analyzer.cli import main; main()'
 HUB_METRICS = {'pagerank', 'pagerank_rank', 'top_n', 'uncertain_test_edge_count'}
@@ -635,7 +637,10 @@ def test_V7_manifest_is_for_the_declared_base_commit():
 
 
 def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
-    payload = pipe.payload('file')
+    if pipe.name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(pipe.output('file')))
+        return
+    payload = with_base_policy(pipe.payload('file'))
     expected = load_manifest()['fixtures'][pipe.name]['file']
     assert payload['schema'] == 'bottlenecks.v8' == expected['schema']
     assert payload['edge_weights'][KEY] == 10
@@ -651,7 +656,8 @@ def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
 def test_V7_R9_C14_new_kinds_are_only_the_two_declared_ones_and_carry_the_declared_shape(pipe):
     payload = pipe.payload('file')
     kinds = {c['kind'] for c in payload['candidates']}
-    assert kinds <= set(load_manifest()['fixtures'][pipe.name]['file']['candidate_kinds']) | set(NEW_KINDS)
+    build_kinds = {'package_cycle', 'unstable_dependency', 'unresolved_boundary', 'evidence_spread'} if pipe.name == ANDROID else set()   # the new build scheme can add these
+    assert kinds <= set(load_manifest()['fixtures'][pipe.name]['file']['candidate_kinds']) | set(NEW_KINDS) | build_kinds
     keys = [(c['kind'], c['id']) for c in payload['candidates']]
     assert keys == sorted(keys) and len(set(keys)) == len(keys)
     for item in payload['candidates']:
@@ -666,6 +672,9 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
     payload = json.loads(data)
     assert payload['schema'] == expected['schema']
     assert not {c['kind'] for c in payload['candidates']} & set(NEW_KINDS)
+    if pipe.name == ANDROID:
+        assert_symbol_changes_are_build_only(payload)
+        return
     assert len(data) == expected['bytes']
     import hashlib
     assert hashlib.sha256(data).hexdigest() == expected['sha256']
@@ -678,6 +687,7 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     first.write_bytes(pipe.output('file'))
     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
     assert canonical_sha(payload['delta']) == expected['delta']
+    payload = with_base_policy(payload)
     stripped = without_reach(payload)
     assert sorted(k for k, v in stripped.items() if canonical_sha(v) != expected['sections'][k]) == []
     assert payload['delta']['counts'] == {key: 0 for key in payload['delta']['counts']}

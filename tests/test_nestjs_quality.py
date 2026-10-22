@@ -16,6 +16,7 @@ from language_analyzers.typescript.analyzer import IGNORED_DIRECTORIES, SOURCE_E
 from repository import RepositorySnapshot
 from renderers.html import HTMLRenderer
 
+from tests.android_build_support import assert_symbol_architecture_changes_are_build_only, assert_symbol_changes_are_build_only
 from tests.nestjs_support import analyze, diagnostics, fixture, framework_edges, framework_nodes, write_project
 from tests.external_rules_support import strip_external_imports
 from tests.standalone_candidate_policy_support import assert_standalone_candidate_policy_transition
@@ -263,6 +264,12 @@ class TestRegression(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(archived).hexdigest(), case["hashes"][name])
                     archived_raw = archived.replace(b'<REPO_ROOT>', baseline['captured_root'].encode())
                     self.assertEqual(hashlib.sha256(archived_raw).hexdigest(), case["raw_hashes"][name])
+                if case['name'] in ('android', 'kotlin'):
+                    # nowinandroid gains Gradle build modules (spec 09e1bf05d439475e G3), so the full transition check against the archived
+                    # originals no longer holds; only build-induced changes against the base-commit run are accepted.
+                    assert_symbol_architecture_changes_are_build_only(current['json'], case['name'])
+                    assert_symbol_changes_are_build_only(current['bottlenecks'], case['name'])
+                    continue
                 assert_standalone_candidate_policy_transition(json.loads(original['outputs']['json']), json.loads(original['outputs']['bottlenecks']), current['json'], current['bottlenecks'], original['snapshot_contents'], original['category_members'])
 
     def test_O12_repeated_and_hash_seeded_json_and_bottlenecks(self):
