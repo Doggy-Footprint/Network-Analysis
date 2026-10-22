@@ -1,4 +1,4 @@
-"""Support for spec 64deae051d59caac v1 (doc code references).
+"""Support for spec 64deae051d59caac (doc code references).
 Expected rows in the tests are written out by hand from the spec rules; nothing here derives an expectation from the product."""
 import hashlib
 import json

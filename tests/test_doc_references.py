@@ -25,7 +25,6 @@ def lines_of(rows):
     return [(r[1], r[4]) for r in rows]
 
 
-# ---- V1 -------------------------------------------------------------------------------------------------------------
 
 LINK = '[x](missing.md)'
 V1_FENCE_CASES = {
@@ -52,7 +51,6 @@ def test_V1_P6_P7_document_extensions():
     assert summary['document_count'] == 3
 
 
-# ---- V2 -------------------------------------------------------------------------------------------------------------
 
 M = {'src/m.py': 'x = 1\n'}
 V2_IGNORED = ['[x](https://a)', '[x](mailto:a)', '[x](#anchor)', '[x](?q=1)', '[x]()', '[x](#)', '[x](<>)', '[x](C:/a.md)']
@@ -155,7 +153,6 @@ def test_V2_C11_percent_decoding_and_angle_wrapping():
         row('docs/z.md', 3, 'link', 'c.md?x=1', 'resolved', 'docs/c.md', 'path')]
 
 
-# ---- V3 -------------------------------------------------------------------------------------------------------------
 
 P = {'src/m.py': 'x = 1\n', 'docs/guide.md': '#\n', 'README.md': '#\n', 'docs/x/y.ts': 'a\n'}
 
@@ -230,7 +227,6 @@ def test_V3_double_backtick_spans_are_excluded(text):
     assert rows_of({D: f'``{text}``\n', **P}) == []
 
 
-# ---- V4 -------------------------------------------------------------------------------------------------------------
 
 GRADLE_NODES = [gradle(':app'), gradle(':core:data')]
 
@@ -263,7 +259,6 @@ def test_V4_P5_malformed_module_paths_are_unrecorded(text):
     assert span(text, {}, nodes=GRADLE_NODES) == []
 
 
-# ---- V5 -------------------------------------------------------------------------------------------------------------
 
 def ident(text, nodes):
     return rows_of({D: f'`{text}`\n'}, nodes=nodes)
@@ -328,7 +323,6 @@ def test_V5_path_span_is_not_also_an_identifier():
     assert result == [row(D, 1, 'code_path', 'guide.md', 'resolved', 'docs/guide.md', 'path')]
 
 
-# ---- V6 -------------------------------------------------------------------------------------------------------------
 
 def test_V6_P1_to_P4_row_format():
     text = '[a](../src/m.py)\n[b](guide.md)\n[c](../src/)\n[d](nope.md)\n[e](/site/route)\n'
@@ -358,7 +352,6 @@ def test_V6_P5_documents_sorted_by_path():
     assert [r[0] for r in rows_of(files)] == ['README.md', 'Zed.md', 'a/x.md', 'docs/z.md']
 
 
-# ---- V7 -------------------------------------------------------------------------------------------------------------
 
 def test_V7_P1_document_without_dangling_has_no_candidate():
     _t, candidates, summary = analyze({D: '[x](../src/m.py)\n[y](/site)\n', **M})
@@ -441,7 +434,6 @@ def test_V7_P4_integration_without_documents_still_has_empty_table_and_zero_summ
     assert not [c for c in bottlenecks['candidates'] if c['kind'] == NEW_KIND]
 
 
-# ---- V8 -------------------------------------------------------------------------------------------------------------
 
 def golden():
     data = json.loads((EVIDENCE / 'base_views.json').read_text(encoding='utf-8'))
@@ -496,7 +488,6 @@ def test_V8_C18_symbol_granularity_has_no_doc_output(tmp_path):
     assert details is None or 'doc_references' not in details
 
 
-# ---- V9 -------------------------------------------------------------------------------------------------------------
 
 def handout(candidates):
     from bottlenecks.handout import render_handout
@@ -548,7 +539,6 @@ def test_V9_exactly_ten_has_no_more_line():
     assert 'more' not in body
 
 
-# ---- V10 ------------------------------------------------------------------------------------------------------------
 
 def test_V10_G1_unmatched_bracket_and_paren_do_not_hide_later_links():
     assert one('[x(missing.md)\n[y](missing.md\n[z](gone.md)\n')[-1] == row(D, 3, 'link', 'gone.md', 'dangling')
@@ -597,7 +587,6 @@ def test_V10_G7_lf_and_mixed_line_numbers_agree():
     assert lines_of(one('a\n\n[x](m.md)\r\n`src/none.ts`\n')) == [(3, 'dangling'), (4, 'dangling')]
 
 
-# ---- B2: field-scoped exclusion of malformed nodes --------------------------------------------------------------------
 
 def raw(ident, kind='class', **fields):
     return {'id': ident, 'kind': kind, **fields}
@@ -634,7 +623,6 @@ def test_V10_B2_non_dict_metadata_is_excluded_only_from_gradle_matching(bad):
     assert ident('Baz', [raw('c1', label='Baz', symbol_path=None, metadata=bad)]) == [row(D, 1, 'identifier', 'Baz', 'resolved', 'c1', 'symbol')]
 
 
-# ---- B3: handout format and cap-after-sort ----------------------------------------------------------------------------
 
 def skeleton(line):
     import re
@@ -671,7 +659,6 @@ def test_V9_F13_cap_is_applied_after_sorting():
     assert f'… 1 more {NEW_KIND} candidates in bottlenecks.json' in body.splitlines()
 
 
-# ---- batch 2 (v5) -----------------------------------------------------------------------------------------------------
 
 @pytest.mark.parametrize('doc, target', [('README.md', '.'), ('README.md', './'), ('docs/a.md', '..')])
 def test_V2_R9_relative_link_to_repository_root_is_resolved_directory(doc, target):

@@ -22,14 +22,18 @@
 
 ## State
 
-- 브랜치 `test/modal-sum-ranking`, HEAD `a8a3012`. `scripts/eval/` 최초 커밋은 `5ddd426`, run 격리 초안(`repos.json`의 `github`·`commit`, `prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`)은 `abd1df2`, 리포트 경량화는 `3373b36`에 커밋했다. 작업 트리는 깨끗하다.
+- 브랜치 `test/modal-sum-ranking`. **평가 대상 분석기 commit은 `0224570`으로 고정한다**(선행 작업 3개 완료; 이후 commit은 테스트·문서 정리뿐). 이전 기록: HEAD `a8a3012` 시점에 `scripts/eval/` 최초 커밋은 `5ddd426`, run 격리 초안(`repos.json`의 `github`·`commit`, `prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`)은 `abd1df2`, 리포트 경량화는 `3373b36`에 커밋했다. 작업 트리는 깨끗하다.
 - **`./eval`은 사용자 지시로 전부 삭제했다.** 삭제한 것: clone, 테스트 환경(`envs`, `node`, `.venv`), 기준선(`test-baseline.json`), 분석기 리포트, 파일럿 결과, raw transcript. `~/toy-projects/network-analysis-eval/`은 만들지 않았다. 아무 run도 실행하지 않았다.
 - 선행 작업(이 실험보다 먼저 한다. Next Step 0):
   - `85aa37516a23897d-report-size-for-llm.md`: LLM용 리포트 경량화. vendure `bottlenecks.json`이 684MB이고 `json.load`에 RSS 5GB가 필요하다. 병렬 run이 불가능한 크기다.
     - 완료(spec `agent-docs/spec-logs/ee17484a52af182c-report-size-for-llm.md` v4, complete; handoff는 `stale/`). file granularity `bottlenecks.json`은 `bottlenecks.v9`(evidence_spread는 details edge index, 순환·unstable은 `file_ids` index 행), `report.json`은 schema "7" compact이고 details는 `<stem>.details.json`으로 분리, `--bottlenecks`이면 `<stem>.handout.md`가 생긴다. 실측: vendure bottlenecks 684→77MB, json.load RSS 3.8GB→0.68GB, handout 70KB; 나머지 6개 bottlenecks 1.2~14.2MB, handout 28~58KB. 실험군에는 handout을 1차 자료로 주고 `prepare_runs.py`의 `REPORT_FILES`에 details 파일과 handout을 추가해야 한다.
   - `b6db876d7191e86d-gradle-module-package-scheme.md`: 완료(spec `agent-docs/spec-logs/09e1bf05d439475e-build-module-packages.md` v6, complete; handoff는 `stale/`). `build` 체계(`pkg:gradle:<path>`, `pkg:npm:<name>`)와 `DECLARES_DEPENDENCY` relation이 추가되고 `structure_policy`가 `structure.v2`가 됐다. 실험군 `{report_section}`에 build 체계 설명을 넣어야 한다. R1 실측(GCP `na-eval`): nowinandroid build 36 package·DECLARES exact 106·package_cycle 5(Gradle은 선언 순환 불가라 코드 edge 기원 추정), vendure build 19 package·DECLARES exact 42.
-  - `fa00b92fe9819b57-agent-context-candidates.md`: 지표와 relation이 추가된다.
-  - 이 셋을 끝낸 분석기 commit을 평가 대상으로 고정하고 리포트를 새로 만든다.
+  - `fa00b92fe9819b57-agent-context-candidates.md`: 완료(handoff는 `stale/`).
+    - C(시그니처 기준 2-hop 맥락 비용)는 구현하지 않고 종료했다(spec `agent-docs/spec-logs/5b0e19017d8b5a79-signature-context-cost.md` v2 aborted). `hop_2_token_cost`와 순위가 거의 같았다(Spearman symbol 0.95–0.99, file 0.87–1.00).
+    - D(문서→코드 참조)는 완료했다(spec `agent-docs/spec-logs/64deae051d59caac-doc-code-references.md` v6 complete, commit `0224570`). file granularity의 details 파일에 `doc_references` 표, bottleneck JSON에 `dangling_doc_reference` candidate(문서당 1개)와 `coverage.doc_references`가 생기고 `versions.analysis`가 "7"이 됐다. 그래프와 기존 지표는 바뀌지 않는다. 실험군 `{report_section}`에 이 candidate 설명을 넣어야 한다.
+    - R1 실측(GCP `na-eval`): 시간·RSS 증가 없음. nowinandroid는 dangling 8건(문서 3개), vendure는 dangling 56건(문서 32개, 튜토리얼 예시 경로 오탐 포함)과 site_route 2405건이다.
+  - 선행 작업 3개가 끝났다. 분석기 commit `0224570`으로 리포트를 새로 만든다.
+- GCP VM `na-eval`(playground-472408, asia-northeast3-a, n2-highmem-16)이 켜져 있다. nowinandroid·vendure clone과 venv가 있다. 실험 환경을 GCP에서 만들지는 결정하지 않았다.
 - 대상 저장소와 고정 commit(별 1k+, 소스 150~3000 파일). `scripts/eval/repos.json`에 `github`와 `commit`으로 기록했다.
 
   | cell | repo | commit |
@@ -102,7 +106,7 @@
 
 ## Next Step
 
-0. 선행 작업을 끝낸다: `85aa37516a23897d-report-size-for-llm.md`(리포트 경량화), `b6db876d7191e86d-gradle-module-package-scheme.md`, `fa00b92fe9819b57-agent-context-candidates.md`. 끝난 분석기 commit을 평가 대상으로 고정한다.
+0. (완료) 선행 작업 3개를 끝내고 분석기 commit `0224570`을 평가 대상으로 고정했다.
 1. 실험 루트를 저장소 밖 `~/toy-projects/network-analysis-eval/`에 새로 만든다(이 저장소 CLAUDE.md/AGENTS.md 오염 방지).
    - `envs`(저장소별 테스트 환경), `node`(dependency-cruiser 18.7.0, typescript 5.9.3), `.venv`(lizard, grimp), seed(node_modules, local.properties)를 다시 만든다.
    - 저장소별 gate를 2회 돌려 State의 기준선 표와 통과 수가 같은지 확인하고 `test-baseline.json`을 다시 쓴다.
