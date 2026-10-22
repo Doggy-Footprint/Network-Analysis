@@ -147,8 +147,6 @@ def test_V04_C03_cli_handout_equals_render_handout_of_the_cli_outputs(tmp_path):
     assert written.startswith('# Dependency bottleneck handout')
 
 
-# ---------------------------------------------------------------------------------------------- synthetic inputs
-
 SPREAD_EDGES = 12
 
 
@@ -377,8 +375,6 @@ def test_V04_C03_packages_show_the_ten_most_unstable_per_scheme_with_counts():
     assert 'p10' not in body and 'p11' not in body
 
 
-# --------------------------------------------------------------------------------------------- empty and cycle-free
-
 def empty_graph_report():
     from tests.file_analysis_support import converted
     snap, arch = converted({'README.md': 'document'}, [], [])
@@ -445,8 +441,6 @@ def test_V04_D14_evidence_count_of_dict_evidence_is_the_length_of_its_edge_list(
     assert has_token(section(text, '### large_node'), 1)
 
 
-# ------------------------------------------------------------------------------------------ D09 secondary keys (F-02)
-
 TIER_ORDER = {'all': 0, 'resolved': 1, 'certain': 2}
 
 
@@ -489,8 +483,6 @@ def test_V04_D09_member_count_still_outranks_tier(kind):
     expected = [c['id'] for c in sorted(candidates, key=lambda c: -c['metrics']['member_count'])]
     assert_selection(kind, candidates, expected)
 
-
-# ------------------------------------------------------------------------------------------ values, not keys (F-03)
 
 def unique_metrics(item, n):
     return {key: 1000 * n + index + 1 for index, key in enumerate(item['metrics'])}
@@ -593,8 +585,6 @@ def test_V04_F11_packages_are_selected_by_instability_desc_not_by_weighted_insta
         assert all(f'p{i:03d}' not in body for i in by_rank[10:])
 
 
-# ------------------------------------------------------------------ package instability edge values (G-M05)
-
 def package_rows(values):
     """values: {name: instability or None}; weighted_instability is deliberately different (reversed) from instability."""
     return {f'pkg:python:{name}': {'file_count': 10 + i, 'ca': 20 + i, 'ce': 30 + i, 'instability': value, 'weighted_ca': 1.0,
@@ -633,8 +623,6 @@ def test_V04_G_M05_none_instability_sorts_after_zero_when_both_fit():
     values = {'a000': 0.0, 'b001': 1.0, 'c002': 0.5, 'a003': None}
     assert shown_packages(values) == ['b001', 'c002', 'a000', 'a003']
 
-
-# ------------------------------------------------------------------ non-cycle representative evidence form (G-M10)
 
 def edge_record(k, with_path=True):
     record = {'from_id': f'file:fb{k:02d}.py', 'to_id': f'file:tb{k:02d}.py', 'relation': 'CALLS', 'resolution': 'ambiguous',

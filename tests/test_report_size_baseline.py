@@ -68,8 +68,6 @@ def test_V07_identical_analysis_has_an_empty_delta_for_both_baseline_schemas(tmp
         assert result['counts'] == {key: 0 for key in result['counts']}, name
 
 
-# ---------------------------------------------------------------------------------------------------- V08
-
 def good():
     return to_v9_payload(V8, details_file='details.json')
 

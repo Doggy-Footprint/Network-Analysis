@@ -165,8 +165,6 @@ def test_V01_v9_json_round_trip_has_no_v8_leftovers(v9):
     assert 'detail_edge_indices' not in json.dumps(v9['candidates'])
 
 
-# ---------------------------------------------------------------------------------------------------- V02
-
 @pytest.fixture(scope='module')
 def r1(tmp_path_factory):
     return cli_fixture_run(tmp_path_factory.mktemp('r1'))
@@ -277,8 +275,6 @@ def test_V02_R5_symbol_granularity_keeps_v6_and_schema_5(tmp_path):
     assert 'details_file' not in json.loads((directory / 'bn' / 'b.json').read_text(encoding='utf-8'))
 
 
-# ---------------------------------------------------------------------------------------------------- V03
-
 @pytest.mark.parametrize('name,handout', [('b.json', 'b.handout.md'), ('b', 'b.handout.md'), ('b.JSON', 'b.JSON.handout.md')],
                          ids=['json-suffix', 'no-suffix', 'upper-JSON-suffix'])
 def test_V03_handout_path_follows_the_bottlenecks_path(tmp_path, name, handout):
@@ -287,8 +283,6 @@ def test_V03_handout_path_follows_the_bottlenecks_path(tmp_path, name, handout):
     assert names(tmp_path / 'bn') == {name, handout}
     assert (tmp_path / 'bn' / handout).read_text(encoding='utf-8').startswith('# Dependency bottleneck handout')
 
-
-# ---------------------------------------------------------------------------------------------------- V05
 
 HASH_SEEDS = ['0', '1', '31337']
 
@@ -308,8 +302,6 @@ def test_V05_four_outputs_are_byte_identical_across_runs_and_hash_seeds(tmp_path
     for seed in HASH_SEEDS[1:]:
         assert outputs[seed][0] == first, seed
 
-
-# ---------------------------------------------------------------------------------------------------- V09
 
 def test_V09_details_path_that_is_a_directory_fails_with_exit_code_1(tmp_path):
     (tmp_path / 'report.details.json').mkdir()
