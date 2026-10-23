@@ -1,4 +1,3 @@
-"""Run a repository's behaviour gate (test command recorded in eval/results/<repo>/test-baseline.json) and count outcomes."""
 import argparse
 import glob
 import json
@@ -12,7 +11,6 @@ from pathlib import Path
 EVAL = Path(__file__).resolve().parents[2] / 'eval'
 JAVA = 'JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"'
 VENDURE_PATH = f'{EVAL}/envs/vendure/node-v22.23.4-darwin-arm64/bin:{EVAL}/envs/vendure/bun-darwin-aarch64'
-# gradle and vitest/jest have no junit flag in the recorded commands, so they are parsed from their own reports/output
 EXTRA = {
     'ghostfolio': ['npx tsc --noEmit -p apps/api/tsconfig.app.json', 'npx tsc --noEmit -p apps/api/tsconfig.spec.json'],
     'vendure': ['cd packages/core && npx tsc -p ./build/tsconfig.build.json --noEmit'],

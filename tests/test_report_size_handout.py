@@ -1,8 +1,4 @@
-"""Spec ee17484a52af182c v1: V04 (handout content) and the F10 CLI file.
-
-Real-pipeline inputs (the fixture project) check F11/F12 structure; hand-built v9 reports (a deep copy of the real
-report with replaced candidates, details edges, rankings and packages) give each boundary an exactly known expectation.
-Section texts are located by their headings; the wording inside an item is not pinned beyond the tokens F12 names."""
+"""Section texts are located by their headings; the wording inside an item is not pinned beyond the tokens F12 names."""
 import copy
 import json
 import re

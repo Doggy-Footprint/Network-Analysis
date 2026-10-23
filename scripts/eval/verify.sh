@@ -1,5 +1,4 @@
 #!/bin/sh
-# usage: verify.sh <repo> <pid>  — independent gate rerun, measurement, comparison and verdict for one point
 set -e
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 PY="$ROOT/eval/.venv/bin/python"

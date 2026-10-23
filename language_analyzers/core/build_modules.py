@@ -12,7 +12,6 @@ _PROJECT_RE = re.compile(r"(?<![\w.])project\s*\(\s*(?:path\s*[:=]\s*)?[\"']([^\
 _ACCESSOR_RE = re.compile(r"(?<![\w.])projects((?:\.[A-Za-z_]\w*)+)")
 _TRAILING_IDENT_RE = re.compile(r"([A-Za-z_]\w*)\s*\(?\s*$")
 _NPM_DEP_FIELDS = ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies")
-# These wrap a dependency notation; they are not configurations.
 _DEPENDENCY_WRAPPERS = {"platform", "enforcedPlatform", "testFixtures"}
 _ZERO_COST = NodeCost(0, 0, 0)
 

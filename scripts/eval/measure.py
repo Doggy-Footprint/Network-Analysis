@@ -1,6 +1,4 @@
-"""Measure one repository revision for the OSS refactoring evaluation.
-
-Run with eval/.venv/bin/python (lizard, grimp). The analyzer under evaluation runs in
+"""Run with eval/.venv/bin/python (lizard, grimp). The analyzer under evaluation runs in
 the project .venv as a subprocess, so its metrics never feed the independent ones.
 """
 import argparse

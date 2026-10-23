@@ -1,6 +1,4 @@
-"""Spec 09e1bf05d439475e v1: Gradle module / npm workspace package detection and the `build` structure scheme.
-
-Expected module ids, package ids and edge tuples are written out by hand from the spec Signatures and the synthetic
+"""Expected module ids, package ids and edge tuples are written out by hand from the spec Signatures and the synthetic
 repositories below. V10 compares against goldens produced by the base commit (see build_modules_evidence/README-free
 generation procedure in the V10 test docstring)."""
 import json

@@ -1,5 +1,4 @@
-"""Spec ee17484a52af182c v3: V11 (F15, C19) the standalone `python -m report.bottlenecks.generate` / `render_report` accept
-bottlenecks.v9 and still accept v8. Inputs: the v8 golden written by the base commit, and the v9 file the CLI wrote."""
+"""The v8 input is the golden written by the base commit."""
 import json
 import re
 import subprocess
@@ -78,7 +77,6 @@ def open_page(chromium, path):
     return context, page, errors
 
 
-# file_ids of the golden project, sorted (hand-written): index -> path
 HAND_FILE_IDS = ['file:app/__init__.py', 'file:app/main.py', 'file:core/__init__.py', 'file:core/engine.py', 'file:core/registry.py',
                  'file:util/__init__.py', 'file:util/helpers.py', 'file:web/__init__.py', 'file:web/extra.py', 'file:web/views.py']
 

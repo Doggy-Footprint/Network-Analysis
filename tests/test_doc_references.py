@@ -1,6 +1,4 @@
-"""Spec 64deae051d59caac v5: documentation code references.
-
-Expected rows are written by hand from the spec rules F1-F13. V8 compares against tests/doc_references_evidence/base_views.json,
+"""Expected rows are written by hand from the spec rules F1-F13. V8 compares against tests/doc_references_evidence/base_views.json,
 produced by running this CLI at base commit 7d16983 in a temporary `git worktree` (PYTHONHASHSEED=0, `--granularity <g> --json
 --bottlenecks`, flags from K_CONFIGS in doc_references_support) and storing canonical sha256 hashes of each bottleneck top-level
 key, each dependency_network key, each details key and the architecture JSON (worktree removed afterwards)."""

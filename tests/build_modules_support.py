@@ -1,5 +1,4 @@
-"""Support for spec 09e1bf05d439475e v1 (build-module packages).
-Expected values in the tests are written out by hand from the spec Signatures; nothing here computes an expectation from the product."""
+"""Expected values in the tests are written out by hand from the spec Signatures; nothing here computes an expectation from the product."""
 import json
 import os
 import subprocess

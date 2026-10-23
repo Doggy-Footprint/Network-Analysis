@@ -1,7 +1,4 @@
-"""Spec ee17484a52af182c v1: V01 (bottlenecks.v9 evidence encoding), V02 (output files per CLI flags), V03 (handout path),
-V05 (determinism), V09 (write failure).
-
-V01 oracle: tests/report_size_evidence/v8_*.json were written by the base commit (see README there) and are decoded
+"""V01 oracle: tests/report_size_evidence/v8_*.json were written by the base commit (see README there) and are decoded
 against the v9 output field by field; cycle rows are also recomputed from the architecture with tests.structure_support."""
 import copy
 import json

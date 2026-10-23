@@ -1,6 +1,4 @@
-"""PreToolUse guard for one isolated evaluation run: python3 run_hook.py <run_dir>.
-
-Complements the Bash sandbox (which has no network and denyRead on these roots) with rules the sandbox cannot express:
+"""Complements the Bash sandbox (which has no network and denyRead on these roots) with rules the sandbox cannot express:
 file-tool paths, upstream-lookup commands, and points.json being write-once.
 """
 import json

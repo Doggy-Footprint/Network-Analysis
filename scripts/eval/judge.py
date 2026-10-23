@@ -1,10 +1,8 @@
-"""Judge a refactoring point against the metrics its finder predicted before implementation."""
 import argparse
 import json
 from pathlib import Path
 
 EVAL = Path(__file__).resolve().parents[2] / 'eval'
-# global guard rails: a point that worsens these is not counted as an improvement
 GUARDS = [('imports_global', 'cycle_count'), ('imports_global', 'files_in_cycles'), ('imports_global', 'largest_cycle'),
           ('lizard_production', 'high_ccn_functions'), ('lizard_production', 'long_functions'), ('lizard_production', 'ccn_max')]
 

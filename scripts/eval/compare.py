@@ -1,4 +1,3 @@
-"""Compare two measured revisions (see measure.py) on independent metrics first, analyzer metrics second."""
 import argparse
 import json
 import subprocess

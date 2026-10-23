@@ -1,6 +1,4 @@
-"""Shared helpers for spec ee17484a52af182c (report size for LLM).
-
-Expected values come from base-commit goldens in tests/report_size_evidence (see its README), from
+"""Expected values come from base-commit goldens in tests/report_size_evidence (see its README), from
 tests.structure_support's independent reference functions, or are written out by hand. Nothing here
 reads product output to derive an expectation."""
 import copy

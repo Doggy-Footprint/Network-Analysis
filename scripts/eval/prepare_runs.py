@@ -1,8 +1,5 @@
-"""Prepare isolated end-to-end runs: fresh depth-1 clone, seeded untracked env files, gate wrapper, task prompt, settings.
-
-Layout: <runs>/<arm>-<n>/<repo>/{clone,report?,gate,TASK.md,settings.json,run.json}. The runs root lives outside this
-repository so a headless agent started there never discovers this project's CLAUDE.md/AGENTS.md.
-"""
+"""The runs root lives outside this repository so a headless agent started there never discovers this project's
+CLAUDE.md/AGENTS.md."""
 import argparse
 import json
 import shlex
@@ -17,7 +14,7 @@ RUNS = Path.home() / 'toy-projects' / 'network-analysis-eval' / 'runs'
 REPOS = ['mealie', 'lnbits', 'CTFd', 'flask-admin', 'ghostfolio', 'vendure', 'nowinandroid']
 JAVA_HOME = '/Applications/Android Studio.app/Contents/jbr/Contents/Home'
 VENDURE_PATH = f'{EVAL}/envs/vendure/node-v22.23.4-darwin-arm64/bin:{EVAL}/envs/vendure/bun-darwin-aarch64'
-# untracked files the gate needs that a fresh clone lacks; copied (APFS clone) from the pilot clones, never their tracked files
+# untracked files only: tracked files must come from the fresh clone
 SEED = {
     'ghostfolio': ['node_modules'],
     'vendure': ['node_modules', 'packages/*/node_modules', 'packages/common/lib'],

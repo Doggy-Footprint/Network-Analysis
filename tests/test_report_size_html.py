@@ -1,5 +1,4 @@
-"""Spec ee17484a52af182c v1: V06 scenarios S1-S5 for the HTML embed (F09). The inputs are bottlenecks.v9 payloads (the
-F02-F05 encoding of the hand-built browser fixtures); expectations are the ones the pre-change browser tests derive by hand."""
+"""Expectations are the ones the pre-change browser tests derive by hand."""
 import copy
 import json
 import re

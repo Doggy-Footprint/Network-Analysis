@@ -1,7 +1,5 @@
-"""Spec ee17484a52af182c v1/v2: V07 (v8 and v9 baselines give the same delta) and V08 (invalid v9 baselines).
-
-The baseline is the base-commit golden itself (v8, written by the base commit) and its v9 re-encoding by the
-F02-F05 rules. The current analysis is the fixture project plus two additions, analysed in-process."""
+"""The baseline is the base-commit golden itself (v8, written by the base commit) and its v9 re-encoding by the
+F02-F05 rules."""
 import copy
 import json
 

@@ -1,4 +1,3 @@
-"""Archive subagent transcripts of an evaluation session and tabulate token usage per agent role."""
 import argparse
 import json
 import re
