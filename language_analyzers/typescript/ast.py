@@ -59,6 +59,16 @@ def end_line(node) -> int:
     return node.end_point[0] + 1
 
 
+# tree-sitter 0.26.0 corrupts the refcount of ints read via Point.row/.column, which later
+# segfaults the process; index access is unaffected.
+def start_column(node) -> int:
+    return node.start_point[1]
+
+
+def end_column(node) -> int:
+    return node.end_point[1]
+
+
 def child_of_type(node, *types) -> Optional[Any]:
     for child in node.named_children:
         if child.type in types:

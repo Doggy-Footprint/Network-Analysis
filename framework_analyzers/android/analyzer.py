@@ -184,7 +184,7 @@ class AndroidAnalyzer:
         self._extract_inject_fields(decl, source, module, name, arch)
 
         if is_iface and "Dao" not in anns:
-            endpoints = self._retrofit_endpoints(decl, source)
+            endpoints = self._retrofit_endpoints(decl, source, module)
             if endpoints:
                 arch.retrofit_apis.append(RetrofitApiInfo(
                     id=f"api_{module}_{name}",
@@ -489,10 +489,9 @@ class AndroidAnalyzer:
                 field_name=prop_name,
             ))
 
-    def _retrofit_endpoints(self, decl, source: bytes) -> List[RetrofitEndpointInfo]:
+    def _retrofit_endpoints(self, decl, source: bytes, module: str) -> List[RetrofitEndpointInfo]:
         endpoints = []
-        module_placeholder = ""
-        name_placeholder = ka.declared_name(decl, source) or "?"
+        interface_name = ka.declared_name(decl, source) or "?"
         for method in ka.nested_declarations(decl):
             if method.type != "function_declaration":
                 continue
@@ -503,7 +502,7 @@ class AndroidAnalyzer:
             method_name = ka.declared_name(method, source) or "?"
             path = ka.annotation_first_string_arg(method_anns[http_method], source) or ""
             endpoints.append(RetrofitEndpointInfo(
-                id=f"retrofit_{name_placeholder}_{method_name}",
+                id=f"retrofit_{module}_{interface_name}_{method_name}_{ka.start_line(method)}",
                 name=method_name,
                 http_method=http_method,
                 path=path,
