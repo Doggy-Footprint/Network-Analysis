@@ -4,15 +4,15 @@
 
 > 좋아. 지금까지 PR하고, 브랜치 바꿔서 handoff 만들어
 
-후속: "커밋해서 푸시하고, fix 브랜치로 넘어가자", "새로운 세션에서 작업을 이어갈건데, 그에 필요한 정보를 handoff에 다 정리했어?"
+후속: "커밋해서 푸시하고, fix 브랜치로 넘어가자", "새로운 세션에서 작업을 이어갈건데, 그에 필요한 정보를 handoff에 다 정리했어?", "VM은 ADR에 올려줘. cpu/memory intensive한 작업은 cloud에서 수행한다.고" → 초안 확인 후 "응 그대로 써줘"
 
 맥락: eval handoff(`agent-docs/handoff/stale/e16d433ef30afd87-oss-report-refactoring-eval.md`)의 마지막 시도에서 후보 저장소 5개에 분석기 `0224570`을 돌렸고, 3개가 아래 버그로 실패했다. 사용자는 eval을 포기했고("일단 정지하고, eval handoff는 검증에 필요한 데이터 셋을 확보하지 못해서 포기라고 적어줘"), 버그가 우리 것인지 물은 뒤 이 handoff를 요청했다. 수정은 아직 지시받지 않았다.
 
 ## State
 
-- 브랜치 `fix/analyzer-crashes`(로컬 전용, push 안 함). `test/modal-sum-ranking`(PR #6 → `master`, https://github.com/Doggy-Footprint/Network-Analysis/pull/6, open)의 HEAD `97387af` 위에 이 handoff 커밋 하나가 있다. 분석기 코드는 바꾸지 않았다. `origin`은 저장소 이전에 맞춰 `https://github.com/Doggy-Footprint/Network-Analysis.git`으로 바꿨다.
+- 브랜치 `fix/analyzer-crashes`(로컬 전용, push 안 함). `test/modal-sum-ranking`은 PR #6(https://github.com/Doggy-Footprint/Network-Analysis/pull/6)으로 `master`에 merge됐다(`c34d6f4`). 이 브랜치는 `97387af`에서 갈라져 handoff 커밋 뒤 `master`를 merge했고(`927e7a6`), 그 위에 ADR `agent-docs/adr/a89462012bf595dd-cloud-for-heavy-workloads.md`(+ index, handoff 보완) 커밋이 있다. 분석기 코드는 바꾸지 않았다. `origin`은 저장소 이전에 맞춰 `https://github.com/Doggy-Footprint/Network-Analysis.git`으로 바꿨다.
 - 사용자는 이 브랜치로 넘어와 수정 작업을 이어가려 한다. "workflow-approach로 spec부터 만들어 진행할까요?"라는 질문에는 아직 답을 받지 않았다.
-- 재현 입력은 GCP VM `na-eval`(project `playground-472408`, zone `asia-northeast3-a`, `n2-standard-16` = 16 vCPU/64GB, 사용자 지정 사양, TERMINATED)의 `~/eval-b/repos/<name>`에 있다(depth 1 clone, 아래 commit). 분석기 사본은 VM `~/pin`(`0224570`, `.venv` 포함). VM은 쓸 때만 켜고 끝나면 끈다(사용자 지시).
+- 재현 입력은 GCP VM `na-eval`(project `playground-472408`, zone `asia-northeast3-a`, `n2-standard-16` = 16 vCPU/64GB, 사용자 지정 사양, TERMINATED)의 `~/eval-b/repos/<name>`에 있다(depth 1 clone, 아래 commit). 분석기 사본은 VM `~/pin`(`0224570`, `.venv` 포함). VM은 쓸 때만 켜고 끝나면 끈다(사용자 지시, ADR `agent-docs/adr/a89462012bf595dd-cloud-for-heavy-workloads.md`).
   - 로컬 `gcloud` 기본 project가 다르므로 항상 `--project playground-472408 --zone asia-northeast3-a`를 붙인다. 켜기 `gcloud compute instances start na-eval ...`, 끄기 `... stop ...`, 접속 `gcloud compute ssh na-eval ... --command '...'`. 부팅 직후 수십 초는 ssh가 `Connection refused`를 낸다.
   - 재현: `cd ~/pin && .venv/bin/python -m code_analyzer.cli ~/eval-b/repos/<name> <명령> -o /tmp/<name>.html --bottlenecks /tmp/<name>.json`. segfault 위치는 `python -X faulthandler`로 얻었다.
   - 수정한 코드를 VM에서 돌리려면 로컬에서 `git archive`로 tar를 만들어 `gcloud compute scp`로 올리고, 풀어 둔 폴더에 `.venv`를 `~/venv` symlink로 둔다(eval 때 `~/pin`을 만든 방식). 작은 진단 스크립트는 `PYTHONPATH=~/pin`이 있어야 `bottlenecks` 등을 import한다.
