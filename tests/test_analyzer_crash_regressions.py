@@ -1,4 +1,4 @@
-"""Spec 3974b0fa12e686e6 v1: regressions for the three analyzer crashes.
+"""Spec 3974b0fa12e686e6: regressions for the three analyzer crashes.
 
 Expected values are computed from fixture text and the spec, never from analyzer output.
 """
@@ -30,7 +30,6 @@ def git_init(root, files):
     subprocess.run(["git", "add", *files], cwd=root, check=True)
 
 
-# ---------------------------------------------------------------- V1
 
 def python_nodes(tmp_path):
     from language_analyzers.python.graph import PythonGraphAnalyzer
@@ -65,7 +64,6 @@ def test_V1_docstring_partitions(tmp_path, case):
     assert nodes[node_id].docstring == expected
 
 
-# ---------------------------------------------------------------- V2
 
 def test_V2_E1_cli_fastapi_with_whitespace_docstring(tmp_path):
     files = {
@@ -88,7 +86,6 @@ def test_V2_E1_cli_fastapi_with_whitespace_docstring(tmp_path):
     assert html.exists() and bottlenecks.exists()
 
 
-# ---------------------------------------------------------------- V3
 
 NEST_RUNNER = textwrap.dedent('''
     import json, sys
@@ -251,7 +248,6 @@ def test_V3_B9_application_declaration_span_is_the_create_call(nest_run):
     assert end_col > 256 and end_col != column
 
 
-# ---------------------------------------------------------------- V4
 
 def retrofit_ids(project):
     from framework_analyzers.android.analyzer import AndroidAnalyzer
@@ -332,7 +328,6 @@ def test_V4_R5_annotation_on_line_above_fun_uses_annotation_line(tmp_path):
     assert ids == [f"retrofit_{path}_Api_get_5"]
 
 
-# ---------------------------------------------------------------- V5
 
 POINT_ATTRIBUTE = re.compile(r"(start|end)_point\s*\.\s*(row|column)\b")
 POINT_PATTERN_EXAMPLES = {
@@ -368,7 +363,6 @@ def test_V5_no_point_attribute_access_outside_tests():
     assert not violations, "\n".join(violations)
 
 
-# ---------------------------------------------------------------- V6
 
 GOLDENS = {
     "tests/coverage_reporting_evidence/characterization-baseline.json":
