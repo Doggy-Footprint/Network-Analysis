@@ -135,3 +135,8 @@ File: fa00b92fe9819b57-agent-context-candidates.md
 Summary: AI agent 친화 코드 조사에서 도출한 후보 C(시그니처 기준 맥락 비용)와 D(문서→코드 참조, dangling 참조)를 인계
 Related Files: analysis/graph_metrics.py, language_analyzers/core/cost.py, repository/scan.py, repository/policy.py, language_analyzers/core/graph_models.py
 Related Symbols: hop_2_token_cost, GraphNode.signature, RelationKind
+---
+File: e16d433ef30afd87-oss-report-refactoring-eval.md
+Summary: OSS 저장소 리포트 기반 리팩토링 평가 인계 — 2026-10-23 검증 데이터셋을 확보하지 못해 포기(사용자 결정). 마지막 B안(컷오프 이후 저장소 before/after 태스크 비교)은 후보 5개 중 분석기가 2개만 완료, 분석기 버그 3건 기록. VM은 n2-standard-16로 변경·중지
+Related Files: scripts/eval/prepare_runs.py, scripts/eval/run_hook.py, scripts/eval/TASK_PROMPT.md, scripts/eval/measure.py, scripts/eval/compare.py, scripts/eval/gate.py, scripts/eval/judge.py, scripts/eval/verify.sh, scripts/eval/collect_agents.py, scripts/eval/repos.json, language_analyzers/typescript/analyzer.py
+Related Symbols: measure.main, gate.main, judge.main, kotlin_imports, typescript_imports, agreement

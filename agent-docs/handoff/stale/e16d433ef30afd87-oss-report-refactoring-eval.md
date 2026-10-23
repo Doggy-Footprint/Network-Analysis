@@ -1,4 +1,4 @@
-# OSS 저장소로 리포트 기반 리팩토링 효과 평가 → 리팩토링 전후 동일 태스크 비용 비교로 전환
+# OSS 저장소로 리포트 기반 리팩토링 효과 평가 → 리팩토링 전후 동일 태스크 비용 비교로 전환 → 데이터셋 미확보로 포기
 
 ## User Query
 
@@ -29,9 +29,16 @@
   - "리팩토링이 있는 것도 좋지만, 그 품질도 좋아야 해. 그리고 sonnet-5.5 모델의 knowedge cutoff 이후 여야해." → "응 후보 수 조사 시작해".
   - "vm은 꺼두자. 필요할 때 켜고, 다쓰면 꺼줘"
   - "포기. 실험 방향을 동일 코드에서 리팩토링 전 후 같은 태스크에 소비되는 토큰 양, 태스크 결과 등으로 바꾼다. 이걸로 handoff update 하고 커밋해"
+- (2026-10-23 세션) "refactoring을 통한 eval을 위해 타겟을 찾아야 해. 1. 관리 상태가 좋지 않아야 함. 2. 어떤 태스크를 통해 평가할지 고민해봐야 함. 3. knowledge cutoff 이전 레포/commit도 사용가능할지 고려해봐야 함. 4. 여기서 활용할 수 있는 다른 평가 방식을 참고할 게 있는지 고려"
+  - "B로 테스트 해보고 싶어. 1k 조건을 와화하되, 기능은 정상적이어야 해. after는 리포트 기반 에이전트가 제작한다. 정적 분석 등의 작업은 gcloud를 이용한 16vCPU+64GB ram VM에서 진행한다." (B = 컷오프 이후 생성된 저장소)
+  - 셀은 3언어 × 1개, 기능 정상은 "빌드 + 기존 테스트 통과", after는 Opus로 저장소당 1개. "검색은 sonnet을 통해 진행한다."
+  - 첫 커밋 일괄 업로드 저장소는 "제외. 이번 시험은 엄밀한 검증보다는 PoC 개념이다". VM은 "중지 후 변경하고 다시 켜기".
+  - 분석기 버그 수정 제안에 "그렇게까지 해야할까..", 이어서 "일단 정지하고, eval handoff는 검증에 필요한 데이터 셋을 확보하지 못해서 포기라고 적어줘".
 
 ## State
 
+- **포기(사용자 결정, 2026-10-23): 검증에 필요한 데이터셋을 확보하지 못했다.** 마지막 시도(B안: Sonnet 5.5 컷오프 이후 생성된 관리 상태가 나쁜 저장소에서 before/after 태스크 비교)에서 셀별 후보는 찾았지만, 분석기 `0224570`이 끝까지 도는 후보는 Python `stevezau/shortlist`와 TS `kienpt012/dashboard`뿐이었고 Kotlin은 0개였다(Failed Attempts 마지막 두 행). 이 handoff는 재개하지 않으면 다음 작업이 없다.
+- VM `na-eval`은 사용자 지시로 `n2-standard-16`(16 vCPU, 64GB)으로 바꿨고 TERMINATED 상태다. B안 clone과 분석 산출물은 VM `~/eval-b/{repos,out}`에 있다(지워도 됨).
 - **실험 방향 전환(사용자 결정, 2026-10-23).** "리포트로 리팩토링 포인트를 찾아 구현하고 지표 개선을 잰다"는 설계와 "과거 메인테이너 리팩토링 복원" 설계를 모두 포기했다. 새 질문: **같은 코드의 리팩토링 전(before)과 후(after)에서 같은 태스크를 에이전트에게 주고, 소비 토큰과 태스크 결과(성공 여부, 테스트 통과 등)를 비교한다.** 아래 State의 run 격리·gate·VM 준비물은 재사용할 수 있다. 실험군/대조군 프롬프트(`TASK_PROMPT.md` + handout `{report_section}`)는 옛 설계용이라 그대로 쓰지 않는다.
 - 브랜치 `test/modal-sum-ranking`. **평가 대상 분석기 commit은 `0224570`으로 고정한다**(선행 작업 3개 완료; 이후 commit은 테스트·문서 정리뿐). 이전 기록: HEAD `a8a3012` 시점에 `scripts/eval/` 최초 커밋은 `5ddd426`, run 격리 초안(`repos.json`의 `github`·`commit`, `prepare_runs.py`, `run_hook.py`, `TASK_PROMPT.md`)은 `abd1df2`, 리포트 경량화는 `3373b36`에 커밋했다. 작업 트리는 깨끗하다.
 - **`./eval`은 사용자 지시로 전부 삭제했다.** 삭제한 것: clone, 테스트 환경(`envs`, `node`, `.venv`), 기준선(`test-baseline.json`), 분석기 리포트, 파일럿 결과, raw transcript. `~/toy-projects/network-analysis-eval/`은 만들지 않았다. 아무 run도 실행하지 않았다.
@@ -144,10 +151,14 @@
 | 기존 벤치마크·데이터셋 조사(2026-10-22 웹 검색) | 맞는 것 없음: RefactorBench(ICLR 2025, 위치를 지시로 줌), SWE-Refactor(Java), ROSE corpus(Java, smell→refactoring 휴리스틱 라벨), DependEval·DI-Bench(리팩토링 아님), SmellBench injected(arXiv 2606.05574, 코드 수준 smell 주입) | verified: "리포트가 고칠 곳을 짚는가"를 정답과 대조하는 Python/TS/Kotlin + 프레임워크 관계 데이터셋은 찾지 못함 |
 | (a) SmellBench architectural(arXiv 2605.07001, Zenodo 10.5281/zenodo.19247588, CC-BY-4.0; scikit-learn 1.7.2, PyExamine hard smell 65개 전문가 라벨) 대조. VM에서 분석기 `0224570`으로 sklearn 실행(1:25, RSS 2.5GB) | 대응 가능한 라벨 16개뿐(Unstable Dependency 14, God Object 2; 나머지 49개는 이름 중복·클래스 유사도·API 오용이라 분석기 개념 밖). 결과는 Execution Ledger | verified: 표본이 작고(오탐 3개), Sonnet 5.5 컷오프(2026-06) 이전 데이터라 에이전트 실험에는 못 씀. 분석기 단독 대조로만 의미 |
 | (b) 과거 메인테이너 구조 리팩토링 PR 수집(2026-07-01 이후 merge = Sonnet 5.5 컷오프 이후, 품질 조건 포함) | 후보 206건(Kotlin 8건/5저장소)까지 줄었으나 사용자 "포기". 깔때기는 Execution Ledger | verified(사용자 결정). 관찰: 대부분 "extract X into module" 국소 분리, 순환·결합 해소형은 소수, trailer 없는 AI 작성 시리즈 의심(dify, cline), 저장소마다 테스트 환경 구축 비용 큼. revert 검사는 도중 중단 |
+| B안 후보 탐색(Sonnet 서브에이전트 3개, `gh` 읽기 전용): 2026-07-01 이후 생성, 별 30+, 라이선스, FastAPI+SQLAlchemy / NestJS / Compose+Room+Hilt·Koin, 소스 100~3000, 테스트 존재, 첫 커밋 일괄 업로드 제외 | 통과: py `stevezau/shortlist` `f97a2473`, `apowerb/apowerb` `04e4f1fd`; ts `kienpt012/dashboard` `0584cc1f`, `7nvv8hyfbn-eng/AI-Learning-Hub` `1dba04fa`; kt `Clash-Projects/LastWave-Native` `3eaf19f9`. 일괄 업로드로 제외: TokEMS(+35.5만 줄), Muse(+20만), Siku(+4.3만) | verified: 컷오프 이후·관리 부실·테스트 보유를 함께 만족하는 저장소는 셀당 1~2개뿐이고, Android는 JVM 테스트가 있는 후보가 특히 적다 |
+| B안 후보 분석기 실행(VM, `0224570`) | shortlist 성공(1:06, RSS 1.6GB, 1262파일), dashboard 성공(0:08, 317파일). 실패 3건: apowerb `IndexError`(`language_analyzers/python/graph.py:366`, 공백뿐인 docstring의 `splitlines()[0]`); AI-Learning-Hub SIGSEGV(`framework_analyzers/nestjs/analyzer.py:337` `_diagnostic` → `language_analyzers/typescript/ast.py:51` `node.start_byte`); LastWave `architecture node ids are invalid`(`framework_analyzers/android/analyzer.py:506` id `retrofit_<interface>_<method>`에 파일 경로가 없어, 저장소 안 앱 사본 `reference zip/extracted/`의 같은 interface와 충돌) | verified(위치): IndexError·id 충돌. hypothesis: segfault는 해제된 tree-sitter 노드 접근. Tusky·wikipedia의 같은 메시지가 같은 원인인지는 미확인. 버그 수정은 사용자가 보류했고 실험은 여기서 포기 |
 
 ## Next Step
 
-새 방향(리팩토링 전후 동일 태스크 비교)의 설계는 아직 없다. 아래 0~6은 옛 설계 단계이며, 1(VM 환경·gate 기준선)·3(settings·hook·launcher)·4(격리 시험)는 새 설계에서도 재사용할 수 있다.
+없음(포기). 재개한다면: 분석기 버그 3건(Failed Attempts 마지막 행)을 고치거나, shortlist 단일 저장소 PoC(기준선 → 태스크 작성 → Opus after → before/after 태스크 1개 × 1회)부터 한다. 설계 초안은 `~/.claude/plans/frolicking-jumping-dolphin.md`(로컬, 저장소 밖)에 있었다.
+
+이하 기록용. 새 방향(리팩토링 전후 동일 태스크 비교)의 설계는 아직 없다. 아래 0~6은 옛 설계 단계이며, 1(VM 환경·gate 기준선)·3(settings·hook·launcher)·4(격리 시험)는 새 설계에서도 재사용할 수 있다.
 
 A. 새 설계 초안을 사용자에게 제안하고 Open Questions의 "새 방향" 항목을 결정받는다. 실행 전에 실험군·대조군(after·before) 프롬프트를 영어로 먼저 보여준다(이전 세션 지시).
 B. VM은 작업할 때만 켜고 끝나면 끈다. 인증 파일과 `claude -p` 동작을 먼저 확인한다.
