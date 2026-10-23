@@ -10070,7 +10070,7 @@
               "hop_3_node_count": 7,
               "hop_3_token_cost": 182.0
             },
-            "retrofit_UserApi_getUser": {
+            "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7": {
               "token_cost": 23,
               "effective_token_cost": 23.0,
               "pagerank": 0.022448618141128786,
@@ -10556,7 +10556,7 @@
               "value": 0.06445137111805066
             },
             {
-              "id": "retrofit_UserApi_getUser",
+              "id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
               "label": "GET api/users/{userId}\ngetUser()",
               "value": 0.03429385827471274
             },
@@ -11351,7 +11351,7 @@
           }
         },
         {
-          "id": "retrofit_UserApi_getUser",
+          "id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "label": "getUser",
           "group": "retrofit_endpoint",
           "category": "retrofit_endpoint",
@@ -12658,7 +12658,7 @@
         },
         {
           "from_id": "api_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi",
-          "to_id": "retrofit_UserApi_getUser",
+          "to_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "relation": "ROUTES",
           "label": "",
           "dashes": false,
@@ -13286,7 +13286,7 @@
           }
         },
         {
-          "from_id": "retrofit_UserApi_getUser",
+          "from_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "to_id": "kotlin:core_network/src/main/kotlin/com/example/core/network/UserApi.kt#UserApi.getUser",
           "relation": "IMPLEMENTED_BY",
           "label": "",
@@ -13639,7 +13639,7 @@
               "hop_3_node_count": 7,
               "hop_3_token_cost": 182.0
             },
-            "retrofit_UserApi_getUser": {
+            "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7": {
               "token_cost": 23,
               "effective_token_cost": 23.0,
               "pagerank": 0.022448618141128786,
@@ -14125,7 +14125,7 @@
               "value": 0.06445137111805066
             },
             {
-              "id": "retrofit_UserApi_getUser",
+              "id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
               "label": "GET api/users/{userId}\ngetUser()",
               "value": 0.03429385827471274
             },
@@ -14984,7 +14984,7 @@
           }
         },
         {
-          "id": "retrofit_UserApi_getUser",
+          "id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "label": "getUser",
           "group": "retrofit_endpoint",
           "category": "retrofit_endpoint",
@@ -16467,7 +16467,7 @@
         },
         {
           "from_id": "api_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi",
-          "to_id": "retrofit_UserApi_getUser",
+          "to_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "relation": "ROUTES",
           "label": "",
           "dashes": false,
@@ -17095,7 +17095,7 @@
           }
         },
         {
-          "from_id": "retrofit_UserApi_getUser",
+          "from_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
           "to_id": "kotlin:core_network/src/main/kotlin/com/example/core/network/UserApi.kt#UserApi.getUser",
           "relation": "IMPLEMENTED_BY",
           "label": "",
@@ -18064,7 +18064,7 @@
             "weighted_fan_in": 1.0,
             "weighted_fan_out": 0
           },
-          "retrofit_UserApi_getUser": {
+          "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7": {
             "authority_score": 8.19555035659398e-31,
             "betweenness_centrality": 0.0006157635467980296,
             "degree_centrality": 0.034482758620689655,
@@ -18442,7 +18442,7 @@
               "value": 0.094633614316045
             },
             {
-              "node_id": "retrofit_UserApi_getUser",
+              "node_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
               "value": 0.03308616399220365
             },
             {
@@ -18963,7 +18963,7 @@
                 "value": 0.094633614316045
               },
               {
-                "node_id": "retrofit_UserApi_getUser",
+                "node_id": "retrofit_core_network/src/main/kotlin/com/example/core/network/UserApi.kt_UserApi_getUser_7",
                 "value": 0.03308616399220365
               },
               {

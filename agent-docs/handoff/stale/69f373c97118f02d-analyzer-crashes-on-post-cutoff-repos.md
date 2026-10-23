@@ -33,6 +33,7 @@
 | attempt | failure evidence | cause |
 |---|---|---|
 | 없음(수정 시도 전) | — | — |
+| 버그 2 가설(tree 해제 후 Node 접근) 확인 | 로컬 재현을 ailh 2파일로 최소화; 크래시 위치가 `_routes`·diagnostics 정렬 등으로 바뀌고 `SourceSpan.start_col` 객체가 다른 객체로 바뀌어 있음; tree-sitter 0.26.0에서 `.column` 반복 접근 뒤 refcount 비정상, `[1]`·0.24.0·0.25.2는 정상 | 가설 기각(verified). 원인은 tree-sitter 0.26.0 Point 속성 접근 결함. 수정·검증은 spec `agent-docs/spec-logs/3974b0fa12e686e6-analyzer-crashes.md` |
 
 ## Next Step
 

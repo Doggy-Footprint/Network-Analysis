@@ -63,6 +63,11 @@ class _Reference:
     is_call: bool
 
 
+def _first_docstring_line(docstring: Optional[str]) -> Optional[str]:
+    lines = (docstring or "").strip().splitlines()
+    return lines[0] if lines else None
+
+
 def _walk_excluding_defs(nodes):
     stack = [node for node in nodes]
     while stack:
@@ -338,7 +343,7 @@ class PythonGraphAnalyzer:
             language="python",
             span=span,
             cost=cost_for_span(entry.source, span),
-            docstring=(entry.docstring or "").strip().splitlines()[0] if entry.docstring else None,
+            docstring=_first_docstring_line(entry.docstring),
             symbol_path=entry.module,
             flags=list(entry.flags),
             provenance=PROVENANCE,
@@ -363,7 +368,7 @@ class PythonGraphAnalyzer:
             span=span,
             cost=cost_for_span(entry.source, span),
             signature=symbol.signature,
-            docstring=(symbol.docstring or "").strip().splitlines()[0] if symbol.docstring else None,
+            docstring=_first_docstring_line(symbol.docstring),
             exported=symbol.exported,
             symbol_path=f"{symbol.module}.{symbol.qualname}",
             flags=flags,
