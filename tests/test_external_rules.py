@@ -494,13 +494,14 @@ def test_V13_validator_accepts_external_violations_and_renders():
     spec = {'version': 1, 'layers': {'db': {'paths': ['db/**']}, 'domain': {'paths': ['domain/**']}}, 'external': {'web': ['fastapi*']},
             'forbid': [{'from': 'db', 'to_external': ['group:web']}], 'allow_external': {'domain': ['typing']}}
     payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights(), rules=to_rules_ext(spec))))
-    assert payload['schema'] == 'bottlenecks.v8'
+    assert payload['schema'] == 'bottlenecks.v9'
     assert brief(external_violations(payload['candidates'])) == [
         (ALLOW_EXT, 'domain', 'file:domain/m.py', 'os'), (FORBID_EXT, 'db', 'file:db/d.py', 'fastapi')]
     coverage = without_digest(payload['coverage']['architecture_rules'])
     assert coverage['external_import_count'] == 3 and coverage['external_violation_count'] == 2 and coverage['violation_count'] == 2
     assert keys_found(payload, 'external_imports') == []
-    for text in render(payload):
+    from tests.report_size_support import legacy_v8
+    for text in render(legacy_v8(payload, arch)):
         assert '<html' in text.lower() and '경계 규칙 위반' in text
 
 

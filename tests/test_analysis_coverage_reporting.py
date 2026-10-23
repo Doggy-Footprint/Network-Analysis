@@ -180,6 +180,10 @@ def test_V04_framework_disabled_language(tmp_path,framework):
 def test_V05_characterization_and_V04_cli_stages():
     baseline=json.loads((Path(__file__).parent/'coverage_reporting_evidence'/'characterization-baseline.json').read_text())
     current=baseline_runner().capture()
+    from tests.report_size_support import legacy_v8_full
+    for name,record in current.items():
+        if name.endswith(':file'):
+            record['bottlenecks']=legacy_v8_full(record['bottlenecks'],record['architecture'])
     normalized = {name: {surface: without_structure_facts(without_candidate_policy_metadata(strip_external_imports(payload), surface)) for surface, payload in record.items()} for name, record in current.items()}
     assert without_coverage(normalized)==without_coverage(legacy_to_current(baseline)), 'Characterization: extraction, schema, metrics and candidates changed'
     expected={**{key:{key+'-core'} for key in ('python','typescript','kotlin')},'fastapi':{'fastapi','python-core'},'sqlalchemy':{'sqlalchemy','python-core'},'android':{'android','kotlin-core'},'nestjs':{'nestjs','typescript-core'},'fastapi-sqlalchemy':{'fastapi','sqlalchemy','python-core'},'nestjs-typescript':{'nestjs','typescript-core'},'android-kotlin':{'android','kotlin-core'}}
@@ -295,10 +299,11 @@ def test_V05_json_exports_and_regeneration(monkeypatch,tmp_path,mode):
     arch=json.loads(output.with_suffix('.json').read_text())
     bottlenecks=json.loads(bottlenecks_path.read_text())
     inline=json.loads(re.search(r'<script[^>]*id="report-data"[^>]*>(.*?)</script>',output.read_text(),re.S).group(1))
-    assert inline['architecture']==arch
-    assert inline['bottlenecks']==bottlenecks
-    assert arch['schema_version']==('6' if mode=='file' else '5')
-    assert bottlenecks['schema']==('bottlenecks.v8' if mode=='file' else 'bottlenecks.v6')
+    assert {k:v for k,v in inline['architecture'].items() if k not in ('schema_version','details_file')}=={k:v for k,v in arch.items() if k not in ('schema_version','details_file')}
+    assert {k:v for k,v in inline['bottlenecks'].items() if k!='details_file'}=={k:v for k,v in bottlenecks.items() if k!='details_file'}
+    assert inline['architecture']['schema_version']==('6' if mode=='file' else '5') and 'details_file' not in inline['architecture'] and 'details_file' not in inline['bottlenecks']
+    assert arch['schema_version']==('7' if mode=='file' else '5')
+    assert bottlenecks['schema']==('bottlenecks.v9' if mode=='file' else 'bottlenecks.v6')
     for value in (arch['stats']['analysis_coverage'],bottlenecks['coverage']['analysis_coverage'],inline['architecture']['stats']['analysis_coverage'],inline['bottlenecks']['coverage']['analysis_coverage']):
         assert_wire_version(value)
     assert arch['stats']['analysis_coverage']==bottlenecks['coverage']['analysis_coverage']

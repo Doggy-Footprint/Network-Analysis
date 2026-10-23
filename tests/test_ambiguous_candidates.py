@@ -206,7 +206,8 @@ def test_VO4_symmetric_evidence_and_unique_projected_pairs(tmp_path, granularity
         arch = to_file_architecture(arch, snap)
     weights = load_weights(tmp_path, weights_data())
     report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights)))
-    report = recovered_candidate_evidence(report)
+    from tests.report_size_support import with_v8_spread
+    report = recovered_candidate_evidence(report) if granularity == 'symbol' else with_v8_spread(report, arch)
     assert report['dependency_network']['ambiguity_policy'] == POLICY
     assert report['dependency_network']['edge_count'] == {'symbol': 4, 'file': 4, 'collapsed-target-file': 2, 'internal-file-evidence': 3}[granularity]
     spread = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
@@ -404,7 +405,8 @@ def test_VO4_overlapping_original_evidence_count_once_per_target(tmp_path):
              edge('u', 'b2', resolution=Resolution.AMBIGUOUS, candidates=['b1', 'c'], evidence=SourceSpan('su/u.py', 3, 4))]
     snap, arch = converted({'sa/a.py': 'a\na', 'su/u.py': 'u\nu\nu\nu', 'tb/b.py': 'b', 'tc/c.py': 'c'}, nodes, edges)
     report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
-    report = recovered_candidate_evidence(report)
+    from tests.report_size_support import with_v8_spread
+    report = with_v8_spread(report, arch)
     candidates = {c['target']: c for c in report['candidates'] if c['kind'] == 'evidence_spread'}
     assert set(candidates) == {'file:tb/b.py', 'file:tc/c.py'}
     for c in candidates.values():
@@ -482,12 +484,17 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
     before = copy.deepcopy(serialize(arch))
     weights = load_weights(tmp_path, weights_data())
     report = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights)))
-    registry = report['dependency_network']['candidate_groups']
     fingerprint = lambda group: json.dumps(group, sort_keys=True)
     expected_groups = {fingerprint({'to_id': target, 'candidates': alternatives}) for target, alternatives in groups}
-    assert len(registry) == 4
-    assert {fingerprint(group) for group in registry.values()} == expected_groups
-    recovered = recovered_candidate_evidence(report)
+    if granularity == 'symbol':
+        registry = report['dependency_network']['candidate_groups']
+        assert len(registry) == 4
+        assert {fingerprint(group) for group in registry.values()} == expected_groups
+        recovered = recovered_candidate_evidence(report)
+    else:
+        from tests.report_size_support import with_v8_spread
+        assert 'candidate_groups' not in report['dependency_network']
+        recovered = with_v8_spread(report, arch)
     expected_records = [dict(copy.deepcopy(relation), path=relation['evidence']['file_path'], start_line=1, end_line=1) for relation in raw]
     if granularity == 'file':
         for ordinal, record in enumerate(expected_records):
@@ -497,9 +504,12 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
     for candidate in candidates:
         assert Counter(fingerprint(record) for record in candidate['evidence']) == Counter(fingerprint(record) for record in expected_records)
     references = {i: set() for i in range(len(groups))}
-    for candidate in report['candidates']:
+    for candidate in recovered['candidates'] if granularity == 'file' else report['candidates']:
         if candidate['kind'] == 'evidence_spread':
             for record in candidate['evidence']:
+                if granularity == 'file':
+                    references[record['metadata']['original_marker']].add(fingerprint({'to_id': record['to_id'], 'candidates': record['candidates']}))
+                    continue
                 assert 'candidates' not in record
                 references[record['metadata']['original_marker']].add(record['candidate_group_id'])
     assert all(len(ids) == 1 for ids in references.values())
@@ -515,7 +525,10 @@ def test_VO4_registry_losslessly_interns_original_order_duplicates_and_represent
     if granularity == 'file':
         reversed_arch = to_file_architecture(reversed_arch, snap)
     reordered = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, reversed_arch, weights)))
-    assert reordered['dependency_network']['candidate_groups'] == registry
+    if granularity == 'symbol':
+        assert reordered['dependency_network']['candidate_groups'] == registry
+    else:
+        assert 'candidate_groups' not in reordered['dependency_network']
 
 
 def test_VO4_registry_omitted_for_unchanged_nonambiguous_evidence(tmp_path):

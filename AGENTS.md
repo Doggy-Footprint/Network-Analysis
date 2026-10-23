@@ -4,7 +4,7 @@ Builds a repository's dependency network from analysis and surfaces its structur
 The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
 The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
 
-<!-- harness:begin 0.25.0 -->
+<!-- harness:begin 0.27.0 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
@@ -119,7 +119,7 @@ Write when a workflow-approach task exhausts its verifier budget, cannot make pr
 Required file structure:
 
 - `#` Title
-- `## Goal` (user's original words)
+- `## User Query` (user's original words)
 - `## State` (branch, commit, changed files)
 - `## Failed Attempts` (table `| attempt | failure evidence | cause |`, cause marked `verified` or `hypothesis`)
 - `## Next Step`
@@ -134,6 +134,7 @@ failed attempts without requiring telemetry to reconstruct them.
 Handoffs created before harness 0.7.0 may retain `## Contract Snapshot` instead
 of `## Spec` and `## Execution Ledger`; do not rewrite historical records solely
 to change their format.
+Handoffs created before harness 0.27.0 may retain `## Goal` instead of `## User Query`.
 
 When resuming, never delete or edit existing Failed Attempts rows; only append.
 

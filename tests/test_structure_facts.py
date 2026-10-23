@@ -32,7 +32,7 @@ def key(tier, *paths, scheme='file'):
 
 
 def test_V01_policy_constants():
-    assert STRUCTURE_POLICY == 'structure.v1'
+    assert STRUCTURE_POLICY == 'structure.v2'
     assert TIERS == ('certain', 'resolved', 'all')
 
 
@@ -350,7 +350,7 @@ def test_V03_candidates_are_sorted_by_kind_then_id():
 def test_V03_result_coverage_is_exactly_the_structure_object():
     result = run(['a/x.py', 'b/y.py'], [])
     empty = {'assigned_file_count': 2, 'unassigned_file_count': 0, 'unassigned_files': [], 'shared_file_count': 0, 'shared_files': []}
-    assert result.coverage == {'structure': {'policy': 'structure.v1', 'schemes': {'language': empty}}}
+    assert result.coverage == {'structure': {'policy': 'structure.v2', 'schemes': {'language': empty}}}
 
 
 def test_V03_result_is_frozen_dataclass_with_declared_fields():
@@ -370,7 +370,7 @@ def test_V03_F17_repeat_and_input_order_independence():
     assert first == analyze_structure(architecture(paths, edges), default_weights())
 
 
-def v8_payload(tmp_path):
+def v8_payload(tmp_path, with_arch=False):
     """A bottlenecks.v8 payload with all three new kinds, produced by the product pipeline on a hand-made graph."""
     from bottlenecks import analyze_bottlenecks, bottlenecks_to_json
     from tests.edge_weights_support import edge, load_weights, weights_data
@@ -379,14 +379,15 @@ def v8_payload(tmp_path):
     nodes = [node('a', 'p/a.py'), node('b', 'q/b.py'), node('c', 'r/c.py')]
     edges = [edge('a', 'b'), edge('b', 'a'), edge('c', 'a')]
     snap, arch = converted(files, nodes, edges)
-    return json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
+    payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, load_weights(tmp_path, weights_data()))))
+    return (payload, arch) if with_arch else payload
 
 
 def test_V09_pipeline_payload_is_v8_with_all_new_kinds(tmp_path):
     payload = v8_payload(tmp_path)
-    assert payload['schema'] == 'bottlenecks.v8' and payload['granularity'] == 'file'
+    assert payload['schema'] == 'bottlenecks.v9' and payload['granularity'] == 'file'
     assert {c['kind'] for c in payload['candidates']} >= {'dependency_cycle', 'package_cycle', 'unstable_dependency'}
-    assert payload['dependency_network']['structure_policy'] == 'structure.v1'
+    assert payload['dependency_network']['structure_policy'] == 'structure.v2'
     assert set(payload['dependency_network']['package_metrics']) == {'language'}
 
 
@@ -402,13 +403,15 @@ def generate_to_text(payload):
 def test_V09_bottleneck_json_coverage_structure_is_the_f13_object(tmp_path):
     payload = v8_payload(tmp_path)
     language = {'assigned_file_count': 3, 'unassigned_file_count': 0, 'unassigned_files': [], 'shared_file_count': 0, 'shared_files': []}
-    assert payload['coverage']['structure'] == {'policy': 'structure.v1', 'schemes': {'language': language}}
+    assert payload['coverage']['structure'] == {'policy': 'structure.v2', 'schemes': {'language': language}}
 
 
 def test_V09_v8_ok_and_new_kind_labels_render(tmp_path):
     from report.bottlenecks import render_report
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
-    payload = v8_payload(tmp_path)
+    from tests.report_size_support import legacy_v8
+    payload, arch = v8_payload(tmp_path, with_arch=True)
+    payload = legacy_v8(payload, arch)
     for kind in ('dependency_cycle', 'package_cycle', 'unstable_dependency', 'untested_hub', 'isolated_node'):
         assert isinstance(KIND_LABELS[kind], str) and KIND_LABELS[kind].strip()
         assert isinstance(KIND_DESCRIPTIONS[kind], str) and KIND_DESCRIPTIONS[kind].strip()
@@ -452,7 +455,7 @@ def test_V09_unknown_kind_is_rejected(tmp_path):
 def test_V09_unknown_schema_version_is_rejected(tmp_path):
     from tests.test_search_mimicry_schema_and_structure import rejected_by_render
     payload = v8_payload(tmp_path)
-    payload['schema'] = 'bottlenecks.v9'
+    payload['schema'] = 'bottlenecks.v10'
     assert '$.schema' in rejected_by_render(payload)
 
 

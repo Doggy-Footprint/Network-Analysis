@@ -760,10 +760,11 @@
     function cycleFiles(kind, members, candidateId) {
         if (kind === 'dependency_cycle') return sortedUnique(members);
         const candidate = candidateById.get(candidateId);
-        const files = [];
-        for (const record of Array.isArray(candidate?.evidence) ? candidate.evidence : [])
-            for (const pair of record.file_pairs || []) files.push(...pair);
-        return sortedUnique(files);
+        const files = [], ids = bottlenecks?.dependency_network?.file_ids || [];
+        for (const row of Array.isArray(candidate?.evidence) ? candidate.evidence : [])
+            for (const pair of Array.isArray(row) ? row[6] || [] : row.file_pairs || [])
+                for (const index of pair) files.push(Array.isArray(row) ? ids[index] : index);
+        return sortedUnique(files.filter(id => id !== undefined));
     }
 
     function violationFiles(candidate) {

@@ -19,8 +19,6 @@ from framework_analyzers.migration_tables import (
 )
 from language_analyzers.core.graph_models import RelationKind, SourceSpan
 
-# ---------------------------------------------------------------- VO1
-
 SQL_CASES = [
     # id, sql, expected
     ("S1_create_table", "CREATE TABLE users (id INTEGER)", ["users"]),
@@ -96,9 +94,6 @@ def test_VO1_normalize_table_name(raw, expected):
 
 def test_VO1_normalize_table_name_none_is_none():
     assert normalize_table_name(None) is None
-
-
-# ---------------------------------------------------------------- VO2
 
 SPAN = SourceSpan("alembic/versions/001.py", 3, 9, 0, 1)
 SPAN_B = SourceSpan("alembic/versions/002.py", 1, 4, 0, 1)

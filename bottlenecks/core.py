@@ -26,6 +26,7 @@ class BottleneckReport:
     candidates: Tuple[Mapping[str, Any], ...]; limitations: Tuple[str, ...]
     granularity: Optional[str] = None
     delta: Optional[Mapping[str, Any]] = None
+    details_file: Optional[str] = None
 
 
 RANKING_KEYS = (
@@ -171,15 +172,15 @@ def _file_candidates(architecture: Any, threshold: int, token_threshold: int, me
         targets = set(node_files[target] or target for target in candidate_targets(edge))
         target = node_files[edge["to_id"]]
         evidence = edge.get("evidence")
-        record = dict(edge, detail_edge_index=index)
-        if evidence is not None:
-            record.update(path=evidence["file_path"], start_line=evidence["start_line"], end_line=evidence["end_line"])
         if evidence is not None:
             for possible_target in targets:
-                incoming.setdefault(possible_target, []).append(record)
+                incoming.setdefault(possible_target, []).append((index, evidence))
         if edge.get("resolution") == "unresolved" or edge.get("confidence") == "dynamic_required":
             affected = target or node_files[edge["from_id"]]
             if affected is not None:
+                record = dict(edge, detail_edge_index=index)
+                if evidence is not None:
+                    record.update(path=evidence["file_path"], start_line=evidence["start_line"], end_line=evidence["end_line"])
                 boundaries.setdefault(affected, []).append(record)
     for node in details["nodes"]:
         target = node_files[node["id"]]
@@ -210,15 +211,29 @@ def _file_candidates(architecture: Any, threshold: int, token_threshold: int, me
             candidates.append(_candidate(node.id + "|boundary", "unresolved_boundary", node.id,
                 {"unresolved_count": sum(_unresolved_count(record) for record in records)}, records, "static_analyzer_relation"))
         own = node.metadata["file_path"]
-        records = [record for record in incoming.get(node.id, []) if record["evidence"]["file_path"] != own]
+        records = [(index, evidence) for index, evidence in incoming.get(node.id, []) if evidence["file_path"] != own]
         if records:
-            paths = {record["evidence"]["file_path"] for record in records}
-            span = max(record["evidence"]["end_line"] for record in records) - min(record["evidence"]["start_line"] for record in records) + 1 if len(paths) == 1 else 0
+            paths = {evidence["file_path"] for _, evidence in records}
+            span = max(evidence["end_line"] for _, evidence in records) - min(evidence["start_line"] for _, evidence in records) + 1 if len(paths) == 1 else 0
             directories = {posixpath.dirname(path) for path in paths} - {posixpath.dirname(own)}
             if len(directories) > 1 or (len(paths) == 1 and span > threshold):
                 candidates.append(_candidate(node.id + "|spread", "evidence_spread", node.id,
-                    {"file_count": len(paths), "directory_count": len(directories), "line_span": span, "line_threshold": threshold}, records, "static_analyzer_relation"))
+                    {"file_count": len(paths), "directory_count": len(directories), "line_span": span, "line_threshold": threshold}, sorted({index for index, _ in records}), "static_analyzer_relation"))
     return sorted(candidates, key=lambda item: (item["kind"], item["id"]))
+
+
+def _compact_structure_evidence(candidates, file_ids):
+    position = {file_id: index for index, file_id in enumerate(file_ids)}
+    for candidate in candidates:
+        kind = candidate["kind"]
+        if kind in ("dependency_cycle", "unstable_dependency"):
+            candidate["evidence"] = [[position[r["from_id"]], position[r["to_id"]], r["relations"], r["max_weight"], r["evidence_count"], r["tier"]] for r in candidate["evidence"]]
+        elif kind == "package_cycle":
+            candidate["evidence"] = [[r["from_id"], r["to_id"], r["relations"], r["max_weight"], r["evidence_count"], r["tier"], [[position[a], position[b]] for a, b in r["file_pairs"]]] for r in candidate["evidence"]]
+
+
+EVIDENCE_COLUMNS = {"file_pair": ["from", "to", "relations", "max_weight", "evidence_count", "tier"],
+    "package_pair": ["from_id", "to_id", "relations", "max_weight", "evidence_count", "tier", "file_pairs"]}
 
 
 def _intern_candidate_groups(candidates):
@@ -262,12 +277,17 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         rankings_by_category = {category: {key: [{"node_id": node_id, "value": metrics[node_id][key]} for node_id in sorted((item for item in ranked_ids if categories[item] == category), key=lambda item: (-metrics[item][key], item))[:10]] for key in RANKING_KEYS} for category in CATEGORY_KEYS}
         candidates = _file_candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics) if is_file else _candidates(architecture, weights.large_node_line_threshold, weights.large_node_token_threshold, metrics)
         structure = None
+        doc_summary = None
         if is_file:
             from analysis.structure import analyze_structure
             structure = analyze_structure(architecture, weights, rules)
             from bottlenecks.reach import reach_candidates
             reach = reach_candidates(architecture, metrics, weights.untested_hub_top_n)
-            candidates = sorted(candidates + list(structure.candidates) + reach, key=lambda item: (item["kind"], item["id"]))
+            from analysis.doc_references import analyze_doc_references
+            doc_table, doc_candidates, doc_summary = analyze_doc_references(snapshot, architecture.details)
+            architecture.details["doc_references"] = doc_table
+            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates, key=lambda item: (item["kind"], item["id"]))
+            _compact_structure_evidence(candidates, sorted(metrics))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold, "large_node_token_threshold": weights.large_node_token_threshold}
         if is_file:
@@ -282,10 +302,14 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             "betweenness_sample_size": analysis["betweenness_sample_size"]}
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
+        if is_file:
+            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS)
+        if doc_summary is not None:
+            coverage["doc_references"] = doc_summary
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v8" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "6"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 
@@ -298,5 +322,7 @@ def bottlenecks_to_json(report: BottleneckReport) -> str:
             payload.pop("granularity")
         if report.delta is None:
             payload.pop("delta")
+        if report.details_file is None:
+            payload.pop("details_file")
         return json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False) + "\n"
     except (TypeError, ValueError) as exc: raise BottleneckInputError("report contains non-JSON values") from exc

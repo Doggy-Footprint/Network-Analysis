@@ -713,12 +713,13 @@ def render(payload):
 
 def test_V09_v8_with_rule_violation_ok_and_label():
     from report.bottlenecks.generate import KIND_DESCRIPTIONS, KIND_LABELS
-    payload, _, _ = v8_payload()
-    assert payload['schema'] == 'bottlenecks.v8'
+    payload, arch, _ = v8_payload()
+    assert payload['schema'] == 'bottlenecks.v9'
     assert {c['kind'] for c in payload['candidates']} >= {RULE_KIND}
     assert KIND_LABELS[RULE_KIND] == '경계 규칙 위반'
     assert isinstance(KIND_DESCRIPTIONS[RULE_KIND], str) and KIND_DESCRIPTIONS[RULE_KIND].strip()
-    for text in render(payload):
+    from tests.report_size_support import legacy_v8
+    for text in render(legacy_v8(payload, arch)):
         assert '<html' in text.lower() and '경계 규칙 위반' in text
 
 
@@ -728,7 +729,8 @@ def test_V09_coverage_architecture_rules_accepted_and_matches_reference():
     assert without_digest(payload['coverage']['architecture_rules'])['policy'] == RULES_POLICY
     assert without_digest(payload['coverage']['architecture_rules'])['violation_count'] == 2
     assert without_digest(payload['coverage']['architecture_rules'])['layer_file_counts'] == {'a': 1, 'b': 1, 'c': 1}
-    for text in render(payload):
+    from tests.report_size_support import legacy_v8
+    for text in render(legacy_v8(payload, arch)):
         assert '<html' in text.lower()
 
 
@@ -745,7 +747,7 @@ def test_V09_rules_absent_payload_has_no_architecture_rules_coverage():
     snap, arch = converted({AX: 'x = 1\n', BY: 'y = 1\n'}, [node('x', AX), node('y', BY)], [edge('x', 'y')])
     payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights())))
     assert 'architecture_rules' not in payload['coverage'] and all(c['kind'] != RULE_KIND for c in payload['candidates'])
-    assert payload['schema'] == 'bottlenecks.v8'
+    assert payload['schema'] == 'bottlenecks.v9'
 
 
 def test_V08_F12_multi_match_error_keeps_its_message_through_analyze_bottlenecks():

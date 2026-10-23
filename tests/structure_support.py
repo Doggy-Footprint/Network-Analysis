@@ -226,6 +226,30 @@ def ref_language(arch):
     return result
 
 
+def ref_build(arch):
+    """F6 written as a brute-force scan: per build system the module whose directory is the longest prefix of the file's directory."""
+    modules = []
+    for node in (arch.details or {}).get('nodes', []):
+        meta = node.get('metadata') or {}
+        if node.get('provenance') in ('gradle', 'npm-workspace') and 'module_dir' in meta:
+            system = 'gradle' if node['provenance'] == 'gradle' else 'npm'
+            modules.append((system, meta['module_dir'], f"pkg:{system}:{meta['module_path']}"))
+    if not modules:
+        return None
+    result = {}
+    for file_id in ref_file_ids(arch):
+        directory = file_id[len('file:'):].rpartition('/')[0]
+        found = []
+        for system in ('gradle', 'npm'):
+            matching = [m for m in modules if m[0] == system
+                        and (m[1] == '' or directory == m[1] or directory.startswith(m[1] + '/'))]
+            if matching:
+                found.append(max(matching, key=lambda m: len(m[1]))[2])
+        if found:
+            result[file_id] = sorted(found)
+    return result
+
+
 def ref_framework(arch):
     detail = arch.details or {}
     node_files = detail.get('node_files', {})
@@ -291,6 +315,9 @@ def ref_structure(arch, weights):
     framework = ref_framework(arch)
     if framework is not None:
         schemes['framework'] = framework
+    build = ref_build(arch)
+    if build is not None:
+        schemes['build'] = build
     files = sorted(ref_file_ids(arch))
     file_cycles = {}
     pairs_by_tier = {tier: ref_pairs(arch, weights, tier) for tier in TIERS}
@@ -326,8 +353,8 @@ def file_pair_view(record):
 
 def without_structure_facts(payload):
     """Drops everything bottlenecks.v8 adds so legacy comparisons keep their original meaning."""
-    import copy
-    result = copy.deepcopy(payload)
+    from tests.doc_references_support import without_doc_references
+    result = without_doc_references(payload)
     if 'candidates' in result:
         result['candidates'] = [c for c in result['candidates'] if c.get('kind') not in NEW_KINDS]
     network = result.get('dependency_network')
@@ -340,4 +367,17 @@ def without_structure_facts(payload):
         coverage.pop('structure', None)
         if isinstance(coverage.get('architecture_rules'), dict):
             coverage['architecture_rules'].pop('rules_sha256', None)
+    return result
+
+
+def with_base_policy(payload):
+    """Copy of a bottleneck payload with both structure policy strings set back to the base commit's structure.v1."""
+    from tests.doc_references_support import without_doc_references
+    result = without_doc_references(payload)
+    network = result.get('dependency_network')
+    if isinstance(network, dict) and 'structure_policy' in network:
+        network['structure_policy'] = 'structure.v1'
+    structure = (result.get('coverage') or {}).get('structure')
+    if isinstance(structure, dict) and 'policy' in structure:
+        structure['policy'] = 'structure.v1'
     return result

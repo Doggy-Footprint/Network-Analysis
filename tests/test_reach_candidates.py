@@ -23,6 +23,8 @@ from tests.edge_weights_support import load_weights, weights_data, write_weights
 from tests.reach_support import (AMBIGUOUS, BASE_COMMIT, CONFIDENCES, DR, E, EXACT, FI, FIXTURES, ISOLATION_EXTENSIONS, NEW_KINDS,
                                  REPO, SC, SI, UNIQUE, UNRESOLVED, Graph, architecture_model, candidate_id, canonical_sha,
                                  fid, graph_model, load_manifest, model_key, of_kind, pagerank_of, record_key, ref_incoming_tests, ref_isolated, ref_untested_hubs, run_report, weights_with, without_reach)
+from tests.android_build_support import NAME as ANDROID, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only
+from tests.structure_support import with_base_policy
 
 MAIN = 'from code_analyzer.cli import main; main()'
 HUB_METRICS = {'pagerank', 'pagerank_rank', 'top_n', 'uncertain_test_edge_count'}
@@ -572,14 +574,22 @@ class Pipeline:
             target = self.directory / f'{granularity}-{seed}-{len(self.cache)}'
             target.mkdir()
             command = [sys.executable, '-c', MAIN, str(fixture_root(self.name).resolve()), *load_manifest()['commands'][self.name],
-                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json'), *extra]
+                       '--granularity', granularity, '-o', str(target / 'report.html'), '--bottlenecks', str(target / 'b.json'), '--json', *extra]
             done = subprocess.run(command, cwd=REPO, env=dict(os.environ, PYTHONHASHSEED=seed), capture_output=True, text=True)
             assert done.returncode == 0, done.stderr[-2000:]
             self.cache[key] = (target / 'b.json').read_bytes()
+            if granularity == 'file':
+                from tests.report_size_support import legacy_bottlenecks_text
+                self.cache[key, 'legacy'] = legacy_bottlenecks_text(target / 'b.json', target / 'report.json').encode('utf-8')
         return self.cache[key]
 
     def payload(self, granularity='file', **kwargs):
-        return json.loads(self.output(granularity, **kwargs))
+        """File mode: the report in the base-commit (bottlenecks.v8) layout, rebuilt from v9 + details."""
+        data = self.output(granularity, **kwargs)
+        if granularity != 'file':
+            return json.loads(data)
+        key = (granularity, kwargs.get('seed', '0'), tuple(kwargs.get('extra', ())), kwargs.get('tag'))
+        return json.loads(self.cache[key, 'legacy'])
 
 
 @pytest.fixture(scope='module', params=FIXTURES)
@@ -627,7 +637,10 @@ def test_V7_manifest_is_for_the_declared_base_commit():
 
 
 def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
-    payload = pipe.payload('file')
+    if pipe.name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(pipe.output('file')))
+        return
+    payload = with_base_policy(pipe.payload('file'))
     expected = load_manifest()['fixtures'][pipe.name]['file']
     assert payload['schema'] == 'bottlenecks.v8' == expected['schema']
     assert payload['edge_weights'][KEY] == 10
@@ -643,7 +656,8 @@ def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
 def test_V7_R9_C14_new_kinds_are_only_the_two_declared_ones_and_carry_the_declared_shape(pipe):
     payload = pipe.payload('file')
     kinds = {c['kind'] for c in payload['candidates']}
-    assert kinds <= set(load_manifest()['fixtures'][pipe.name]['file']['candidate_kinds']) | set(NEW_KINDS)
+    build_kinds = {'package_cycle', 'unstable_dependency', 'unresolved_boundary', 'evidence_spread'} if pipe.name == ANDROID else set()   # the new build scheme can add these
+    assert kinds <= set(load_manifest()['fixtures'][pipe.name]['file']['candidate_kinds']) | set(NEW_KINDS) | build_kinds
     keys = [(c['kind'], c['id']) for c in payload['candidates']]
     assert keys == sorted(keys) and len(set(keys)) == len(keys)
     for item in payload['candidates']:
@@ -658,6 +672,11 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
     payload = json.loads(data)
     assert payload['schema'] == expected['schema']
     assert not {c['kind'] for c in payload['candidates']} & set(NEW_KINDS)
+    if pipe.name == ANDROID:
+        assert_symbol_changes_are_build_only(payload)
+        return
+    from tests.doc_references_support import base_symbol_bytes
+    data = base_symbol_bytes(data)
     assert len(data) == expected['bytes']
     import hashlib
     assert hashlib.sha256(data).hexdigest() == expected['sha256']
@@ -668,8 +687,9 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     pipe = Pipeline(expected['fixture'], tmp_path_factory.mktemp('delta'))
     first = pipe.directory / 'baseline.json'
     first.write_bytes(pipe.output('file'))
-    payload = json.loads(pipe.output('file', extra=['--baseline', str(first)], tag='delta'))
+    payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
     assert canonical_sha(payload['delta']) == expected['delta']
+    payload = with_base_policy(payload)
     stripped = without_reach(payload)
     assert sorted(k for k, v in stripped.items() if canonical_sha(v) != expected['sections'][k]) == []
     assert payload['delta']['counts'] == {key: 0 for key in payload['delta']['counts']}
@@ -791,7 +811,8 @@ def real_payload(tmp_path):
 
 
 def payload_with_sentinels(tmp_path):
-    payload = real_payload(tmp_path)
+    from tests.report_size_support import legacy_v8
+    payload = legacy_v8(real_payload(tmp_path))
     assert {c['kind'] for c in payload['candidates']} == set(NEW_KINDS)
     payload['candidates'] = [c for c in payload['candidates'] if c['kind'] not in NEW_KINDS]
     hub, iso = sentinel_candidates()

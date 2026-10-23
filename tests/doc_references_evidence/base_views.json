@@ -1,0 +1,228 @@
+{
+ "base_commit": "7d169832420840158671369992f392d025284ff4",
+ "configs": {
+  "K1": {
+   "analysis_version": "6",
+   "fixture": "fastapi-realworld",
+   "flags": [
+    "-f",
+    "fastapi"
+   ],
+   "granularity": "file",
+   "schema": "bottlenecks.v9",
+   "views": {
+    "bottlenecks": {
+     "candidates": "71a4709d58a73c779593369e52d593a21f735eaab5ee0d38c5c0307fcc251e53",
+     "coverage": "fabbaa53a6b1ebffbd81afd9d75621cb0a0663963e987437499de1a1c80ad271",
+     "details_file": "0bd95b9f4543c2990723fd06c2c5c0d0eb3e32d97fded3b56138273076e6f9a2",
+     "edge_weights": "6ba88902f23a4ea5be00a6713f3e736fbc81e8728e723aeed68cad7de7dd4788",
+     "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
+     "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "schema": "d7d7ccc5796a476028062e54b82d18b4def94a22c7b8d8563787de0fa396ffe7",
+     "snapshot": "83ab1b8d9795b549bf8a35c88d16ae064ea6558bda0b9301721e7ef593c14a07",
+     "versions": "52230ae157ea8b37320a8c7bfa0c784a6bfbe0f117cb3710dafe82c80c1b5df8"
+    },
+    "candidate_count": 64,
+    "details": {
+     "edges": "b2e58b5c78ce97cd367202e4baea75ab9f1870cc2731ffa4c3a91cce8b6fffb1",
+     "file_nodes": "645ab9ce73bb85f943c5ff44425ee52d667d378ffc2bf11a7c9ae207837f1205",
+     "node_files": "ed50319405a469879240541628643e8367f089c6bb7d94bab42582db0d3b51f0",
+     "node_owners": "d3ef44bcb21dad4aeb352713e538f9ac4dee001d1f7cf7f8b1e4fb76cd3c67f8",
+     "nodes": "ad3809ff1d87978009b39c4227b0680a75a89c016a0b503d1c9659447486c61b"
+    },
+    "network": {
+     "ambiguity_policy": "372ea55879910d8b0e6e919349e0a6a55ee570ca0b61f88f396f2e044fb2857b",
+     "betweenness_sample_size": "29db0c6782dbd5000559ef4d9e953e300e2b479eed26d887ef3f92b921c06a67",
+     "betweenness_strategy": "9316fd5c0370b0116fce9325e72bc288488b83f2977030ced0f683670e4b2f49",
+     "edge_count": "a0d177b4967a6d99f4ff117defe1c0d23d4e78ca4630febcb948ee9e4520eff3",
+     "evidence_columns": "fe17d6b5adaa6648aece14a060f7144fde187462edb6f3272336c951db7fdb5c",
+     "file_ids": "44bf16e034a7e7ab94a853437d2c013572a8def5db29dc7d0c0d0e9f7c6b4f10",
+     "node_count": "29db0c6782dbd5000559ef4d9e953e300e2b479eed26d887ef3f92b921c06a67",
+     "node_metrics": "205210805c79a48b1bc8850958a3bfc4bf20c868386509361ab5a408fcadffb6",
+     "package_dependencies": "dbf4bbc03bcd7ff75d1e32d509b074196f5e88359dd9b80c170927cbd4c99353",
+     "package_metrics": "612e006f72a0380e1ff92576435f8d62114131af5114b41726ff643488715fe5",
+     "rankings": "766a45f86b9d814820748562cdf3f15d911f4d84bfb7396fdfce10163709d732",
+     "rankings_by_category": "1e1a0d657e4af896a9df795daada227e0e8d163c7d96095ba51d2ae0ebacceb1",
+     "structure_policy": "6e17cf4de7e02950db5b5ddd30c62d1f95cb581424d1188ee90cbc55627b99fa"
+    },
+    "report": "970ef71c33e574636a0fab3a6f0b6594df640d698ef1d236034e426dda273361"
+   }
+  },
+  "K2": {
+   "analysis_version": "6",
+   "fixture": "typescript-nestjs-realworld",
+   "flags": [
+    "-f",
+    "nestjs"
+   ],
+   "granularity": "file",
+   "schema": "bottlenecks.v9",
+   "views": {
+    "bottlenecks": {
+     "candidates": "c49d78762112a648c5f09d26371eae2b2247ac802752e80f08eb60582c211bea",
+     "coverage": "53148d8a347a25b61243cc6384bf6bfed1536c808d1961c3f15759af652f7b91",
+     "details_file": "0bd95b9f4543c2990723fd06c2c5c0d0eb3e32d97fded3b56138273076e6f9a2",
+     "edge_weights": "6ba88902f23a4ea5be00a6713f3e736fbc81e8728e723aeed68cad7de7dd4788",
+     "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
+     "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "schema": "d7d7ccc5796a476028062e54b82d18b4def94a22c7b8d8563787de0fa396ffe7",
+     "snapshot": "92174b288261aaf94e4a405e579743f61924855da8bb7dc3920460eb21471fd4",
+     "versions": "52230ae157ea8b37320a8c7bfa0c784a6bfbe0f117cb3710dafe82c80c1b5df8"
+    },
+    "candidate_count": 46,
+    "details": {
+     "edges": "5a070b69666568c6a84abbd0bcd9b650f7f23dcb8759f1509e84bf2d81624a02",
+     "file_nodes": "ce7107710067575bbb86d2737da3de70ffabcbf2a11fe4245665fd750311aa54",
+     "node_files": "65b46b1b1c386c9c25f971067a702ae6662ff5fe9170c5fffb1934cb5dd3c870",
+     "node_owners": "365e0af9741e71fc73cb59003a3952d5acce5e011885427a332c1b600d8574af",
+     "nodes": "6fdd3bdc8cb3b13988f5bf45201de9b5af8d075977db5167827380475cd52124"
+    },
+    "network": {
+     "ambiguity_policy": "372ea55879910d8b0e6e919349e0a6a55ee570ca0b61f88f396f2e044fb2857b",
+     "betweenness_sample_size": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+     "betweenness_strategy": "9316fd5c0370b0116fce9325e72bc288488b83f2977030ced0f683670e4b2f49",
+     "edge_count": "093434a3ee9e0a010bb2c2aae06c2614dd24894062a1caf26718a01e175569b8",
+     "evidence_columns": "fe17d6b5adaa6648aece14a060f7144fde187462edb6f3272336c951db7fdb5c",
+     "file_ids": "5d3eec29583cdf959a4615295687f8f622d2721df93bb90c8adfa574a32da79a",
+     "node_count": "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+     "node_metrics": "593a3b9d3466e5466329c45f137840c39e8995ed004f1d9557a3b8bbdbef4c7d",
+     "package_dependencies": "703757755ef47f37f969d0bed6a7ebf621ec4a4468d4de922b964695d58cf413",
+     "package_metrics": "271a13cb008f2ff44c1e33844607f40c8db9d548bd8a894f5d43350ead5c4c50",
+     "rankings": "c7f98f20a04fe9e5ad2eb5b34d0642bfce4656f2ae359e03dbe0db9cec26a261",
+     "rankings_by_category": "1267e5031291463c9d3e2bdf54f6e4caa8169e43e1c8d227a629a282189c3931",
+     "structure_policy": "6e17cf4de7e02950db5b5ddd30c62d1f95cb581424d1188ee90cbc55627b99fa"
+    },
+    "report": "71871b8b33c7b4bc1237e7b82d1e2985c435d3a46fdd5a7f8248004f8d3491e2"
+   }
+  },
+  "K3": {
+   "analysis_version": "6",
+   "fixture": "android-nowinandroid",
+   "flags": [
+    "-f",
+    "android"
+   ],
+   "granularity": "file",
+   "schema": "bottlenecks.v9",
+   "views": {
+    "bottlenecks": {
+     "candidates": "b0dc0fa42eca2451688677440efd81680251d9e33ab07ce6b9037ffaebdfa9ce",
+     "coverage": "d2a1bc55b5068f78fccb44c091d2beb1bae8f9a8209b3a049f3d43e42c9356b8",
+     "details_file": "0bd95b9f4543c2990723fd06c2c5c0d0eb3e32d97fded3b56138273076e6f9a2",
+     "edge_weights": "6ba88902f23a4ea5be00a6713f3e736fbc81e8728e723aeed68cad7de7dd4788",
+     "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
+     "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "schema": "d7d7ccc5796a476028062e54b82d18b4def94a22c7b8d8563787de0fa396ffe7",
+     "snapshot": "c054fd1a21ae368a057fa34311baf62c9f97aedaa32509c4516b3eea42350837",
+     "versions": "52230ae157ea8b37320a8c7bfa0c784a6bfbe0f117cb3710dafe82c80c1b5df8"
+    },
+    "candidate_count": 76,
+    "details": {
+     "edges": "481c435f82409544050507d8d313d8e7337042b93e5a3327f566442a365af138",
+     "file_nodes": "248125e0f26e5ccd3ac508eb3d33f2e5aafb2f50954eda7b5027d5105dc0e82a",
+     "node_files": "25138bc872dc99a7cc5e22ece0f5553cf8723f3edec24a94cb2b71e804c1684b",
+     "node_owners": "d532795abfe01828c02c519a85672ffc410d37e1fd64093e77e52758b036c6d6",
+     "nodes": "5a6f802b65dab0088ed236848946cf7a4e42401852ebdca292cf0f77b9f3d358"
+    },
+    "network": {
+     "ambiguity_policy": "372ea55879910d8b0e6e919349e0a6a55ee570ca0b61f88f396f2e044fb2857b",
+     "betweenness_sample_size": "bdd2d3af3a5a1213497d4f1f7bfcda898274fe9cb5401bbc0190885664708fc2",
+     "betweenness_strategy": "9316fd5c0370b0116fce9325e72bc288488b83f2977030ced0f683670e4b2f49",
+     "edge_count": "91a73fd806ab2c005c13b4dc19130a884e909dea3f72d46e30266fe1a1f588d8",
+     "evidence_columns": "fe17d6b5adaa6648aece14a060f7144fde187462edb6f3272336c951db7fdb5c",
+     "file_ids": "c7b89967217017dfa6706803d4ac7e869d3f344d995ec9a758a74f6f4d24ecb7",
+     "node_count": "bdd2d3af3a5a1213497d4f1f7bfcda898274fe9cb5401bbc0190885664708fc2",
+     "node_metrics": "6f015bfbb01efd5bbf4aba0bd87ff065713db9456c05dc69163c85ca2e4b04c5",
+     "package_dependencies": "ab8e9d974787551b90847d3608e5b8d9f2f33630915eec323dc0f10227304793",
+     "package_metrics": "c927711dd394d228e15ec1758868ddc9357fd02d0dae4cc8854eb4ae69a54722",
+     "rankings": "c10e4b1f74499777244aae5bbe92de6d2c785291c0faac5c486c5275ac96f883",
+     "rankings_by_category": "73162a8d86d8fa6ffbdb0ffb92aacf201ceec399d07c9f0ded0bf7981c873369",
+     "structure_policy": "6e17cf4de7e02950db5b5ddd30c62d1f95cb581424d1188ee90cbc55627b99fa"
+    },
+    "report": "c888aae490f846fdbfbad0f922e307e78353863f50d12346b399ee6741babe3d"
+   }
+  },
+  "K4": {
+   "analysis_version": "6",
+   "fixture": "futuramaapi",
+   "flags": [
+    "-f",
+    "fastapi"
+   ],
+   "granularity": "file",
+   "schema": "bottlenecks.v9",
+   "views": {
+    "bottlenecks": {
+     "candidates": "9e25029165e6f8b20834a0a028b3a7da20faf28733edebbf7e77244757a4204c",
+     "coverage": "0384b13d569dcc09a07c6d379bd6843cc6fbc748b29991d57f5b25afe60ebdcc",
+     "details_file": "0bd95b9f4543c2990723fd06c2c5c0d0eb3e32d97fded3b56138273076e6f9a2",
+     "edge_weights": "6ba88902f23a4ea5be00a6713f3e736fbc81e8728e723aeed68cad7de7dd4788",
+     "granularity": "bfdde6f5651ac5e4e6711f3c2836d5f8c5c4b381a50eb87c51d990b7eb36501b",
+     "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "schema": "d7d7ccc5796a476028062e54b82d18b4def94a22c7b8d8563787de0fa396ffe7",
+     "snapshot": "03fe87ae483240d26842da6043b4fa9213d99267ef9f9464d914bb66693801d8",
+     "versions": "52230ae157ea8b37320a8c7bfa0c784a6bfbe0f117cb3710dafe82c80c1b5df8"
+    },
+    "candidate_count": 153,
+    "details": {
+     "edges": "fba165aa611fa4fa99b145eda5a0293b053d2ccfc7387ecdf47ffe2c49e19598",
+     "file_nodes": "2854c6a146db69d7f80f2165196cf5c3699d2ea931069df7e9c4950d4bb2b802",
+     "node_files": "64dfbd636cb419cbe204dc2309b2beaeb5005196ff6af700db278a8dcc40ae88",
+     "node_owners": "6bb18d5c73de9ab6f5e71866f37b6df19d35c5540914573a91a9738bd7e59efc",
+     "nodes": "f86e6aca9cfde1e83e6ae32c61773d9d3672a1af3f738d3ad023034e302641c2"
+    },
+    "network": {
+     "ambiguity_policy": "372ea55879910d8b0e6e919349e0a6a55ee570ca0b61f88f396f2e044fb2857b",
+     "betweenness_sample_size": "d6061bbee6cf13bd73765faaea7cdd0af1323e4b125342ac346047f7c4bda1fc",
+     "betweenness_strategy": "9316fd5c0370b0116fce9325e72bc288488b83f2977030ced0f683670e4b2f49",
+     "edge_count": "367461e6dd07bdb57342cb64b2a8d8e0fa13c53842a95ec20a90d35bdd6eb77f",
+     "evidence_columns": "fe17d6b5adaa6648aece14a060f7144fde187462edb6f3272336c951db7fdb5c",
+     "file_ids": "89bf27f107e418c0f4d9725e92f56277abce93f6e98b76b866c8034ec9c936a1",
+     "node_count": "d6061bbee6cf13bd73765faaea7cdd0af1323e4b125342ac346047f7c4bda1fc",
+     "node_metrics": "785cbeca14f8b755f39a1af0ba9efb3729b2611305f72e4cba974fcff4d5c427",
+     "package_dependencies": "dc61cd0191e33d997cb6a6ba23962e7e6f12b050ff770598908a00dc78864eae",
+     "package_metrics": "a3c6428976491ce8aabc4575a23f82fe0747a8207c9717c11539564dc1d319a3",
+     "rankings": "aae157b8801f5c174521c199004c51484e8d767d551b37993197c529cd6b64d7",
+     "rankings_by_category": "d9a650079c7ed8b8b8e93024b985db3ec52af515f8771839dc63f1eb010b24ea",
+     "structure_policy": "6e17cf4de7e02950db5b5ddd30c62d1f95cb581424d1188ee90cbc55627b99fa"
+    },
+    "report": "e63e4a8a181b8cfc4a29241a1267af7e9ada757c85ae0fd0002a2e278844f01a"
+   }
+  },
+  "K5": {
+   "analysis_version": "6",
+   "fixture": "fastapi-realworld",
+   "flags": [
+    "-f",
+    "fastapi"
+   ],
+   "granularity": "symbol",
+   "schema": "bottlenecks.v6",
+   "views": {
+    "bottlenecks": {
+     "candidates": "e8c7b43fb12413a96404a5007548624b8f3c507cae5f14685c6e9e2287d2ddb4",
+     "coverage": "a496171ddf546af2928ee64a4d14144d9bc328668324d17abed73e934b1ae83b",
+     "edge_weights": "e61c8e37d1d99486e10227733272ef8c369b7ced97a62687d2ac8c9ca995b66c",
+     "limitations": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+     "schema": "fb8fcfb912f9f8044905b748fc3ec4ed670e2f548e81326b94d001e98eb19075",
+     "snapshot": "83ab1b8d9795b549bf8a35c88d16ae064ea6558bda0b9301721e7ef593c14a07",
+     "versions": "52230ae157ea8b37320a8c7bfa0c784a6bfbe0f117cb3710dafe82c80c1b5df8"
+    },
+    "candidate_count": 71,
+    "details": null,
+    "network": {
+     "ambiguity_policy": "372ea55879910d8b0e6e919349e0a6a55ee570ca0b61f88f396f2e044fb2857b",
+     "betweenness_sample_size": "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306",
+     "betweenness_strategy": "3a78627b94cf3459307134645d1c5eb29bdf03781ccabf810f005dae13f6d0c2",
+     "candidate_groups": "e0e188f2463c6e76da9af21765cee612aead5c8aab9155b13c90470b758a853a",
+     "edge_count": "e85cdd30a33c8fbee53826f320976004b87d7f4660d2b2743cb2d39ce23da5f1",
+     "node_count": "a4c6af0cb6f02dff01ba174e4cf11f24f73d9ed16ca7a1e3c9d831c0139faa5c",
+     "node_metrics": "1b742b2378f746460d3fa242694b823da4a23c24eb454aebf731007374834050",
+     "rankings": "8483e9edca78edc1c7669d9d8bdb2761c9873cd34ac660c3dda2808cdaa04718",
+     "rankings_by_category": "b554e24ee91c3f0c6a69905600ea2cd60a6ca6571bd18ec070d6ff1d0ef1ab46"
+    },
+    "report": "75176b430308bdd7312f2c9113da256a1de11f43e9bfea68f142cacc164465ce"
+   }
+  }
+ }
+}

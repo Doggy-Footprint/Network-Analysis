@@ -13,7 +13,8 @@ from tests.file_analysis_support import architecture, converted, node, serialize
 
 def payload(snap, arch, tmp_path, threshold=2000):
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
-    return json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights)))
+    from tests.report_size_support import with_v8_spread
+    return with_v8_spread(json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, arch, weights))), arch)
 
 
 @pytest.mark.parametrize('variant', ['internal-only', 'isolated', 'empty-file', 'empty-graph', 'docs-only'])
@@ -131,7 +132,7 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
         assert row['betweenness_centrality'] == pytest.approx(1/6 if letter == 'b' else 0,abs=1e-9,rel=0)
         neighbors = set('abc') - {letter} if letter != 'd' else set()
         assert row['hop_2_token_cost'] == sum(tokens[n] for n in neighbors)
-    assert report['schema'] == 'bottlenecks.v8' and report['granularity'] == 'file'
+    assert report['schema'] == 'bottlenecks.v9' and report['granularity'] == 'file'
     assert all('analysis' not in n['metadata'] for n in serialize(result)['details']['nodes'])
     unicode_snap,unicode_file=converted({'a.py':'value = "a\u2028b"'},[node('value','a.py','constant')])
     unicode_data=serialize(unicode_file)
@@ -141,7 +142,7 @@ def test_V05_independent_chain_metrics_and_whole_text(tmp_path):
     original_span=unicode_data['details']['nodes'][0]['span']
     assert (original_span['file_path'],original_span['start_line'],original_span['end_line'])==('a.py',1,1)
     unicode_report=payload(unicode_snap,unicode_file,tmp_path)
-    assert unicode_report['schema']=='bottlenecks.v8'
+    assert unicode_report['schema']=='bottlenecks.v9'
     assert unicode_report['granularity']=='file'
     assert unicode_report['dependency_network']['node_metrics']['file:a.py']['token_cost']==4
 

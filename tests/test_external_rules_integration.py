@@ -1,5 +1,6 @@
 """Expected hashes and byte counts come from tests/external_rules_evidence/base_manifest.json, produced at the pre-feature
-commit. Size and time checks are deliberately not benchmark-marked so they run in the default selection."""
+commit. Size checks are deliberately not benchmark-marked so they run in the default selection; the 20k-file external rules
+time budget runs with -m benchmark because wall-clock medians are unreliable under the parallel default run."""
 import fnmatch
 import hashlib
 import json
@@ -22,6 +23,8 @@ from tests.external_rules_support import (KOTLIN_PACKAGE, ALLOW_EXT, EXAMPLE_EXT
                                           ref_kotlin_external_names, ref_normalize, ref_python_external_names, ref_ts_scan,
                                           to_rules_ext)
 
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
+
 MANIFEST = load_manifest()
 EXAMPLE_PROFILE = Path(__file__).resolve().parents[1] / 'profiles' / 'architecture_rules.example.yaml'
 
@@ -39,7 +42,12 @@ def run_cli(name, directory, granularity='file', rules=None, seed='0', root=None
         args += ['--architecture-rules', rules]
     done = cli(args, seed=seed)
     assert done.returncode == 0, done.stderr[-2000:]
-    return {'arch': (directory / 'r.json').read_bytes(), 'bn': (directory / 'b.json').read_bytes() if granularity == 'file' else None}
+    from tests.report_size_support import legacy_architecture_text, legacy_bottlenecks_text
+    if granularity == 'symbol':
+        return {'arch': (directory / 'r.json').read_bytes(), 'bn': None}
+    arch = legacy_architecture_text((directory / 'r.json').read_text(encoding='utf-8'), (directory / 'r.details.json').read_text(encoding='utf-8'))
+    return {'arch': arch.encode('utf-8'), 'bn': (directory / 'b.json').read_bytes(),
+            'bn_v8': legacy_bottlenecks_text(directory / 'b.json', directory / 'r.json').encode('utf-8')}
 
 
 @pytest.fixture(scope='module', params=SYMBOL_FIXTURES)
@@ -107,15 +115,21 @@ def realworld_arch(tmp_path_factory):
 
 def test_V11_bottleneck_json_byte_equal_to_base(plain):
     name, run, _ = plain
+    if name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(run['bn']))
+        return
     expected = MANIFEST['fixtures'][name]['file']
-    base_form = base_form_bytes(run['bn'])
+    base_form = base_form_bytes(run['bn_v8'])
     assert len(base_form) == expected['bottleneck_bytes']
     assert hashlib.sha256(base_form).hexdigest() == expected['bottleneck_sha256']
-    assert json.loads(run['bn'])['schema'] == 'bottlenecks.v8'
+    assert json.loads(run['bn'])['schema'] == 'bottlenecks.v9'
 
 
 def test_V11_architecture_file_canonical_equal_to_base(plain):
     name, _, payload = plain
+    if name == ANDROID:
+        assert_architecture_changes_are_build_only(payload)
+        return
     assert canonical_architecture_sha(payload) == MANIFEST['fixtures'][name]['file']['architecture_canonical_sha256']
 
 
@@ -221,7 +235,7 @@ def test_V12_C22_independent_ast_reading_of_the_fixture_sources(realworld_rules)
 def test_V12_C22_example_profile_loaded_through_cli_has_the_f15_coverage(realworld_rules):
     coverage = without_digest(realworld_rules['coverage']['architecture_rules'])
     assert set(coverage) == INTERNAL_COVERAGE_KEYS | EXTERNAL_COVERAGE_KEYS
-    assert realworld_rules['schema'] == 'bottlenecks.v8'
+    assert realworld_rules['schema'] == 'bottlenecks.v9'
 
 
 def test_V12_C23_official_template_backend_root(by_name):
@@ -281,7 +295,7 @@ def test_V14_bottleneck_size_ratio_realworld(realworld_rules_run, by_name):
     plain_bytes = by_name('fastapi-realworld')[0]['bn']
     ratio = len(realworld_rules_run['bn']) / len(plain_bytes)
     assert 1.0 <= ratio <= 1.25, ratio
-    assert len(base_form_bytes(plain_bytes)) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
+    assert len(base_form_bytes(by_name('fastapi-realworld')[0]['bn_v8'])) == MANIFEST['fixtures']['fastapi-realworld']['file']['bottleneck_bytes']
 
 
 MINI_PY = {'app/__init__.py': '', 'app/x.py': 'import os\nfrom app import y\n', 'app/y.py': 'Y = 1\n'}
@@ -303,7 +317,8 @@ def test_V07_cli_file_mode_projects_to_file_nodes_and_details_keep_key(tmp_path)
     assert done.returncode == 0, done.stderr
     payload = json.loads((out / 'report.json').read_text(encoding='utf-8'))
     assert records_by_file(payload) == {'app/x.py': [rec('os', 1)]}
-    held = {d['id']: d['metadata']['external_imports'] for d in payload['details']['nodes'] if 'external_imports' in d['metadata']}
+    details = json.loads((out / 'report.details.json').read_text(encoding='utf-8'))
+    held = {d['id']: d['metadata']['external_imports'] for d in details['nodes'] if 'external_imports' in d['metadata']}
     assert held == {'py:app.x': [rec('os', 1)]}
 
 
@@ -388,14 +403,13 @@ def median_time(function):
     return statistics.median(samples)
 
 
-def test_V14_C29_synthetic_time_and_correctness():
+def test_V14_C29_synthetic_correctness():
     files, spec = synthetic_external_input()
     assert len(files) == 20000 and all(len(r) == 20 for r in files.values()) and len(spec['layers']) == 10
     assert all(len(set(i['to_external'])) == 10 for i in spec['forbid']) and all(len(v) == 10 for v in spec['allow_external'].values())
     assert len(spec['external']) == 5 and all(len(v) == 5 for v in spec['external'].values())
     arch = ext_arch(files)
     rules = to_rules_ext(spec)
-    plain_rules = to_rules_ext({'version': 1, 'layers': spec['layers']})
     result = analyze_structure(arch, weights(), rules)
     actual = external_violations(result.candidates)
     sample = {path: records for index, (path, records) in enumerate(files.items()) if index % 10 == 0}
@@ -404,6 +418,14 @@ def test_V14_C29_synthetic_time_and_correctness():
     assert_external_equal([c for c in actual if c['target'] in targets], expected)
     assert 1000 < len(actual) <= 40000 and without_digest(result.coverage['architecture_rules'])['external_violation_count'] == len(actual)
     assert without_digest(result.coverage['architecture_rules'])['external_import_count'] == 20000 * 20
+
+
+@pytest.mark.benchmark
+def test_V14_C29_synthetic_time_budget():
+    files, spec = synthetic_external_input()
+    arch = ext_arch(files)
+    rules = to_rules_ext(spec)
+    plain_rules = to_rules_ext({'version': 1, 'layers': spec['layers']})
     with_external = median_time(lambda: analyze_structure(arch, weights(), rules))
     without = median_time(lambda: analyze_structure(arch, weights(), plain_rules))
     assert with_external - without <= 5.0, (with_external, without)

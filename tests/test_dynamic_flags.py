@@ -403,7 +403,7 @@ EDGE_KEYS = ['arrows', 'candidates', 'color', 'confidence', 'dashes', 'evidence'
              'resolution', 'title', 'to_id', 'weight']
 CANDIDATE_BASE = {'coverage', 'evidence', 'id', 'kind', 'metrics', 'status', 'target'}
 SHAPE = {
-    'file': ('bottlenecks.v8', '6', ['candidates', 'coverage', 'dependency_network', 'edge_weights', 'granularity',
+    'file': ('bottlenecks.v9', '6', ['candidates', 'coverage', 'dependency_network', 'details_file', 'edge_weights', 'granularity',
                                      'limitations', 'schema', 'snapshot', 'versions']),
     'symbol': ('bottlenecks.v6', '5', ['candidates', 'coverage', 'dependency_network', 'edge_weights', 'limitations',
                                        'schema', 'snapshot', 'versions']),

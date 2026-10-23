@@ -8,6 +8,7 @@ DELTA_POLICY = "delta.v1"
 INSTABILITY_THRESHOLD = 0.2
 # Tolerates float error of differences such as 0.8 - 0.6 landing just below 0.2.
 _EPSILON = 1e-12
+_SCHEMAS = ("bottlenecks.v8", "bottlenecks.v9")
 _CYCLE_KINDS = ("dependency_cycle", "package_cycle")
 _LIST_NAMES = ("new_cycles", "grown_cycles", "new_violations", "new_package_dependencies", "instability_changes")
 
@@ -44,12 +45,14 @@ def _check_tier(value: Any, path: str, where: str) -> None:
 
 def _check_baseline(document: Any, path: str) -> None:
     root = _object(document, path, "$")
-    if root.get("schema") != "bottlenecks.v8": _fail(path, "$.schema", '"bottlenecks.v8"')
+    schema = root.get("schema")
+    if schema not in _SCHEMAS: _fail(path, "$.schema", 'one of "bottlenecks.v8", "bottlenecks.v9"')
     if root.get("granularity") != "file": _fail(path, "$.granularity", '"file"')
     snapshot = _object(_member(root, "snapshot", path, "$"), path, "$.snapshot")
     count = _member(snapshot, "file_count", path, "$.snapshot")
     if not isinstance(count, int) or isinstance(count, bool): _fail(path, "$.snapshot.file_count", "an integer")
     network = _object(_member(root, "dependency_network", path, "$"), path, "$.dependency_network")
+    columns = _check_columns(network, path) if schema == "bottlenecks.v9" else None
     _string(_member(network, "structure_policy", path, "$.dependency_network"), path, "$.dependency_network.structure_policy")
     dependencies = _object(_member(network, "package_dependencies", path, "$.dependency_network"), path, "$.dependency_network.package_dependencies")
     for scheme, pairs in dependencies.items():
@@ -77,7 +80,7 @@ def _check_baseline(document: Any, path: str) -> None:
         _object(candidate, path, where)
         _string(candidate.get("id"), path, where + ".id")
         _string(candidate.get("kind"), path, where + ".kind")
-        if candidate["kind"] in _CYCLE_KINDS: _check_cycle(candidate, path, where)
+        if candidate["kind"] in _CYCLE_KINDS: _check_cycle(candidate, path, where, columns)
         elif candidate["kind"] == "rule_violation": _check_violation(candidate, path, where)
     coverage = root.get("coverage")
     if coverage is not None:
@@ -88,7 +91,18 @@ def _check_baseline(document: Any, path: str) -> None:
             if "rules_sha256" in rules: _string(rules["rules_sha256"], path, "$.coverage.architecture_rules.rules_sha256")
 
 
-def _check_cycle(candidate: Mapping[str, Any], path: str, where: str) -> None:
+def _check_columns(network: Mapping[str, Any], path: str) -> dict:
+    base = "$.dependency_network"
+    ids = _member(network, "file_ids", path, base)
+    if not isinstance(ids, list) or not all(isinstance(item, str) for item in ids): _fail(path, base + ".file_ids", "a list of strings")
+    columns = _object(_member(network, "evidence_columns", path, base), path, base + ".evidence_columns")
+    for name in ("file_pair", "package_pair"):
+        names = _member(columns, name, path, base + ".evidence_columns")
+        if not isinstance(names, list) or not all(isinstance(item, str) for item in names): _fail(path, f"{base}.evidence_columns.{name}", "a list of strings")
+    return {"count": len(ids), "file_pair": len(columns["file_pair"]), "package_pair": len(columns["package_pair"])}
+
+
+def _check_cycle(candidate: Mapping[str, Any], path: str, where: str, columns: Mapping[str, int] | None = None) -> None:
     structure = _object(candidate.get("structure"), path, where + ".structure")
     _string(structure.get("scheme"), path, where + ".structure.scheme")
     _check_tier(structure.get("tier"), path, where + ".structure.tier")
@@ -99,9 +113,28 @@ def _check_cycle(candidate: Mapping[str, Any], path: str, where: str) -> None:
     if not isinstance(evidence, list): _fail(path, where + ".evidence", "a list")
     for index, record in enumerate(evidence):
         item = f"{where}.evidence[{index}]"
+        if columns is not None:
+            _check_row(record, candidate["kind"], path, item, columns)
+            continue
         _object(record, path, item)
         _string(record.get("from_id"), path, item + ".from_id")
         _string(record.get("to_id"), path, item + ".to_id")
+
+
+def _check_row(row: Any, kind: str, path: str, where: str, columns: Mapping[str, int]) -> None:
+    name = "file_pair" if kind == "dependency_cycle" else "package_pair"
+    if not isinstance(row, list) or len(row) != columns[name]: _fail(path, where, f"a list of {columns[name]} values")
+    def index(value: Any, at: str) -> None:
+        if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value < columns["count"]: _fail(path, at, "an integer index within file_ids")
+    if name == "file_pair":
+        index(row[0], where + "[0]"); index(row[1], where + "[1]")
+        return
+    _string(row[0], path, where + "[0]"); _string(row[1], path, where + "[1]")
+    pairs = row[6]
+    if not isinstance(pairs, list): _fail(path, where + "[6]", "a list")
+    for position, pair in enumerate(pairs):
+        if not isinstance(pair, list) or len(pair) != 2: _fail(path, f"{where}[6][{position}]", "a pair of indices")
+        index(pair[0], f"{where}[6][{position}][0]"); index(pair[1], f"{where}[6][{position}][1]")
 
 
 def _check_violation(candidate: Mapping[str, Any], path: str, where: str) -> None:
@@ -142,11 +175,13 @@ def _structure_cycles(candidates: Iterable[Mapping[str, Any]]) -> dict[tuple, li
     return grouped
 
 
-def _pairs(candidate: Mapping[str, Any]) -> set[tuple[str, str]]:
-    return {(record["from_id"], record["to_id"]) for record in candidate["evidence"]}
+def _pairs(candidate: Mapping[str, Any], file_ids: list | None = None) -> set[tuple[str, str]]:
+    if file_ids is None: return {(record["from_id"], record["to_id"]) for record in candidate["evidence"]}
+    if candidate["kind"] == "package_cycle": return {(row[0], row[1]) for row in candidate["evidence"]}
+    return {(file_ids[row[0]], file_ids[row[1]]) for row in candidate["evidence"]}
 
 
-def _cycle_delta(current: list, baseline: list) -> tuple[list, list, int]:
+def _cycle_delta(current: list, baseline: list, current_ids: list | None = None, baseline_ids: list | None = None) -> tuple[list, list, int]:
     base_by_key = _structure_cycles(baseline)
     current_by_key = _structure_cycles(current)
     new, grown, resolved = [], [], 0
@@ -161,10 +196,10 @@ def _cycle_delta(current: list, baseline: list) -> tuple[list, list, int]:
             union = set().union(*(base_cycles[index]["structure"]["members"] for index in overlap)) if overlap else set()
             added = members - union
             if overlap and not added and len(overlap) < 2: continue
-            known_pairs = set().union(*(_pairs(base_cycles[index]) for index in overlap)) if overlap else set()
+            known_pairs = set().union(*(_pairs(base_cycles[index], baseline_ids) for index in overlap)) if overlap else set()
             item = {"candidate_id": cycle["id"], "kind": key[0], "scheme": key[1], "tier": key[2], "members": sorted(members),
                     "baseline_candidate_ids": sorted(base_cycles[index]["id"] for index in overlap), "added_members": sorted(added),
-                    "new_internal_pairs": [list(pair) for pair in sorted(_pairs(cycle) - known_pairs)]}
+                    "new_internal_pairs": [list(pair) for pair in sorted(_pairs(cycle, current_ids) - known_pairs)]}
             (grown if overlap else new).append(item)
     current_members = {key: {member for cycle in cycles for member in cycle["structure"]["members"]} for key, cycles in current_by_key.items()}
     for key, cycles in base_by_key.items():
@@ -221,7 +256,7 @@ def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> di
     digest = None if baseline_rules is None else baseline_rules.get("rules_sha256")
     rules_changed = current_rules is not None and (digest is None or current_rules.get("rules_sha256") != digest)
 
-    new_cycles, grown_cycles, resolved_cycles = _cycle_delta(current["candidates"], baseline["candidates"])
+    new_cycles, grown_cycles, resolved_cycles = _cycle_delta(current["candidates"], baseline["candidates"], current_network.get("file_ids"), baseline_network.get("file_ids"))
     current_violations, baseline_violations = _violations(current["candidates"]), _violations(baseline["candidates"])
     new_violations = [_violation_item(current_violations[key]) for key in sorted(set(current_violations) - set(baseline_violations))]
     current_pairs, baseline_pairs = _dependency_map(current_network), _dependency_map(baseline_network)

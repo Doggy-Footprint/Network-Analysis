@@ -28,7 +28,8 @@ def architecture(nodes=(), edges=(), collection_count=0):
 
 def document(arch, bottlenecks=None, **kwargs):
     from report.unified import render_unified_report
-    return render_unified_report(arch, bottlenecks, **kwargs)
+    from tests.report_size_support import as_v9
+    return render_unified_report(arch, as_v9(bottlenecks), **kwargs)
 
 
 @pytest.fixture(scope='session')

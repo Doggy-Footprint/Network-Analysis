@@ -297,3 +297,40 @@ def test_V04_keyboard_only_tab_switching(open_report):
     page.wait_for_function('document.body.dataset.graphReady === "true"')
     assert tab_active(page, '그래프') and dict(panel_state())['panel-graph'] and not dict(panel_state())['panel-list']
     assert page.unhandled_errors == []
+
+
+SUM_HUB = 'src/core/SumHub.py'
+SUM_PEERS = [f'Peer{i:02}' for i in range(10)]
+
+
+def sum_ranking_report(direction):
+    folder, prefix = ('in', 'In') if direction == 'in' else ('out', 'Out')
+    path = lambda stem: f'src/{folder}/{prefix}{stem}.py'
+    peers = [path(s) for s in SUM_PEERS]
+    winner, loser = path('SumWinner'), path('SumLoser')
+    framework_exact = ('framework_inferred', 'exact')
+    dynamic_exact = ('dynamic_required', 'exact')
+    static_unresolved = ('static_certain', 'unresolved')
+    edges = [(p, 'CALLS', framework_exact, 100 + i) for i, p in enumerate(peers)]
+    edges += [(winner, 'CALLS', dynamic_exact, 300), (winner, 'IMPORTS', dynamic_exact, 301), (loser, 'CALLS', dynamic_exact, 400), (loser, 'IMPORTS', static_unresolved, 401)]
+    relations = [(other, SUM_HUB, kind, *tier, line) if direction == 'in' else (SUM_HUB, other, kind, *tier, line) for other, kind, tier, line in edges]
+    files = [make_file(SUM_HUB)] + [make_file(p) for p in peers + [winner, loser]]
+    return build_report(files, relations, weights=WEIGHT_TABLE)
+
+
+@pytest.mark.parametrize('direction', ['in', 'out'])
+def test_V04S_modal_neighbours_ranked_by_summed_effective_weight(open_report, direction):
+    prefix = 'In' if direction == 'in' else 'Out'
+    arch, bn = sum_ranking_report(direction)
+    page = open_report(arch, bn)
+    open_modal(page, 'list', SUM_HUB)
+    lines = [line.strip() for line in dialog_text(page).splitlines() if line.strip()]
+    incoming_at = next(i for i, l in enumerate(lines) if l.startswith('들어오는 연결 ·'))
+    outgoing_at = next(i for i, l in enumerate(lines) if l.startswith('나가는 연결 ·'))
+    assert incoming_at < outgoing_at
+    header, section = (lines[incoming_at], lines[incoming_at + 1:outgoing_at]) if direction == 'in' else (lines[outgoing_at], lines[outgoing_at + 1:])
+    body = '\n'.join(section)
+    assert has_number(header, 12), header
+    assert f'{prefix}SumWinner' in body, 'sum 0.8 outranks the 0.6 cut'
+    assert f'{prefix}SumLoser' not in body, 'sum 0.5 falls below the 0.6 cut'
+    assert sum(f'{prefix}{stem}' in body for stem in SUM_PEERS) == 9

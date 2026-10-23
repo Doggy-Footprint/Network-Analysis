@@ -57,7 +57,7 @@ def test_V7_five_cold_chrome_runs_and_interactions(chromium,tmp_path):
         assert set(requests)<={CDN_URL}
         context.close()
     result={'spec_version':3,'context':'current workstation, installed Chrome, local file, five fresh contexts; fixture preparation excluded','raw_ms':readings,'median_ms':{key:statistics.median(values) for key,values in readings.items()},'threshold_ms':{'summary_ms':5000,'filter_page_ms':300,'modal_ms':1000}}
-    artifact=Path(__file__).parent/'unified_evidence'/'performance.json'
+    artifact=Path(__file__).parent/'unified_evidence'/'performance.latest.json'
     artifact.parent.mkdir(exist_ok=True); artifact.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
     for key,threshold in result['threshold_ms'].items():
         assert result['median_ms'][key]<=threshold, result

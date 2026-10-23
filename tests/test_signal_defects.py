@@ -665,7 +665,8 @@ def _file_spread(tmp_path, evidences, owner_edges=(), threshold=LINE_T):
     import json
     from bottlenecks import bottlenecks_to_json
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=threshold))
-    payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights)))
+    from tests.report_size_support import with_v8_spread
+    payload = with_v8_spread(json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights))), result)
     return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == 'file:a/x.py']
 
 

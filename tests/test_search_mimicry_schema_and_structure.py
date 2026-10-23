@@ -141,15 +141,15 @@ def test_V5_O1_symbol_output_is_v6_without_granularity(tmp_path):
 
 def test_V5_O2_file_output_is_v7_with_granularity_file(tmp_path):
     payload = file_mode_payload(tmp_path)
-    assert payload["schema"] == "bottlenecks.v8"
+    assert payload["schema"] == "bottlenecks.v9"
     assert payload["granularity"] == "file"
 
 
-def test_V5_O3_versions_analysis_is_6_in_both_modes(tmp_path):
+def test_V5_O3_versions_analysis_is_7_in_both_modes(tmp_path):
     snapshot, architecture = network_subject(["a"], [])
     symbol = json.loads(bottlenecks_to_json(analyze_bottlenecks(snapshot, architecture, load_weights(tmp_path, weights_data()))))
-    assert symbol["versions"]["analysis"] == "6"
-    assert file_mode_payload(tmp_path)["versions"]["analysis"] == "6"
+    assert symbol["versions"]["analysis"] == "7"
+    assert file_mode_payload(tmp_path)["versions"]["analysis"] == "7"
 
 
 # ---- V7 -------------------------------------------------------------------------------------------------------------

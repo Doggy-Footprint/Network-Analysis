@@ -16,6 +16,8 @@ from tests.architecture_rules_support import (EXAMPLE_PROFILE, EXAMPLE_SPEC, FIX
                                               copy_fixture, init_git, load_manifest, mini_project, ref_rule_evaluation, synthetic_input,
                                               to_rules, violations_of, weights, write_rules)
 
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
+
 MANIFEST = load_manifest()
 
 
@@ -23,15 +25,22 @@ def fixture_args(name):
     return MANIFEST['fixtures'][name]['args']
 
 
+class Output(bytes):
+    """The bottlenecks.json bytes; `.legacy` is the same report in the base-commit (v8) layout, rebuilt with its details file."""
+
+
 def run_cli(name, directory, rules=None, seed='0', root=None):
     directory.mkdir(parents=True, exist_ok=True)
     args = [root or fixture_root(name).resolve(), *fixture_args(name), '--granularity', 'file', '-o', directory / 'r.html',
-            '--bottlenecks', directory / 'b.json']
+            '--bottlenecks', directory / 'b.json', '--json']
     if rules is not None:
         args += ['--architecture-rules', rules]
     done = cli(args, seed=seed)
     assert done.returncode == 0, done.stderr[-2000:]
-    return (directory / 'b.json').read_bytes()
+    from tests.report_size_support import legacy_bottlenecks_canonical
+    out = Output((directory / 'b.json').read_bytes())
+    out.legacy = legacy_bottlenecks_canonical(directory / 'b.json', directory / 'r.json')
+    return out
 
 
 @pytest.fixture(scope='module', params=FIXTURES)
@@ -42,11 +51,14 @@ def plain(request, tmp_path_factory):
 
 def test_V07_no_rules_byte_equal_to_base(plain):
     name, data = plain
+    if name == ANDROID:
+        assert_file_changes_are_build_only(json.loads(data))
+        return
     expected = MANIFEST['fixtures'][name]
-    base_form = base_form_bytes(data)
+    base_form = base_form_bytes(data.legacy)
     assert len(base_form) == expected['bytes']
     assert hashlib.sha256(base_form).hexdigest() == expected['sha256']
-    assert json.loads(data)['schema'] == 'bottlenecks.v8'
+    assert json.loads(data)['schema'] == 'bottlenecks.v9'
 
 
 @pytest.fixture(scope='module')
@@ -97,7 +109,7 @@ def test_V07_rules_change_only_the_rule_parts(realworld_plain, realworld_rules):
     keys = [(c['kind'], c['id']) for c in realworld_rules['candidates']]
     assert keys == sorted(keys) and len(set(keys)) == len(keys)
     assert {k: v for k, v in realworld_rules['coverage'].items() if k != 'architecture_rules'} == realworld_plain['coverage']
-    assert realworld_rules['schema'] == 'bottlenecks.v8' and 'architecture_rules' not in realworld_plain['coverage']
+    assert realworld_rules['schema'] == 'bottlenecks.v9' and 'architecture_rules' not in realworld_plain['coverage']
 
 
 def internal_only(candidates):
@@ -238,9 +250,9 @@ def test_V08_reverse_import_copy_adds_allow_violation(tmp_path, realworld_rules)
 
 
 def test_V11_size_ratio_realworld(realworld_rules_bytes):
-    ratio = len(realworld_rules_bytes) / MANIFEST['fixtures']['fastapi-realworld']['bytes']
+    ratio = len(realworld_rules_bytes.legacy) / MANIFEST['fixtures']['fastapi-realworld']['bytes']
     assert ratio <= 1.25, ratio
-    assert len(realworld_rules_bytes) >= MANIFEST['fixtures']['fastapi-realworld']['bytes']
+    assert len(realworld_rules_bytes.legacy) >= MANIFEST['fixtures']['fastapi-realworld']['bytes']
 
 
 TIME_LIMIT = 5.0

@@ -129,7 +129,8 @@ def _file_spread(tmp_path, target_path, evidence):
     paths = {target_path, *(s.file_path for s in evidence)}
     snap, result = converted({p: 'x\n' * 12 for p in paths}, nodes, edges)
     weights = load_weights(tmp_path, weights_data(large_node_line_threshold=LINE_T))
-    payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights)))
+    from tests.report_size_support import with_v8_spread
+    payload = with_v8_spread(json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights))), result)
     return [c for c in of_kind(payload, 'evidence_spread') if c['target'] == f'file:{target_path}']
 
 
@@ -430,7 +431,7 @@ def test_V6_error_inside_a_valid_declaration_keeps_collectable_members(tmp_path)
 def test_V7_symbol_bottlenecks_json(tmp_path):
     snap, arch = make_subject({'w.py': 'x\n'}, [sym('t', 'w.py')], [])
     payload = run_payload(snap, arch, weights_in(tmp_path))
-    assert payload['versions']['analysis'] == '6' and payload['schema'] == 'bottlenecks.v6'
+    assert payload['versions']['analysis'] == '7' and payload['schema'] == 'bottlenecks.v6'
     assert 'granularity' not in payload
 
 
@@ -438,15 +439,15 @@ def test_V7_file_bottlenecks_json(tmp_path):
     snap, result = converted({'a.py': 'x\n'}, [file_node('a', 'a.py')], [])
     weights = load_weights(tmp_path, weights_data())
     payload = json.loads(bottlenecks_to_json(analyze_bottlenecks(snap, result, weights)))
-    assert payload['versions']['analysis'] == '6' and payload['schema'] == 'bottlenecks.v8'
+    assert payload['versions']['analysis'] == '7' and payload['schema'] == 'bottlenecks.v9'
     assert payload['granularity'] == 'file'
 
 
-@pytest.mark.parametrize('granularity,schema', [('symbol', 'bottlenecks.v6'), ('file', 'bottlenecks.v8')])
-def test_V7_cli_output_declares_version_six(tmp_path, granularity, schema):
+@pytest.mark.parametrize('granularity,schema', [('symbol', 'bottlenecks.v6'), ('file', 'bottlenecks.v9')])
+def test_V7_cli_output_declares_version_seven(tmp_path, granularity, schema):
     root = _py_project(tmp_path, f'v7{granularity}', ['b/x.py', 'c/y.py'])
     payload = pipeline(root, tmp_path, granularity, 'python', name=f'v7{granularity}')
-    assert payload['versions'] == {'analysis': '6'} and payload['schema'] == schema
+    assert payload['versions'] == {'analysis': '7'} and payload['schema'] == schema
 
 
 C7_C11_INPUTS = {

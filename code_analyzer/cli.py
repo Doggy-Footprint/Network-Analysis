@@ -5,6 +5,7 @@ Command-line interface for the FastAPI Visualizer.
 import argparse
 import dataclasses
 import json
+import os
 import sys
 import time
 import webbrowser
@@ -21,11 +22,12 @@ from repository import (ScanPolicyError, build_snapshot, default_scan_policy_pat
                         list_repository_files, load_scan_policy, read_file)
 from language_analyzers.core.graph_models import GraphEdge, GraphNode
 from language_analyzers.core.report_schema import ReportCollection
-from language_analyzers.core.serialization import architecture_to_dict
+from language_analyzers.core.serialization import architecture_to_dict, edge_to_dict, node_to_dict
 from analysis.architecture_rules import load_architecture_rules
 from analysis.file_graph import to_file_architecture
 from analysis.candidate_projection import AMBIGUITY_POLICY
 from bottlenecks.core import _snapshot, _validate
+from bottlenecks.handout import render_handout
 
 from framework_analyzers.android.analyzer import AndroidAnalyzer
 from framework_analyzers.android.graph import AndroidArchitectureGraphBuilder
@@ -312,6 +314,9 @@ def _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis
     return arch, builder, http_calls
 
 
+_SNAPSHOT_DERIVED_PROVENANCE = {"repository-enrichment", "gradle", "npm-workspace"}
+
+
 def _run_merged(args, project_path, repository_snapshot, analysis_config, results=None) -> MergedArchitecture:
     results = results if results is not None else [
         _run_analyzer(kind, value, args, project_path, repository_snapshot, analysis_config, single=False)
@@ -322,15 +327,23 @@ def _run_merged(args, project_path, repository_snapshot, analysis_config, result
         project_path=results[0][0].project_path,
     )
     http_calls = []
-    seen = set()
+    seen = {}
+    seen_edges = set()
     for arch, _builder, calls in results:
+        nodes = []
         for node in arch.nodes:
             if node.id in seen:
+                # Enrichment runs once per analyzer over the same snapshot, so these nodes repeat verbatim.
+                if node.provenance in _SNAPSHOT_DERIVED_PROVENANCE and seen[node.id].provenance == node.provenance and node_to_dict(seen[node.id]) == node_to_dict(node):
+                    continue
                 print(f"[!] Error: duplicate node id across analyzers: {node.id}", file=sys.stderr)
                 raise SystemExit(1)
-            seen.add(node.id)
-        merged.nodes.extend(arch.nodes)
-        merged.edges.extend(arch.edges)
+            seen[node.id] = node
+            nodes.append(node)
+        edge_keys = [json.dumps([str(getattr(edge, name)) for name in ("from_id", "to_id", "relation", "confidence", "resolution")] + [list(edge.candidates), edge_to_dict(edge).get("evidence"), edge.metadata], sort_keys=True, default=str) for edge in arch.edges]
+        merged.nodes.extend(nodes)
+        merged.edges.extend(edge for edge, key in zip(arch.edges, edge_keys) if key not in seen_edges)
+        seen_edges.update(edge_keys)
         merged.report_collections.extend(arch.report_collections)
         http_calls.extend(calls)
         for key, item in arch.stats.items():
@@ -467,19 +480,36 @@ def main(
             print("[!] Warning: architecture rules differ from the baseline", file=sys.stderr)
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")
 
+    is_file = args.granularity == "file"
+    details_path = output_html_path.with_name(f"{output_html_path.stem}.details.json") if is_file and (args.json or args.bottlenecks) else None
+    architecture_dict = architecture_to_dict(arch) if args.json or (args.bottlenecks and is_file) else None
+    if details_path is not None:
+        _write_text(details_path, json.dumps(architecture_dict["details"], separators=(",", ":"), ensure_ascii=False, default=str), file_writer)
+        print(f"[✓] Exported architecture details: {details_path}")
+
+    def _relative(target: Path, base: Path) -> str:
+        return Path(os.path.relpath(target, base)).as_posix()
+
     if args.json:
         json_output_path = output_html_path.with_suffix(".json")
-        _write_text(
-            json_output_path,
-            json.dumps(architecture_to_dict(arch), indent=2, ensure_ascii=False, default=str),
-            file_writer,
-        )
+        exported = architecture_dict
+        if is_file:
+            exported = {key: value for key, value in architecture_dict.items() if key != "details"}
+            exported.update(schema_version="7", details_file=_relative(details_path, json_output_path.parent))
+        _write_text(json_output_path, json.dumps(exported, separators=(",", ":"), ensure_ascii=False, default=str), file_writer)
         print(f"[✓] Exported architecture JSON: {json_output_path}")
 
     if args.bottlenecks:
         bottleneck_path = Path(args.bottlenecks).resolve()
+        if is_file:
+            bottleneck_report = dataclasses.replace(bottleneck_report, details_file=_relative(details_path, bottleneck_path.parent))
         _write_text(bottleneck_path, bottlenecks_to_json(bottleneck_report), file_writer)
         print(f"[✓] Exported bottleneck report: {bottleneck_path}")
+        if is_file:
+            name = bottleneck_path.name
+            handout_path = bottleneck_path.with_name((name[:-5] if name.endswith(".json") else name) + ".handout.md")
+            _write_text(handout_path, render_handout(json.loads(bottlenecks_to_json(bottleneck_report)), architecture_dict), file_writer)
+            print(f"[✓] Exported bottleneck handout: {handout_path}")
 
     stats = arch.stats
     print(f"\n📊 Summary Statistics:")

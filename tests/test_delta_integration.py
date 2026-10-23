@@ -12,7 +12,10 @@ import pytest
 from fixtures.registry import fixture_root
 from tests.delta_support import (EXAMPLE_PROFILE, FIXTURE_ARGS, cid, cli, cycle, independent_digest, internal_violation,
                                  load_manifest, payload, pdep, ref_delta, run_bottlenecks, wire)
-from tests.structure_support import default_weights, ref_framework, ref_language, ref_package_pairs, ref_pairs
+from tests.report_size_support import legacy_bottlenecks_canonical
+from tests.structure_support import default_weights, ref_build, ref_framework, ref_language, ref_package_pairs, ref_pairs
+
+from tests.android_build_support import NAME as ANDROID, assert_architecture_changes_are_build_only, assert_file_changes_are_build_only, assert_symbol_changes_are_build_only, without_build_parts
 
 MANIFEST = load_manifest()
 RUNS = MANIFEST['runs']
@@ -27,7 +30,8 @@ def run_args(entry):
 
 @pytest.fixture(scope='module')
 def outputs_by_id(tmp_path_factory):
-    cache = {}
+    """get(entry): the v8 form of the run's bottlenecks.json (decoded from v9 with the details); get.raw(entry): the file bytes."""
+    cache, legacy = {}, {}
 
     def get(entry):
         key = f"{entry['fixture']}{'-rules' if entry['rules'] else ''}"
@@ -37,7 +41,13 @@ def outputs_by_id(tmp_path_factory):
             rules = EXAMPLE_PROFILE if entry['rules'] else None
             run_bottlenecks(fixture_root(entry['fixture']).resolve(), directory, name=entry['fixture'], rules=rules, extra=[])
             cache[key] = (directory / 'b.json').read_bytes()
-        return cache[key]
+            legacy[key] = legacy_bottlenecks_canonical(directory / 'b.json', directory / 'r.json')
+        return legacy[key]
+
+    def raw(entry):
+        get(entry)
+        return cache[f"{entry['fixture']}{'-rules' if entry['rules'] else ''}"]
+    get.raw = raw
     return get
 
 
@@ -79,8 +89,13 @@ def plain_entry(request):
 
 
 def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by_id):
+    if entry['fixture'] == ANDROID:
+        assert_file_changes_are_build_only(json.loads(outputs_by_id.raw(entry)))
+        return
     data = outputs_by_id(entry)
     obj = json.loads(data)
+    obj['dependency_network']['structure_policy'] = 'structure.v1'
+    obj['coverage']['structure']['policy'] = 'structure.v1'
     del obj['dependency_network']['package_dependencies']
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj['edge_weights'].pop('untested_hub_top_n', None)
@@ -91,6 +106,7 @@ def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by
     assert len(text.encode('utf-8')) == entry['bottleneck_bytes']
     assert hashlib.sha256(text.encode('utf-8')).hexdigest() == entry['bottleneck_sha256']
     assert obj['schema'] == 'bottlenecks.v8'
+    assert json.loads(outputs_by_id.raw(entry))['schema'] == 'bottlenecks.v9'
 
 
 def test_V06_F02_without_rules_no_rules_section_is_added(plain_entry, outputs_by_id):
@@ -102,6 +118,9 @@ def expected_package_dependencies(arch):
     framework = ref_framework(arch)
     if framework is not None:
         files['framework'] = framework
+    build = ref_build(arch)
+    if build is not None:
+        files['build'] = build
     pairs = ref_pairs(arch, default_weights(), 'all')
     result = {}
     for scheme, assignment in files.items():
@@ -149,7 +168,10 @@ def test_V06_F01_symbol_granularity_has_no_package_dependencies(tmp_path):
 
 
 def test_V13_Q04_size_ratio(plain_entry, outputs_by_id):
-    ratio = len(outputs_by_id(plain_entry)) / plain_entry['bottleneck_bytes']
+    data = outputs_by_id(plain_entry)
+    if plain_entry['fixture'] == ANDROID:
+        data = json.dumps(without_build_parts(json.loads(data)), **CANON).encode('utf-8') + b'\n'
+    ratio = len(data) / plain_entry['bottleneck_bytes']
     assert 1.0 <= ratio <= 1.03, ratio
 
 
@@ -186,7 +208,7 @@ def shrink(data):
 
 def test_V12_Q02_compute_delta_on_real_futuramaapi_json(outputs_by_id):
     from bottlenecks.delta import compute_delta
-    current = json.loads(outputs_by_id([r for r in PLAIN if r['fixture'] == 'futuramaapi'][0]))
+    current = json.loads(outputs_by_id.raw([r for r in PLAIN if r['fixture'] == 'futuramaapi'][0]))
     baseline = shrink(current)
     seconds, result = fastest(lambda: compute_delta(current, baseline))
     assert seconds <= 1.0, seconds
@@ -198,7 +220,7 @@ def test_V12_Q02_compute_delta_on_real_futuramaapi_json(outputs_by_id):
 
 def test_V12_Q02_identical_real_json_pair(outputs_by_id):
     from bottlenecks.delta import compute_delta
-    current = json.loads(outputs_by_id([r for r in PLAIN if r['fixture'] == 'futuramaapi'][0]))
+    current = json.loads(outputs_by_id.raw([r for r in PLAIN if r['fixture'] == 'futuramaapi'][0]))
     seconds, result = fastest(lambda: compute_delta(current, copy.deepcopy(current)))
     assert seconds <= 1.0, seconds
     assert wire(result)['counts'] == {'new_cycles': 0, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 0,

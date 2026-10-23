@@ -58,6 +58,7 @@ class RelationKind:
     CONFIGURES = "CONFIGURES"
     CALLS_ROUTE = "CALLS_ROUTE"
     MIGRATES = "MIGRATES"
+    DECLARES_DEPENDENCY = "DECLARES_DEPENDENCY"
 
 
 @dataclass(frozen=True)

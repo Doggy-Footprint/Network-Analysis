@@ -59,7 +59,7 @@ def test_V07_large_report_five_fresh_context_kpi_medians(open_report,tmp_path):
         raw['summary'].append((time.perf_counter()-started)*1000)
         assert page.unhandled_errors==[]
     medians={key:statistics.median(values) for key,values in raw.items()}
-    dump('performance.json',{'spec_version':3,'files':10000,'producers_per_file':7,'fresh_context_count':5,'raw_ms':raw,'median_ms':medians,'threshold_ms':{'summary':5000}})
+    dump('performance.latest.json',{'spec_version':3,'files':10000,'producers_per_file':7,'fresh_context_count':5,'raw_ms':raw,'median_ms':medians,'threshold_ms':{'summary':5000}})
     assert medians['summary']<=5000
 
 

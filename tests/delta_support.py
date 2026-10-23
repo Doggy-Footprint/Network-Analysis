@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from tests.architecture_rules_support import init_git
+from tests.doc_references_support import without_doc_references
 
 REPO = Path(__file__).resolve().parents[1]
 EVIDENCE = Path(__file__).parent / 'delta_evidence'
@@ -73,7 +74,7 @@ def pmetrics(instabilities):
 
 
 def payload(candidates=(), package_dependencies=None, package_metrics=None, rules_sha='absent', file_count=3,
-            policy='structure.v1'):
+            policy='structure.v2'):
     """rules_sha: 'absent' omits coverage.architecture_rules; None keeps the section without a digest."""
     result = {
         'schema': 'bottlenecks.v8', 'granularity': 'file', 'snapshot': {'file_count': file_count},
@@ -88,14 +89,24 @@ def payload(candidates=(), package_dependencies=None, package_metrics=None, rule
     return result
 
 
+def _pair(item, evidence, file_ids):
+    """(from, to) of one cycle evidence entry: a v8 record, or a bottlenecks.v9 row (file indexes for file pairs)."""
+    if isinstance(evidence, dict):
+        return [evidence['from_id'], evidence['to_id']]
+    if item['kind'] == 'dependency_cycle':
+        return [file_ids[evidence[0]], file_ids[evidence[1]]]
+    return [evidence[0], evidence[1]]
+
+
 def _cycles(data):
     found = []
+    file_ids = data['dependency_network'].get('file_ids')
     for item in data['candidates']:
         if item['kind'] in CYCLE_KINDS:
             structure = item['structure']
             found.append({'id': item['id'], 'kind': item['kind'], 'scheme': structure['scheme'], 'tier': structure['tier'],
                           'members': list(structure['members']),
-                          'pairs': [[e['from_id'], e['to_id']] for e in item['evidence']]})
+                          'pairs': [_pair(item, e, file_ids) for e in item['evidence']]})
     return found
 
 
@@ -260,8 +271,10 @@ def without_digest(coverage):
 
 
 def base_form_bytes(data):
-    obj = json.loads(data)
+    obj = without_doc_references(json.loads(data))
     obj['dependency_network'].pop('package_dependencies', None)
+    obj['dependency_network']['structure_policy'] = 'structure.v1'   # base hashes predate the structure.v2 bump (build scheme)
+    obj.get('coverage', {}).get('structure', {})['policy'] = 'structure.v1'
     obj['candidates'] = [c for c in obj['candidates'] if c['kind'] not in ('untested_hub', 'isolated_node')]
     obj.get('edge_weights', {}).pop('untested_hub_top_n', None)
     obj.get('edge_weights', {}).pop('large_node_token_threshold', None)

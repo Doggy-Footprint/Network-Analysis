@@ -85,7 +85,7 @@ def payload(rng):
     deps = {"language": [{"from_id": a, "to_id": b, "tier": rng.choice(TIERS)} for a, b in pairs if a != b]}
     metrics = {"language": {p: {"instability": rng.choice([None, rng.random(), 0.0, 1.0])} for p in pkgs}}
     return {"schema": "bottlenecks.v8", "granularity": "file", "snapshot": {"file_count": len(files)}, "coverage": {"architecture_rules": {"rules_sha256": "x"}},
-            "dependency_network": {"structure_policy": "structure.v1", "package_dependencies": deps, "package_metrics": metrics}, "candidates": cands}
+            "dependency_network": {"structure_policy": "structure.v2", "package_dependencies": deps, "package_metrics": metrics}, "candidates": cands}
 violations = []
 for i in range(N):
     a, b = payload(rng), payload(rng)
