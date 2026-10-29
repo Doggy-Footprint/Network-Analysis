@@ -50,3 +50,4 @@ agent-docs/specs/.seed/
 
 # Rewritten by every test run; the tracked performance.json files are the evidence cited by archived specs
 /tests/*_evidence/performance.latest.json
+.harness/sessions/progress-*.json
