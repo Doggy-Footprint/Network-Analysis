@@ -4,7 +4,7 @@ Builds a repository's dependency network from analysis and surfaces its structur
 The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
 The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
 
-<!-- harness:begin 0.33.0 -->
+<!-- harness:begin 0.34.1 -->
 # Documentation Guide
 
 "Documentation" refers to standalone docs, inline comments, and docstrings.
@@ -90,7 +90,7 @@ Append rows for new attempts at the same goal; never delete or edit existing row
 
 ## Progress Rule
 
-Directory: `agent-docs/progress/`, holding at most one `<16-char-hex-id>-<kebab-case-name>.md`, the current session's. Every session that changes repository files writes one and commits it with the work. When a new session writes its progress, a hook moves the previous one to `agent-docs/progress-logs/` under the same name; a merge moves progress files it adds there too. One progress per session: merge into the existing one instead of writing a second. Parallel sessions on one checkout are not supported.
+Directory: `agent-docs/progress/`, holding at most one `<16-char-hex-id>-<kebab-case-name>.md`, the current session's. Every session in which Claude Code changes the project (edits, patches, commits, or other commands that change the working tree or HEAD) writes one and commits it with the work; files changed outside the session's own tool calls, under `.harness/`, or ignored by git do not count. A Bash command run in the background is checked only until its tool call returns, so later changes it makes are not seen. When a new session writes its progress, a hook moves the previous one to `agent-docs/progress-logs/` under the same name; a merge moves progress files it adds there too. One progress per session: merge into the existing one instead of writing a second. Parallel sessions on one checkout are not supported.
 
 Frontmatter: `session` (Claude Code session id), `before` (repo path of the progress moved to logs when this one was created, or `none`), `previous` (repo path of the progress this session continued through `/continue-on`, or `none`), `branch`, and the `commit` stamp. `before` records order only; `previous` records an explicit continuation.
 
@@ -102,7 +102,7 @@ Required file structure:
 
 Every `## Next Session` bullet outside `### Constraints` is an entry followed by `  - commit: <sha checked against>; files: <comma-separated repo paths or none>`; record each entry's own commit. `### Constraints` bullets quote the user verbatim from `### User Requests` and carry `  - source: <where it was said>`. With nothing to continue, write `- none: <reason>`. `### Related` lists the exact records a later session needs; never point to records you did not check.
 
-A hook writes `### User Requests` from the session's masked prompts; do not edit it. Pre-commit blocks keys, tokens, emails, IP addresses, and internal hostnames in `progress/` and `progress-logs/`; replace each with `[masked:<category>]`.
+Hooks write `### User Requests` from the session's masked prompts when the progress is written and at each commit, which stages it; do not edit it. Pre-commit blocks keys, tokens, emails, IP addresses, and internal hostnames in `progress/` and `progress-logs/`; replace each with `[masked:<category>]`.
 
 To continue earlier work, read only the `## Next Session` of the chosen progress and the pointers under its `### Related` (`/continue-on`); never guess related records. Re-check entries the hooks flag as stale, and ask the user whether a flagged near-duplicate was re-verified or copied. Never edit a progress after its session ends.
 
