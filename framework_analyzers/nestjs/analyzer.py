@@ -44,7 +44,7 @@ def _text(file: _File, node: Any) -> str:
 
 
 def _span(file: _File, node: Any) -> SourceSpan:
-    return SourceSpan(file.key, ts.start_line(node), ts.end_line(node), node.start_point.column, node.end_point.column)
+    return SourceSpan(file.key, ts.start_line(node), ts.end_line(node), ts.start_column(node), ts.end_column(node))
 
 
 def _children(node: Any, *types: str) -> List[Any]:
@@ -415,7 +415,7 @@ class NestJSAnalyzer:
                     if route is None or "*" in route:
                         self._diagnostic("unsupported_expression", file, args[0] if args else decorator, "unsupported route path")
                     relative = _normalize(controller.metadata.get("controller_path") or "", route) if route is not None and controller.metadata.get("controller_path") is not None and "*" not in route else None
-                    identity = f"{controller.name}.{name}@{ts.start_line(decorator)}:{decorator.start_point.column}"
+                    identity = f"{controller.name}.{name}@{ts.start_line(decorator)}:{ts.start_column(decorator)}"
                     endpoint = self._declare("endpoint", file, decorator, identity, {
                         "http_method": _HTTP[http], "path": _normalize(route) if route is not None and "*" not in route else None,
                         "controller_path": controller.metadata.get("controller_path"),
@@ -438,7 +438,7 @@ class NestJSAnalyzer:
             args = node.child_by_field_name("arguments")
             items = args.named_children if args else []
             target = self._resolve(file, items[0], "module") if items else None
-            app = self._declare("application", file, node, f"NestFactory.create@{ts.start_line(node)}:{node.start_point.column}",
+            app = self._declare("application", file, node, f"NestFactory.create@{ts.start_line(node)}:{ts.start_column(node)}",
                                 {"root_module": target.id if target else None, "prefix": None})
             self._reference(app, target, "INCLUDES", file, items[0] if items else node)
             if not target:

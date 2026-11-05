@@ -140,3 +140,8 @@ File: e16d433ef30afd87-oss-report-refactoring-eval.md
 Summary: OSS 저장소 리포트 기반 리팩토링 평가 인계 — 2026-10-23 검증 데이터셋을 확보하지 못해 포기(사용자 결정). 마지막 B안(컷오프 이후 저장소 before/after 태스크 비교)은 후보 5개 중 분석기가 2개만 완료, 분석기 버그 3건 기록. VM은 n2-standard-16로 변경·중지
 Related Files: scripts/eval/prepare_runs.py, scripts/eval/run_hook.py, scripts/eval/TASK_PROMPT.md, scripts/eval/measure.py, scripts/eval/compare.py, scripts/eval/gate.py, scripts/eval/judge.py, scripts/eval/verify.sh, scripts/eval/collect_agents.py, scripts/eval/repos.json, language_analyzers/typescript/analyzer.py
 Related Symbols: measure.main, gate.main, judge.main, kotlin_imports, typescript_imports, agreement
+---
+File: 69f373c97118f02d-analyzer-crashes-on-post-cutoff-repos.md
+Summary: 컷오프 이후 OSS 저장소에서 드러난 분석기 크래시 3건(Python 공백 docstring IndexError, NestJS _diagnostic SIGSEGV, Android Retrofit endpoint id 충돌) 인계, 수정 전
+Related Files: language_analyzers/python/graph.py, framework_analyzers/nestjs/analyzer.py, language_analyzers/typescript/ast.py, framework_analyzers/android/analyzer.py, bottlenecks/core.py
+Related Symbols: _build_symbol_node, _diagnostic, _resolve, node_text, _retrofit_endpoints, _validate_structure
