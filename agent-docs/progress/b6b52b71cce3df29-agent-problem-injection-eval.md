@@ -43,10 +43,12 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
   - commit: d628d03; files: scripts/eval/inject/harness.py
 - Usage limit: a Claude call whose JSON result has is_error and a limit message (pattern `LIMIT_RE`: "hit your ... limit", "reached your ... limit", "out of usage", "usage limit reached"; strings taken from the Claude Code 2.1.322 binary) waits instead of failing. One thread per process probes with a one-line Sonnet call every 15 min, other threads retry once it clears; an injection call resets its worktree to HEAD before the retry. After 12 h it gives up, later calls fail at once and stay uncached (infra_failed). Events go to `inject/usage-limit.log`; score.json has a `usage_limit` summary. Checked with fake processes (detection, wait/retry, 3 concurrent threads -> one hit and one clear logged, give-up) and one real probe call (not misread as a limit); not observed against a real limit.
   - commit: e574eba; files: scripts/eval/inject/harness.py
+- Each Claude call records usage (cost_usd = `total_cost_usd` of `claude -p`, tokens, seconds) under inject/judge/match `usage`; results carry `wall_s`; `run_start` in memory.log carries `pending` (uncached tasks). Pilot results before 4df0161 have no judge/match usage and are excluded from `cost`. One flask-admin G02 check: injection $0.062 (script) and $0.119 (sonnet), judge and match about $0.005-0.012 each.
+  - commit: 4df0161; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- User starts the overnight run as two parallel streams: `scripts/eval/inject/overnight.sh "CTFd flask-admin" & scripts/eval/inject/overnight.sh "ghostfolio nowinandroid" & wait` (all injectable types, both methods, 4 per control; resumable); then read each `inject/<repo>/score.txt` and start improvement with the uncaught weight-3 types (P16 duplication first) and the analyzer false positives on format and comment controls.
-  - commit: d628d03; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
+- Second pilot (user asked for about a third of the plan plus a cost estimate) started 2026-11-10 23:40 in the background: `overnight.sh "CTFd flask-admin" 1 2 "--fraction 3"` and the same for ghostfolio nowinandroid. `--fraction 3` gives each repo one stratified third of the 68 types (rotated by repo order, all 68 covered across the four repos), 2 per control; 170 new tasks. When it ends, run `harness.py cost` (per-category Sonnet spend and elapsed time per new task, projected to the remaining full plan) and each `harness.py score <repo>`, report both, and let the user decide the full run.
+  - commit: 4df0161; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
@@ -75,6 +77,7 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
 ## Record
 
 ### Changes
+- scripts/eval/inject/harness.py, overnight.sh: per-stage Sonnet usage, `--fraction` stratified type parts, `cost` subcommand; overnight.sh passes extra run flags.
 - scripts/eval/inject/harness.py: Claude calls wait out the usage limit and retry; injection retries start from a reset worktree.
 - AGENTS.md: project definition rewritten per the user's choice of the broader scope.
 - scripts/eval/defects/agent-reported.md: catalog of 52 problem types reported for AI-written code, compiled by an Opus subagent without analyzer knowledge, with source verification status.
