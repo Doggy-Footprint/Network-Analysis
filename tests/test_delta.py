@@ -38,7 +38,7 @@ def pairs_of(*pairs):
 
 
 def test_policy_constant():
-    assert delta_api().DELTA_POLICY == 'delta.v1'
+    assert delta_api().DELTA_POLICY == 'delta.v2'
 
 
 def test_F12_delta_object_shape_and_counts():
@@ -46,12 +46,12 @@ def test_F12_delta_object_shape_and_counts():
     cur = payload(candidates=[cycle([A, B, C]), cycle([D, E])], file_count=9, rules_sha='h1')
     result = run(cur, base)
     assert set(result) == DELTA_KEYS
-    assert result['policy'] == 'delta.v1'
+    assert result['policy'] == 'delta.v2'
     assert result['baseline'] == {'file_count': 7, 'rules_sha256': 'h1'}
     assert result['rules_changed'] is False
-    assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0}
+    assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 1, 'new_violations': 0, 'new_package_dependencies': 0,
-                                'instability_changes': 0}
+                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
 
 
 def test_F12_same_input_same_bytes_and_inputs_untouched():
@@ -357,8 +357,8 @@ def test_V14_schemes_are_not_mixed_for_cycles_dependencies_and_metrics():
                   package_dependencies={'framework': [pdep('p', 'q')]}, package_metrics={'framework': pmetrics({'pkg:x': 1.0})})
     result = run(cur, base)
     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 1,
-                                'instability_changes': 0}
-    assert result['resolved'] == {'cycles': 1, 'violations': 0, 'package_dependencies': 1}
+                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
+    assert result['resolved'] == {'cycles': 1, 'violations': 0, 'package_dependencies': 1, 'candidates': 0}
 
 
 def test_V14_resolved_cycles_exclude_baseline_cycles_that_overlap_current():
@@ -418,7 +418,7 @@ def good():
     return payload(
         candidates=[cycle([A, B]), cycle(['p', 'q'], kind='package_cycle', scheme='language'),
                     internal_violation('b:v1', A, B), external_violation('b:v2', A, 'os'),
-                    {'id': 'b:l', 'kind': 'large_node'}],
+                    {'id': 'b:l', 'kind': 'large_node', 'target': A, 'metrics': {}}],
         package_dependencies={'language': [pdep('p', 'q')]}, package_metrics={'language': pmetrics({'pkg:x': 0.5, 'pkg:n': None})},
         rules_sha='abc')
 

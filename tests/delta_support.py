@@ -20,11 +20,13 @@ MAIN = 'from code_analyzer.cli import main; main()'
 CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
 TIERS = ('certain', 'resolved', 'all')
 LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
-DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'resolved', 'counts'}
+DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts'}
 FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
 FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
-SUMMARY = '[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
+GENERAL_LISTS = ('new_candidates', 'strengthened_candidates')
+SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
+           ', new candidates {}, strengthened candidates {}')
 RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
 
 
@@ -187,14 +189,19 @@ def ref_delta(current, baseline):
         changed = 'rules_sha256' not in cur_rules or 'rules_sha256' not in base_rules or cur_rules['rules_sha256'] != base_rules['rules_sha256']
     lists = {'new_cycles': new_cycles, 'grown_cycles': grown_cycles, 'new_violations': new_violations,
              'new_package_dependencies': new_pd, 'instability_changes': changes}
-    return {'policy': 'delta.v1',
+    from tests.delta_candidates_support import ref_general
+    general = ref_general(current, baseline)
+    return {'policy': 'delta.v2',
             'baseline': {'file_count': baseline['snapshot']['file_count'],
                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
             'rules_changed': changed, **lists,
+            'new_candidates': general['new_candidates'], 'strengthened_candidates': general['strengthened_candidates'],
             'resolved': {'cycles': resolved_cycles,
                          'violations': sum(1 for i in base_ids if i not in cur_ids),
-                         'package_dependencies': resolved_pd},
-            'counts': {name: len(items) for name, items in lists.items()}}
+                         'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
+            'counts': {**{name: len(items) for name, items in lists.items()},
+                       'new_candidates': len(general['new_candidates']),
+                       'strengthened_candidates': len(general['strengthened_candidates'])}}
 
 
 def ref_regressions(delta, fail_on):

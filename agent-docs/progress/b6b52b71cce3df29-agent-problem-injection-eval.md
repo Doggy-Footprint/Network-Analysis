@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
+commit: 9ea723bfce0b18890e16084f9d9edce27c5b0f77
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -12,16 +12,20 @@ commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 
 ### State
 - Project definition in AGENTS.md now covers structure, code quality, security, and correctness candidates; `bottlenecks/handout.py:109` still prints "Candidates are structural facts to review, not verdicts." and was left unchanged because only structural candidate kinds exist so far.
-  - commit: 12da674; files: AGENTS.md, bottlenecks/handout.py
+  - commit: 9ea723b; files: AGENTS.md, bottlenecks/handout.py
 - Scoring catalog: 74 types (52 agent-reported, weight 3; 22 general, weight 1), 68 injectable, total injectable weight 160. Regenerate with `python3 scripts/eval/defects/build_catalog.py`.
-  - commit: 12da674; files: scripts/eval/defects/build_catalog.py, scripts/eval/defects/catalog.json, scripts/eval/defects/agent-reported.md
-- Delta comparison (`bottlenecks/delta.py`, policy delta.v1) covers only new_cycles, grown_cycles, new_violations, new_package_dependencies, instability_changes; other candidate kinds have no baseline comparison.
-  - commit: 12da674; files: bottlenecks/delta.py
+  - commit: 9ea723b; files: scripts/eval/defects/build_catalog.py, scripts/eval/defects/catalog.json, scripts/eval/defects/agent-reported.md
+- Delta comparison is `delta.v2`: besides the five v1 lists it reports `new_candidates`, `strengthened_candidates`, `resolved.candidates` for every non-cycle, non-violation kind (unknown kinds included). Spec run 2afad1e5c96b32ff closed with verifier pass.
+  - commit: 9ea723b; files: bottlenecks/delta.py, code_analyzer/cli.py, agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
+- Known false positive: file renames are not tracked, so a renamed file's candidates appear as resolved (old path) plus new (new path). The eval must measure this rate with the rename negative control (NC1) and report it next to recall.
+  - commit: 9ea723b; files: bottlenecks/delta.py, tests/test_delta_candidates.py
+- The Python analyzer records an unresolved reference only for calls aimed at project code (attribute of an imported project module, name imported from a project module). A call to an unbound bare name (`missing_fn()`) is classified as external and yields no `unresolved_boundary`; observed on fastapi-realworld with 25 such calls. This affects the agent problem "reference to non-existent internal symbol" (P02).
+  - commit: 9ea723b; files: language_analyzers/python/graph.py
+- At base 9ea723b the full suite has pre-existing failures: 5 characterization tests (12 node ids) and 2 flaky tests (report_modal V04 under parallel load; report_size_format V01 depending on in-process order). The spec Test command deselects them.
+  - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
 ### Next Step
-- Extend delta comparison to every candidate kind, matching cycles by member superset and other kinds by kind + target path + metrics (candidate ids hash node ids, so ids change on rename and growth).
-  - commit: 12da674; files: bottlenecks/delta.py, bottlenecks/core.py, code_analyzer/cli.py
-- Then build the injection harness (script-chosen and Sonnet-chosen locations, reported separately) and run the CTFd pilot locally; then start improvement with duplicate/clone detection (P16).
+- Build the injection harness (script-chosen and Sonnet-chosen locations, reported separately) and run the CTFd pilot locally; then start improvement with duplicate/clone detection (P16).
   - commit: 12da674; files: scripts/eval/measure.py, scripts/eval/gate.py
 
 ### Constraints
@@ -34,14 +38,19 @@ commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 
 ### Verify
 - `python3 scripts/eval/defects/build_catalog.py` regenerates catalog.json without diff.
-  - commit: 12da674; files: scripts/eval/defects/catalog.json
+  - commit: 9ea723b; files: scripts/eval/defects/catalog.json
+- The Test command line in the archived spec (pytest-cov, deselects) passes: 3811 passed, delta.py branch 99%.
+  - commit: 9ea723b; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 
 ### Dead Ends
-- none: no implementation attempt has failed yet in this session
+- `coverage run -m pytest` collects no data in this repo because pytest.ini adds `-n auto`; use pytest-cov.
+  - commit: 9ea723b; files: pytest.ini
 
 ### Related
 - agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md (earlier OSS eval dropped for lack of a validation dataset; saturation numbers on large cycles)
   - commit: 12da674; files: agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md
+- agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md (delta.v2 contract, strength-metric table, rename false positive)
+  - commit: 9ea723b; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 
 ## Record
 
@@ -49,6 +58,7 @@ commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 - AGENTS.md: project definition rewritten per the user's choice of the broader scope.
 - scripts/eval/defects/agent-reported.md: catalog of 52 problem types reported for AI-written code, compiled by an Opus subagent without analyzer knowledge, with source verification status.
 - scripts/eval/defects/build_catalog.py, catalog.json: weighted scoring denominator.
+- bottlenecks/delta.py, code_analyzer/cli.py: delta.v2 (spec 2afad1e5c96b32ff); tests/test_delta_candidates.py and support; existing delta tests adjusted within the spec range (tests/delta_candidates_evidence/existing-tests.diff).
 
 ### Commands
 - `python3 scripts/eval/defects/build_catalog.py`
@@ -56,6 +66,8 @@ commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 ### Failed Attempts
 | attempt | failure evidence | cause |
 |---|---|---|
+| `coverage run` around pytest for delta.py coverage | "No data was collected" with 3807 tests run | verified: xdist workers (`-n auto` in pytest.ini) are outside coverage run |
+| V05 injection with bare undefined calls | no unresolved_boundary in delta; details show no unresolved_references on the new function | verified: `_is_boundary_call` treats unbound bare names as external |
 | Defect list derived from the analyzer's candidate kinds (18 observable of 39) | user rejected it: the eval must measure AI-agent problems, not fit the tool | verified |
 
 ### Sources
@@ -117,3 +129,31 @@ commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 #### 9 — 2026-11-10T07:16:54Z
 
 > 둘 다 권장으로 가야겠네. 2에 오탐이 있을 것이고 그걸 음성대조에서 보는 점은 확실히 적어놔.
+
+#### 10 — 2026-11-10T07:35:56Z
+
+> 승인
+
+#### 11 — 2026-11-10T07:39:30Z
+
+> <task-notification>
+> <task-id>bn8kbdk2r</task-id>
+> <tool-use-id>toolu_0112YgSBd6QPrWQtL2wMQgv7</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bn8kbdk2r.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Produce a real file-granularity bottleneck JSON for fuzzing" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 12 — 2026-11-10T07:46:40Z
+
+> <task-notification>
+> <task-id>bm84b4izb</task-id>
+> <tool-use-id>toolu_01LNnhDhSkiHgqHDniuk3C1G</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bm84b4izb.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Run the spec Test command with coverage" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 13 — 2026-11-10T08:21:34Z
+
+> 확인했어. 넘어가도 좋아.

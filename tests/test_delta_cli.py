@@ -56,7 +56,7 @@ def error_lines(done):
 
 
 def summary_for(delta):
-    return SUMMARY.format(*(len(delta[name]) for name in LISTS))
+    return SUMMARY.format(*(len(delta[name]) for name in LISTS), len(delta['new_candidates']), len(delta['strengthened_candidates']))
 
 
 def stdout_summary(done):
@@ -80,9 +80,9 @@ def test_V07_C01_rerun_on_same_commit_reports_nothing(tmp_path, pristine, baseli
     assert done.returncode == 0, done.stderr[-1500:]
     delta = assert_matches_reference(written(tmp_path), baselines['ruled'])
     assert all(delta[name] == [] for name in LISTS)
-    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0}
+    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
     assert delta['rules_changed'] is False
-    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0)]
+    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0, 0, 0)]
     assert error_lines(done) == []
     assert outputs(tmp_path / 'out') == ALL_OUTPUTS
 
@@ -162,7 +162,7 @@ def test_V07_C04_new_package_dependency_never_fails(tmp_path, baselines):
                                                   'to_id': 'pkg:python:app.core', 'tier': 'certain'}]
     assert delta['new_cycles'] == [] and delta['grown_cycles'] == [] and delta['new_violations'] == []
     assert done.returncode == 0, done.stderr[-1500:]
-    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0)]
+    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0, len(delta['new_candidates']), len(delta['strengthened_candidates']))]
     assert error_lines(done) == []
 
 

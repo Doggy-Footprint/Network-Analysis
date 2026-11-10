@@ -475,7 +475,8 @@ def main(
     if delta is not None:
         counts = delta["counts"]
         print(f"[Δ] Delta vs baseline: new cycles {counts['new_cycles']}, grown cycles {counts['grown_cycles']}, new violations {counts['new_violations']}, "
-              f"new package dependencies {counts['new_package_dependencies']}, instability changes {counts['instability_changes']}")
+              f"new package dependencies {counts['new_package_dependencies']}, instability changes {counts['instability_changes']}, "
+              f"new candidates {counts['new_candidates']}, strengthened candidates {counts['strengthened_candidates']}")
         if delta["rules_changed"]:
             print("[!] Warning: architecture rules differ from the baseline", file=sys.stderr)
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")

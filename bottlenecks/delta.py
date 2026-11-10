@@ -4,13 +4,19 @@ from typing import Any, Iterable, Mapping
 
 from analysis.structure import TIERS
 
-DELTA_POLICY = "delta.v1"
+DELTA_POLICY = "delta.v2"
 INSTABILITY_THRESHOLD = 0.2
 # Tolerates float error of differences such as 0.8 - 0.6 landing just below 0.2.
 _EPSILON = 1e-12
 _SCHEMAS = ("bottlenecks.v8", "bottlenecks.v9")
 _CYCLE_KINDS = ("dependency_cycle", "package_cycle")
-_LIST_NAMES = ("new_cycles", "grown_cycles", "new_violations", "new_package_dependencies", "instability_changes")
+_LIST_NAMES = ("new_cycles", "grown_cycles", "new_violations", "new_package_dependencies", "instability_changes", "new_candidates", "strengthened_candidates")
+_SPECIAL_KINDS = _CYCLE_KINDS + ("rule_violation",)
+# Only these count as strengthening; line spans, thresholds and ranks change on formatting alone.
+_STRENGTH_METRICS = {"large_node": ("line_count", "token_count"), "unresolved_boundary": ("unresolved_count",),
+                     "evidence_spread": ("file_count", "directory_count"), "dangling_doc_reference": ("dangling_count",),
+                     "unstable_dependency": ("file_pair_count",)}
+_EVIDENCE_KINDS = ("unresolved_boundary", "dangling_doc_reference")
 
 
 class BaselineError(ValueError):
@@ -82,6 +88,7 @@ def _check_baseline(document: Any, path: str) -> None:
         _string(candidate.get("kind"), path, where + ".kind")
         if candidate["kind"] in _CYCLE_KINDS: _check_cycle(candidate, path, where, columns)
         elif candidate["kind"] == "rule_violation": _check_violation(candidate, path, where)
+        else: _check_general(candidate, path, where)
     coverage = root.get("coverage")
     if coverage is not None:
         _object(coverage, path, "$.coverage")
@@ -144,6 +151,17 @@ def _check_violation(candidate: Mapping[str, Any], path: str, where: str) -> Non
     if "to_layer" in structure: _string(structure["to_layer"], path, where + ".structure.to_layer")
     elif "to_external" in structure: _string(structure["to_external"], path, where + ".structure.to_external")
     else: _fail(path, where + ".structure", "an object with a string to_layer or to_external")
+
+
+def _check_general(candidate: Mapping[str, Any], path: str, where: str) -> None:
+    _string(candidate.get("target"), path, where + ".target")
+    metrics = _object(candidate.get("metrics"), path, where + ".metrics")
+    for name in _STRENGTH_METRICS.get(candidate["kind"], ()):
+        if name in metrics and not _number(metrics[name]): _fail(path, f"{where}.metrics.{name}", "a number")
+    if candidate["kind"] in _EVIDENCE_KINDS:
+        evidence = candidate.get("evidence")
+        if not isinstance(evidence, list): _fail(path, where + ".evidence", "a list")
+        for index, record in enumerate(evidence): _object(record, path, f"{where}.evidence[{index}]")
 
 
 def load_baseline(path: "str | os.PathLike") -> dict:
@@ -224,6 +242,62 @@ def _violation_item(candidate: Mapping[str, Any]) -> dict:
     return item
 
 
+def _signatures(candidate: Mapping[str, Any]) -> set[tuple[str, ...]]:
+    kind, found = candidate["kind"], set()
+    evidence = candidate.get("evidence")
+    if kind not in _EVIDENCE_KINDS or not isinstance(evidence, list): return found
+    for record in evidence:
+        if not isinstance(record, dict): continue
+        if kind == "dangling_doc_reference":
+            if isinstance(record.get("notation"), str) and isinstance(record.get("text"), str): found.add(("doc", record["notation"], record["text"]))
+            continue
+        node = record["node_id"] if isinstance(record.get("node_id"), str) else candidate.get("target")
+        references, flags = record.get("unresolved_references"), record.get("flags")
+        if isinstance(references, list):
+            found.update(("reference", node, item["name"]) for item in references if isinstance(item, dict) and isinstance(item.get("name"), str))
+        if isinstance(flags, list): found.update(("flag", node, flag) for flag in flags if isinstance(flag, str))
+        if isinstance(record.get("from_id"), str) and isinstance(record.get("to_id"), str):
+            relation = record.get("relation")
+            found.add(("edge", record["from_id"], record["to_id"], relation if isinstance(relation, str) else ""))
+    return found
+
+
+def _general(candidates: Iterable[Mapping[str, Any]]) -> dict[tuple, Mapping[str, Any]]:
+    keys = []
+    seen: dict[tuple, int] = {}
+    chosen = [candidate for candidate in candidates if candidate.get("kind") not in _SPECIAL_KINDS]
+    for candidate in chosen:
+        structure = candidate.get("structure")
+        if isinstance(structure, dict): structure = json.dumps({k: v for k, v in structure.items() if k != "tier"}, sort_keys=True)
+        else: structure = "" if structure is None else json.dumps(structure, sort_keys=True)
+        key = (candidate.get("kind"), candidate.get("target"), structure)
+        keys.append(key)
+        seen[key] = seen.get(key, 0) + 1
+    return {(key + (candidate.get("id"),) if seen[key] > 1 else key): candidate for key, candidate in zip(keys, chosen)}
+
+
+def _general_delta(current: Iterable[Mapping[str, Any]], baseline: Iterable[Mapping[str, Any]]) -> tuple[list, list, int]:
+    now, then = _general(current), _general(baseline)
+    new, strengthened = [], []
+    for key, candidate in now.items():
+        before = then.get(key)
+        if before is None:
+            new.append({"candidate_id": candidate.get("id"), "kind": candidate["kind"], "target": candidate.get("target"), "metrics": candidate.get("metrics")})
+            continue
+        increased = {}
+        now_metrics, then_metrics = candidate.get("metrics"), before.get("metrics")
+        if isinstance(now_metrics, dict) and isinstance(then_metrics, dict):
+            for name in _STRENGTH_METRICS.get(candidate["kind"], ()):
+                if _number(now_metrics.get(name)) and _number(then_metrics.get(name)) and now_metrics[name] > then_metrics[name]:
+                    increased[name] = {"baseline": then_metrics[name], "current": now_metrics[name]}
+        added = sorted(_signatures(candidate) - _signatures(before))
+        if increased or added:
+            strengthened.append({"candidate_id": candidate.get("id"), "baseline_candidate_id": before.get("id"), "kind": candidate["kind"], "target": candidate.get("target"),
+                                 "increased": increased, "added_evidence": [list(item) for item in added]})
+    order = lambda item: (item["kind"], item["target"], item["candidate_id"])
+    return sorted(new, key=order), sorted(strengthened, key=order), len(then.keys() - now.keys())
+
+
 def _dependency_map(network: Mapping[str, Any]) -> dict[tuple[str, str, str], str]:
     found: dict[tuple[str, str, str], str] = {}
     for scheme, pairs in (network.get("package_dependencies") or {}).items():
@@ -262,11 +336,13 @@ def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> di
     current_pairs, baseline_pairs = _dependency_map(current_network), _dependency_map(baseline_network)
     new_pairs = [{"scheme": key[0], "from_id": key[1], "to_id": key[2], "tier": current_pairs[key]} for key in sorted(set(current_pairs) - set(baseline_pairs))]
     changes = _instability_changes(current_network, baseline_network)
+    new_candidates, strengthened, resolved_candidates = _general_delta(current["candidates"], baseline["candidates"])
     delta = {"policy": DELTA_POLICY, "baseline": {"file_count": baseline["snapshot"]["file_count"], "rules_sha256": digest}, "rules_changed": rules_changed,
              "new_cycles": new_cycles, "grown_cycles": grown_cycles, "new_violations": new_violations,
              "new_package_dependencies": new_pairs, "instability_changes": changes,
+             "new_candidates": new_candidates, "strengthened_candidates": strengthened,
              "resolved": {"cycles": resolved_cycles, "violations": len(set(baseline_violations) - set(current_violations)),
-                          "package_dependencies": len(set(baseline_pairs) - set(current_pairs))}}
+                          "package_dependencies": len(set(baseline_pairs) - set(current_pairs)), "candidates": resolved_candidates}}
     delta["counts"] = {name: len(delta[name]) for name in _LIST_NAMES}
     return delta
 
