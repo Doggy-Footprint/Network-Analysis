@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: d628d03a38c9842140a9fd8ea503e05a00df317c
+commit: 52d1e19e747061a896d999238b99609008783166
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -41,6 +41,8 @@ commit: d628d03a38c9842140a9fd8ea503e05a00df317c
 
 - Memory guard: before each gate the harness waits until `kern.memorystatus_level` (system-wide free-memory percent) is at least 25, and at least 15 before Sonnet calls and analyzer runs (gives up after 2 h and logs it); gate starts across processes are spaced 60 s apart through `inject/gate-start.lock`; nowinandroid gates end with `./gradlew --stop`. Samples every 60 s and waits go to `inject/<repo>/memory.log`; each gate result carries memory before/after; score.json has a memory summary. A nowinandroid gate check ran with level 38 -> 42 and left no Gradle 9.7.1 daemon.
   - commit: d628d03; files: scripts/eval/inject/harness.py
+- Usage limit: a Claude call whose JSON result has is_error and a limit message (pattern `LIMIT_RE`: "hit your ... limit", "reached your ... limit", "out of usage", "usage limit reached"; strings taken from the Claude Code 2.1.322 binary) waits instead of failing. One thread per process probes with a one-line Sonnet call every 15 min, other threads retry once it clears; an injection call resets its worktree to HEAD before the retry. After 12 h it gives up, later calls fail at once and stay uncached (infra_failed). Events go to `inject/usage-limit.log`; score.json has a `usage_limit` summary. Checked with fake processes (detection, wait/retry, 3 concurrent threads -> one hit and one clear logged, give-up) and one real probe call (not misread as a limit); not observed against a real limit.
+  - commit: 52d1e19; files: scripts/eval/inject/harness.py
 
 ### Next Step
 - User starts the overnight run as two parallel streams: `scripts/eval/inject/overnight.sh "CTFd flask-admin" & scripts/eval/inject/overnight.sh "ghostfolio nowinandroid" & wait` (all injectable types, both methods, 4 per control; resumable); then read each `inject/<repo>/score.txt` and start improvement with the uncaught weight-3 types (P16 duplication first) and the analyzer false positives on format and comment controls.
@@ -73,6 +75,7 @@ commit: d628d03a38c9842140a9fd8ea503e05a00df317c
 ## Record
 
 ### Changes
+- scripts/eval/inject/harness.py: Claude calls wait out the usage limit and retry; injection retries start from a reset worktree.
 - AGENTS.md: project definition rewritten per the user's choice of the broader scope.
 - scripts/eval/defects/agent-reported.md: catalog of 52 problem types reported for AI-written code, compiled by an Opus subagent without analyzer knowledge, with source verification status.
 - scripts/eval/defects/build_catalog.py, catalog.json: weighted scoring denominator.
@@ -276,3 +279,7 @@ commit: d628d03a38c9842140a9fd8ea503e05a00df317c
 #### 27 — 2026-11-10T14:13:44Z
 
 > 밤 사이 진행할 작업 설명해
+
+#### 28 — 2026-11-10T14:18:24Z
+
+> 중간에 사용량 제한에 걸렸을 때 어떻게 할거야?

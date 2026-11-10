@@ -213,9 +213,69 @@ def wait_online(limit=4 * 3600):
         time.sleep(60)
 
 
-def call(args, cwd, timeout, prompt):
-    wait_online()
-    return run(args, cwd=cwd, timeout=timeout, input=prompt)
+LIMIT_RE = re.compile(r"hit your [^.]{0,40}limit|reached your [^.]{0,40}limit|out of (extra )?usage|usage limit reached|out of usage credits", re.I)
+LIMIT_POLL, LIMIT_WAIT = 15 * 60, 12 * 3600
+LIMIT_LOG = WORK / 'usage-limit.log'
+limit_lock = threading.Lock()
+limit_state = {'gave_up': False, 'cleared_at': 0.0}
+
+
+def limit_message(proc):
+    try:
+        out = json.loads(proc.stdout)
+        if not out.get('is_error'):
+            return None
+        text = str(out.get('result') or '') + proc.stderr
+    except (json.JSONDecodeError, AttributeError):
+        if proc.returncode == 0:
+            return None
+        text = proc.stdout + proc.stderr
+    found = LIMIT_RE.search(text)
+    return text[-300:].strip() if found else None
+
+
+def log_limit(event, **fields):
+    with open(LIMIT_LOG, 'a') as fh:
+        fh.write(json.dumps({'time': time.strftime('%Y-%m-%dT%H:%M:%S'), 'pid': os.getpid(), 'event': event, **fields}) + '\n')
+
+
+def wait_limit(message, sent_at):
+    # one thread per process probes; the others block on the lock and retry once it is released
+    with limit_lock:
+        if limit_state['gave_up']:
+            return False
+        if limit_state['cleared_at'] > sent_at:
+            return True
+        probe = CLAUDE + ['--tools', '']
+        start = time.time()
+        log_limit('limit_hit', message=message)
+        while time.time() - start < LIMIT_WAIT:
+            wait_online()
+            proc = run(probe, cwd=WORK, timeout=300, input='Reply with OK.')
+            if not limit_message(proc) and proc.returncode == 0:
+                log_limit('limit_cleared', waited_s=round(time.time() - start))
+                limit_state['cleared_at'] = time.time()
+                return True
+            time.sleep(LIMIT_POLL)
+        limit_state['gave_up'] = True
+        log_limit('limit_gave_up', waited_s=round(time.time() - start))
+        return False
+
+
+def call(args, cwd, timeout, prompt, before_retry=None):
+    while True:
+        if limit_state['gave_up']:
+            return subprocess.CompletedProcess(args, 1, '', 'usage limit: gave up waiting')
+        wait_online()
+        sent_at = time.time()
+        proc = run(args, cwd=cwd, timeout=timeout, input=prompt)
+        message = limit_message(proc)
+        if not message:
+            return proc
+        if not wait_limit(message, sent_at):
+            return proc
+        if before_retry:
+            before_retry()
 
 
 def infra_failed(result):
@@ -224,10 +284,16 @@ def infra_failed(result):
                 or (matched is not None and matched.get('verdict') is None) or result.get('error'))
 
 
+def reset_worktree(worktree):
+    # a call cut off by the usage limit may leave a half-made injection; the retry starts from the base commit
+    run(['git', 'reset', '-q', '--hard', 'HEAD'], cwd=worktree, check=True)
+    run(['git', 'clean', '-qfd'], cwd=worktree, check=True)
+
+
 def claude(prompt, cwd, timeout):
     start = time.perf_counter()
     proc = call(CLAUDE + ['--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Edit', 'Write', 'Glob', 'Grep'],
-                cwd, timeout, prompt)
+                cwd, timeout, prompt, before_retry=lambda: reset_worktree(cwd))
     try:
         out = json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -803,6 +869,10 @@ def cmd_score(args):
         report['memory'] = {'min_level': min(r['level'] for r in rows), 'min_available_gb': min(r['available_gb'] for r in rows),
                             'max_swap_used_gb': max(r['swap_used_gb'] or 0 for r in rows),
                             'wait_samples': sum(r['event'] == 'wait' for r in rows), 'gave_up': sum(r['event'] == 'wait_gave_up' for r in rows)}
+    if LIMIT_LOG.exists():
+        rows = [json.loads(line) for line in LIMIT_LOG.read_text().splitlines() if line.strip()]
+        report['usage_limit'] = {'hits': sum(r['event'] == 'limit_hit' for r in rows), 'gave_up': sum(r['event'] == 'limit_gave_up' for r in rows),
+                                 'waited_s': sum(r.get('waited_s', 0) for r in rows)}
     text = json.dumps(report, indent=1)
     (WORK / args.repo / 'score.json').write_text(text)
     print(text)
