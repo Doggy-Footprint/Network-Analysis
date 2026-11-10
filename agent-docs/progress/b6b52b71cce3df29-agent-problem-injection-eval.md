@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: d08342bc07f724358d1c1fca93b900f8456967a7
+commit: c502749aaf855eb9ddf9f65a656eafead1879b0d
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -51,7 +51,7 @@ commit: d08342bc07f724358d1c1fca93b900f8456967a7
   - commit: 334e57c; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- Second pilot (user asked for about a third of the plan plus a cost estimate) started 2026-11-10 23:40 in the background: `overnight.sh "CTFd flask-admin" 1 2 "--fraction 3"` and the same for ghostfolio nowinandroid. `--fraction 3` gives each repo one stratified third of the 68 types (rotated by repo order, all 68 covered across the four repos), 2 per control; 170 new tasks. When it ends, run `harness.py cost` (per-category Sonnet spend and elapsed time per new task, projected to the remaining full plan) and each `harness.py score <repo>`, report both. User rule: if pilot 1 + pilot 2 + the projected remaining full plan (replicates 1, negatives 4) is at most $100, start the full run right after the pilot with `--budget 100` in both streams; otherwise report and wait.
+- Second pilot (`--fraction 3`, negatives 2) ran 23:32-02:12: 170 new tasks, no task errors, no infra failures, no memory/thermal/limit waits. Measured mean Sonnet cost per task: script $0.067, sonnet $0.083, Sonnet-made control $0.050, scripted control $0. Elapsed per new task: CTFd 154 s, flask-admin 105 s, ghostfolio 99 s, nowinandroid 105 s. Recorded spend $15.91; projected remaining full plan $26.0, so the user's $100 rule allowed the full run, started 2026-11-11 02:15 as `overnight.sh "CTFd flask-admin" 1 4 "--budget 100"` and the same for ghostfolio nowinandroid (projection 6.3 h and 5.3 h per stream). Pilot-2 scores are saved as `inject/<repo>/score-pilot2.txt`. Pilot-2 analyzer FP on controls: rename in all four repos, ghostfolio format 1 of 2, nowinandroid comment-only 2 of 2. Next: when the run ends, read each `score.txt` and `harness.py cost`, report, then start improvement with uncaught weight-3 types (P16 duplication first) and the control false positives.
   - commit: 4df0161; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 
 ### Constraints
@@ -312,3 +312,13 @@ commit: d08342bc07f724358d1c1fca93b900f8456967a7
 #### 33 — 2026-11-10T14:54:24Z
 
 > 혹시 작업 중 온도 모니터링도 가능해? 과하게 높아지면 10분 대기 후 이어가는 식으로. 실시간일 필요는 없고 작업 중간 체크 정도면 돼. 네가 직접 하지말고 자동화로
+
+#### 34 — 2026-11-10T17:12:50Z
+
+> <task-notification>
+> <task-id>b6fcinn77</task-id>
+> <tool-use-id>toolu_011Bescg9q1efrvmcJbjQWKh</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/b6fcinn77.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Run second pilot on a third of the types in two lanes" completed (exit code 0)</summary>
+> </task-notification>
