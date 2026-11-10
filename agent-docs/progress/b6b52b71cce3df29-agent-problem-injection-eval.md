@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: ea38506d24c15de17845cc8b13b2b731bad4cca3
+commit: f47b0fdf7880d8d22db91e3cfe09479edb95067f
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -24,18 +24,24 @@ commit: ea38506d24c15de17845cc8b13b2b731bad4cca3
 - At base 9ea723b the full suite has pre-existing failures: 5 characterization tests (12 node ids) and 2 flaky tests (report_modal V04 under parallel load; report_size_format V01 depending on in-process order). The spec Test command deselects them.
   - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
-- Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Only CTFd has a test command (`TEST_ENV`). The earlier `eval/repos` clones and envs no longer exist.
-  - commit: 4670e4e; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
-- Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; NC1 rename and NC2 format are scripted because file tools cannot delete files (Sonnet renames left the old file, judged invalid). Validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff, CTFd test gate (725 passed, about 115 s, serialized). Catch = Sonnet match judge on anonymized findings (`matched`); `located` = analyzer delta item naming a touched file or its `pkg:python:` package, or a tool finding on an added line. Tools: ruff ALL, bandit, pylint on touched files, new = count increase per (tool, rule, path, message).
-  - commit: 4670e4e; files: scripts/eval/inject/harness.py
+- Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Test commands and scopes are in `REPOS`. The earlier `eval/repos` clones and envs no longer exist.
+  - commit: f47b0fd; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
+- Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; NC1 rename and NC2 format are scripted because file tools cannot delete files (Sonnet renames left the old file, judged invalid). Validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff (not for scripted controls), test gate (serialized per process). Catch = Sonnet match judge on anonymized findings (`matched`); `located` = analyzer delta item naming a touched file or its `pkg:python:` package, or a tool finding on an added line. Tools: ruff ALL, bandit, pylint on touched files, new = count increase per (tool, rule, path, message).
+  - commit: f47b0fd; files: scripts/eval/inject/harness.py
 - CTFd pilot (16 types x 2 methods, 1 replicate, 2 per control): 34 valid of 40. Weighted type recall matched: script analyzer 0.031, ruff 0.50, pylint 0.53, any tool 0.53; sonnet analyzer 0.125, ruff 0.40, pylint 0.35, any tool 0.425. Analyzer-only catches: package cycle, unstable dependency, layer violation (G01, G02, P21). Caught by no finder: hallucinated package, duplicated code, hard-coded credential, XSS, dependency declaration smell, shotgun surgery (P05, P16, P32, P34, P38, G09). Controls: analyzer located false positive 2/2 on rename only (known), 0 on format, comments, refactor; ruff flags format/comment/refactor controls on added lines. Script-chosen locations were judged invalid for G02, G09, P21 (structural types do not fit an arbitrary file). Results in `~/toy-projects/network-analysis-eval/inject/CTFd/score.json`.
   - commit: 6fe7133; files: none
 - In G01-script-0 the injected admin <-> utils.challenges import pair is inside the existing large package SCC, so delta reports no new or grown cycle (only new package dependencies and an unstable_dependency candidate).
   - commit: 6fe7133; files: bottlenecks/delta.py
+- Harness covers CTFd, flask-admin (Python), ghostfolio (TypeScript, Node 22 at `inject/node`, scope apps/api and libs/common), nowinandroid (Kotlin, androidTest excluded). Gates run in `inject/<repo>/gate` (persistent checkout, dependencies installed there): flask-admin 391 passed (median 43 s), ghostfolio 710 passed plus two tsc checks (median 93 s), nowinandroid 173 passed (median 67 s), CTFd median 137 s. Comparison tools: Python ruff/bandit/pylint/semgrep, TypeScript eslint 9.17 (@eslint/js + typescript-eslint recommended and stylistic)/semgrep, Kotlin detekt 1.23.7/semgrep; semgrep uses the pinned `inject/tools/semgrep-default.yml`.
+  - commit: f47b0fd; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
+- Mini pilot (P02, P10, G01, one of each control) on the three new repos: in ghostfolio and nowinandroid both P02 injections fail the test gate with compile errors (TS2304, Kotlin Unresolved reference), so P02 has no valid injection in compiled languages. Analyzer control false positives: ghostfolio format-only (prettier width 60) strengthened large_node through line_count; nowinandroid comment-only (KDoc with [Name] links in WorkManagerSyncManager.kt) produced a new package dependency sync.status -> core.analytics and an unstable_dependency candidate; renames in every repo (known).
+  - commit: f47b0fd; files: bottlenecks/delta.py
+- Judge is skipped for scripted controls (rename, format): it rejected a Kotlin rename because the file name no longer matched the class and a format change because a `# type: ignore` moved lines.
+  - commit: f47b0fd; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- User starts the overnight CTFd run `scripts/eval/inject/overnight.sh CTFd 1 4` (all 68 injectable types, both methods, 4 per control; resumable, about 5 h); then read score.txt and start improvement with the uncaught weight-3 types, duplicate/clone detection (P16) first.
-  - commit: 4670e4e; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
+- User starts the overnight run as two parallel streams: `scripts/eval/inject/overnight.sh "CTFd flask-admin" & scripts/eval/inject/overnight.sh "ghostfolio nowinandroid" & wait` (all injectable types, both methods, 4 per control; resumable); then read each `inject/<repo>/score.txt` and start improvement with the uncaught weight-3 types (P16 duplication first) and the analyzer false positives on format and comment controls.
+  - commit: f47b0fd; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
@@ -244,4 +250,14 @@ commit: ea38506d24c15de17845cc8b13b2b731bad4cca3
 > <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/br73f1i23.output</output-file>
 > <status>completed</status>
 > <summary>Background command "Run mini pilots on three new repos" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 24 — 2026-11-10T12:24:07Z
+
+> <task-notification>
+> <task-id>b4nlso2ps</task-id>
+> <tool-use-id>toolu_01TWjP9TxvGo2cc9YPofvFhn</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/b4nlso2ps.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Rerun scripted controls and rescore all repos" completed (exit code 0)</summary>
 > </task-notification>
