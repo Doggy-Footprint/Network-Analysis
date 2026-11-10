@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 98d309e98933979820497ae2af79ed734f46a630
+commit: d08342bc07f724358d1c1fca93b900f8456967a7
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -47,6 +47,8 @@ commit: 98d309e98933979820497ae2af79ed734f46a630
   - commit: 4df0161; files: scripts/eval/inject/harness.py
 - `run --budget USD`: before each Claude call, spend summed from every repo's saved result.json (refreshed at most every 60 s; pilot-1 judge/match spend unrecorded) is compared with the cap; once reached, calls fail at once (tasks stay uncached) and `budget_reached` goes to `inject/usage-limit.log`. Overshoot is bounded by in-flight calls and the 60 s refresh. Checked with a $0.01 cap (blocked, logged; recorded spend was $5.63 at 23:52).
   - commit: 7e2f9d7; files: scripts/eval/inject/harness.py
+- Thermal guard: every memory wait (before inject, analyze, gate) first checks `NSProcessInfo.thermalState` via `osascript -l JavaScript` (0 nominal, 1 fair, 2 serious, 3 critical; no sudo; about 0.1 s). At 2 or more it logs `thermal_wait` and sleeps 10 min, up to 6 rounds, then logs `thermal_gave_up` and continues. Every memory.log row carries `thermal`; score.json memory summary has max_thermal, thermal_waits, thermal_gave_up. `pmset -g therm` recorded no warning level and no °C sensor tool (macmon, smctemp, istats) is installed. State was 0 at 23:54 with load average 33 during pilot 2. Checked with a stubbed reader (hot, hot, cool -> two waits; always hot -> six waits and give-up).
+  - commit: d08342b; files: scripts/eval/inject/harness.py
 
 ### Next Step
 - Second pilot (user asked for about a third of the plan plus a cost estimate) started 2026-11-10 23:40 in the background: `overnight.sh "CTFd flask-admin" 1 2 "--fraction 3"` and the same for ghostfolio nowinandroid. `--fraction 3` gives each repo one stratified third of the 68 types (rotated by repo order, all 68 covered across the four repos), 2 per control; 170 new tasks. When it ends, run `harness.py cost` (per-category Sonnet spend and elapsed time per new task, projected to the remaining full plan) and each `harness.py score <repo>`, report both. User rule: if pilot 1 + pilot 2 + the projected remaining full plan (replicates 1, negatives 4) is at most $100, start the full run right after the pilot with `--budget 100` in both streams; otherwise report and wait.
@@ -79,6 +81,7 @@ commit: 98d309e98933979820497ae2af79ed734f46a630
 ## Record
 
 ### Changes
+- scripts/eval/inject/harness.py: thermal-state wait before heavy steps, thermal in memory.log.
 - scripts/eval/inject/harness.py: `--budget` shared spend cap on Claude calls.
 - scripts/eval/inject/harness.py, overnight.sh: per-stage Sonnet usage, `--fraction` stratified type parts, `cost` subcommand; overnight.sh passes extra run flags.
 - scripts/eval/inject/harness.py: Claude calls wait out the usage limit and retry; injection retries start from a reset worktree.
@@ -305,3 +308,7 @@ commit: 98d309e98933979820497ae2af79ed734f46a630
 #### 32 — 2026-11-10T14:51:39Z
 
 > 이정도 추세면 본 실험까지 해도 되겠네 총 $100이내로 들어올 것으로 판단되면  본실험까지 진행해
+
+#### 33 — 2026-11-10T14:54:24Z
+
+> 혹시 작업 중 온도 모니터링도 가능해? 과하게 높아지면 10분 대기 후 이어가는 식으로. 실시간일 필요는 없고 작업 중간 체크 정도면 돼. 네가 직접 하지말고 자동화로

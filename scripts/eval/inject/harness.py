@@ -67,6 +67,8 @@ NEGATIVE = {
 }
 GATE = threading.Lock()
 GATE_LEVEL, LIGHT_LEVEL, WAIT_LIMIT = 25, 15, 2 * 3600
+THERMAL_NAMES = ('nominal', 'fair', 'serious', 'critical')
+HOT, COOL_WAIT, COOL_ROUNDS = 2, 600, 6
 GATE_SPACING = 60
 
 
@@ -80,13 +82,33 @@ def memory():
             'available_gb': round(sum(pages.values()) * page / 2**30, 2), 'swap_used_gb': round(float(swap.group(1)) / 1024, 2) if swap else None}
 
 
+def thermal():
+    """NSProcessInfo.thermalState is macOS's own heat verdict (0 nominal .. 3 critical); it needs no sudo, unlike powermetrics."""
+    proc = run(['osascript', '-l', 'JavaScript', '-e', 'ObjC.import("Foundation"); $.NSProcessInfo.processInfo.thermalState'])
+    return int(proc.stdout.strip()) if proc.stdout.strip().isdigit() else None
+
+
+def wait_cool(repo, label):
+    start = time.time()
+    for _ in range(COOL_ROUNDS):
+        state = thermal()
+        if state is None or state < HOT:
+            return round(time.time() - start, 1)
+        log_memory(repo, 'thermal_wait', step=label, thermal_name=THERMAL_NAMES[state])
+        time.sleep(COOL_WAIT)
+    if (thermal() or 0) >= HOT:
+        log_memory(repo, 'thermal_gave_up', step=label)
+    return round(time.time() - start, 1)
+
+
 def log_memory(repo, event, **fields):
     with open(WORK / repo / 'memory.log', 'a') as fh:
-        fh.write(json.dumps({'time': time.strftime('%Y-%m-%dT%H:%M:%S'), 'event': event, **memory(), **fields}) + '\n')
+        fh.write(json.dumps({'time': time.strftime('%Y-%m-%dT%H:%M:%S'), 'event': event, **memory(), 'thermal': thermal(), **fields}) + '\n')
 
 
 def wait_memory(repo, min_level, label):
     start = time.time()
+    wait_cool(repo, label)
     while True:
         level = memory()['level']
         if level >= min_level:
@@ -1009,7 +1031,10 @@ def cmd_score(args):
         rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
         report['memory'] = {'min_level': min(r['level'] for r in rows), 'min_available_gb': min(r['available_gb'] for r in rows),
                             'max_swap_used_gb': max(r['swap_used_gb'] or 0 for r in rows),
-                            'wait_samples': sum(r['event'] == 'wait' for r in rows), 'gave_up': sum(r['event'] == 'wait_gave_up' for r in rows)}
+                            'wait_samples': sum(r['event'] == 'wait' for r in rows), 'gave_up': sum(r['event'] == 'wait_gave_up' for r in rows),
+                            'max_thermal': max((r.get('thermal') or 0 for r in rows), default=0),
+                            'thermal_waits': sum(r['event'] == 'thermal_wait' for r in rows),
+                            'thermal_gave_up': sum(r['event'] == 'thermal_gave_up' for r in rows)}
     if LIMIT_LOG.exists():
         rows = [json.loads(line) for line in LIMIT_LOG.read_text().splitlines() if line.strip()]
         report['usage_limit'] = {'hits': sum(r['event'] == 'limit_hit' for r in rows), 'gave_up': sum(r['event'] == 'limit_gave_up' for r in rows),
@@ -1043,7 +1068,7 @@ def main():
     rs.add_argument('repo')
     rs.add_argument('--workers', type=int, default=4)
     args = parser.parse_args()
-    {'memory': lambda a: print(json.dumps(memory())), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score, 'cost': cmd_cost}[args.cmd](args)
+    {'memory': lambda a: print(json.dumps({**memory(), 'thermal': thermal()})), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score, 'cost': cmd_cost}[args.cmd](args)
 
 
 if __name__ == '__main__':
