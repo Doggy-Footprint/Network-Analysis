@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
+commit: 98d309e98933979820497ae2af79ed734f46a630
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -45,9 +45,11 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
   - commit: 4df0161; files: scripts/eval/inject/harness.py
 - Each Claude call records usage (cost_usd = `total_cost_usd` of `claude -p`, tokens, seconds) under inject/judge/match `usage`; results carry `wall_s`; `run_start` in memory.log carries `pending` (uncached tasks). Pilot results before 4df0161 have no judge/match usage and are excluded from `cost`. One flask-admin G02 check: injection $0.062 (script) and $0.119 (sonnet), judge and match about $0.005-0.012 each.
   - commit: 4df0161; files: scripts/eval/inject/harness.py
+- `run --budget USD`: before each Claude call, spend summed from every repo's saved result.json (refreshed at most every 60 s; pilot-1 judge/match spend unrecorded) is compared with the cap; once reached, calls fail at once (tasks stay uncached) and `budget_reached` goes to `inject/usage-limit.log`. Overshoot is bounded by in-flight calls and the 60 s refresh. Checked with a $0.01 cap (blocked, logged; recorded spend was $5.63 at 23:52).
+  - commit: 98d309e; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- Second pilot (user asked for about a third of the plan plus a cost estimate) started 2026-11-10 23:40 in the background: `overnight.sh "CTFd flask-admin" 1 2 "--fraction 3"` and the same for ghostfolio nowinandroid. `--fraction 3` gives each repo one stratified third of the 68 types (rotated by repo order, all 68 covered across the four repos), 2 per control; 170 new tasks. When it ends, run `harness.py cost` (per-category Sonnet spend and elapsed time per new task, projected to the remaining full plan) and each `harness.py score <repo>`, report both, and let the user decide the full run.
+- Second pilot (user asked for about a third of the plan plus a cost estimate) started 2026-11-10 23:40 in the background: `overnight.sh "CTFd flask-admin" 1 2 "--fraction 3"` and the same for ghostfolio nowinandroid. `--fraction 3` gives each repo one stratified third of the 68 types (rotated by repo order, all 68 covered across the four repos), 2 per control; 170 new tasks. When it ends, run `harness.py cost` (per-category Sonnet spend and elapsed time per new task, projected to the remaining full plan) and each `harness.py score <repo>`, report both. User rule: if pilot 1 + pilot 2 + the projected remaining full plan (replicates 1, negatives 4) is at most $100, start the full run right after the pilot with `--budget 100` in both streams; otherwise report and wait.
   - commit: 4df0161; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 
 ### Constraints
@@ -77,6 +79,7 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
 ## Record
 
 ### Changes
+- scripts/eval/inject/harness.py: `--budget` shared spend cap on Claude calls.
 - scripts/eval/inject/harness.py, overnight.sh: per-stage Sonnet usage, `--fraction` stratified type parts, `cost` subcommand; overnight.sh passes extra run flags.
 - scripts/eval/inject/harness.py: Claude calls wait out the usage limit and retry; injection retries start from a reset worktree.
 - AGENTS.md: project definition rewritten per the user's choice of the broader scope.
@@ -298,3 +301,7 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
 #### 31 — 2026-11-10T14:27:51Z
 
 > 1/3 정도만 하면서 2차 파일럿 + 비용 추산 해보자
+
+#### 32 — 2026-11-10T14:51:39Z
+
+> 이정도 추세면 본 실험까지 해도 되겠네 총 $100이내로 들어올 것으로 판단되면  본실험까지 진행해

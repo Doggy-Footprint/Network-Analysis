@@ -233,6 +233,35 @@ LIMIT_POLL, LIMIT_WAIT = 15 * 60, 12 * 3600
 LIMIT_LOG = WORK / 'usage-limit.log'
 limit_lock = threading.Lock()
 limit_state = {'gave_up': False, 'cleared_at': 0.0}
+budget_state = {'usd': None, 'spent': 0.0, 'checked': 0.0, 'reached': False}
+budget_lock = threading.Lock()
+
+
+def recorded_spend():
+    total = 0.0
+    for path in WORK.glob('*/runs/*/result.json'):
+        try:
+            r = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        inject = r.get('inject') or {}
+        total += (inject.get('usage') or {}).get('cost_usd') or inject.get('cost_usd') or 0
+        for stage in ('judge', 'match'):
+            total += ((r.get(stage) or {}).get('usage') or {}).get('cost_usd') or 0
+    return total
+
+
+def over_budget():
+    # spend is summed from every repository's saved results, so both parallel streams share one cap
+    if budget_state['usd'] is None:
+        return False
+    with budget_lock:
+        if not budget_state['reached'] and time.time() - budget_state['checked'] > 60:
+            budget_state['spent'], budget_state['checked'] = recorded_spend(), time.time()
+            if budget_state['spent'] >= budget_state['usd']:
+                budget_state['reached'] = True
+                log_limit('budget_reached', spent_usd=round(budget_state['spent'], 2), budget_usd=budget_state['usd'])
+        return budget_state['reached']
 
 
 def limit_message(proc):
@@ -281,6 +310,8 @@ def call(args, cwd, timeout, prompt, before_retry=None):
     while True:
         if limit_state['gave_up']:
             return subprocess.CompletedProcess(args, 1, '', 'usage limit: gave up waiting')
+        if over_budget():
+            return subprocess.CompletedProcess(args, 1, '', 'budget reached')
         wait_online()
         sent_at = time.time()
         proc = run(args, cwd=cwd, timeout=timeout, input=prompt)
@@ -891,6 +922,7 @@ def cmd_run(args):
     catalog = {t['id']: t for t in CATALOG['types']}
     texts = type_text()
     types = args.types.split(',') if args.types else [t['id'] for t in CATALOG['types'] if t['injectable']]
+    budget_state['usd'] = args.budget
     if args.fraction:
         types = part_of(types, list(REPOS).index(args.repo) % args.fraction, args.fraction)
     tasks = plan(args.repo, types, args.replicates, args.negatives)
@@ -1001,6 +1033,7 @@ def main():
     r.add_argument('--workers', type=int, default=3)
     r.add_argument('--skip-gate', action='store_true')
     r.add_argument('--only-negative', action='store_true')
+    r.add_argument('--budget', type=float, help='stop Claude calls once the spend saved in all repositories\' results reaches this many USD')
     r.add_argument('--fraction', type=int, help='run one stratified 1/N of the types; the part rotates with the repository')
     c = sub.add_parser('cost')
     c.add_argument('--repos', default='CTFd,flask-admin,ghostfolio,nowinandroid')
