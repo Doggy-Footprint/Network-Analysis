@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
+commit: 6fe7133f92bcb0814d853e3e84a90c1cc5887904
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -16,24 +16,26 @@ commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
 - Scoring catalog: 74 types (52 agent-reported, weight 3; 22 general, weight 1), 68 injectable, total injectable weight 160. Regenerate with `python3 scripts/eval/defects/build_catalog.py`.
   - commit: 9ea723b; files: scripts/eval/defects/build_catalog.py, scripts/eval/defects/catalog.json, scripts/eval/defects/agent-reported.md
 - Delta comparison is `delta.v2`: besides the five v1 lists it reports `new_candidates`, `strengthened_candidates`, `resolved.candidates` for every non-cycle, non-violation kind (unknown kinds included). Spec run 2afad1e5c96b32ff closed with verifier pass.
-  - commit: 9ea723b; files: bottlenecks/delta.py, code_analyzer/cli.py, agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
+  - commit: 6fe7133; files: bottlenecks/delta.py, code_analyzer/cli.py, agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 - Known false positive: file renames are not tracked, so a renamed file's candidates appear as resolved (old path) plus new (new path). The eval must measure this rate with the rename negative control (NC1) and report it next to recall.
-  - commit: 9ea723b; files: bottlenecks/delta.py, tests/test_delta_candidates.py
+  - commit: 6fe7133; files: bottlenecks/delta.py, tests/test_delta_candidates.py
 - The Python analyzer records an unresolved reference only for calls aimed at project code (attribute of an imported project module, name imported from a project module). A call to an unbound bare name (`missing_fn()`) is classified as external and yields no `unresolved_boundary`; observed on fastapi-realworld with 25 such calls. This affects the agent problem "reference to non-existent internal symbol" (P02).
   - commit: 9ea723b; files: language_analyzers/python/graph.py
 - At base 9ea723b the full suite has pre-existing failures: 5 characterization tests (12 node ids) and 2 flaky tests (report_modal V04 under parallel load; report_size_format V01 depending on in-process order). The spec Test command deselects them.
   - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
 - Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Only CTFd has a test command (`TEST_ENV`). The earlier `eval/repos` clones and envs no longer exist.
-  - commit: 5963630; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
-- Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; analyzer runs with `--baseline`; caught = a delta item whose JSON mentions a touched path; ruff/bandit/pylint new findings on touched files are the tool comparison; validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff, CTFd test gate (725 passed, about 115 s, serialized).
-  - commit: 5963630; files: scripts/eval/inject/harness.py
-- Smoke test P02 (both methods): both valid; analyzer missed both (bare undefined name), ruff F821 and pylint undefined-variable caught both.
-  - commit: 5963630; files: none
+  - commit: 6fe7133; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
+- Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; NC1 rename and NC2 format are scripted because file tools cannot delete files (Sonnet renames left the old file, judged invalid). Validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff, CTFd test gate (725 passed, about 115 s, serialized). Catch = Sonnet match judge on anonymized findings (`matched`); `located` = analyzer delta item naming a touched file or its `pkg:python:` package, or a tool finding on an added line. Tools: ruff ALL, bandit, pylint on touched files, new = count increase per (tool, rule, path, message).
+  - commit: 6fe7133; files: scripts/eval/inject/harness.py
+- CTFd pilot (16 types x 2 methods, 1 replicate, 2 per control): 34 valid of 40. Weighted type recall matched: script analyzer 0.031, ruff 0.50, pylint 0.53, any tool 0.53; sonnet analyzer 0.125, ruff 0.40, pylint 0.35, any tool 0.425. Analyzer-only catches: package cycle, unstable dependency, layer violation (G01, G02, P21). Caught by no finder: hallucinated package, duplicated code, hard-coded credential, XSS, dependency declaration smell, shotgun surgery (P05, P16, P32, P34, P38, G09). Controls: analyzer located false positive 2/2 on rename only (known), 0 on format, comments, refactor; ruff flags format/comment/refactor controls on added lines. Script-chosen locations were judged invalid for G02, G09, P21 (structural types do not fit an arbitrary file). Results in `~/toy-projects/network-analysis-eval/inject/CTFd/score.json`.
+  - commit: 6fe7133; files: none
+- In G01-script-0 the injected admin <-> utils.challenges import pair is inside the existing large package SCC, so delta reports no new or grown cycle (only new package dependencies and an unstable_dependency candidate).
+  - commit: 6fe7133; files: bottlenecks/delta.py
 
 ### Next Step
-- Read the CTFd pilot score (`harness.py score CTFd`, types P02,P05,P10,P13,P16,P19,P21,P23,P26,P32,P34,P38,G01,G02,G09,G18, 2 negatives per control), fix harness problems it shows, then launch the overnight CTFd run over all injectable types; then start improvement with duplicate/clone detection (P16).
-  - commit: 5963630; files: scripts/eval/inject/harness.py
+- User starts the overnight CTFd run `scripts/eval/inject/overnight.sh CTFd 1 4` (all 68 injectable types, both methods, 4 per control; resumable, about 5 h); then read score.txt and start improvement with the uncaught weight-3 types, duplicate/clone detection (P16) first.
+  - commit: 6fe7133; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
@@ -47,7 +49,7 @@ commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
 - `python3 scripts/eval/defects/build_catalog.py` regenerates catalog.json without diff.
   - commit: 9ea723b; files: scripts/eval/defects/catalog.json
 - The Test command line in the archived spec (pytest-cov, deselects) passes: 3811 passed, delta.py branch 99%.
-  - commit: 9ea723b; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
+  - commit: 6fe7133; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 
 ### Dead Ends
 - `coverage run -m pytest` collects no data in this repo because pytest.ini adds `-n auto`; use pytest-cov.
@@ -57,7 +59,7 @@ commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
 - agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md (earlier OSS eval dropped for lack of a validation dataset; saturation numbers on large cycles)
   - commit: 12da674; files: agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md
 - agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md (delta.v2 contract, strength-metric table, rename false positive)
-  - commit: 9ea723b; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
+  - commit: 6fe7133; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 
 ## Record
 
@@ -176,4 +178,24 @@ commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
 > <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bat8gobrz.output</output-file>
 > <status>completed</status>
 > <summary>Background command "Smoke-test harness on one type, both methods" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 15 — 2026-11-10T09:46:00Z
+
+> <task-notification>
+> <task-id>byo1janw0</task-id>
+> <tool-use-id>toolu_01RzQXsuXmkeJFArRcyxUFBL</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/byo1janw0.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Run CTFd pilot (16 types × 2 methods + 8 controls)" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 16 — 2026-11-10T09:53:12Z
+
+> <task-notification>
+> <task-id>bbbxwi15w</task-id>
+> <tool-use-id>toolu_01WSSuzuU7DXqHJjWWNYjfYA</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bbbxwi15w.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Rerun rename controls, rescore, score" completed (exit code 0)</summary>
 > </task-notification>

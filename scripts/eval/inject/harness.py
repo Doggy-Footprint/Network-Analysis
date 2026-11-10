@@ -172,6 +172,23 @@ def analyze(repo, worktree, out, baseline):
     return {'returncode': proc.returncode, 'seconds': round(time.perf_counter() - start, 1)}
 
 
+def location_tokens(touched):
+    tokens = set(touched)
+    for rel in touched:
+        if rel.endswith('.py'):
+            parts = Path(rel).with_suffix('').parts
+            package = parts[:-1] if parts[-1] != '__init__' else parts[:-1]
+            module = parts if parts[-1] != '__init__' else parts[:-1]
+            for dotted in {'.'.join(package), '.'.join(module)} - {''}:
+                tokens.add(f'"pkg:python:{dotted}"')
+    return tokens
+
+
+def mentions(item, touched):
+    text = json.dumps(item)
+    return any(t in text for t in location_tokens(touched))
+
+
 def located_delta(delta, touched):
     hits, total = [], 0
     for key, items in delta.items():
@@ -179,8 +196,7 @@ def located_delta(delta, touched):
             continue
         for item in items:
             total += 1
-            text = json.dumps(item)
-            if any(t in text for t in touched):
+            if mentions(item, touched):
                 hits.append({'list': key, 'kind': item.get('kind'), 'target': item.get('target'), 'id': item.get('id')})
     return hits, total
 
@@ -192,27 +208,124 @@ def tool_findings(root, rels):
         return found
     proc = run([str(TOOLS / 'ruff'), 'check', '--isolated', '--select', 'ALL', '--no-cache', '--output-format', 'json', *py], cwd=root)
     for row in json.loads(proc.stdout or '[]'):
-        found.append(('ruff', row['code'], Path(row['filename']).resolve().relative_to(root.resolve()).as_posix(), row['message']))
+        rel = Path(row['filename']).resolve().relative_to(root.resolve()).as_posix()
+        found.append(('ruff', row['code'], rel, row['message'], row['location']['row']))
     proc = run([str(TOOLS / 'bandit'), '-q', '-f', 'json', *py], cwd=root)
     for row in json.loads(proc.stdout or '{}').get('results', []):
-        found.append(('bandit', row['test_id'], row['filename'].removeprefix('./'), row['issue_text']))
+        found.append(('bandit', row['test_id'], row['filename'].removeprefix('./'), row['issue_text'], row['line_number']))
     proc = run([str(TOOLS / 'pylint'), '--output-format=json', '--score=n', *py], cwd=root)
     for row in json.loads(proc.stdout or '[]'):
-        found.append(('pylint', row['symbol'], row['path'], re.sub(r'\d+', 'N', row['message'])))
+        found.append(('pylint', row['symbol'], row['path'], row['message'], row['line']))
     return found
 
 
-def tool_delta(base_root, worktree, touched):
-    before, after = {}, {}
-    for key in tool_findings(base_root, touched):
-        before[key] = before.get(key, 0) + 1
-    for key in tool_findings(worktree, touched):
-        after[key] = after.get(key, 0) + 1
-    new = [list(k) for k, n in after.items() if n > before.get(k, 0)]
-    by_tool = {}
-    for tool, *_ in new:
-        by_tool[tool] = by_tool.get(tool, 0) + 1
-    return {'new': new[:200], 'new_by_tool': by_tool}
+def changed_lines(diff):
+    lines, path, number = {}, None, 0
+    for line in diff.splitlines():
+        if line.startswith('+++ '):
+            path = line[6:] if line.startswith('+++ b/') else None
+        elif line.startswith('@@'):
+            number = int(re.search(r'\+(\d+)', line).group(1))
+        elif path and not line.startswith(('---', '\\')):
+            if line.startswith('+'):
+                lines.setdefault(path, set()).add(number)
+            if not line.startswith('-'):
+                number += 1
+    return lines
+
+
+def tool_delta(base_root, worktree, touched, diff):
+    def key(f):
+        return f[0], f[1], f[2], re.sub(r'\d+', 'N', f[3])
+    before = {}
+    for f in tool_findings(base_root, touched):
+        before[key(f)] = before.get(key(f), 0) + 1
+    after = tool_findings(worktree, touched)
+    counts = {}
+    for f in after:
+        counts[key(f)] = counts.get(key(f), 0) + 1
+    lines = changed_lines(diff)
+    new = [{'tool': f[0], 'rule': f[1], 'path': f[2], 'message': f[3], 'line': f[4], 'on_changed_line': f[4] in lines.get(f[2], ())}
+           for f in after if counts[key(f)] > before.get(key(f), 0)]
+    by_tool, on_lines = {}, {}
+    for f in new:
+        by_tool[f['tool']] = by_tool.get(f['tool'], 0) + 1
+        on_lines[f['tool']] = on_lines.get(f['tool'], 0) + f['on_changed_line']
+    return {'new': new[:300], 'new_by_tool': by_tool, 'on_changed_lines_by_tool': {k: v for k, v in on_lines.items() if v}}
+
+
+def rename_module(worktree, rel):
+    source = Path(rel)
+    target = source.with_name(source.stem + '_impl.py')
+    old_dotted, new_dotted = '.'.join(source.with_suffix('').parts), '.'.join(target.with_suffix('').parts)
+    run(['git', 'mv', rel, target.as_posix()], cwd=worktree, check=True)
+    package = '.'.join(source.parent.parts)
+    patterns = [(re.compile(rf'\b{re.escape(old_dotted)}\b'), new_dotted),
+                (re.compile(rf'(from\s+{re.escape(package)}\s+import\s+(?:\([^)]*?)?)\b{source.stem}\b'), rf'\g<1>{target.stem}'),
+                (re.compile(rf'(from\s+\.)({source.stem})(\s+import)'), rf'\g<1>{target.stem}\g<3>')]
+    rewritten = []
+    for path in sorted(worktree.rglob('*.py')):
+        if '.git' in path.parts:
+            continue
+        text = path.read_text(errors='replace')
+        new = text
+        for pattern, replacement in patterns[:2]:
+            new = pattern.sub(replacement, new)
+        if path.parent == worktree / source.parent:
+            new = patterns[2][0].sub(patterns[2][1], new)
+        if new != text:
+            path.write_text(new)
+            rewritten.append(path.relative_to(worktree).as_posix())
+    return {'renamed_to': target.as_posix(), 'rewritten': rewritten}
+
+
+FINDERS = ('analyzer', 'ruff', 'bandit', 'pylint')
+
+
+def match(task, out, diff, catalog, texts, analyzer_items, tool_new):
+    findings = {'analyzer': [json.dumps(i)[:2500] for i in analyzer_items[:20]]}
+    for tool in FINDERS[1:]:
+        findings[tool] = [f'{f["path"]}:{f["line"]} {f["rule"]} {f["message"]}' for f in tool_new if f['tool'] == tool][:40]
+    present = [f for f in FINDERS if findings[f]]
+    verdict = {f: False for f in FINDERS}
+    if not present:
+        return {'verdict': verdict, 'reason': 'no findings'}
+    order = sorted(present, key=lambda f: random.Random(f'{task["id"]}:{f}').random())
+    letters = {f: chr(ord('A') + i) for i, f in enumerate(order)}
+    note = (out / NOTE).read_text()[:2000] if (out / NOTE).exists() else ''
+    entry = catalog[task['type']]
+    blocks = '\n\n'.join(f'Reviewer {letters[f]}:\n' + '\n'.join(f'- {x}' for x in findings[f]) for f in order)
+    prompt = (f'A diff was made to contain one instance of this problem: {entry["name"]}. {texts.get(task["type"], "")}\n'
+              f'Author\'s note on where it is: {note}\n\n```diff\n{diff[:40000]}\n```\n\n'
+              'Several automated reviewers reported the findings below. For each reviewer, decide whether at least one of its findings '
+              'identifies this injected problem: it must point at the code that carries the problem and describe the problem or its direct '
+              'symptom. Findings that only flag style, naming, or unrelated issues do not count.\n\n'
+              f'{blocks}\n\nAnswer with one JSON object only: {{"<letter>": true|false, ..., "reason": "<one sentence>"}}.')
+    (out / 'match_prompt.md').write_text(prompt)
+    scratch = out / 'judge'
+    scratch.mkdir(exist_ok=True)
+    proc = run(CLAUDE + ['--tools', ''], cwd=scratch, timeout=600, input=prompt)
+    try:
+        answer = json.loads(re.search(r'\{.*\}', json.loads(proc.stdout).get('result', ''), re.S).group(0))
+    except (json.JSONDecodeError, AttributeError):
+        return {'verdict': None, 'reason': (proc.stdout + proc.stderr)[-500:]}
+    for f in present:
+        verdict[f] = answer.get(letters[f]) is True
+    return {'verdict': verdict, 'letters': letters, 'reason': answer.get('reason')}
+
+
+def assess(repo, task, out, worktree, touched, diff, result):
+    delta = json.loads((out / 'delta.json').read_text())
+    hits, total = located_delta(delta, touched)
+    result['analyzer'].update(caught=bool(hits), delta_items=total, located=hits[:50])
+    result['tools'] = tool_delta(paths(repo)['clone'], worktree, touched, diff)
+
+
+def assess_match(task, out, diff, touched, result, catalog, texts):
+    delta = json.loads((out / 'delta.json').read_text())
+    if result.get('valid') and task['method'] != 'negative':
+        items = [i for k, v in delta.items() if isinstance(v, list) for i in v if mentions(i, touched)]
+        result['match'] = match(task, out, diff, catalog, texts, items, result['tools']['new'])
 
 
 def format_only(worktree, rel):
@@ -234,6 +347,8 @@ def execute(repo, task, catalog, texts, skip_gate):
     try:
         if task['type'] == 'NC2':
             result['inject'] = format_only(worktree, task['file'])
+        elif task['type'] == 'NC1':
+            result['inject'] = rename_module(worktree, task['file'])
         else:
             if task['method'] == 'negative':
                 prompt = (HERE / 'NEGATIVE_PROMPT.md').read_text().format(instruction=NEGATIVE[task['type']][1].format(file=task['file']))
@@ -260,11 +375,8 @@ def execute(repo, task, catalog, texts, skip_gate):
         checks['compiles'] = not compile_errors
         result['analyzer'] = analyze(repo, worktree, out, p['base'] / 'bottlenecks.json')
         report = json.loads((out / 'bottlenecks.json').read_text()) if result['analyzer']['returncode'] == 0 else {}
-        delta = report.get('delta') or {}
-        (out / 'delta.json').write_text(json.dumps(delta, indent=1))
-        hits, total = located_delta(delta, touched)
-        result['analyzer'].update(caught=bool(hits), delta_items=total, located=hits[:50])
-        result['tools'] = tool_delta(p['clone'], worktree, touched)
+        (out / 'delta.json').write_text(json.dumps(report.get('delta') or {}, indent=1))
+        assess(repo, task, out, worktree, touched, diff, result)
         # validity checks run after analysis because the test gate leaves files in the worktree
         if all(checks.values()):
             result['judge'] = judge(task, diff, catalog, texts, out / 'judge')
@@ -274,6 +386,7 @@ def execute(repo, task, catalog, texts, skip_gate):
             checks['tests_green'] = result['gate']['ok']
         result['checks'] = checks
         result['valid'] = all(checks.values())
+        assess_match(task, out, diff, touched, result, catalog, texts)
     except Exception as exc:  # noqa: BLE001 - a broken task must not stop the batch
         result['error'] = f'{type(exc).__name__}: {exc}'[:2000]
         result['valid'] = False
@@ -281,6 +394,36 @@ def execute(repo, task, catalog, texts, skip_gate):
         run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
         (out / 'result.json').write_text(json.dumps(result, indent=1))
     return result
+
+
+def cmd_rescore(args):
+    catalog = {t['id']: t for t in CATALOG['types']}
+    texts = type_text()
+    p = paths(args.repo)
+
+    def one(path):
+        result = json.loads(path.read_text())
+        out, task = path.parent, result['task']
+        if result.get('error') or 'analyzer' not in result:
+            return task['id'], 'skipped'
+        worktree = WORK / args.repo / 'wt' / ('rescore-' + task['id'])
+        if worktree.exists():
+            run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
+        run(['git', 'worktree', 'add', '-q', '--detach', str(worktree), 'base'], cwd=p['clone'], check=True)
+        try:
+            diff = (out / 'diff.patch').read_text()
+            if diff:
+                run(['git', 'apply', '--index', str(out / 'diff.patch')], cwd=worktree, check=True)
+            assess(args.repo, task, out, worktree, result['touched'], diff, result)
+            assess_match(task, out, diff, result['touched'], result, catalog, texts)
+        finally:
+            run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
+        path.write_text(json.dumps(result, indent=1))
+        return task['id'], (result.get('match') or {}).get('verdict')
+
+    with ThreadPoolExecutor(args.workers) as pool:
+        for row in pool.map(one, sorted(p['runs'].glob('*/result.json'))):
+            print(json.dumps(row), flush=True)
 
 
 def cmd_baseline(args):
@@ -306,11 +449,23 @@ def cmd_run(args):
                               'error': result.get('error')}), flush=True)
 
 
+def hits(r):
+    on_lines = (r.get('tools') or {}).get('on_changed_lines_by_tool', {})
+    located = {'analyzer': bool(r['analyzer'].get('caught')), **{t: bool(on_lines.get(t)) for t in FINDERS[1:]}}
+    verdict = (r.get('match') or {}).get('verdict') or {}
+    matched = {f: bool(verdict.get(f)) for f in FINDERS}
+    for h in (located, matched):
+        h['any_tool'] = any(h[t] for t in FINDERS[1:])
+    return {'matched': matched, 'located': located}
+
+
 def cmd_score(args):
     catalog = {t['id']: t for t in CATALOG['types']}
     results = [json.loads(p.read_text()) for p in sorted(paths(args.repo)['runs'].glob('*/result.json'))]
-    report = {'repo': args.repo, 'tasks': len(results), 'invalid': {}, 'methods': {}, 'negative': {}}
-    finders = ['analyzer', 'ruff', 'bandit', 'pylint', 'any_tool']
+    report = {'repo': args.repo, 'tasks': len(results), 'invalid': {}, 'methods': {}, 'negative': {},
+              'definitions': {'matched': 'a Sonnet judge, seeing the diff, the type, and anonymized findings, says a finding identifies the injected problem',
+                              'located': 'analyzer: a delta item names a touched file; tools: a new finding on an added line'}}
+    finders = [*FINDERS, 'any_tool']
     for r in results:
         if not r.get('valid'):
             reason = r.get('error') and 'error' or ','.join(k for k, v in (r.get('checks') or {}).items() if not v)
@@ -320,31 +475,33 @@ def cmd_score(args):
         for r in results:
             if r['task']['method'] != method or not r.get('valid'):
                 continue
-            by_tool = (r.get('tools') or {}).get('new_by_tool', {})
-            hit = {'analyzer': bool(r['analyzer'].get('caught')), 'any_tool': bool(by_tool), **{t: bool(by_tool.get(t)) for t in ('ruff', 'bandit', 'pylint')}}
-            row = per_type.setdefault(r['task']['type'], {f: [0, 0] for f in finders})
-            for f in finders:
-                row[f][0] += hit[f]
-                row[f][1] += 1
+            h = hits(r)
+            row = per_type.setdefault(r['task']['type'], {m: {f: [0, 0] for f in finders} for m in h})
+            for m in h:
+                for f in finders:
+                    row[m][f][0] += h[m][f]
+                    row[m][f][1] += 1
         summary = {}
-        for f in finders:
-            num = den = 0.0
-            for type_id, row in per_type.items():
-                w = catalog[type_id]['weight']
-                num += w * row[f][0] / row[f][1]
-                den += w
-            summary[f] = round(num / den, 4) if den else None
+        for m in ('matched', 'located'):
+            summary[m] = {}
+            for f in finders:
+                num = den = 0.0
+                for type_id, row in per_type.items():
+                    w = catalog[type_id]['weight']
+                    num += w * row[m][f][0] / row[m][f][1]
+                    den += w
+                summary[m][f] = round(num / den, 4) if den else None
         report['methods'][method] = {'types_with_valid_injection': len(per_type), 'weighted_type_recall': summary,
-                                     'per_type': {k: {f: f'{v[f][0]}/{v[f][1]}' for f in finders} for k, v in sorted(per_type.items())}}
+                                     'per_type_matched': {k: {f: f'{v["matched"][f][0]}/{v["matched"][f][1]}' for f in finders} for k, v in sorted(per_type.items())}}
     for r in results:
         if r['task']['method'] == 'negative':
-            row = report['negative'].setdefault(r['task']['type'], {'valid': 0, 'analyzer_fp': 0, 'tool_fp': 0, 'invalid': 0})
+            row = report['negative'].setdefault(r['task']['type'], {'valid': 0, 'invalid': 0, **{f'{f}_fp': 0 for f in finders}})
             if not r.get('valid'):
                 row['invalid'] += 1
                 continue
             row['valid'] += 1
-            row['analyzer_fp'] += bool(r['analyzer'].get('caught'))
-            row['tool_fp'] += bool((r.get('tools') or {}).get('new_by_tool'))
+            for f, v in hits(r)['located'].items():
+                row[f'{f}_fp'] += v
     text = json.dumps(report, indent=1)
     (WORK / args.repo / 'score.json').write_text(text)
     print(text)
@@ -363,10 +520,13 @@ def main():
     r.add_argument('--workers', type=int, default=3)
     r.add_argument('--skip-gate', action='store_true')
     r.add_argument('--only-negative', action='store_true')
+    rs = sub.add_parser('rescore')
+    rs.add_argument('repo')
+    rs.add_argument('--workers', type=int, default=4)
     s = sub.add_parser('score')
     s.add_argument('repo')
     args = parser.parse_args()
-    {'baseline': cmd_baseline, 'run': cmd_run, 'score': cmd_score}[args.cmd](args)
+    {'baseline': cmd_baseline, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score}[args.cmd](args)
 
 
 if __name__ == '__main__':
