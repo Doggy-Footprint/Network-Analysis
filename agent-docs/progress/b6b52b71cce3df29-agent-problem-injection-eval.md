@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: f47b0fdf7880d8d22db91e3cfe09479edb95067f
+commit: 476ca06328799bb4b76d8c61ec8f7e597b18257e
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -38,6 +38,9 @@ commit: f47b0fdf7880d8d22db91e3cfe09479edb95067f
   - commit: f47b0fd; files: bottlenecks/delta.py
 - Judge is skipped for scripted controls (rename, format): it rejected a Kotlin rename because the file name no longer matched the class and a format change because a `# type: ignore` moved lines.
   - commit: f47b0fd; files: scripts/eval/inject/harness.py
+
+- Memory guard: before each gate the harness waits until `kern.memorystatus_level` (system-wide free-memory percent) is at least 25, and at least 15 before Sonnet calls and analyzer runs (gives up after 2 h and logs it); gate starts across processes are spaced 60 s apart through `inject/gate-start.lock`; nowinandroid gates end with `./gradlew --stop`. Samples every 60 s and waits go to `inject/<repo>/memory.log`; each gate result carries memory before/after; score.json has a memory summary. A nowinandroid gate check ran with level 38 -> 42 and left no Gradle 9.7.1 daemon.
+  - commit: 476ca06; files: scripts/eval/inject/harness.py
 
 ### Next Step
 - User starts the overnight run as two parallel streams: `scripts/eval/inject/overnight.sh "CTFd flask-admin" & scripts/eval/inject/overnight.sh "ghostfolio nowinandroid" & wait` (all injectable types, both methods, 4 per control; resumable); then read each `inject/<repo>/score.txt` and start improvement with the uncaught weight-3 types (P16 duplication first) and the analyzer false positives on format and comment controls.
@@ -261,3 +264,7 @@ commit: f47b0fdf7880d8d22db91e3cfe09479edb95067f
 > <status>completed</status>
 > <summary>Background command "Rerun scripted controls and rescore all repos" completed (exit code 0)</summary>
 > </task-notification>
+
+#### 25 — 2026-11-10T12:36:37Z
+
+> 돌아갈 때 메모리 체크하면서 돌아가게 작업해줄래?

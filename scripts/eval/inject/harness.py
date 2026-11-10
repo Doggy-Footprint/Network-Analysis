@@ -4,6 +4,7 @@ The workspace lives outside this repository and headless agents run with --restr
 injector never sees the analyzer or this project's instructions.
 """
 import argparse
+import fcntl
 import json
 import os
 import random
@@ -51,7 +52,7 @@ REPOS = {
                            '--projects=api,common --parallel=1 --skip-nx-cache --outputStyle=stream',
                    'extra': ['npx tsc --noEmit -p apps/api/tsconfig.app.json', 'npx tsc --noEmit -p apps/api/tsconfig.spec.json']},
     # deleting test-results and --no-build-cache make Gradle rerun the tests instead of reporting them up to date
-    'nowinandroid': {'count': 'junit', 'exclude': r'/src/androidTest/', 'test': 'find . -path "*/build/test-results" -type d -prune -exec rm -rf {{}} + ; '
+    'nowinandroid': {'count': 'junit', 'after': f'JAVA_HOME="{Path(JAVA).parents[1]}" ./gradlew --stop', 'exclude': r'/src/androidTest/', 'test': 'find . -path "*/build/test-results" -type d -prune -exec rm -rf {{}} + ; '
                      f'JAVA_HOME="{Path(JAVA).parents[1]}" ./gradlew --no-build-cache testDemoDebugUnitTest :core:common:test :lint:test '
                      '-Proborazzi.test.verify=false --continue'},
 }
@@ -65,6 +66,59 @@ NEGATIVE = {
                         'private helper used once). Do not change behavior, public names, or other files, and do not introduce any problem.'),
 }
 GATE = threading.Lock()
+GATE_LEVEL, LIGHT_LEVEL, WAIT_LIMIT = 25, 15, 2 * 3600
+GATE_SPACING = 60
+
+
+def memory():
+    """kern.memorystatus_level is the system-wide free-memory percentage macOS itself uses for memory pressure."""
+    stats = run(['vm_stat']).stdout
+    page = int(re.search(r'page size of (\d+)', stats).group(1))
+    pages = {k: int(v) for k, v in re.findall(r'Pages (free|inactive|speculative|purgeable):\s+(\d+)', stats)}
+    swap = re.search(r'used = ([\d.]+)M', run(['sysctl', '-n', 'vm.swapusage']).stdout)
+    return {'level': int(run(['sysctl', '-n', 'kern.memorystatus_level']).stdout.strip() or 0),
+            'available_gb': round(sum(pages.values()) * page / 2**30, 2), 'swap_used_gb': round(float(swap.group(1)) / 1024, 2) if swap else None}
+
+
+def log_memory(repo, event, **fields):
+    with open(WORK / repo / 'memory.log', 'a') as fh:
+        fh.write(json.dumps({'time': time.strftime('%Y-%m-%dT%H:%M:%S'), 'event': event, **memory(), **fields}) + '\n')
+
+
+def wait_memory(repo, min_level, label):
+    start = time.time()
+    while True:
+        level = memory()['level']
+        if level >= min_level:
+            break
+        if time.time() - start > WAIT_LIMIT:
+            log_memory(repo, 'wait_gave_up', step=label, min_level=min_level)
+            break
+        log_memory(repo, 'wait', step=label, min_level=min_level)
+        time.sleep(20)
+    return round(time.time() - start, 1)
+
+
+def gate_slot(repo):
+    """Across processes, gate starts are spaced so a second gate sees the memory the first one has already taken."""
+    lock = WORK / 'gate-start.lock'
+    with open(lock, 'a+') as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        fh.seek(0)
+        last = float(fh.read().strip() or 0)
+        time.sleep(max(0.0, last + GATE_SPACING - time.time()))
+        waited = wait_memory(repo, GATE_LEVEL, 'gate')
+        fh.seek(0)
+        fh.truncate()
+        fh.write(str(time.time()))
+        fh.flush()
+        fcntl.flock(fh, fcntl.LOCK_UN)
+    return waited
+
+
+def monitor(repo, stop):
+    while not stop.wait(60):
+        log_memory(repo, 'sample')
 
 
 def run(cmd, cwd=None, timeout=None, input=None, env=None, check=False):
@@ -243,6 +297,8 @@ def gate(repo, out):
     env = node_env() if cfg.get('node') else None
     command = cfg['test'].format(py=paths(repo)['venv'] / 'bin' / 'python')
     with GATE:
+        waited = gate_slot(repo)
+        before = memory()
         run(['git', 'reset', '-q', '--hard', 'base'], cwd=gate_dir, check=True)
         run(['git', 'clean', '-qfd'], cwd=gate_dir, check=True)
         try:
@@ -254,12 +310,17 @@ def gate(repo, out):
             counts = count_tests(repo, output, gate_dir)
             extras = [run(c, cwd=gate_dir, timeout=1800, env=env) for c in cfg.get('extra', [])]
             seconds = round(time.perf_counter() - start, 1)
+            after = memory()
         finally:
+            if cfg.get('after'):
+                run(cfg['after'], cwd=gate_dir, timeout=300)
             run(['git', 'reset', '-q', '--hard', 'base'], cwd=gate_dir)
             run(['git', 'clean', '-qfd'], cwd=gate_dir)
     (out / 'gate.log').write_text(output + ''.join(e.stdout + e.stderr for e in extras))
     ok = proc.returncode == 0 and not counts.get('failed') and not counts.get('error') and counts.get('passed', 0) > 0
-    return {'returncode': proc.returncode, 'seconds': seconds, **counts, 'extra_ok': [e.returncode == 0 for e in extras],
+    log_memory(repo, 'gate_done', seconds=seconds, waited=waited)
+    return {'returncode': proc.returncode, 'seconds': seconds, 'memory': {'waited_s': waited, 'before': before, 'after': after},
+            **counts, 'extra_ok': [e.returncode == 0 for e in extras],
             'ok': ok and all(e.returncode == 0 for e in extras), 'tail': output[-800:]}
 
 
@@ -551,6 +612,7 @@ def execute(repo, task, catalog, texts, skip_gate):
             else:
                 prompt = injection_prompt(repo, task, catalog, texts)
             (out / 'prompt.md').write_text(prompt)
+            wait_memory(repo, LIGHT_LEVEL, 'inject')
             result['inject'] = claude(prompt, worktree, timeout=1800)
         note = worktree / NOTE
         if note.exists():
@@ -563,6 +625,7 @@ def execute(repo, task, catalog, texts, skip_gate):
         if task['method'] == 'script':
             checks['primary_touched'] = task['file'] in touched
         checks['compiles'] = compiles(repo, worktree, touched)
+        result['memory_wait_s'] = wait_memory(repo, LIGHT_LEVEL, 'analyze')
         result['analyzer'] = analyze(repo, worktree, out, p['base'] / 'bottlenecks.json')
         report = json.loads((out / 'bottlenecks.json').read_text()) if result['analyzer']['returncode'] == 0 else {}
         (out / 'delta.json').write_text(json.dumps(report.get('delta') or {}, indent=1))
@@ -661,12 +724,19 @@ def cmd_run(args):
         tasks = [t for t in tasks if t['method'] == 'negative']
     paths(args.repo)['runs'].mkdir(parents=True, exist_ok=True)
     print(f'{len(tasks)} tasks', flush=True)
-    with ThreadPoolExecutor(args.workers) as pool:
-        for result in pool.map(lambda t: execute(args.repo, t, catalog, texts, args.skip_gate), tasks):
-            a = result.get('analyzer') or {}
-            print(json.dumps({'id': result['task']['id'], 'valid': result.get('valid'), 'checks': result.get('checks'),
-                              'caught': a.get('caught'), 'tools': (result.get('tools') or {}).get('new_by_tool'),
-                              'error': result.get('error')}), flush=True)
+    stop = threading.Event()
+    log_memory(args.repo, 'run_start', tasks=len(tasks))
+    threading.Thread(target=monitor, args=(args.repo, stop), daemon=True).start()
+    try:
+        with ThreadPoolExecutor(args.workers) as pool:
+            for result in pool.map(lambda t: execute(args.repo, t, catalog, texts, args.skip_gate), tasks):
+                a = result.get('analyzer') or {}
+                print(json.dumps({'id': result['task']['id'], 'valid': result.get('valid'), 'checks': result.get('checks'),
+                                  'caught': a.get('caught'), 'tools': (result.get('tools') or {}).get('new_by_tool'),
+                                  'error': result.get('error')}), flush=True)
+    finally:
+        stop.set()
+        log_memory(args.repo, 'run_end')
 
 
 def hits(r, tools):
@@ -727,6 +797,12 @@ def cmd_score(args):
         row['valid'] += 1
         for f, v in hits(r, tools)['located'].items():
             row[f'{f}_fp'] += v
+    log = WORK / args.repo / 'memory.log'
+    if log.exists():
+        rows = [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+        report['memory'] = {'min_level': min(r['level'] for r in rows), 'min_available_gb': min(r['available_gb'] for r in rows),
+                            'max_swap_used_gb': max(r['swap_used_gb'] or 0 for r in rows),
+                            'wait_samples': sum(r['event'] == 'wait' for r in rows), 'gave_up': sum(r['event'] == 'wait_gave_up' for r in rows)}
     text = json.dumps(report, indent=1)
     (WORK / args.repo / 'score.json').write_text(text)
     print(text)
@@ -735,6 +811,7 @@ def cmd_score(args):
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest='cmd', required=True)
+    sub.add_parser('memory')
     for name in ('clone', 'baseline', 'gate', 'score'):
         sub.add_parser(name).add_argument('repo')
     r = sub.add_parser('run')
@@ -749,7 +826,7 @@ def main():
     rs.add_argument('repo')
     rs.add_argument('--workers', type=int, default=4)
     args = parser.parse_args()
-    {'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score}[args.cmd](args)
+    {'memory': lambda a: print(json.dumps(memory())), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score}[args.cmd](args)
 
 
 if __name__ == '__main__':
