@@ -1,8 +1,8 @@
 # Project Definition
 
-Builds a repository's dependency network from analysis and surfaces its structural bottlenecks as refactoring candidates.
-The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations stay in the network, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
-The project does not simulate or predict AI agent behavior, and does not judge code quality, change risk, or task difficulty; a candidate is a structural fact for a human or agent to review, not a verdict.
+Builds a repository's dependency network from analysis and surfaces, as review candidates, its structural bottlenecks and the code problems a change introduces, weighted toward problems reported to arise from AI coding agents.
+The network joins language-level relations with connections that only framework semantics reveal, such as dependency injection, routing, and ORM-to-migration links, etc. Recall takes priority over precision: uncertain relations and findings stay in the output, graded by confidence and resolution and discounted by configurable edge weights, rather than being dropped.
+Candidates cover structure, code quality, security, and correctness. The project does not simulate or predict AI agent behavior, and does not score change risk or task difficulty; a candidate is evidence for a human or agent to review, not a verdict.
 
 <!-- harness:begin 0.39.0 -->
 # Documentation Guide
