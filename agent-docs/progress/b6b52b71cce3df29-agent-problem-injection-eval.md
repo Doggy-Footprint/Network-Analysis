@@ -37,12 +37,12 @@ commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
 - Mini pilot (P02, P10, G01, one of each control) on the three new repos: in ghostfolio and nowinandroid both P02 injections fail the test gate with compile errors (TS2304, Kotlin Unresolved reference), so P02 has no valid injection in compiled languages. Analyzer control false positives: ghostfolio format-only (prettier width 60) strengthened large_node through line_count; nowinandroid comment-only (KDoc with [Name] links in WorkManagerSyncManager.kt) produced a new package dependency sync.status -> core.analytics and an unstable_dependency candidate; renames in every repo (known).
   - commit: f47b0fd; files: bottlenecks/delta.py
 - Judge is skipped for scripted controls (rename, format): it rejected a Kotlin rename because the file name no longer matched the class and a format change because a `# type: ignore` moved lines.
-  - commit: d628d03; files: scripts/eval/inject/harness.py
+  - commit: 4df0161; files: scripts/eval/inject/harness.py
 
 - Memory guard: before each gate the harness waits until `kern.memorystatus_level` (system-wide free-memory percent) is at least 25, and at least 15 before Sonnet calls and analyzer runs (gives up after 2 h and logs it); gate starts across processes are spaced 60 s apart through `inject/gate-start.lock`; nowinandroid gates end with `./gradlew --stop`. Samples every 60 s and waits go to `inject/<repo>/memory.log`; each gate result carries memory before/after; score.json has a memory summary. A nowinandroid gate check ran with level 38 -> 42 and left no Gradle 9.7.1 daemon.
-  - commit: d628d03; files: scripts/eval/inject/harness.py
+  - commit: 4df0161; files: scripts/eval/inject/harness.py
 - Usage limit: a Claude call whose JSON result has is_error and a limit message (pattern `LIMIT_RE`: "hit your ... limit", "reached your ... limit", "out of usage", "usage limit reached"; strings taken from the Claude Code 2.1.322 binary) waits instead of failing. One thread per process probes with a one-line Sonnet call every 15 min, other threads retry once it clears; an injection call resets its worktree to HEAD before the retry. After 12 h it gives up, later calls fail at once and stay uncached (infra_failed). Events go to `inject/usage-limit.log`; score.json has a `usage_limit` summary. Checked with fake processes (detection, wait/retry, 3 concurrent threads -> one hit and one clear logged, give-up) and one real probe call (not misread as a limit); not observed against a real limit.
-  - commit: e574eba; files: scripts/eval/inject/harness.py
+  - commit: 4df0161; files: scripts/eval/inject/harness.py
 - Each Claude call records usage (cost_usd = `total_cost_usd` of `claude -p`, tokens, seconds) under inject/judge/match `usage`; results carry `wall_s`; `run_start` in memory.log carries `pending` (uncached tasks). Pilot results before 4df0161 have no judge/match usage and are excluded from `cost`. One flask-admin G02 check: injection $0.062 (script) and $0.119 (sonnet), judge and match about $0.005-0.012 each.
   - commit: 4df0161; files: scripts/eval/inject/harness.py
 
