@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 6fe7133f92bcb0814d853e3e84a90c1cc5887904
+commit: 3001370e9e7dda1a7d87e56340d5d004178f45a3
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -199,3 +199,7 @@ commit: 6fe7133f92bcb0814d853e3e84a90c1cc5887904
 > <status>completed</status>
 > <summary>Background command "Rerun rename controls, rescore, score" completed (exit code 0)</summary>
 > </task-notification>
+
+#### 17 — 2026-11-10T10:19:08Z
+
+> 중간에 이동해야해서 인터넷이 끊어졌을텐데 괜찮아?

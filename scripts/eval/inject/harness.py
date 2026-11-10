@@ -106,10 +106,30 @@ def injection_prompt(task, catalog, texts):
     return (HERE / 'INJECT_PROMPT.md').read_text().format(name=entry['name'], detail=detail, where=where, note=NOTE)
 
 
+def wait_online(limit=4 * 3600):
+    # an offline Claude call would be recorded as an invalid injection, so calls wait for the API to be reachable
+    start = time.time()
+    while time.time() - start < limit:
+        if run(['curl', '-s', '-o', '/dev/null', '-m', '10', 'https://api.anthropic.com']).returncode == 0:
+            return
+        time.sleep(60)
+
+
+def call(args, cwd, timeout, prompt):
+    wait_online()
+    return run(args, cwd=cwd, timeout=timeout, input=prompt)
+
+
+def infra_failed(result):
+    inject, judged, matched = result.get('inject') or {}, result.get('judge'), result.get('match')
+    return bool(inject.get('is_error') or (judged is not None and judged.get('valid') is None)
+                or (matched is not None and matched.get('verdict') is None) or result.get('error'))
+
+
 def claude(prompt, cwd, timeout):
     start = time.perf_counter()
-    proc = run(CLAUDE + ['--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Edit', 'Write', 'Glob', 'Grep'],
-               cwd=cwd, timeout=timeout, input=prompt)
+    proc = call(CLAUDE + ['--permission-mode', 'acceptEdits', '--allowedTools', 'Read', 'Edit', 'Write', 'Glob', 'Grep'],
+                cwd, timeout, prompt)
     try:
         out = json.loads(proc.stdout)
     except json.JSONDecodeError:
@@ -130,7 +150,7 @@ def judge(task, diff, catalog, texts, scratch):
     prompt = (f'{question}\nAnswer with one JSON object only: {{"valid": true|false, "reason": "<one sentence>"}}.\n\n'
               f'```diff\n{diff[:60000]}\n```\n')
     scratch.mkdir(exist_ok=True)
-    proc = run(CLAUDE + ['--tools', ''], cwd=scratch, timeout=600, input=prompt)
+    proc = call(CLAUDE + ['--tools', ''], scratch, 600, prompt)
     try:
         text = json.loads(proc.stdout).get('result', '')
         return json.loads(re.search(r'\{.*\}', text, re.S).group(0))
@@ -304,7 +324,7 @@ def match(task, out, diff, catalog, texts, analyzer_items, tool_new):
     (out / 'match_prompt.md').write_text(prompt)
     scratch = out / 'judge'
     scratch.mkdir(exist_ok=True)
-    proc = run(CLAUDE + ['--tools', ''], cwd=scratch, timeout=600, input=prompt)
+    proc = call(CLAUDE + ['--tools', ''], scratch, 600, prompt)
     try:
         answer = json.loads(re.search(r'\{.*\}', json.loads(proc.stdout).get('result', ''), re.S).group(0))
     except (json.JSONDecodeError, AttributeError):
@@ -337,7 +357,10 @@ def execute(repo, task, catalog, texts, skip_gate):
     p = paths(repo)
     out = p['runs'] / task['id']
     if (out / 'result.json').exists():
-        return json.loads((out / 'result.json').read_text())
+        cached = json.loads((out / 'result.json').read_text())
+        if not cached.get('infra_failed'):
+            return cached
+        shutil.rmtree(out)
     out.mkdir(parents=True, exist_ok=True)
     worktree = WORK / repo / 'wt' / task['id']
     if worktree.exists():
@@ -392,6 +415,7 @@ def execute(repo, task, catalog, texts, skip_gate):
         result['valid'] = False
     finally:
         run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
+        result['infra_failed'] = infra_failed(result)
         (out / 'result.json').write_text(json.dumps(result, indent=1))
     return result
 
@@ -467,13 +491,15 @@ def cmd_score(args):
                               'located': 'analyzer: a delta item names a touched file; tools: a new finding on an added line'}}
     finders = [*FINDERS, 'any_tool']
     for r in results:
-        if not r.get('valid'):
+        if r.get('infra_failed'):
+            report.setdefault('infra_failed', []).append(r['task']['id'])
+        elif not r.get('valid'):
             reason = r.get('error') and 'error' or ','.join(k for k, v in (r.get('checks') or {}).items() if not v)
             report['invalid'][r['task']['id']] = reason
     for method in ('script', 'sonnet'):
         per_type = {}
         for r in results:
-            if r['task']['method'] != method or not r.get('valid'):
+            if r['task']['method'] != method or not r.get('valid') or r.get('infra_failed'):
                 continue
             h = hits(r)
             row = per_type.setdefault(r['task']['type'], {m: {f: [0, 0] for f in finders} for m in h})
@@ -496,6 +522,8 @@ def cmd_score(args):
     for r in results:
         if r['task']['method'] == 'negative':
             row = report['negative'].setdefault(r['task']['type'], {'valid': 0, 'invalid': 0, **{f'{f}_fp': 0 for f in finders}})
+            if r.get('infra_failed'):
+                continue
             if not r.get('valid'):
                 row['invalid'] += 1
                 continue
