@@ -25,9 +25,9 @@ commit: 6fe7133f92bcb0814d853e3e84a90c1cc5887904
   - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
 - Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Only CTFd has a test command (`TEST_ENV`). The earlier `eval/repos` clones and envs no longer exist.
-  - commit: 6fe7133; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
+  - commit: 4670e4e; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
 - Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; NC1 rename and NC2 format are scripted because file tools cannot delete files (Sonnet renames left the old file, judged invalid). Validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff, CTFd test gate (725 passed, about 115 s, serialized). Catch = Sonnet match judge on anonymized findings (`matched`); `located` = analyzer delta item naming a touched file or its `pkg:python:` package, or a tool finding on an added line. Tools: ruff ALL, bandit, pylint on touched files, new = count increase per (tool, rule, path, message).
-  - commit: 6fe7133; files: scripts/eval/inject/harness.py
+  - commit: 4670e4e; files: scripts/eval/inject/harness.py
 - CTFd pilot (16 types x 2 methods, 1 replicate, 2 per control): 34 valid of 40. Weighted type recall matched: script analyzer 0.031, ruff 0.50, pylint 0.53, any tool 0.53; sonnet analyzer 0.125, ruff 0.40, pylint 0.35, any tool 0.425. Analyzer-only catches: package cycle, unstable dependency, layer violation (G01, G02, P21). Caught by no finder: hallucinated package, duplicated code, hard-coded credential, XSS, dependency declaration smell, shotgun surgery (P05, P16, P32, P34, P38, G09). Controls: analyzer located false positive 2/2 on rename only (known), 0 on format, comments, refactor; ruff flags format/comment/refactor controls on added lines. Script-chosen locations were judged invalid for G02, G09, P21 (structural types do not fit an arbitrary file). Results in `~/toy-projects/network-analysis-eval/inject/CTFd/score.json`.
   - commit: 6fe7133; files: none
 - In G01-script-0 the injected admin <-> utils.challenges import pair is inside the existing large package SCC, so delta reports no new or grown cycle (only new package dependencies and an unstable_dependency candidate).
@@ -35,7 +35,7 @@ commit: 6fe7133f92bcb0814d853e3e84a90c1cc5887904
 
 ### Next Step
 - User starts the overnight CTFd run `scripts/eval/inject/overnight.sh CTFd 1 4` (all 68 injectable types, both methods, 4 per control; resumable, about 5 h); then read score.txt and start improvement with the uncaught weight-3 types, duplicate/clone detection (P16) first.
-  - commit: 6fe7133; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
+  - commit: 4670e4e; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
