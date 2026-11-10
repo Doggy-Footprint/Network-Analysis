@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 9ea723bfce0b18890e16084f9d9edce27c5b0f77
+commit: 59636304336a35b97b6202e8ea2d5f75d2f536b1
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -24,9 +24,16 @@ commit: 9ea723bfce0b18890e16084f9d9edce27c5b0f77
 - At base 9ea723b the full suite has pre-existing failures: 5 characterization tests (12 node ids) and 2 flaky tests (report_modal V04 under parallel load; report_size_format V01 depending on in-process order). The spec Test command deselects them.
   - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
+- Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Only CTFd has a test command (`TEST_ENV`). The earlier `eval/repos` clones and envs no longer exist.
+  - commit: 5963630; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
+- Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; analyzer runs with `--baseline`; caught = a delta item whose JSON mentions a touched path; ruff/bandit/pylint new findings on touched files are the tool comparison; validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff, CTFd test gate (725 passed, about 115 s, serialized).
+  - commit: 5963630; files: scripts/eval/inject/harness.py
+- Smoke test P02 (both methods): both valid; analyzer missed both (bare undefined name), ruff F821 and pylint undefined-variable caught both.
+  - commit: 5963630; files: none
+
 ### Next Step
-- Build the injection harness (script-chosen and Sonnet-chosen locations, reported separately) and run the CTFd pilot locally; then start improvement with duplicate/clone detection (P16).
-  - commit: 12da674; files: scripts/eval/measure.py, scripts/eval/gate.py
+- Read the CTFd pilot score (`harness.py score CTFd`, types P02,P05,P10,P13,P16,P19,P21,P23,P26,P32,P34,P38,G01,G02,G09,G18, 2 negatives per control), fix harness problems it shows, then launch the overnight CTFd run over all injectable types; then start improvement with duplicate/clone detection (P16).
+  - commit: 5963630; files: scripts/eval/inject/harness.py
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
@@ -58,10 +65,13 @@ commit: 9ea723bfce0b18890e16084f9d9edce27c5b0f77
 - AGENTS.md: project definition rewritten per the user's choice of the broader scope.
 - scripts/eval/defects/agent-reported.md: catalog of 52 problem types reported for AI-written code, compiled by an Opus subagent without analyzer knowledge, with source verification status.
 - scripts/eval/defects/build_catalog.py, catalog.json: weighted scoring denominator.
+- scripts/eval/inject/: injection harness and prompts.
 - bottlenecks/delta.py, code_analyzer/cli.py: delta.v2 (spec 2afad1e5c96b32ff); tests/test_delta_candidates.py and support; existing delta tests adjusted within the spec range (tests/delta_candidates_evidence/existing-tests.diff).
 
 ### Commands
 - `python3 scripts/eval/defects/build_catalog.py`
+- `uv venv .venv --python 3.12 && uv pip install -p .venv -r requirements.txt` (analyzer env used by the harness)
+- `.venv/bin/python scripts/eval/inject/harness.py run CTFd --types <ids> --negatives 2 --workers 3`; `... score CTFd`
 
 ### Failed Attempts
 | attempt | failure evidence | cause |
@@ -157,3 +167,13 @@ commit: 9ea723bfce0b18890e16084f9d9edce27c5b0f77
 #### 13 — 2026-11-10T08:21:34Z
 
 > 확인했어. 넘어가도 좋아.
+
+#### 14 — 2026-11-10T08:36:07Z
+
+> <task-notification>
+> <task-id>bat8gobrz</task-id>
+> <tool-use-id>toolu_01MzKPpmm7B5nj889ZHSyziN</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bat8gobrz.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Smoke-test harness on one type, both methods" completed (exit code 0)</summary>
+> </task-notification>
