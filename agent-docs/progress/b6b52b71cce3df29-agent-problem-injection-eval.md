@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 476ca06328799bb4b76d8c61ec8f7e597b18257e
+commit: d628d03a38c9842140a9fd8ea503e05a00df317c
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -25,26 +25,26 @@ commit: 476ca06328799bb4b76d8c61ec8f7e597b18257e
   - commit: 9ea723b; files: tests/test_doc_references.py, tests/test_file_analysis_cli.py, tests/test_nestjs_quality.py, tests/test_analysis_coverage_reporting.py, tests/test_signal_defects_round4.py, tests/test_report_modal.py, tests/test_report_size_format.py
 
 - Injection harness `scripts/eval/inject/harness.py` (subcommands baseline, run, score). Workspace `~/toy-projects/network-analysis-eval/inject/<repo>/` holds clone (pinned commit, no remote), env/venv (test env), base/bottlenecks.json, runs/<task>/ (prompt, diff.patch, delta.json, result.json), score.json; `inject/tools` holds ruff 0.8.4, bandit 1.8.0, pylint 3.3.3. Test commands and scopes are in `REPOS`. The earlier `eval/repos` clones and envs no longer exist.
-  - commit: f47b0fd; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
+  - commit: d628d03; files: scripts/eval/inject/harness.py, scripts/eval/inject/INJECT_PROMPT.md, scripts/eval/inject/NEGATIVE_PROMPT.md
 - Per task: Sonnet (`claude -p --restricted`, file tools only, cwd = per-task git worktree) injects; NC1 rename and NC2 format are scripted because file tools cannot delete files (Sonnet renames left the old file, judged invalid). Validity = non-empty diff, primary file touched (script method), py_compile, Sonnet judge on the diff (not for scripted controls), test gate (serialized per process). Catch = Sonnet match judge on anonymized findings (`matched`); `located` = analyzer delta item naming a touched file or its `pkg:python:` package, or a tool finding on an added line. Tools: ruff ALL, bandit, pylint on touched files, new = count increase per (tool, rule, path, message).
-  - commit: f47b0fd; files: scripts/eval/inject/harness.py
+  - commit: d628d03; files: scripts/eval/inject/harness.py
 - CTFd pilot (16 types x 2 methods, 1 replicate, 2 per control): 34 valid of 40. Weighted type recall matched: script analyzer 0.031, ruff 0.50, pylint 0.53, any tool 0.53; sonnet analyzer 0.125, ruff 0.40, pylint 0.35, any tool 0.425. Analyzer-only catches: package cycle, unstable dependency, layer violation (G01, G02, P21). Caught by no finder: hallucinated package, duplicated code, hard-coded credential, XSS, dependency declaration smell, shotgun surgery (P05, P16, P32, P34, P38, G09). Controls: analyzer located false positive 2/2 on rename only (known), 0 on format, comments, refactor; ruff flags format/comment/refactor controls on added lines. Script-chosen locations were judged invalid for G02, G09, P21 (structural types do not fit an arbitrary file). Results in `~/toy-projects/network-analysis-eval/inject/CTFd/score.json`.
   - commit: 6fe7133; files: none
 - In G01-script-0 the injected admin <-> utils.challenges import pair is inside the existing large package SCC, so delta reports no new or grown cycle (only new package dependencies and an unstable_dependency candidate).
   - commit: 6fe7133; files: bottlenecks/delta.py
 - Harness covers CTFd, flask-admin (Python), ghostfolio (TypeScript, Node 22 at `inject/node`, scope apps/api and libs/common), nowinandroid (Kotlin, androidTest excluded). Gates run in `inject/<repo>/gate` (persistent checkout, dependencies installed there): flask-admin 391 passed (median 43 s), ghostfolio 710 passed plus two tsc checks (median 93 s), nowinandroid 173 passed (median 67 s), CTFd median 137 s. Comparison tools: Python ruff/bandit/pylint/semgrep, TypeScript eslint 9.17 (@eslint/js + typescript-eslint recommended and stylistic)/semgrep, Kotlin detekt 1.23.7/semgrep; semgrep uses the pinned `inject/tools/semgrep-default.yml`.
-  - commit: f47b0fd; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
+  - commit: d628d03; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 - Mini pilot (P02, P10, G01, one of each control) on the three new repos: in ghostfolio and nowinandroid both P02 injections fail the test gate with compile errors (TS2304, Kotlin Unresolved reference), so P02 has no valid injection in compiled languages. Analyzer control false positives: ghostfolio format-only (prettier width 60) strengthened large_node through line_count; nowinandroid comment-only (KDoc with [Name] links in WorkManagerSyncManager.kt) produced a new package dependency sync.status -> core.analytics and an unstable_dependency candidate; renames in every repo (known).
   - commit: f47b0fd; files: bottlenecks/delta.py
 - Judge is skipped for scripted controls (rename, format): it rejected a Kotlin rename because the file name no longer matched the class and a format change because a `# type: ignore` moved lines.
-  - commit: f47b0fd; files: scripts/eval/inject/harness.py
+  - commit: d628d03; files: scripts/eval/inject/harness.py
 
 - Memory guard: before each gate the harness waits until `kern.memorystatus_level` (system-wide free-memory percent) is at least 25, and at least 15 before Sonnet calls and analyzer runs (gives up after 2 h and logs it); gate starts across processes are spaced 60 s apart through `inject/gate-start.lock`; nowinandroid gates end with `./gradlew --stop`. Samples every 60 s and waits go to `inject/<repo>/memory.log`; each gate result carries memory before/after; score.json has a memory summary. A nowinandroid gate check ran with level 38 -> 42 and left no Gradle 9.7.1 daemon.
-  - commit: 476ca06; files: scripts/eval/inject/harness.py
+  - commit: d628d03; files: scripts/eval/inject/harness.py
 
 ### Next Step
 - User starts the overnight run as two parallel streams: `scripts/eval/inject/overnight.sh "CTFd flask-admin" & scripts/eval/inject/overnight.sh "ghostfolio nowinandroid" & wait` (all injectable types, both methods, 4 per control; resumable); then read each `inject/<repo>/score.txt` and start improvement with the uncaught weight-3 types (P16 duplication first) and the analyzer false positives on format and comment controls.
-  - commit: f47b0fd; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
+  - commit: d628d03; files: scripts/eval/inject/overnight.sh, scripts/eval/inject/harness.py
 
 ### Constraints
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
@@ -268,3 +268,11 @@ commit: 476ca06328799bb4b76d8c61ec8f7e597b18257e
 #### 25 — 2026-11-10T12:36:37Z
 
 > 돌아갈 때 메모리 체크하면서 돌아가게 작업해줄래?
+
+#### 26 — 2026-11-10T12:39:20Z
+
+> 한글
+
+#### 27 — 2026-11-10T14:13:44Z
+
+> 밤 사이 진행할 작업 설명해
