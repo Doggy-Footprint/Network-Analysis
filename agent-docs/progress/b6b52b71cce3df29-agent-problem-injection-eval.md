@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: c502749aaf855eb9ddf9f65a656eafead1879b0d
+commit: 092f4a2caaeebae426d1ab612f533229eaa5a6e9
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -51,7 +51,11 @@ commit: c502749aaf855eb9ddf9f65a656eafead1879b0d
   - commit: 334e57c; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- Second pilot (`--fraction 3`, negatives 2) ran 23:32-02:12: 170 new tasks, no task errors, no infra failures, no memory/thermal/limit waits. Measured mean Sonnet cost per task: script $0.067, sonnet $0.083, Sonnet-made control $0.050, scripted control $0. Elapsed per new task: CTFd 154 s, flask-admin 105 s, ghostfolio 99 s, nowinandroid 105 s. Recorded spend $15.91; projected remaining full plan $26.0, so the user's $100 rule allowed the full run, started 2026-11-11 02:15 as `overnight.sh "CTFd flask-admin" 1 4 "--budget 100"` and the same for ghostfolio nowinandroid (projection 6.3 h and 5.3 h per stream). Pilot-2 scores are saved as `inject/<repo>/score-pilot2.txt`. Pilot-2 analyzer FP on controls: rename in all four repos, ghostfolio format 1 of 2, nowinandroid comment-only 2 of 2. Next: when the run ends, read each `score.txt` and `harness.py cost`, report, then start improvement with uncaught weight-3 types (P16 duplication first) and the control false positives.
+- Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
+  - commit: 092f4a2; files: none
+- Improvement order is the user's choice (asked 2026-11-11 after the full run); proposal: first the control false positives (rename, KDoc), then uncaught weight-3 types that the dependency network can decide (P50 breaking change, P45 tangled change, P15/P11 untested changed code, P20 unreferenced new code, P36 route without the siblings' authorization, P12-P14 test-diff checks, P37/P38 manifest checks). Each improvement is a workflow-approach spec.
+  - commit: 092f4a2; files: none
+- Second pilot (`--fraction 3`, negatives 2) ran 23:32-02:12: 170 new tasks, no task errors, no infra failures, no memory/thermal/limit waits. Measured mean Sonnet cost per task: script $0.067, sonnet $0.083, Sonnet-made control $0.050, scripted control $0. Elapsed per new task: CTFd 154 s, flask-admin 105 s, ghostfolio 99 s, nowinandroid 105 s. Recorded spend $15.91; projected remaining full plan $26.0, so the user's $100 rule allowed the full run, started 2026-11-11 02:15 as `overnight.sh "CTFd flask-admin" 1 4 "--budget 100"` and the same for ghostfolio nowinandroid (projection 6.3 h and 5.3 h per stream). Pilot-2 scores are saved as `inject/<repo>/score-pilot2.txt`. Pilot-2 analyzer FP on controls: rename in all four repos, ghostfolio format 1 of 2, nowinandroid comment-only 2 of 2.
   - commit: 334e57c; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 
 ### Constraints
@@ -321,4 +325,14 @@ commit: c502749aaf855eb9ddf9f65a656eafead1879b0d
 > <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/b6fcinn77.output</output-file>
 > <status>completed</status>
 > <summary>Background command "Run second pilot on a third of the types in two lanes" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 35 — 2026-11-10T22:55:55Z
+
+> <task-notification>
+> <task-id>b4cz2wdg5</task-id>
+> <tool-use-id>toolu_016v1mjPeymH4rMrAiCQqLov</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/b4cz2wdg5.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Run full experiment in two lanes with $100 cap" completed (exit code 0)</summary>
 > </task-notification>
