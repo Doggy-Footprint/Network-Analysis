@@ -170,6 +170,21 @@ def files_of(repo, kind):
     return out
 
 
+def part_of(types, index, parts):
+    # strata keep every part's mix of weights and file kinds close to the whole catalog's
+    catalog = {t['id']: t for t in CATALOG['types']}
+    strata = {}
+    for type_id in sorted(types, key=lambda t: random.Random(f'part:{t}').random()):
+        kind = 'test' if type_id in TEST_TYPES else 'manifest' if type_id in MANIFEST_TYPES else 'source'
+        strata.setdefault((catalog[type_id]['weight'], kind), []).append(type_id)
+    chosen, offset = [], 0
+    for key in sorted(strata):
+        members = strata[key]
+        chosen += [t for i, t in enumerate(members) if (i + offset) % parts == index]
+        offset += len(members)
+    return sorted(chosen)
+
+
 def plan(repo, types, replicates, negatives):
     tasks = []
     for type_id in types:
@@ -284,6 +299,17 @@ def infra_failed(result):
                 or (matched is not None and matched.get('verdict') is None) or result.get('error'))
 
 
+def usage(proc, seconds):
+    try:
+        out = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return {'seconds': seconds, 'cost_usd': None}
+    u = out.get('usage') or {}
+    return {'seconds': seconds, 'cost_usd': out.get('total_cost_usd'), 'turns': out.get('num_turns'),
+            'input_tokens': u.get('input_tokens'), 'output_tokens': u.get('output_tokens'),
+            'cache_read_tokens': u.get('cache_read_input_tokens'), 'cache_write_tokens': u.get('cache_creation_input_tokens')}
+
+
 def reset_worktree(worktree):
     # a call cut off by the usage limit may leave a half-made injection; the retry starts from the base commit
     run(['git', 'reset', '-q', '--hard', 'HEAD'], cwd=worktree, check=True)
@@ -299,7 +325,8 @@ def claude(prompt, cwd, timeout):
     except json.JSONDecodeError:
         out = {'is_error': True, 'result': (proc.stdout + proc.stderr)[-2000:]}
     return {'seconds': round(time.perf_counter() - start, 1), 'is_error': out.get('is_error'), 'cost_usd': out.get('total_cost_usd'),
-            'turns': out.get('num_turns'), 'result': (out.get('result') or '')[-3000:]}
+            'turns': out.get('num_turns'), 'usage': usage(proc, round(time.perf_counter() - start, 1)),
+            'result': (out.get('result') or '')[-3000:]}
 
 
 def negative_meaning(task):
@@ -321,12 +348,14 @@ def judge(task, diff, catalog, texts, scratch):
     prompt = (f'{question}\nAnswer with one JSON object only: {{"valid": true|false, "reason": "<one sentence>"}}.\n\n'
               f'```diff\n{diff[:60000]}\n```\n')
     scratch.mkdir(exist_ok=True)
+    start = time.perf_counter()
     proc = call(CLAUDE + ['--tools', ''], scratch, 600, prompt)
+    spent = usage(proc, round(time.perf_counter() - start, 1))
     try:
         text = json.loads(proc.stdout).get('result', '')
-        return json.loads(re.search(r'\{.*\}', text, re.S).group(0))
+        return {**json.loads(re.search(r'\{.*\}', text, re.S).group(0)), 'usage': spent}
     except (json.JSONDecodeError, AttributeError):
-        return {'valid': None, 'reason': (proc.stdout + proc.stderr)[-500:]}
+        return {'valid': None, 'reason': (proc.stdout + proc.stderr)[-500:], 'usage': spent}
 
 
 def changed(worktree):
@@ -618,14 +647,16 @@ def match(task, out, diff, catalog, texts, analyzer_items, tool_new, finders):
     (out / 'match_prompt.md').write_text(prompt)
     scratch = out / 'judge'
     scratch.mkdir(exist_ok=True)
+    start = time.perf_counter()
     proc = call(CLAUDE + ['--tools', ''], scratch, 600, prompt)
+    spent = usage(proc, round(time.perf_counter() - start, 1))
     try:
         answer = json.loads(re.search(r'\{.*\}', json.loads(proc.stdout).get('result', ''), re.S).group(0))
     except (json.JSONDecodeError, AttributeError):
-        return {'verdict': None, 'reason': (proc.stdout + proc.stderr)[-500:]}
+        return {'verdict': None, 'reason': (proc.stdout + proc.stderr)[-500:], 'usage': spent}
     for f in present:
         verdict[f] = answer.get(letters[f]) is True
-    return {'verdict': verdict, 'letters': letters, 'reason': answer.get('reason')}
+    return {'verdict': verdict, 'letters': letters, 'reason': answer.get('reason'), 'usage': spent}
 
 
 def assess(repo, out, worktree, touched, diff, result):
@@ -667,6 +698,7 @@ def execute(repo, task, catalog, texts, skip_gate):
         run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
     run(['git', 'worktree', 'add', '-q', '--detach', str(worktree), 'base'], cwd=p['clone'], check=True)
     result = {'task': task}
+    began = time.perf_counter()
     try:
         if task['type'] == 'NC2':
             result['inject'] = format_only(worktree, task['file'])
@@ -711,6 +743,7 @@ def execute(repo, task, catalog, texts, skip_gate):
     finally:
         run(['git', 'worktree', 'remove', '--force', str(worktree)], cwd=p['clone'])
         result['infra_failed'] = infra_failed(result)
+        result['wall_s'] = round(time.perf_counter() - began, 1)
         (out / 'result.json').write_text(json.dumps(result, indent=1))
     return result
 
@@ -781,17 +814,93 @@ def cmd_gate(args):
     print(json.dumps({k: v for k, v in result.items() if k != 'tail'}))
 
 
+def done(repo, task):
+    path = paths(repo)['runs'] / task['id'] / 'result.json'
+    return path.exists() and not json.loads(path.read_text()).get('infra_failed')
+
+
+def stage_usage(r):
+    stages = {'inject': (r.get('inject') or {}).get('usage'), 'judge': (r.get('judge') or {}).get('usage'),
+              'match': (r.get('match') or {}).get('usage')}
+    return {k: v for k, v in stages.items() if v}
+
+
+def category(task):
+    if task['method'] != 'negative':
+        return task['method']
+    return 'negative_script' if task['type'] in ('NC1', 'NC2') else 'negative_sonnet'
+
+
+def cmd_cost(args):
+    """Sonnet spend per task category, measured on runs that recorded usage, and its projection to the full plan."""
+    types = [t['id'] for t in CATALOG['types'] if t['injectable']]
+    per_cat, elapsed, full, remaining = {}, {}, {}, {}
+    for repo in args.repos.split(','):
+        results = [json.loads(q.read_text()) for q in sorted(paths(repo)['runs'].glob('*/result.json'))]
+        for r in results:
+            if 'wall_s' not in r or r.get('infra_failed'):
+                continue
+            stages = stage_usage(r)
+            row = per_cat.setdefault(category(r['task']), {'tasks': 0, 'cost_usd': 0.0, 'output_tokens': 0, 'input_tokens': 0,
+                                                          'cache_read_tokens': 0, 'cache_write_tokens': 0, 'sonnet_s': 0.0,
+                                                          'by_stage': {}})
+            row['tasks'] += 1
+            for name, u in stages.items():
+                row['cost_usd'] += u.get('cost_usd') or 0
+                row['sonnet_s'] += u.get('seconds') or 0
+                for k in ('output_tokens', 'input_tokens', 'cache_read_tokens', 'cache_write_tokens'):
+                    row[k] += u.get(k) or 0
+                row['by_stage'][name] = round(row['by_stage'].get(name, 0) + (u.get('cost_usd') or 0), 4)
+        log = WORK / repo / 'memory.log'
+        rows = [json.loads(x) for x in log.read_text().splitlines() if x.strip()] if log.exists() else []
+        start = None
+        for x in rows:
+            if x['event'] == 'run_start' and x.get('pending'):
+                start = x
+            elif x['event'] == 'run_end' and start:
+                t0 = time.mktime(time.strptime(start['time'], '%Y-%m-%dT%H:%M:%S'))
+                t1 = time.mktime(time.strptime(x['time'], '%Y-%m-%dT%H:%M:%S'))
+                e = elapsed.setdefault(repo, {'seconds': 0, 'tasks': 0})
+                e['seconds'] += t1 - t0
+                e['tasks'] += start['pending']
+                start = None
+        plan_tasks = plan(repo, types, args.replicates, args.negatives)
+        full[repo] = [category(t) for t in plan_tasks]
+        remaining[repo] = [category(t) for t in plan_tasks if not done(repo, t)]
+    for row in per_cat.values():
+        row['mean_cost_usd'] = round(row['cost_usd'] / row['tasks'], 4)
+        row['cost_usd'] = round(row['cost_usd'], 3)
+        row['sonnet_s'] = round(row['sonnet_s'])
+
+    def project(cats):
+        known = [c for c in cats if c in per_cat]
+        return {'tasks': len(cats), 'unmeasured_tasks': len(cats) - len(known),
+                'cost_usd': round(sum(per_cat[c]['mean_cost_usd'] for c in known), 2)}
+    report = {'measured': per_cat,
+              'elapsed_per_new_task_s': {r: round(e['seconds'] / e['tasks'], 1) for r, e in elapsed.items() if e['tasks']},
+              'projection': {'plan': f'replicates {args.replicates}, negatives {args.negatives}',
+                             'full': {r: project(c) for r, c in full.items()},
+                             'remaining': {r: project(c) for r, c in remaining.items()}},
+              'note': 'cost_usd is total_cost_usd from claude -p (API list price); under a subscription it is drawn from the usage limit instead'}
+    for r, e in report['elapsed_per_new_task_s'].items():
+        report['projection']['remaining'][r]['hours_at_this_rate'] = round(e * len(remaining[r]) / 3600, 1)
+    print(json.dumps(report, indent=1))
+
+
 def cmd_run(args):
     catalog = {t['id']: t for t in CATALOG['types']}
     texts = type_text()
     types = args.types.split(',') if args.types else [t['id'] for t in CATALOG['types'] if t['injectable']]
+    if args.fraction:
+        types = part_of(types, list(REPOS).index(args.repo) % args.fraction, args.fraction)
     tasks = plan(args.repo, types, args.replicates, args.negatives)
     if args.only_negative:
         tasks = [t for t in tasks if t['method'] == 'negative']
     paths(args.repo)['runs'].mkdir(parents=True, exist_ok=True)
     print(f'{len(tasks)} tasks', flush=True)
     stop = threading.Event()
-    log_memory(args.repo, 'run_start', tasks=len(tasks))
+    pending = sum(not done(args.repo, t) for t in tasks)
+    log_memory(args.repo, 'run_start', tasks=len(tasks), pending=pending)
     threading.Thread(target=monitor, args=(args.repo, stop), daemon=True).start()
     try:
         with ThreadPoolExecutor(args.workers) as pool:
@@ -892,11 +1001,16 @@ def main():
     r.add_argument('--workers', type=int, default=3)
     r.add_argument('--skip-gate', action='store_true')
     r.add_argument('--only-negative', action='store_true')
+    r.add_argument('--fraction', type=int, help='run one stratified 1/N of the types; the part rotates with the repository')
+    c = sub.add_parser('cost')
+    c.add_argument('--repos', default='CTFd,flask-admin,ghostfolio,nowinandroid')
+    c.add_argument('--replicates', type=int, default=1)
+    c.add_argument('--negatives', type=int, default=4)
     rs = sub.add_parser('rescore')
     rs.add_argument('repo')
     rs.add_argument('--workers', type=int, default=4)
     args = parser.parse_args()
-    {'memory': lambda a: print(json.dumps(memory())), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score}[args.cmd](args)
+    {'memory': lambda a: print(json.dumps(memory())), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score, 'cost': cmd_cost}[args.cmd](args)
 
 
 if __name__ == '__main__':

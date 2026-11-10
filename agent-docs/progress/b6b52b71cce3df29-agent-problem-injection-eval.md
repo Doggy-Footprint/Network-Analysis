@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 52d1e19e747061a896d999238b99609008783166
+commit: e19c3a1156c7f2899ef59dc194cca1de2c75da15
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -283,3 +283,15 @@ commit: 52d1e19e747061a896d999238b99609008783166
 #### 28 — 2026-11-10T14:18:24Z
 
 > 중간에 사용량 제한에 걸렸을 때 어떻게 할거야?
+
+#### 29 — 2026-11-10T14:26:46Z
+
+> 1/3 정도만 하면서 2차 파일럿 + 비용 추산 해보자
+
+#### 30 — 2026-11-10T14:27:41Z
+
+> 심사관이 있지 않았어?
+
+#### 31 — 2026-11-10T14:27:51Z
+
+> 1/3 정도만 하면서 2차 파일럿 + 비용 추산 해보자
