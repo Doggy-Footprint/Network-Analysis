@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 12da6746066bea213aa816962e051dbed786070e
+commit: 95a617ddd4dbfcbaa05a2bacd74b141d59764477
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -113,3 +113,7 @@ commit: 12da6746066bea213aa816962e051dbed786070e
 > agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다.
 > 
 > 진행 순서: 기본값 수용.
+
+#### 9 — 2026-11-10T07:16:54Z
+
+> 둘 다 권장으로 가야겠네. 2에 오탐이 있을 것이고 그걸 음성대조에서 보는 점은 확실히 적어놔.

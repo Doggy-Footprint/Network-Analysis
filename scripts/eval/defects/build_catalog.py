@@ -1,15 +1,10 @@
-"""Builds catalog.json, the scoring denominator of the fault-injection eval.
-
-Agent-reported types come from agent-reported.md (independent of the analyzer).
-General types are problems with no AI-specific source that can still occur in a change.
-"""
+"""Agent-reported types must stay independent of the analyzer's candidate kinds; they come from agent-reported.md."""
 import json
 from pathlib import Path
 
 AGENT_WEIGHT = 3
 GENERAL_WEIGHT = 1
 
-# id, name, evidence grade, visibility (S snapshot / D diff only / SD both), injectable reason or None
 AGENT = [
     ("P01", "Functional requirement violation / logic error", "strong", "SD", None),
     ("P02", "Reference to non-existent internal symbol", "strong", "S", None),
@@ -65,7 +60,6 @@ AGENT = [
     ("P52", "License issues", "moderate", "S", None),
 ]
 
-# id, name, sources, visibility
 GENERAL = [
     ("G01", "Package-level cycle", "Suryanarayana2014; Mo2015", "S"),
     ("G02", "Unstable dependency (Stable Dependencies Principle violation)", "Martin2002; Arcan2017", "S"),
