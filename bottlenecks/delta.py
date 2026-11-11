@@ -1,10 +1,12 @@
+import copy
 import json
 import os
+import re
 from typing import Any, Iterable, Mapping
 
 from analysis.structure import TIERS
 
-DELTA_POLICY = "delta.v2"
+DELTA_POLICY = "delta.v3"
 INSTABILITY_THRESHOLD = 0.2
 # Tolerates float error of differences such as 0.8 - 0.6 landing just below 0.2.
 _EPSILON = 1e-12
@@ -57,6 +59,8 @@ def _check_baseline(document: Any, path: str) -> None:
     snapshot = _object(_member(root, "snapshot", path, "$"), path, "$.snapshot")
     count = _member(snapshot, "file_count", path, "$.snapshot")
     if not isinstance(count, int) or isinstance(count, bool): _fail(path, "$.snapshot.file_count", "an integer")
+    commit = snapshot.get("git_commit")
+    if commit is not None and not isinstance(commit, str): _fail(path, "$.snapshot.git_commit", "a string or null")
     network = _object(_member(root, "dependency_network", path, "$"), path, "$.dependency_network")
     columns = _check_columns(network, path) if schema == "bottlenecks.v9" else None
     _string(_member(network, "structure_policy", path, "$.dependency_network"), path, "$.dependency_network.structure_policy")
@@ -227,6 +231,12 @@ def _cycle_delta(current: list, baseline: list, current_ids: list | None = None,
     return sorted(new, key=order), sorted(grown, key=order), resolved
 
 
+def _violation_key(candidate: Mapping[str, Any]) -> tuple:
+    structure, evidence = candidate["structure"], candidate.get("evidence")
+    first = evidence[0].get("to_id") if isinstance(evidence, list) and evidence and isinstance(evidence[0], dict) else None
+    return (structure["rule_type"], structure["from_layer"], structure.get("to_layer"), structure.get("to_external"), candidate["target"], first)
+
+
 def _violations(candidates: Iterable[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
     found: dict[str, Mapping[str, Any]] = {}
     for candidate in candidates:
@@ -319,7 +329,49 @@ def _instability_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]
     return sorted(changes, key=lambda item: (-abs(item["delta"]), item["scheme"], item["package"]))
 
 
-def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> dict:
+_NOT_REQUESTED = {"status": "skipped", "reason": "not_requested", "pairs": []}
+
+
+def _remap(value: Any, pattern: "re.Pattern", mapping: Mapping[str, str]) -> Any:
+    if isinstance(value, str): return pattern.sub(lambda found: mapping[found.group(0)], value)
+    if isinstance(value, list): return [_remap(item, pattern, mapping) for item in value]
+    if isinstance(value, dict): return {key: _remap(item, pattern, mapping) for key, item in value.items()}
+    return value
+
+
+def _remap_baseline(baseline: Mapping[str, Any], mapping: Mapping[str, str]) -> dict:
+    result = copy.deepcopy(dict(baseline))
+    # A path only counts when it is a whole path segment of the id: at the start or after ":", and at the end or before "#".
+    pattern = re.compile(r"(?<![^:])(?:" + "|".join(re.escape(old) for old in sorted(mapping, key=len, reverse=True)) + r")(?![^#])")
+    def fix(value: Any) -> Any: return _remap(value, pattern, mapping)
+    network = result.get("dependency_network") or {}
+    if "file_ids" in network: network["file_ids"] = fix(network["file_ids"])
+    for pairs in (network.get("package_dependencies") or {}).values():
+        for pair in pairs:
+            pair["from_id"], pair["to_id"] = fix(pair["from_id"]), fix(pair["to_id"])
+    metrics = network.get("package_metrics") or {}
+    for scheme, packages in metrics.items(): metrics[scheme] = {fix(package): record for package, record in packages.items()}
+    for candidate in result.get("candidates", []):
+        if "target" in candidate: candidate["target"] = fix(candidate["target"])
+        structure = candidate.get("structure")
+        if candidate.get("kind") == "rule_violation": pass
+        elif candidate.get("kind") in _CYCLE_KINDS: structure["members"] = fix(structure["members"])
+        elif structure is not None: candidate["structure"] = fix(structure)
+        evidence = candidate.get("evidence")
+        for record in evidence if isinstance(evidence, list) else [evidence]:
+            if isinstance(record, dict):
+                for key in ("from_id", "to_id", "node_id"):
+                    if key in record: record[key] = fix(record[key])
+            elif isinstance(record, list):
+                for position in (0, 1):
+                    if isinstance(record[position], str): record[position] = fix(record[position])
+    return result
+
+
+def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any], renames: Mapping[str, Any] | None = None) -> dict:
+    renames = dict(_NOT_REQUESTED) if renames is None else renames
+    mapping = {pair["from"]: pair["to"] for pair in renames["pairs"] if pair["from"] != pair["to"]}
+    if mapping: baseline = _remap_baseline(baseline, mapping)
     current_network, baseline_network = current.get("dependency_network") or {}, baseline.get("dependency_network") or {}
     if current_network.get("structure_policy") != baseline_network.get("structure_policy"):
         raise BaselineError(f"baseline: structure_policy {baseline_network.get('structure_policy')!r} differs from current {current_network.get('structure_policy')!r}")
@@ -332,16 +384,19 @@ def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> di
 
     new_cycles, grown_cycles, resolved_cycles = _cycle_delta(current["candidates"], baseline["candidates"], current_network.get("file_ids"), baseline_network.get("file_ids"))
     current_violations, baseline_violations = _violations(current["candidates"]), _violations(baseline["candidates"])
-    new_violations = [_violation_item(current_violations[key]) for key in sorted(set(current_violations) - set(baseline_violations))]
+    current_keys = {_violation_key(candidate) for candidate in current_violations.values()}
+    baseline_keys = {_violation_key(candidate) for candidate in baseline_violations.values()}
+    new_violations = [_violation_item(current_violations[found]) for found in sorted(current_violations) if _violation_key(current_violations[found]) not in baseline_keys]
+    resolved_violations = sum(1 for candidate in baseline_violations.values() if _violation_key(candidate) not in current_keys)
     current_pairs, baseline_pairs = _dependency_map(current_network), _dependency_map(baseline_network)
     new_pairs = [{"scheme": key[0], "from_id": key[1], "to_id": key[2], "tier": current_pairs[key]} for key in sorted(set(current_pairs) - set(baseline_pairs))]
     changes = _instability_changes(current_network, baseline_network)
     new_candidates, strengthened, resolved_candidates = _general_delta(current["candidates"], baseline["candidates"])
-    delta = {"policy": DELTA_POLICY, "baseline": {"file_count": baseline["snapshot"]["file_count"], "rules_sha256": digest}, "rules_changed": rules_changed,
+    delta = {"policy": DELTA_POLICY, "renames": {"status": renames["status"], "reason": renames["reason"], "pairs": [dict(pair) for pair in renames["pairs"]]}, "baseline": {"file_count": baseline["snapshot"]["file_count"], "rules_sha256": digest}, "rules_changed": rules_changed,
              "new_cycles": new_cycles, "grown_cycles": grown_cycles, "new_violations": new_violations,
              "new_package_dependencies": new_pairs, "instability_changes": changes,
              "new_candidates": new_candidates, "strengthened_candidates": strengthened,
-             "resolved": {"cycles": resolved_cycles, "violations": len(set(baseline_violations) - set(current_violations)),
+             "resolved": {"cycles": resolved_cycles, "violations": resolved_violations,
                           "package_dependencies": len(set(baseline_pairs) - set(current_pairs)), "candidates": resolved_candidates}}
     delta["counts"] = {name: len(delta[name]) for name in _LIST_NAMES}
     return delta

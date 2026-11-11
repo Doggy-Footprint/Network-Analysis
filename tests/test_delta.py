@@ -38,7 +38,7 @@ def pairs_of(*pairs):
 
 
 def test_policy_constant():
-    assert delta_api().DELTA_POLICY == 'delta.v2'
+    assert delta_api().DELTA_POLICY == 'delta.v3'
 
 
 def test_F12_delta_object_shape_and_counts():
@@ -46,7 +46,7 @@ def test_F12_delta_object_shape_and_counts():
     cur = payload(candidates=[cycle([A, B, C]), cycle([D, E])], file_count=9, rules_sha='h1')
     result = run(cur, base)
     assert set(result) == DELTA_KEYS
-    assert result['policy'] == 'delta.v2'
+    assert result['policy'] == 'delta.v3'
     assert result['baseline'] == {'file_count': 7, 'rules_sha256': 'h1'}
     assert result['rules_changed'] is False
     assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}

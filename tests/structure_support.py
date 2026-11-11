@@ -380,4 +380,7 @@ def with_base_policy(payload):
     structure = (result.get('coverage') or {}).get('structure')
     if isinstance(structure, dict) and 'policy' in structure:
         structure['policy'] = 'structure.v1'
+    if isinstance(result.get('snapshot'), dict):
+        for key in ('git_commit', 'git_commit_reason'):
+            result['snapshot'].pop(key, None)
     return result

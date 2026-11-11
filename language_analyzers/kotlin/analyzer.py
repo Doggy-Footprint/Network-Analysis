@@ -32,6 +32,8 @@ from language_analyzers.core.report_schema import ColumnSpec, ReportCollection
 from . import ast as ka
 from repository.models import SourceText
 
+_COMMENT_NODE_TYPES = frozenset({"line_comment", "multiline_comment"})
+
 
 @dataclass
 class KotlinProjectArchitecture:
@@ -106,6 +108,7 @@ class KotlinAnalyzer:
         self._file_package: Dict[str, str] = {}
         self._exact_imports: Dict[str, Dict[str, str]] = {}
         self._positions = {}
+        self._code_positions = {}
         self._byte_starts = {}
         self._valid_utf8 = {}
         self._symbol_offsets = {}
@@ -135,6 +138,7 @@ class KotlinAnalyzer:
                 byte_starts.append(byte_starts[-1] + len(character.encode("utf-8")))
             self._byte_starts[key] = byte_starts
             self._valid_utf8[key] = source == text.encode("utf-8")
+            self._code_positions[key] = self._comment_free_positions(key, text, root)
             self._collect_file(key, source, text, root)
 
         self._record_external_imports()
@@ -335,8 +339,9 @@ class KotlinAnalyzer:
         def in_member(position):
             index = bisect.bisect_right(starts, position) - 1
             return index >= 0 and position < excluded[index][1]
-        def occurrences(name, header_only=False):
-            found = positions.matches(name, offset, offset + len(header) if header_only else end_offset)
+        scan = self._code_positions[symbol.file_key]
+        def occurrences(name, header_only=False, source=positions):
+            found = source.matches(name, offset, offset + len(header) if header_only else end_offset)
             return [item for item in found if not in_member(item[0])] if excluded and not header_only else found
         if symbol.kind in (NodeKind.CLASS, NodeKind.INTERFACE):
             for name in ka.supertype_names(symbol.node, source):
@@ -349,8 +354,8 @@ class KotlinAnalyzer:
             if target:
                 self._add_edge(symbol.id, target, RelationKind.TYPE_USES,
                                SourceSpan(symbol.file_key, ka.start_line(symbol.node), ka.start_line(symbol.node)), confidence, resolution, candidates)
-        for name in positions.candidate_names(self._name_order, offset, offset + len(header)):
-            if name == symbol.name or not occurrences(name, header_only=True):
+        for name in scan.candidate_names(self._name_order, offset, offset + len(header)):
+            if name == symbol.name or not occurrences(name, True, scan):
                 continue
             target, resolution, confidence, candidates = self._resolve(name, symbol.file_key)
             if target and self._symbols[target].kind in (NodeKind.CLASS, NodeKind.INTERFACE):
@@ -385,10 +390,10 @@ class KotlinAnalyzer:
         if external:
             self._nodes[symbol.id].metadata["external_call_count"] = sum(external.values())
             self._nodes[symbol.id].metadata["external_calls"] = dict(external.most_common(20))
-        for name in positions.candidate_names(self._name_order, offset, end_offset):
+        for name in scan.candidate_names(self._name_order, offset, end_offset):
             if name == symbol.name:
                 continue
-            for absolute_start, absolute_end in occurrences(name):
+            for absolute_start, absolute_end in occurrences(name, False, scan):
                 match_start, match_end = absolute_start - offset, absolute_end - offset
                 prefix = node_text[max(0, match_start - 12):match_start]
                 if re.search(r"(class|fun|val|var)\s+$", prefix):
@@ -400,6 +405,25 @@ class KotlinAnalyzer:
                 relation = RelationKind.WRITES if re.match(r"\s*(?:[+\-*/]?=|\+\+|--)", tail) else RelationKind.READS
                 line = positions.line(absolute_start) - positions.line(offset) + ka.start_line(symbol.node)
                 self._add_edge(symbol.id, target, relation, SourceSpan(symbol.file_key, line, line), confidence, resolution, candidates)
+
+    def _comment_free_positions(self, key: str, text: str, root: Any) -> NamePositions:
+        spans, stack = [], [root]
+        while stack:
+            node = stack.pop()
+            if node.type in _COMMENT_NODE_TYPES:
+                spans.append((self._char_offset(key, node.start_byte), self._char_offset(key, node.end_byte)))
+            else:
+                stack.extend(node.children)
+        if not spans:
+            return self._positions[key]
+        # Blanking keeps every offset and line break in place, so positions outside comments stay valid.
+        pieces, cursor = [], 0
+        for start, end in sorted(spans):
+            pieces.append(text[cursor:start])
+            pieces.append(re.sub(r"[^\n]", " ", text[start:end]))
+            cursor = end
+        pieces.append(text[cursor:])
+        return NamePositions("".join(pieces))
 
     def _char_offset(self, key: str, byte: int) -> int:
         if self._valid_utf8[key]:

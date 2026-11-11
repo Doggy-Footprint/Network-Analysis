@@ -20,7 +20,7 @@ MAIN = 'from code_analyzer.cli import main; main()'
 CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
 TIERS = ('certain', 'resolved', 'all')
 LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
-DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts'}
+DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts'}
 FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
 FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
@@ -120,7 +120,67 @@ def _overlaps(a, b):
     return _same_key(a, b) and any(m == n for m in a['members'] for n in b['members'])
 
 
-def ref_delta(current, baseline):
+NOT_REQUESTED = {'status': 'skipped', 'reason': 'not_requested', 'pairs': []}
+
+
+def map_path_id(text, pairs):
+    """Replaces each renamed path found at a start-or-':' boundary and ending at end-or-'#'; single left-to-right scan."""
+    out, i = '', 0
+    while i < len(text):
+        for pair in pairs:
+            old, new = pair['from'], pair['to']
+            end = i + len(old)
+            if text.startswith(old, i) and (i == 0 or text[i - 1] == ':') and (end == len(text) or text[end] == '#'):
+                out, i = out + new, end
+                break
+        else:
+            out, i = out + text[i], i + 1
+    return out
+
+
+def remap_baseline(baseline, pairs):
+    """Copy of a baseline payload with renamed paths replaced in the locations the spec lists; candidate ids stay."""
+    data = json.loads(json.dumps(baseline))
+    m = lambda value: map_path_id(value, pairs) if isinstance(value, str) else value
+    network = data['dependency_network']
+    if 'file_ids' in network:
+        network['file_ids'] = [m(v) for v in network['file_ids']]
+    for scheme in network['package_dependencies']:
+        for row in network['package_dependencies'][scheme]:
+            row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
+    network['package_metrics'] = {scheme: {m(k): v for k, v in rows.items()} for scheme, rows in network['package_metrics'].items()}
+    for item in data['candidates']:
+        if 'target' in item:
+            item['target'] = m(item['target'])
+        structure = item.get('structure')
+        if isinstance(structure, dict) and item['kind'] not in ('rule_violation',):
+            if item['kind'] in CYCLE_KINDS:
+                structure['members'] = [m(v) for v in structure['members']]
+            else:
+                for key in structure:
+                    structure[key] = m(structure[key])
+        evidence = item.get('evidence')
+        if isinstance(evidence, list):
+            for index, element in enumerate(evidence):
+                if isinstance(element, dict):
+                    for key in ('from_id', 'to_id', 'node_id'):
+                        if key in element:
+                            element[key] = m(element[key])
+                elif isinstance(element, list):
+                    evidence[index] = [m(v) for v in element]
+    return data
+
+
+def _violation_key(v):
+    s = v['structure']
+    first = v['evidence'][0] if v.get('evidence') else {}
+    return (s['rule_type'], s['from_layer'], s.get('to_layer'), s.get('to_external'), v['target'], first.get('to_id'))
+
+
+def ref_delta(current, baseline, renames=None):
+    pairs = [] if renames is None else renames['pairs']
+    if pairs:
+        baseline = remap_baseline(baseline, pairs)
     cur, base = _cycles(current), _cycles(baseline)
     new_cycles, grown_cycles = [], []
     for c in cur:
@@ -141,11 +201,11 @@ def ref_delta(current, baseline):
 
     def violations(data):
         return [c for c in data['candidates'] if c['kind'] == 'rule_violation']
-    base_ids = [v['id'] for v in violations(baseline)]
-    cur_ids = [v['id'] for v in violations(current)]
+    base_keys = [_violation_key(v) for v in violations(baseline)]
+    cur_keys = [_violation_key(v) for v in violations(current)]
     new_violations = []
     for v in violations(current):
-        if v['id'] in base_ids:
+        if _violation_key(v) in base_keys:
             continue
         s = v['structure']
         item = {'candidate_id': v['id'], 'rule_type': s['rule_type'], 'from_layer': s['from_layer'], 'target': v['target']}
@@ -191,13 +251,13 @@ def ref_delta(current, baseline):
              'new_package_dependencies': new_pd, 'instability_changes': changes}
     from tests.delta_candidates_support import ref_general
     general = ref_general(current, baseline)
-    return {'policy': 'delta.v2',
+    return {'policy': 'delta.v3', 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
             'baseline': {'file_count': baseline['snapshot']['file_count'],
                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
             'rules_changed': changed, **lists,
             'new_candidates': general['new_candidates'], 'strengthened_candidates': general['strengthened_candidates'],
             'resolved': {'cycles': resolved_cycles,
-                         'violations': sum(1 for i in base_ids if i not in cur_ids),
+                         'violations': sum(1 for k in base_keys if k not in cur_keys),
                          'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
             'counts': {**{name: len(items) for name, items in lists.items()},
                        'new_candidates': len(general['new_candidates']),
@@ -210,6 +270,10 @@ def ref_regressions(delta, fail_on):
         names.update(('cycle', 'violation') if name == 'any' else (name,))
     hit = {'cycle': bool(delta['new_cycles'] or delta['grown_cycles']), 'violation': bool(delta['new_violations'])}
     return [name for name in ('cycle', 'violation') if name in names and hit[name]]
+
+
+def without_renames(delta):
+    return {k: v for k, v in delta.items() if k != 'renames'}
 
 
 def make_delta(**lists):
@@ -279,6 +343,8 @@ def without_digest(coverage):
 
 def base_form_bytes(data):
     obj = without_doc_references(json.loads(data))
+    obj.get('snapshot', {}).pop('git_commit', None)
+    obj.get('snapshot', {}).pop('git_commit_reason', None)
     obj['dependency_network'].pop('package_dependencies', None)
     obj['dependency_network']['structure_policy'] = 'structure.v1'   # base hashes predate the structure.v2 bump (build scheme)
     obj.get('coverage', {}).get('structure', {})['policy'] = 'structure.v1'

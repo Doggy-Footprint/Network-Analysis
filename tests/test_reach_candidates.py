@@ -686,6 +686,8 @@ def delta_v1_form(delta):
     """The delta without the fields added by delta.v2, so the base-commit hash still applies."""
     result = copy.deepcopy(delta)
     result['policy'] = 'delta.v1'
+    assert set(result['renames']) == {'status', 'reason', 'pairs'}
+    del result['renames']
     for name in ('new_candidates', 'strengthened_candidates'):
         del result[name]
         del result['counts'][name]
@@ -699,7 +701,7 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     first = pipe.directory / 'baseline.json'
     first.write_bytes(pipe.output('file'))
     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
-    assert payload['delta']['policy'] == 'delta.v2'
+    assert payload['delta']['policy'] == 'delta.v3'
     assert payload['delta']['new_candidates'] == [] and payload['delta']['strengthened_candidates'] == []
     assert payload['delta']['resolved']['candidates'] == 0
     assert canonical_sha(delta_v1_form(payload['delta'])) == expected['delta']

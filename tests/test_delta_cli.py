@@ -51,8 +51,14 @@ def written(tmp_path, directory='out'):
     return json.loads((tmp_path / directory / 'b.json').read_text(encoding='utf-8'))
 
 
+RENAMES_WARNING_PREFIX = '[!] Warning: renames not detected ('
+
+
 def error_lines(done):
-    return [line for line in done.stderr.splitlines() if line.startswith('[!]')]
+    lines = [line for line in done.stderr.splitlines() if line.startswith('[!]')]
+    warnings = [line for line in lines if line.startswith(RENAMES_WARNING_PREFIX)]
+    assert len(warnings) <= 1
+    return [line for line in lines if line not in warnings]
 
 
 def summary_for(delta):
@@ -60,7 +66,7 @@ def summary_for(delta):
 
 
 def stdout_summary(done):
-    return [line for line in done.stdout.splitlines() if line.startswith('[Δ]')]
+    return [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
 
 
 def regression_line(delta, names):
@@ -71,7 +77,8 @@ def regression_line(delta, names):
 def assert_matches_reference(after, baseline_path):
     base = json.loads(baseline_path.read_text(encoding='utf-8'))
     body = {k: v for k, v in after.items() if k != 'delta'}
-    assert after['delta'] == wire(ref_delta(body, base))
+    assert set(after['delta']['renames']) == {'status', 'reason', 'pairs'}
+    assert after['delta'] == wire(ref_delta(body, base, after['delta']['renames']))
     return after['delta']
 
 
@@ -177,7 +184,7 @@ def test_V07_C15_baseline_and_bottlenecks_share_a_path(tmp_path, baselines):
     after = written(tmp_path)
     assert shared.read_bytes() != original
     assert after['delta']['counts']['new_package_dependencies'] == 1
-    assert after['delta'] == wire(ref_delta({k: v for k, v in after.items() if k != 'delta'}, json.loads(original)))
+    assert after['delta'] == wire(ref_delta({k: v for k, v in after.items() if k != 'delta'}, json.loads(original), after['delta']['renames']))
 
 
 def test_V07_C22_both_regressions_name_both(tmp_path, baselines):

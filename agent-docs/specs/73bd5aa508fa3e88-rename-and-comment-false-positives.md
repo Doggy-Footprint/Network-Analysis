@@ -1,5 +1,5 @@
 ---
-version: 1
+version: 6
 run_id: 73bd5aa508fa3e88
 status: active
 base_commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
@@ -21,7 +21,7 @@ Out of scope: 포맷 변경 오탐(ghostfolio NC2), import 경로가 길어져 �
 
 # Paths
 Implementation: bottlenecks/delta.py, bottlenecks/renames.py, bottlenecks/core.py, bottlenecks/__init__.py, code_analyzer/cli.py, language_analyzers/kotlin/analyzer.py, language_analyzers/core/positions.py
-Tests: tests/test_rename_delta.py, tests/test_kotlin_comment_scan.py, tests/rename_delta_support.py, tests/rename_comment_evidence/, 그리고 기존 tests/ file(조정 허용 범위: `"delta.v2"` 기대값을 `"delta.v3"`로; delta key 집합에 `renames` 추가; `snapshot` key 집합에 `git_commit`·`git_commit_reason` 추가; 기존 기준 구현 `tests/delta_support.py` `ref_delta`가 `renames` 인자 없이 호출될 때 `renames: {"status": "skipped", "reason": "not_requested", "pairs": []}`를 내도록 확장; bottleneck JSON이나 delta 전체를 hash·byte로 고정한 characterization은 비교 전에 위 새 key를 제거하고 `policy`를 이전 값으로 되돌린 뒤 비교하며 새 key는 같은 test에서 별도로 단언; `--baseline` CLI test의 stderr 기대값에 `[!] Warning: renames not detected (<reason>)` 한 줄 허용; Kotlin 분석 결과를 고정한 기존 기대값에서 근거가 주석 안의 이름 출현뿐인 edge만 제거. 다른 assertion 약화 금지. 모든 변경은 `tests/rename_comment_evidence/existing-tests.diff`에 기록)
+Tests: tests/test_rename_delta.py, tests/test_kotlin_comment_scan.py, tests/rename_delta_support.py, tests/rename_comment_evidence/, 그리고 기존 tests/ file(조정 허용 범위: `"delta.v2"` 기대값을 `"delta.v3"`로; delta key 집합에 `renames` 추가; `snapshot` key 집합에 `git_commit`·`git_commit_reason` 추가; 기존 기준 구현 `tests/delta_support.py` `ref_delta`가 `renames` 인자 없이 호출될 때 `renames: {"status": "skipped", "reason": "not_requested", "pairs": []}`를 내도록 확장; bottleneck JSON이나 delta 전체를 hash·byte로 고정한 characterization은 비교 전에 위 새 key를 제거하고 `policy`를 이전 값으로 되돌린 뒤 비교하며 새 key는 같은 test에서 별도로 단언; `--baseline` CLI test의 stderr 기대값에 `[!] Warning: renames not detected (<reason>)` 한 줄, stdout 기대값에 `[Δ] Renames applied: N` 한 줄 허용; Kotlin 분석 결과를 고정한 기존 기대값에서 근거가 주석 안의 이름 출현뿐인 edge만 제거. 다른 assertion 약화 금지. 모든 변경은 `tests/rename_comment_evidence/existing-tests.diff`에 기록)
 Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with pytest-cov python -m pytest -q -p no:cacheprovider --cov=bottlenecks.delta --cov=bottlenecks.renames --cov-branch --cov-report=term-missing --cov-fail-under=90 --deselect 'tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages' --deselect 'tests/test_doc_references.py::test_V8_base_choice_cli_output_equals_base_after_removing_new_keys' --deselect 'tests/test_file_analysis_cli.py::test_V01_direct_builder_defaults_characterization' --deselect 'tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical' --deselect 'tests/test_signal_defects_round4.py::test_V4_B_data_object' --deselect 'tests/test_report_modal.py::test_V04_graph_tab_active_modal_selects_and_centres_node' --deselect 'tests/test_report_size_format.py::test_V01_fixture_details_equal_base_details'
 Review evidence: R1 — eval 재측정 절차(Traceability Q06 참조), 산출물 `~/toy-projects/network-analysis-eval/inject/<repo>/score-fp-fix.txt` 와 main이 작성하는 비교표. R2 — git 호출 점검: `bottlenecks/renames.py`의 모든 subprocess 호출이 인자 list이고 `shell=True`가 없으며 diff 계열 호출에 `--no-ext-diff --no-textconv`가 있음을 grep으로 확인.
 Fuzzing: main이 scratchpad에 작성한 stdlib harness, seed 20261111. 대상 `compute_delta`. 생성: 합성 file granularity payload(파일 2~8개, 일반 후보 8종, 순환·package 순환, 위반, NestJS형 `pkg:nestjs:<path>#M` package id와 의존·metrics). oracle property — P1(metamorphic) payload `a`의 파일 무작위 부분집합을 새 경로로 바꿔 모든 경로 파생 id를 일관되게 치환한 `b`를 만들고 그 map을 `renames`로 주면 `compute_delta(b, a, renames)`의 7개 목록이 모두 비고 resolved 4개 값이 모두 0; P2 `renames` 없이 호출한 결과에서 `policy`·`renames`를 제외하면 base_commit의 `compute_delta` 결과와 같다(differential, base_commit 모듈을 별도 경로에서 import); P3 `renames` pairs가 비어 있으면 P2와 같은 결과. 5,000 입력, 예외 0.
@@ -38,12 +38,12 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 # Functional Requirements
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
-| F01 | file granularity 분석은 `snapshot.git_commit`에 project root의 HEAD commit(40자 hex)을 기록한다. 단 tracked file 수정·staged 변경·ignore되지 않은 untracked file이 하나라도 있으면(이번 실행의 출력 file과 `--baseline` file은 제외) `git_commit: null`, `git_commit_reason: "dirty"`. git 저장소가 아니면 `"not_a_git_repository"`, git 실행 file이 없으면 `"git_unavailable"`, 그 밖의 git 실패는 `"git_failed"`. 기록되면 `git_commit_reason: null`. | must | I1, A02 |
+| F01 | file granularity 분석은 `snapshot.git_commit`에 project root의 HEAD commit(40자 hex)을 기록한다. 단 tracked file 수정·staged 변경·ignore되지 않은 untracked file이 하나라도 있으면(이번 실행의 출력: `-o` HTML, assets 디렉터리, `--bottlenecks` file, `<out>.json`, `<out>.details.json`, 그리고 `--baseline` file은 제외) `git_commit: null`, `git_commit_reason: "dirty"`. git 저장소가 아니면 `"not_a_git_repository"`, git 실행 file이 없으면 `"git_unavailable"`, 그 밖의 git 실패는 `"git_failed"`. 기록되면 `git_commit_reason: null`. | must | I1, A02 |
 | F02 | `--baseline`이 주어지고 baseline의 `snapshot.git_commit`이 문자열이면, 그 commit의 tree와 현재 작업 트리(tracked 수정, staged 변경, ignore되지 않은 untracked file 포함) 사이의 이름 변경을 git 자체의 rename 판정(기본 유사도 50% 이상, git이 정하는 일대일 대응)으로 구해 `pairs`(`from` 오름차순, `similarity`는 git이 보고하는 정수 %)로 낸다. 결과 status `applied`(pairs가 비어도 applied). | must | I1, 사용자 선택 1-A |
 | F03 | 이름 변경 판정은 저장소의 index, object database, refs, 작업 트리, config를 바꾸지 않는다. | must | A04 |
 | F04 | 판정할 수 없으면 status `skipped`와 reason을 내고 delta는 매핑 없이 계산한다: baseline에 `git_commit` key가 없거나 null → `baseline_without_commit`; project root가 git 저장소가 아님 → `not_a_git_repository`; git 실행 file 없음 → `git_unavailable`; commit이 저장소에 없음 → `commit_not_found`; 그 밖의 git 실패 → `git_failed`. 어떤 경우에도 예외로 끝나지 않고 CLI 종료 코드는 판정 실패 때문에 바뀌지 않는다. | must | I4 |
-| F05 | 비교 전에 baseline 쪽의 모든 id 문자열에서, 이름이 바뀐 파일 경로 `old`가 "문자열 시작 또는 `:` 바로 뒤"에서 시작해 "문자열 끝 또는 `#` 바로 앞"에서 끝나는 위치에 있으면 `new`로 바꾼다. 적용 대상: `dependency_network.file_ids`, 후보 `target`, 순환 `structure.members`, evidence의 `from_id`·`to_id`·`node_id`, package 순환 evidence row의 package id, `package_dependencies`의 `from_id`·`to_id`, `package_metrics`의 key, 위반 후보의 `target`·evidence. 그 밖의 id(`pkg:dir:`, `pkg:python:`, `pkg:kotlin:`, `pkg:gradle:` 등 경로가 위 형태로 들어 있지 않은 것)는 그대로 둔다. | must | I1 |
-| F06 | 매핑 후 비교 규칙은 delta.v2와 같다. 단 규칙 위반은 candidate id 대신 (`rule_type`, `from_layer`, `to_layer` 또는 `to_external`, `target`, 첫 evidence의 `to_id`) 동일성으로 대응시킨다. 이름 변경이 없으면 결과의 기존 key들은 delta.v2 결과와 같다. | must | I1, I4 |
+| F05 | 비교 전에 baseline 쪽의 모든 id 문자열에서, 이름이 바뀐 파일 경로 `old`가 "문자열 시작 또는 `:` 바로 뒤"에서 시작해 "문자열 끝 또는 `#` 바로 앞"에서 끝나는 위치에 있으면 `new`로 바꾼다. 적용 대상: `dependency_network.file_ids`, 후보 `target`, 일반 후보(순환·위반 외) `structure` 안의 문자열 값(`unstable_dependency`의 `from_package`·`to_package` 등), 순환 `structure.members`, evidence의 `from_id`·`to_id`·`node_id`, package 순환 evidence row의 package id, `package_dependencies`의 `from_id`·`to_id`, `package_metrics`의 key, 위반 후보의 `target`·evidence. 그 밖의 id(`pkg:dir:`, `pkg:python:`, `pkg:kotlin:`, `pkg:gradle:` 등 경로가 위 형태로 들어 있지 않은 것)는 그대로 둔다. | must | I1 |
+| F06 | 매핑 후 비교 규칙은 delta.v2와 같다. 단 규칙 위반은 candidate id 대신 (`rule_type`, `from_layer`, `to_layer` 또는 `to_external`, `target`, 첫 evidence의 `to_id`) 동일성으로 대응시킨다. 셈 단위는 v2처럼 위반 candidate(서로 다른 id)다: `new_violations`는 내용 key가 baseline에 없는 현재 위반 candidate마다 한 항목, `resolved.violations`는 내용 key가 현재에 없는 baseline 위반 candidate 수. 이름 변경이 없으면 결과의 기존 key들은 delta.v2 결과와 같다. | must | I1, I4 |
 | F07 | delta 출력에 `renames` 객체(F02/F04 형태)를 추가하고 `policy`를 `"delta.v3"`로 한다. `counts`의 key 집합은 그대로다. | must | I4 |
 | F08 | CLI는 F04 skipped(reason ≠ `not_requested`) 때 stderr에 `[!] Warning: renames not detected (<reason>)` 한 줄, pairs가 1개 이상이면 stdout에 `[Δ] Renames applied: N` 한 줄을 출력한다. 기존 `[Δ] Delta vs baseline: …` 줄은 그대로다. | should | I4 |
 | F09 | Kotlin 분석기의 이름 텍스트 스캔(declaration header의 TYPE_USES 후보, 본문의 READS/WRITES 후보)은 주석 안의 텍스트를 보지 않는다: `//` 줄 주석, `/* */` block 주석, `/** */` KDoc(링크 `[Name]` 포함), tree-sitter-kotlin이 주석으로 파싱하는 중첩 block 주석. 주석 밖 code token의 매칭, edge의 relation·resolution·line 번호는 바뀌지 않는다. 문자열 literal 안의 텍스트는 지금처럼 스캔한다. | must | I2, 사용자 선택 2 |
@@ -109,13 +109,13 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 | id | parent requirement/Case ids | variant and target surface | test layer and selection policy | ISO/IEC/IEEE 29119-4 technique | coverage items | coverage target | observation and expected result | evidence procedure |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | V01 | F01, C07, C09, C10 | `repository_commit` 결과와 CLI가 쓴 bottleneck JSON `snapshot` | unit + integration(CLI subprocess), 임시 git 저장소 | equivalence partitioning | EP1 clean repo, EP2 tracked 수정, EP3 staged 변경, EP4 untracked file, EP5 출력 file만 project 안, EP6 git 저장소 아님, EP7 git 없음 | 100% | 각 분할의 `git_commit`·`git_commit_reason`이 F01과 일치 | Test command |
-| V02 | F02, C01, C02, C04, C13 | `detect_renames` 결과 pairs | unit, 임시 git 저장소 | scenario testing | S1 `git mv` 순수 변경, S2 변경+편집, S3 untracked 새 file, S4 무관한 삭제+추가, S5 이름 변경 2쌍(`from` 정렬 확인) | 100% | pairs가 같은 상태에서 `git diff -M --name-status`(임시 index로 untracked 포함)가 보고하는 R 쌍과 같음 | Test command |
+| V02 | F02, C01, C02, C04, C13 | `detect_renames` 결과 pairs | unit, 임시 git 저장소 | scenario testing | S1 `git mv` 순수 변경, S2 변경+편집, S3 untracked 새 file, S4 무관한 삭제+추가, S5 이름 변경 2쌍(`from` 정렬 확인), S6 baseline commit ≠ HEAD(baseline 뒤 이름 변경을 commit한 clean tree, 그리고 그 위에 commit하지 않은 이름 변경 하나 더) | 100% | pairs가 같은 상태에서 `git diff -M --name-status`(임시 index로 untracked 포함)가 보고하는 R 쌍과 같음 | Test command |
 | V03 | F02, C03 | 유사도 경계 | unit | boundary value analysis (2-value) | B1 50%, B2 49% | 100% | 50%는 pair, 49%는 pair 없음; 유사도 값은 테스트가 git으로 확인 | Test command |
 | V04 | F03, C11 | 저장소 상태 | unit | equivalence partitioning | EP1 clean + `git mv`, EP2 untracked 새 file, EP3 commit_not_found 경로 | 100% | C11의 다섯 관찰값이 전후 같음 | Test command |
-| V05 | F04, C06, C08, C09 | `detect_renames`·`compute_delta`의 skipped 결과 | unit | equivalence partitioning | EP1 key 없음, EP2 null, EP3 git 저장소 아님, EP4 git 없음, EP5 commit 없음, EP6 git 비정상 종료(손상된 `.git/HEAD` 등) | 100% | status `skipped`, reason이 F04 표와 일치, 예외 없음 | Test command |
-| V06 | F05, F06, C01, C05, C12 | `compute_delta` 결과 7개 목록·resolved | unit, 합성 payload | classification tree | 분류 A(id 형태): A1 `file:<p>`, A2 `<scheme>:<p>#<rest>`, A3 경로가 다른 위치에 부분 문자열로만 있음(`file:x/<p>`처럼 경계 불일치), A4 경로 비파생 package id; 분류 B(위치): B1 후보 target, B2 순환 members, B3 evidence from/to/node_id, B4 package 의존, B5 package_metrics key, B6 위반 target·evidence, B7 file_ids | A·B 각 class 1회 이상(each choice), 13 items 100% | A1·A2는 매핑되어 해당 위치에서 새 항목 없음; A3·A4는 매핑되지 않음 | Test command |
+| V05 | F04, C06, C08, C09 | `detect_renames`·`compute_delta`의 skipped 결과 | unit | equivalence partitioning | EP1 key 없음, EP2 null, EP3 git 저장소 아님, EP4 git 없음, EP5 commit 없음, EP6 git 비정상 종료(문법이 깨진 `.git/config`), EP7 hex가 아닌 commit 문자열(`HEAD`, `--output=x`) → `commit_not_found`이고 project 안에 새 file 없음 | 100% | status `skipped`, reason이 F04 표와 일치, 예외 없음 | Test command |
+| V06 | F05, F06, C01, C05, C12 | `compute_delta` 결과 7개 목록·resolved | unit, 합성 payload | classification tree | 분류 A(id 형태): A1 `file:<p>`, A2 `<scheme>:<p>#<rest>`, A3 경로가 다른 위치에 부분 문자열로만 있음(`file:x/<p>`처럼 경계 불일치), A4 경로 비파생 package id; 분류 B(위치): B1 후보 target, B2 순환 members, B3 evidence from/to/node_id, B4 package 의존, B5 package_metrics key, B6 위반 target·evidence, B7 file_ids, B8 일반 후보 structure 문자열(`unstable_dependency` `to_package`), B9 package 순환 members·evidence row의 `pkg:nestjs:<p>#M` | A 4 class·B 9 class 각 1회 이상(each choice), 13 items 100% | A1·A2는 매핑되어 해당 위치에서 새 항목 없음; A3·A4는 매핑되지 않음 | Test command |
 | V07 | F06, F07, C06 | 이름 변경 없음 / pairs 빈 applied | unit | metamorphic testing | M1 renames=None, M2 applied+빈 pairs, M3 skipped 각 reason | 100% | 기존 key가 기준 구현(`ref_delta` v2 규칙) 결과와 같고 `policy = delta.v3`, `renames` 형태가 F07과 같음 | Test command |
-| V08 | F06 | 위반 대응 | unit | decision table | D1 다섯 필드 모두 같음(이름 변경으로 같아짐 포함) → 새 위반 아님, D2 `target`만 다름, D3 `to_id`만 다름, D4 `to_external` 위반 동일 | 100% | D1 새 위반 0, D2·D3 새 위반 1, D4 0 | Test command |
+| V08 | F06 | 위반 대응 | unit | decision table | D1 다섯 필드 모두 같음(이름 변경으로 같아짐 포함) → 새 위반 아님, D2 `target`만 다름, D3 `to_id`만 다름, D4 `to_external` 위반 동일, D5 `rule_type`만 다름, D6 `from_layer`만 다름, D7 `to_layer`만 다름, D8 `to_external`만 다름(같은 target, `requests` vs `boto3`) | 100% | D1 새 위반 0, D2·D3 새 위반 1, D4 0, D5~D8 각 새 위반 1 | Test command |
 | V09 | F08, C18 | CLI stdout/stderr, 종료 코드 | integration(subprocess) | equivalence partitioning | EP1 applied pairs ≥ 1, EP2 applied pairs 0, EP3 skipped(baseline_without_commit), EP4 `--baseline` 없음 | 100% | EP1 `[Δ] Renames applied: N` 한 줄; EP2 둘 다 없음; EP3 stderr 경고 한 줄, 종료 코드 기존 규칙; EP4 둘 다 없음 | Test command |
 | V10 | C19 | `load_baseline` | unit | equivalence partitioning | EP1 문자열, EP2 null, EP3 key 없음, EP4 정수, EP5 list | 100% | EP1~3 통과, EP4·5 `BaselineError`에 `$.snapshot.git_commit` | Test command |
 | V11 | F09, C14, C15 | Kotlin edge 집합 | unit(KotlinAnalyzer를 임시 project에 실행) | equivalence partitioning | EP1 줄 주석, EP2 block 주석, EP3 KDoc 문장 단어, EP4 KDoc 링크 `[Name]`, EP5 주석 밖 READS, EP6 주석 밖 WRITES, EP7 header type 사용 | 100% | EP1~4 주석 추가 전후 edge 집합 같음; EP5~7 edge 존재, relation·line이 base_commit 분석과 같음 | Test command |
@@ -150,29 +150,63 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 | F07 | C06 | V07 | Test command |
 | F08 | C18 | V09 | Test command |
 | F09 | C14, C15, C16, C17 | V11, V12 | Test command |
-| F10 | — | V14 | R1: (1) `harness.py baseline <repo>` 4개, 각 `base/bottlenecks.json`의 `snapshot.git_commit`이 manifest commit과 같음 확인; (2) 기존 결과 `score.txt`를 `score-full.txt`로 보존; (3) `harness.py rescore <repo> --workers 4`; (4) `harness.py score <repo>` → `score-fp-fix.txt`; (5) main이 NC1~NC4 오탐과 칸별 recall을 본 실험 값과 표로 비교 |
+| F10 | — | V14 | R1: (1) `harness.py baseline <repo>` 4개, 각 `base/bottlenecks.json`의 `snapshot.git_commit`이 manifest commit과 같음 확인; (2) 기존 결과 `score.txt`를 `score-full.txt`로, 각 run의 `result.json`·`delta.json`과 `base/bottlenecks.json`을 `inject/<repo>/backup-full/`로 보존; (3) `python3 tests/rename_comment_evidence/r1_reanalyze.py <repo> --match --workers 4`(먼저 `--only-negative` pilot을 낮에, 전체는 사용자 상시 지시대로 밤에); (4) `harness.py score <repo>` → `score-fp-fix.txt`; (5) main이 NC1~NC4 오탐과 칸별 recall을 본 실험 값과 표로 비교 |
 | C19 | C19 | V10 | Test command |
 | Q01–Q07 | — | V13, V14, V15 | Fuzzing, R1, R2, Test command |
 
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 0 |
-| verifier invocations | 0 |
-| open finding ids | none |
+| correction batches used | 3 |
+| verifier invocations | 2 |
+| open finding ids | none (V14 pending R1/Q02 measurement) |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V01–V15 | 1 | none | pending | 미실행 | none |
+| V01 | 4 | tests/test_rename_delta.py V01_* (EP1–EP7, CLI C10) | accepted (verifier 1 v4, retained by verifier 2 v6) | M5 killed by V01_EP5 | rename_delta_support.py |
+| V02 | 6 | test_rename_delta.py V02_S1–S5, oracle `git diff --cached -M` on repo copy | accepted (verifier 2, v6) | M7 killed by V02_S3; M12 (diff HEAD) killed by V02_S6 | rename_delta_support.py |
+| V03 | 4 | V03_B1, V03_B2 | accepted (verifier 1 v4, retained by verifier 2 v6) | M11 killed by V03_B2; correction batch 2 fixed intermittent B2 failure (20/20 pass after) | none |
+| V04 | 4 | V04_EP1–EP3 (five observations) | accepted (verifier 1 v4, retained by verifier 2 v6) | M6 killed by V04_EP1/EP2 | rename_delta_support.py |
+| V05 | 6 | V05_EP1–EP6 (EP6 broken .git/config) | accepted (verifier 2, v6) | M15 (commit unvalidated) killed by EP7 | v3 EP6 example |
+| V06 | 6 | V06_A1–A4 × B1–B8, C05 | accepted (verifier 2, v6) | M1 killed by V06_A3; M3 killed by V06_A2_B8; M13 (package cycle unmapped) killed by B9 | delta_support.ref_delta (renames extension) |
+| V07 | 4 | V07_M1–M3 | accepted (verifier 1 v4, retained by verifier 2 v6) | none | ref_delta |
+| V08 | 6 | V08_D1–D4 | accepted (verifier 2, v6) | M4 killed by V08_D1; M14 (key subset) killed by D5–D8 | ref_delta; v4 F06 counting unit (also existing test_delta_integration Q03) |
+| V09 | 4 | V09_EP1(C18)–EP4 | accepted (verifier 1 v4, retained by verifier 2 v6) | M10 killed by V09_EP3 | none |
+| V10 | 4 | V10_EP1–EP5, C19 | accepted (verifier 1 v4, retained by verifier 2 v6) | none | none |
+| V11 | 4 | test_kotlin_comment_scan.py V11_* | accepted (verifier 1 v4, retained by verifier 2 v6) | none | none |
+| V12 | 4 | V12_G1–G7 (G1·G2·G3·G6·G7 rewritten in batch 1 to class members) | accepted (verifier 1 v4, retained by verifier 2 v6) | M8 killed by G7; M9 killed by G5 | none |
+| V13 | 4 | tests/rename_comment_evidence/fuzz/ result.json: 5000 inputs, 11581 pairs, P1·P2·P3 0, exceptions 0 | accepted (verifier 1 v4, retained by verifier 2 v6) | n/a | base_delta = 1bd6ebe bottlenecks/delta.py |
+| V14 | 4 | R2 grep done (1 subprocess.run, list args, no shell=True, diff has --no-ext-diff --no-textconv); Q01 0.22 s on ghostfolio copy, .git/index unchanged; Q02 implementer 1.02–1.08; R1 pending | pending | n/a | R1 after verifier |
+| V15 | 4 | Test command: 3916 passed (v6); delta.py 99%, renames.py 94% branch | accepted (verifier 1, v4); re-run green on v6 | n/a | existing-tests.diff incl. regenerated android golden (android_golden/README.md) |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
+| 1 | Test command: 15 failed / 3889 passed; coverage delta 99%, renames 92% | (a) V12 G1·G2·G3·G6·G7은 top-level `var total` 참조를 기대하나 base_commit 분석기도 top-level property node를 만들지 않음(같은 test를 base worktree에서 실행해 실패 확인) — test defect. (b) android-nowinandroid 고정 기대값(golden, Q04 bytes)이 주석 안 이름 edge를 포함 — 허용된 기존 기대값 조정. (c) `test_V12_Q03` resolved.violations 1 ≠ 1000: 내용이 같은 baseline 위반 1000개를 key 하나로 셈 — implementation defect(v4 F06 셈 단위) | (b) main이 재생성: 새 KotlinAnalyzer(원본) edge 2513 = base 1bd6ebe(주석 공백화 사본) edge 2513, 대칭차 0; golden은 a8a3012 worktree에 새 analyzer.py만 적용해 생성(기존 golden 재현 byte 일치 확인 후), Q04 bytes는 주석 효과 90675 byte 차감 → `tests/rename_comment_evidence/android_golden/` | (b) 해당 9개 test 통과; (a)(c) correction batch 1로 test-implementer·implementer에 전달 |
+| 2 | Test command: 1 failed / 3903 passed; `test_V03_B2_similarity_49_is_not_a_pair`가 git 판정 R049인데 detect가 similarity 100 쌍을 냄, `-n 0` 12회 반복 중 4회 실패 | 임시 index를 `shutil.copyfile`로 복사해 index file mtime이 새로워져 git racy-clean 검사가 꺼짐: 같은 초·같은 크기로 다시 쓴 file을 stat상 변경 없음으로 보고 옛 blob 유지 — implementation defect | correction batch 2: index 복사 시 timestamp 보존 | 20/20 V03 통과, Test command 3904 passed |
+| 3 | verifier 1 retry: VF1-1 V02 baseline commit = HEAD뿐이라 HEAD 대비 diff 결함을 못 거름; VF1-2 V06에 package 순환 nestjs id class 없음; VF1-3 V08이 rule_type·layer·to_external 차이를 안 봄 | evidence gap / spec 누락 | v6: V02 S6, V06 B9, V08 D5–D8, V05 EP7(advisory O7) 추가; test_delta_cli C15 비교에 `renames` 전달(O1) | B9 rows 변형이 file_ids 없는 v8 payload에 v9 row를 넣어 TypeError(base도 같음) → test defect 수정; Test command 3916 passed; M12–M15 전부 의도한 test에 잡힘 |
+| 4 | verifier 2 pass: V01–V13·V15 accepted, finding 0; V14 pending(Q02·Q06 미측정) | — | V14는 main 측정(R1 pilot 낮, 전체 밤)으로 닫음 | 진행 중 |
 
 # Version Log
 ## v1
 - 초안. Test command의 deselect 7개는 이전 spec(2afad1e5c96b32ff)과 같고, base_commit에서 이 묶음을 실행하면 17 failed·5 passed(-n 0); deselect 상태 suite는 3811 passed.
 - 원인 근거: 본 실험 NC1 delta(`inject/<repo>/runs/NC1-*/delta.json`)에서 이름이 바뀐 file이 `new_candidates`·`grown_cycles`로, ghostfolio NC1-1에서 `pkg:nestjs:…events-impl.module.ts#EventsModule` 관련 `new_package_dependencies` 46개; nowinandroid NC3-0의 새 READS edge `WorkManagerSyncManager → AnalyticsEvent.Param.value` 근거가 KDoc 줄 48의 단어 "value"(`report.details.json`).
+
+
+## v2
+- F05 적용 위치에 일반 후보 `structure` 문자열 값 추가, V06 분류 B8 추가. 근거: ghostfolio baseline의 `unstable_dependency` 중 259개가 framework scheme `pkg:nestjs:<path>#<Module>`를 `structure.to_package`에 담고, delta.v2 `_general`은 (kind, target, tier 제외 structure)로 대응하므로 target만 매핑하면 이름 변경 시 새 후보로 남는다. 브리프 항목(경로를 담은 NestJS id는 매핑) 범위 안의 계약 보완.
+
+## v3
+- test-implementer 이의 반영(계약 보완): F01 제외 출력 목록을 명시(구현이 제외하는 html, assets, bottlenecks, `<out>.json`, `<out>.details.json`, baseline). V05 EP6 예시를 `.git/config` 손상으로 교체: 손상된 `.git/HEAD`는 git이 'not a git repository'로 보고해 `git_failed`에 도달하지 않는다(test-implementer 보고). 기존 test 이름 `test_V02_violation_identity_is_the_candidate_id_not_the_file_pair`는 단언이 내용 대응에서도 성립해 그대로 둔다.
+
+## v4
+- F06 셈 단위 명시(위반 candidate 단위, v2와 같음). 근거: 기존 `test_V12_Q03_compute_delta_on_large_synthetic_input`은 내용이 같고 id가 다른 baseline 위반 1000개를 resolved 1000으로 기대하며, 내용 key 집합 차로 세면 1이 된다. 기존 관찰 동작 보존(I4).
+
+## v5
+- R1 (3) 교체: `harness.py rescore`는 저장된 `delta.json`을 재사용하고 분석기를 다시 돌리지 않는다(`scripts/eval/inject/harness.py` `cmd_rescore`는 `assess`·`assess_match`만 호출). harness 변경은 범위 밖이므로 harness 함수를 import해 diff 재적용·분석기 재실행·assess·assess_match를 하는 `tests/rename_comment_evidence/r1_reanalyze.py`로 대체. 분석기 재실행 비용은 local, 내용 판정 비용은 A08 그대로.
+
+## v6
+- verifier 1 (retry) 반영: V02 S6(baseline commit ≠ HEAD), V06 B9(package 순환 nestjs id; v2의 '14 items'는 A 4 + B 8 = 12 class를 잘못 센 값, 이제 13), V08 D5–D8(나머지 key 필드), V05 EP7(hex 아닌 commit 문자열, option 주입 방지 관찰). Paths 허용 범위에 stdout `[Δ] Renames applied` 줄 추가(F08이 정한 출력, test_delta_cli `stdout_summary`가 걸러냄). V01·V03·V04·V07·V09–V13·V15 v4 acceptance 유지: 변경이 test 추가뿐이고 기존 test·helper 동작을 바꾸지 않는다(ref_delta 변경 없음).
 
 # Retrospective

@@ -94,6 +94,8 @@ def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by
         return
     data = outputs_by_id(entry)
     obj = json.loads(data)
+    assert set(obj['snapshot']) >= {'git_commit', 'git_commit_reason'}
+    del obj['snapshot']['git_commit'], obj['snapshot']['git_commit_reason']
     obj['dependency_network']['structure_policy'] = 'structure.v1'
     obj['coverage']['structure']['policy'] = 'structure.v1'
     del obj['dependency_network']['package_dependencies']

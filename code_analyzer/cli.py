@@ -42,7 +42,7 @@ from language_analyzers.python.graph import PythonGraphAnalyzer
 from language_analyzers.kotlin import KotlinAnalyzer, KotlinParseCache
 from language_analyzers.typescript import TypeScriptAnalyzer
 from renderers.html import HTMLRenderer
-from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json, compute_delta, load_baseline, regressions
+from bottlenecks import BottleneckInputError, analyze_bottlenecks, bottlenecks_to_json, compute_delta, detect_renames, load_baseline, regressions
 
 FRAMEWORK_LABELS = {"fastapi": "FastAPI", "android": "Android", "sqlalchemy": "SQLAlchemy", "nestjs": "NestJS"}
 LANGUAGE_LABELS = {"kotlin": "Kotlin", "python": "Python", "typescript": "TypeScript/JavaScript"}
@@ -396,6 +396,8 @@ def main(
     repository_snapshot = None
     bottleneck_report = None
     outputs = _output_paths(project_path, args)
+    html_output = Path(args.output).resolve()
+    excluded_from_state = outputs + (html_output.with_suffix(".json"), html_output.with_name(f"{html_output.stem}.details.json")) + ((Path(args.baseline).resolve(),) if args.baseline else ())
     analysis_config = None
     try:
         edge_weights = load_edge_weights(args.edge_weights)
@@ -452,10 +454,13 @@ def main(
             }
         elif not isinstance(arch.stats["analysis"], Mapping) or arch.stats["analysis"].get("ambiguity_policy") != AMBIGUITY_POLICY:
             raise BottleneckInputError("missing or unsupported analysis ambiguity_policy")
-        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis, rules=architecture_rules)
+        bottleneck_report = analyze_bottlenecks(repository_snapshot, arch, edge_weights, analysis=final_analysis, rules=architecture_rules,
+                                              exclude_paths=excluded_from_state)
         delta = None
         if baseline is not None:
-            delta = compute_delta(json.loads(bottlenecks_to_json(bottleneck_report)), baseline)
+            baseline_commit = baseline["snapshot"].get("git_commit")
+            renames = detect_renames(project_path, baseline_commit, exclude=excluded_from_state)
+            delta = compute_delta(json.loads(bottlenecks_to_json(bottleneck_report)), baseline, renames)
             bottleneck_report = dataclasses.replace(bottleneck_report, delta=delta)
         timing["metrics_candidates"] = time.perf_counter() - stage_started
     except (OSError, UnicodeError, ValueError, BottleneckInputError) as exc:
@@ -477,6 +482,10 @@ def main(
         print(f"[Δ] Delta vs baseline: new cycles {counts['new_cycles']}, grown cycles {counts['grown_cycles']}, new violations {counts['new_violations']}, "
               f"new package dependencies {counts['new_package_dependencies']}, instability changes {counts['instability_changes']}, "
               f"new candidates {counts['new_candidates']}, strengthened candidates {counts['strengthened_candidates']}")
+        if delta["renames"]["status"] == "skipped" and delta["renames"]["reason"] != "not_requested":
+            print(f"[!] Warning: renames not detected ({delta['renames']['reason']})", file=sys.stderr)
+        if delta["renames"]["pairs"]:
+            print(f"[Δ] Renames applied: {len(delta['renames']['pairs'])}")
         if delta["rules_changed"]:
             print("[!] Warning: architecture rules differ from the baseline", file=sys.stderr)
     print(f"[✓] Generated unified dependency bottleneck report: {output_html_path}")

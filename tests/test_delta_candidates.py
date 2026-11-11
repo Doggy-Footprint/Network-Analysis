@@ -302,10 +302,10 @@ def mixed_pair():
 
 
 def test_V04_policy_value_and_key_sets():
-    assert api().DELTA_POLICY == 'delta.v2'
+    assert api().DELTA_POLICY == 'delta.v3'
     cur, base = mixed_pair()
     result = run(cur, base)
-    assert result['policy'] == 'delta.v2'
+    assert result['policy'] == 'delta.v3'
     assert set(result) == DELTA_KEYS
     assert set(result['counts']) == {'new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes',
                                      'new_candidates', 'strengthened_candidates'}

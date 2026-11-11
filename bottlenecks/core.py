@@ -14,6 +14,7 @@ from language_analyzers.core.serialization import edge_to_dict
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
+from bottlenecks.renames import repository_commit
 
 
 class BottleneckInputError(ValueError): pass
@@ -261,7 +262,7 @@ def _intern_candidate_groups(candidates):
     return groups
 
 
-def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None) -> BottleneckReport:
+def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None, exclude_paths: Tuple[Path, ...] = ()) -> BottleneckReport:
     try:
         _weights(weights)
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
@@ -309,7 +310,10 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        snapshot_record = {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}
+        if is_file:
+            snapshot_record["git_commit"], snapshot_record["git_commit_reason"] = repository_commit(Path(snapshot.root), exclude=exclude_paths)
+        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", snapshot_record, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 
