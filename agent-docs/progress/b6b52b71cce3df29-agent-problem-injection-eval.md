@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 9de10d6975d374ad674c782fd0bccba11eee80c0
+commit: 93f6ea5fba1d83e2342e91948be5238d551badf9
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -395,3 +395,19 @@ commit: 9de10d6975d374ad674c782fd0bccba11eee80c0
 > <status>completed</status>
 > <summary>Background command "L=~/toy-projects/network-analysis-eval/inject/r1-controls-v7.log; for r in CTFd flask-admin ghostfolio nowinandroid; do echo "== $r" ; python3 tests/rename_comment_evidence/r1_reanalyze.py $r --only-negative --workers 4; done &gt; $L 2&gt;&amp;1; echo rc=$?; grep -c '^\["' $L" completed (exit code 0)</summary>
 > </task-notification>
+
+#### 44 — 2026-11-11T02:44:31Z
+
+> I'll tell you back when current other job ends
+
+#### 45 — 2026-11-11T02:45:24Z
+
+> Finish verifier round first - memory cap is the bottleneck here
+
+#### 46 — 2026-11-11T02:45:48Z
+
+> And use Korean plz
+
+#### 47 — 2026-11-11T02:45:52Z
+
+> When you report to me

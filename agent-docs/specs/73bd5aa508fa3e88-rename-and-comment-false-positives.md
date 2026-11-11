@@ -3,7 +3,7 @@ version: 7
 run_id: 73bd5aa508fa3e88
 status: active
 base_commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
-max_verifier_invocations: 2
+max_verifier_invocations: 3
 commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
 ---
 
@@ -137,6 +137,8 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 | A08 | 재측정은 전체 608건 rescore, 내용 판정 비용 ≤ $5 예상 | 본 실험 match 실측 건당 $0.0104 × 214건; 누적 $42.66, 상한 $100 | brief v1 — approved |
 | A09 | 위반 대응을 내용 기준으로 바꿈 | 위반 id는 경로를 포함한 식별자의 hash라 이름 변경 시 달라짐(`bottlenecks/core.py` `_candidate`) | brief v1 — approved |
 | A11 | 이름이 바뀐 `.py` file의 Python symbol id(`py:<module>#…`)도 새 module 이름으로 매핑 | controls pilot(r1_reanalyze `--only-negative`) 뒤 NC1 FP 4/16 중 4건이 `unresolved_boundary` evidence `node_id` `py:<module>#…` 차이; 실제 baseline의 `py:` id 129개 모두 module = root 기준 경로 점 표기. 불확실: src layout처럼 module이 경로와 다르면 매핑 안 됨(누락, 오매핑 아님) | user answer (re-brief v7: 매핑 추가) |
+| A12 | verifier 상한 2 → 3 (v7 변경분 V06·V11·V12·V13만 재검토) | verifier 2 pass 뒤 v7 구현 변경으로 4개 obligation acceptance invalidated | user answer (2026-11-11) |
+| A13 | R1 전체 재측정 시작 시점 | 사용자가 '지금 시작'을 고른 뒤 다른 작업이 끝나면 알려주겠다고 보류 | user answer (대기) |
 | A10 | 역할 model: implementer·test-implementer·test-verifier 모두 저장소 기본(sonnet) | 변경이 두 module에 국한 | brief v1 — approved |
 
 # Traceability
@@ -159,8 +161,8 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 | item | value |
 | --- | --- |
 | correction batches used | 4 |
-| verifier invocations | 2 |
-| open finding ids | none (V06·V13 invalidated by v7, verifier budget used; V14 pending R1) |
+| verifier invocations | 3 |
+| open finding ids | none (V14 pending full R1) |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
@@ -170,14 +172,14 @@ Audit state (one entry per obligation; retain prior decisions in the execution l
 | V03 | 4 | V03_B1, V03_B2 | accepted (verifier 1 v4, retained by verifier 2 v6) | M11 killed by V03_B2; correction batch 2 fixed intermittent B2 failure (20/20 pass after) | none |
 | V04 | 4 | V04_EP1–EP3 (five observations) | accepted (verifier 1 v4, retained by verifier 2 v6) | M6 killed by V04_EP1/EP2 | rename_delta_support.py |
 | V05 | 6 | V05_EP1–EP6 (EP6 broken .git/config) | accepted (verifier 2, v6) | M15 (commit unvalidated) killed by EP7 | v3 EP6 example |
-| V06 | 7 | V06_A1–A4 × B1–B8, C05 | invalidated (v7 adds A5·A6) | M1 killed by V06_A3; M3 killed by V06_A2_B8; M13 (package cycle unmapped) killed by B9 | delta_support.ref_delta (renames extension) |
+| V06 | 7 | V06_A1–A6 × B1–B9, C05 | accepted (verifier 3, v7) | M1 killed by V06_A3; M3 killed by V06_A2_B8; M13 (package cycle unmapped) killed by B9 | delta_support.ref_delta (renames extension) |
 | V07 | 4 | V07_M1–M3 | accepted (verifier 1 v4, retained by verifier 2 v6) | none | ref_delta |
 | V08 | 6 | V08_D1–D4 | accepted (verifier 2, v6) | M4 killed by V08_D1; M14 (key subset) killed by D5–D8 | ref_delta; v4 F06 counting unit (also existing test_delta_integration Q03) |
 | V09 | 4 | V09_EP1(C18)–EP4 | accepted (verifier 1 v4, retained by verifier 2 v6) | M10 killed by V09_EP3 | none |
 | V10 | 4 | V10_EP1–EP5, C19 | accepted (verifier 1 v4, retained by verifier 2 v6) | none | none |
-| V11 | 7 | test_kotlin_comment_scan.py V11_* | invalidated (implementation changed in batch 4; tests green, M19·M20 killed) | M19, M20 killed | none |
-| V12 | 7 | V12_G1–G7 (G1·G2·G3·G6·G7 rewritten in batch 1 to class members) | invalidated (implementation changed in batch 4; tests green) | M8 killed by G7; M9 killed by G5; on batch-4 code M8b killed by G7, M9b killed by G5 | none |
-| V13 | 7 | tests/rename_comment_evidence/fuzz/ result.json (v7 harness with `py:` ids, `a/` dir): 5000 inputs, 11591 pairs, P1·P2·P3 0, exceptions 0 | invalidated (harness extended in v7; rerun 0 violations) | n/a | base_delta = 1bd6ebe bottlenecks/delta.py |
+| V11 | 7 | test_kotlin_comment_scan.py V11_* | accepted (verifier 3, v7) | M19, M20 killed | none |
+| V12 | 7 | V12_G1–G7 (G1·G2·G3·G6·G7 rewritten in batch 1 to class members) | accepted (verifier 3, v7) | M8 killed by G7; M9 killed by G5; on batch-4 code M8b killed by G7, M9b killed by G5 | none |
+| V13 | 7 | tests/rename_comment_evidence/fuzz/ result.json (v7 harness with `py:` ids, `a/` dir): 5000 inputs, 11591 pairs, P1·P2·P3 0, exceptions 0 | accepted (verifier 3, v7) | n/a | base_delta = 1bd6ebe bottlenecks/delta.py |
 | V14 | 4 | R2 grep done (1 subprocess.run, list args, no shell=True, diff has --no-ext-diff --no-textconv); Q01 0.22 s on ghostfolio copy, .git/index unchanged; Q02 implementer 1.02–1.08; R1 pending | pending | n/a | R1 after verifier |
 | V15 | 4 | Test command: 3916 passed (v6); delta.py 99%, renames.py 94% branch | accepted (verifier 1, v4); re-run green on v6 | n/a | existing-tests.diff incl. regenerated android golden (android_golden/README.md) |
 
@@ -191,6 +193,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 5 | Q02 main 측정 1.104/1.122/1.147 > 1.10 | 주석 공백화 사본으로 두 번째 NamePositions를 만드는 비용 | correction batch 4: 주석 구간 bisect로 occurrence 필터, 두 번째 index 제거; edge 3156 동일(implementer), base 주석 공백화 사본과 2513 edge 동일(main) | Q02 1.000/1.039/1.031 (`tests/rename_comment_evidence/q02_result.txt`) |
 | 6 | NC1 4/16 중 4건이 `py:<module>#…` evidence 차이 | F05가 Python symbol id를 다루지 않음(spec gap) | v7 re-brief 승인, A5·A6 test, fuzz에 `py:` node id 생성 추가 | Test command 3923 passed; fuzz 5000 입력·11591 쌍·위반 0; M16–M18 의도한 test에 잡힘 |
 | 7 | v7 controls pilot(`r1_reanalyze.py --only-negative`, 64 controls) | — | — | NC1 분석기 FP 2/16(flask-admin NC1-0·NC1-1 `large_node` token_count, 범위 밖), nowinandroid NC3 0/4, NC2 1/16(ghostfolio NC2-0 `large_node`, 본 실험과 같음), NC4 0/14; Kotlin 새 구현에 M8b·M9b·M19·M20 모두 V11·V12에 잡힘 |
+| 8 | verifier 3 pass: V06·V11·V12·V13 재수용, 나머지 유지, finding 0; 권고 O1(`.py`↔비-`.py` 쌍 미시험, 선언된 분할 밖), O2(주석 구간 경계 mutation 제안) | — | 권고는 다음 작업 후보로 기록 | V14만 남음(전체 R1) |
 
 # Version Log
 ## v1
@@ -214,6 +217,6 @@ Execution ledger (append attempts; preserve failed approaches):
 - verifier 1 (retry) 반영: V02 S6(baseline commit ≠ HEAD), V06 B9(package 순환 nestjs id; v2의 '14 items'는 A 4 + B 8 = 12 class를 잘못 센 값, 이제 13), V08 D5–D8(나머지 key 필드), V05 EP7(hex 아닌 commit 문자열, option 주입 방지 관찰). Paths 허용 범위에 stdout `[Δ] Renames applied` 줄 추가(F08이 정한 출력, test_delta_cli `stdout_summary`가 걸러냄). V01·V03·V04·V07·V09–V13·V15 v4 acceptance 유지: 변경이 test 추가뿐이고 기존 test·helper 동작을 바꾸지 않는다(ref_delta 변경 없음).
 
 ## v7
-- [re-brief] F05에 Python symbol id 매핑 추가(A11, 사용자 승인). 근거: 낮 controls pilot에서 NC1 분석기 FP 15/16 → 4/16, 남은 4건 중 CTFd NC1-1, flask-admin NC1-0·NC1-1·NC1-2의 `unresolved_boundary` strengthened가 `['flag', 'py:<module>#<qualname>', 'dynamic_attr']` evidence로, module 이름이 file 이름에서 나옴. V06에 A5·A6 추가(15 items), V06·V13 acceptance invalidated(매핑 규칙 변경; fuzz harness에 `py:` id 생성 추가 후 재실행). Q02는 correction batch 4(주석 구간 bisect 필터)로 1.018–1.037.
+- [re-brief] F05에 Python symbol id 매핑 추가(A11, 사용자 승인). 근거: 낮 controls pilot에서 NC1 분석기 FP 15/16 → 4/16, 남은 4건 중 CTFd NC1-1, flask-admin NC1-0·NC1-1·NC1-2의 `unresolved_boundary` strengthened가 `['flag', 'py:<module>#<qualname>', 'dynamic_attr']` evidence로, module 이름이 file 이름에서 나옴. V06에 A5·A6 추가(15 items), V06·V13 acceptance invalidated(매핑 규칙 변경; fuzz harness에 `py:` id 생성 추가 후 재실행). Q02는 correction batch 4(주석 구간 bisect 필터) 뒤 implementer 측정 1.018–1.037, main 측정 1.000·1.039·1.031(`tests/rename_comment_evidence/q02_result.txt`).
 
 # Retrospective
