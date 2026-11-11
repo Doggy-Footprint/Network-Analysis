@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 9764c23a31e074804cdb32af0778a14bd68a3e34
+commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -53,8 +53,8 @@ commit: 9764c23a31e074804cdb32af0778a14bd68a3e34
 ### Next Step
 - Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
   - commit: 092f4a2; files: none
-- First improvement is the control false positives; the user accepted both recommendations on 2026-11-11: renames are detected with git between a commit recorded in the baseline JSON and the current working tree (git's 50% similarity), and Kotlin comments are excluded from the name scan entirely (KDoc links included). A workflow-approach spec is being drafted. Observed causes: delta keys general candidates, cycle members and package ids by file path (bottlenecks/delta.py `_general`, `_cycle_delta`, `_dependency_map`), so a rename shows as new candidates, grown cycles and, for NestJS module ids, 46 new package dependencies; the Kotlin analyzer matches word tokens of the whole symbol text, comments included (language_analyzers/kotlin/analyzer.py `_add_symbol_edges`, NamePositions), e.g. a KDoc "value" became a READS edge to AnalyticsEvent.Param.value. Expected remainder after the rename fix: flask-admin NC1-0/NC1-1 large_node token_count growth from longer import paths. Next uncaught weight-3 types afterwards (proposal): P50, P45, P15/P11, P20, P36, P12-P14, P37/P38.
-  - commit: 9764c23; files: bottlenecks/delta.py, language_analyzers/kotlin/analyzer.py, language_analyzers/core/positions.py
+- First improvement is the control false positives; the user accepted both recommendations on 2026-11-11: renames are detected with git between a commit recorded in the baseline JSON and the current working tree (git's 50% similarity), and Kotlin comments are excluded from the name scan entirely (KDoc links included). Spec agent-docs/specs/73bd5aa508fa3e88-rename-and-comment-false-positives.md v1 approved 2026-11-11 (dirty tree at baseline time records no commit, user answer); status active, implementer and test-implementer dispatched in parallel; next: reconcile, Test command, fuzz (seed 20261111), verifier, R1 re-measure (`score-full.txt` kept, new `score-fp-fix.txt`). Observed causes: delta keys general candidates, cycle members and package ids by file path (bottlenecks/delta.py `_general`, `_cycle_delta`, `_dependency_map`), so a rename shows as new candidates, grown cycles and, for NestJS module ids, 46 new package dependencies; the Kotlin analyzer matches word tokens of the whole symbol text, comments included (language_analyzers/kotlin/analyzer.py `_add_symbol_edges`, NamePositions), e.g. a KDoc "value" became a READS edge to AnalyticsEvent.Param.value. Expected remainder after the rename fix: flask-admin NC1-0/NC1-1 large_node token_count growth from longer import paths. Next uncaught weight-3 types afterwards (proposal): P50, P45, P15/P11, P20, P36, P12-P14, P37/P38.
+  - commit: 1bd6ebe; files: agent-docs/specs/73bd5aa508fa3e88-rename-and-comment-false-positives.md, bottlenecks/delta.py, language_analyzers/kotlin/analyzer.py, language_analyzers/core/positions.py
 - Invalid injections are kept in inject/<repo>/runs with their checks and excluded from recall; they are not retried. Full run: judge-rejected 51 injections + 5 controls, tests failed 39 (ghostfolio 21). 15 repo×type pairs have no valid injection: CTFd P24; flask-admin G06 G22; ghostfolio G10 G11 P02 P05 P19 P22 P40; nowinandroid G04 G07 G14 P02 P03.
   - commit: 9764c23; files: none
 - `harness.py archive <repo>` copies valid injections and controls (diff, prompts, result, delta, entry.json with base commit and eval commit) to `<Google Drive mount>/My Drive/토이 프로젝트/network-analysis-eval/injections/<repo>/<task>-<diff sha256 16>` and appends index.jsonl; entries already present are skipped; `run` archives at its end. 513 entries (454 injections, 59 controls) archived 2026-11-11.
@@ -357,3 +357,21 @@ commit: 9764c23a31e074804cdb32af0778a14bd68a3e34
 > 기존 오탐 주입이 성공적으로 끝난 것들은 google drive (desktop 설치되어 있음)에 저장해두고 계속 모아가자. 오류 주입에 실패한 것들은 어떻게 처리했어?
 > 
 > 1,2는 추천안 수용.
+
+#### 39 — 2026-11-11T01:20:40Z
+
+> <task-notification>
+> <task-id>bhux3azsg</task-id>
+> <tool-use-id>toolu_01WfpWx2uBcdKm6XxW2XUKaE</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bhux3azsg.output</output-file>
+> <status>completed</status>
+> <summary>Background command "Run the existing test suite at HEAD for a baseline" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 40 — 2026-11-11T01:24:59Z
+
+> 승인
+
+#### 41 — 2026-11-11T01:24:59Z
+
+> 추천대로
