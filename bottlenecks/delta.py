@@ -346,7 +346,6 @@ def _module_name(path: str) -> str:
 
 
 def _substituter(mapping: Mapping[str, str]) -> Callable[[str], str]:
-    # A path only counts when it is a whole path segment of the id: at the start or after ":", and at the end or before "#".
     paths = re.compile(r"(?<![^:])(?:" + "|".join(re.escape(old) for old in sorted(mapping, key=len, reverse=True)) + r")(?![^#])")
     modules = {_module_name(old): _module_name(new) for old, new in mapping.items() if old.endswith(".py") and new.endswith(".py")}
     modules = {old: new for old, new in modules.items() if old != new}

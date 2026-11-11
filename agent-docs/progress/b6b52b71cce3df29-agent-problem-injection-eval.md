@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 0c75f42f8640425c117c708b3262f9fba4a7d6b9
+commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -53,7 +53,7 @@ commit: 0c75f42f8640425c117c708b3262f9fba4a7d6b9
 ### Next Step
 - Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
   - commit: 092f4a2; files: none
-- First improvement (control false positives) is complete: spec agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md v7, status complete, 3 verifier rounds (cap raised to 3 by the user). Full re-measure 2026-11-11 13:48-14:26 (`tests/rename_comment_evidence/r1_reanalyze.py`, judge about $2.60): analyzer FP on controls rename 15/16 -> 2/16 (flask-admin large_node token_count), format 1/16 -> 1/16, comments 4/13 -> 0/13, refactor 0/14; analyzer recall unchanged in 7 of 8 repo x method cells, ghostfolio sonnet matched 0.037 -> 0.044, nowinandroid sonnet located 0.239 -> 0.188 from 3 tasks whose only signal came from comment text (G12, P23, P29). Table: tests/rename_comment_evidence/r1_comparison.md; scores `inject/<repo>/score-fp-fix.txt`, previous `score-full.txt` and `backup-full/`. Verifier advisories not done: renames that change the extension (`x.py -> x.txt`), boundary mutations of the Kotlin comment-span filter. Next uncaught weight-3 types (proposal): P50, P45, P15/P11, P20, P36, P12-P14, P37/P38.
+- First improvement (control false positives) is complete: spec agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md v7, status complete, 3 verifier rounds (cap raised to 3 by the user). Full re-measure 2026-11-11 13:48-14:26 (`tests/rename_comment_evidence/r1_reanalyze.py`, judge about $2.60): analyzer FP on controls rename 15/16 -> 2/16 (flask-admin large_node token_count), format 1/16 -> 1/16, comments 4/13 -> 0/13, refactor 0/14; analyzer recall unchanged in 7 of 8 repo x method cells, ghostfolio sonnet matched 0.037 -> 0.044, nowinandroid sonnet located 0.239 -> 0.188 from 3 tasks whose only signal came from comment text (G12, P23, P29). Table: tests/rename_comment_evidence/r1_comparison.md; scores `inject/<repo>/score-fp-fix.txt`, previous `score-full.txt` and `backup-full/`. Verifier advisories are in agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md. The user asked to work the next improvement (uncaught weight-3 types, proposal: P50, P45, P15/P11, P20, P36, P12-P14, P37/P38) on a new branch after this PR.
   - commit: 0c75f42; files: bottlenecks/delta.py, bottlenecks/renames.py, language_analyzers/kotlin/analyzer.py, tests/rename_comment_evidence/r1_comparison.md
 - Invalid injections are kept in inject/<repo>/runs with their checks and excluded from recall; they are not retried. Full run: judge-rejected 51 injections + 5 controls, tests failed 39 (ghostfolio 21). 15 repo×type pairs have no valid injection: CTFd P24; flask-admin G06 G22; ghostfolio G10 G11 P02 P05 P19 P22 P40; nowinandroid G04 G07 G14 P02 P03.
   - commit: 9764c23; files: none
@@ -83,6 +83,10 @@ commit: 0c75f42f8640425c117c708b3262f9fba4a7d6b9
   - commit: 9ea723b; files: pytest.ini
 
 ### Related
+- agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md (untested partitions of the rename mapping and the Kotlin comment filter)
+  - commit: 3c0ffe3; files: agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md
+- agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md (delta.v3 rename contract, Kotlin comment rule, R1 procedure and retrospective)
+  - commit: 3c0ffe3; files: agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md
 - agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md (earlier OSS eval dropped for lack of a validation dataset; saturation numbers on large cycles)
   - commit: 12da674; files: agent-docs/todos/stale/e16d433ef30afd87-oss-report-refactoring-eval.md
 - agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md (delta.v2 contract, strength-metric table, rename false positive)
@@ -429,3 +433,9 @@ commit: 0c75f42f8640425c117c708b3262f9fba4a7d6b9
 > <status>completed</status>
 > <summary>Background command "I=~/toy-projects/network-analysis-eval/inject &amp;&amp; date &amp;&amp; (for r in CTFd flask-admin; do echo "== $r $(date +%T)"; python3 tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4; done &gt; $I/r1-full-a.log 2&gt;&amp;1) &amp; (for r in ghostfolio nowinandroid; do echo "== $r $(date +%T)"; python3 tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4; done &gt; $I/r1-full-b.log 2&gt;&amp;1) &amp; wait; echo done $(date)" completed (exit code 0)</summary>
 > </task-notification>
+
+#### 51 — 2026-11-11T05:51:24Z
+
+> 주석과 회고에서 쉽게 재생성 가능한 정보는 배제하고 PR. 
+> 
+> 검증자 권고는 TODO에 넣고, 다음 개선 제안은 새로운 브랜치에서 진행.

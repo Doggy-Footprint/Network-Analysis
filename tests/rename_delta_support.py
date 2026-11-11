@@ -31,7 +31,6 @@ def write_files(root, files):
 
 
 def make_repo(root, files):
-    """Creates a git repository with every file committed; returns the HEAD commit."""
     root = Path(root)
     root.mkdir(parents=True, exist_ok=True)
     git(root, 'init', '-q')
@@ -42,7 +41,6 @@ def make_repo(root, files):
 
 
 def block(tag, count=30, width=20):
-    """count lines of exactly `width` bytes each; lines of different tags never coincide."""
     lines = []
     for index in range(count):
         head = f'{tag}_{index:04d}_'
@@ -52,7 +50,6 @@ def block(tag, count=30, width=20):
 
 
 def oracle_pairs(root, commit, scratch, threshold=None):
-    """git's own rename report for commit -> working tree including untracked files, computed on a copy of the repository."""
     copy = Path(scratch) / 'oracle-copy'
     if copy.exists():
         shutil.rmtree(copy)
@@ -69,7 +66,6 @@ def oracle_pairs(root, commit, scratch, threshold=None):
 
 
 def observations(root):
-    """The five repository observations that a rename detection must leave unchanged."""
     root = Path(root)
     index = (root / '.git' / 'index').read_bytes()
     quiet = {'GIT_OPTIONAL_LOCKS': '0'}

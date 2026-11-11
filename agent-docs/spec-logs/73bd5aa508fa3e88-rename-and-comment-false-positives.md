@@ -221,3 +221,9 @@ Execution ledger (append attempts; preserve failed approaches):
 - [re-brief] F05에 Python symbol id 매핑 추가(A11, 사용자 승인). 근거: 낮 controls pilot에서 NC1 분석기 FP 15/16 → 4/16, 남은 4건 중 CTFd NC1-1, flask-admin NC1-0·NC1-1·NC1-2의 `unresolved_boundary` strengthened가 `['flag', 'py:<module>#<qualname>', 'dynamic_attr']` evidence로, module 이름이 file 이름에서 나옴. V06에 A5·A6 추가(15 items), V06·V13 acceptance invalidated(매핑 규칙 변경; fuzz harness에 `py:` id 생성 추가 후 재실행). Q02는 correction batch 4(주석 구간 bisect 필터) 뒤 implementer 측정 1.018–1.037, main 측정 1.000·1.039·1.031(`tests/rename_comment_evidence/q02_result.txt`).
 
 # Retrospective
+## 2026-11-11
+| observation | evidence | how to re-check |
+| --- | --- | --- |
+| 내용 판정 답변이 JSON 문법 오류(끝 쉼표)면 verdict가 null이 되고 그 task는 infra_failed로 점수에서 빠져, 분석기 변화 없이 칸 recall이 떨어진 것처럼 보인다 | 전체 R1에서 flask-admin P21·P22-sonnet-0, sonnet 칸 located 0.250 → 0.218; 두 건 재판정 뒤 0.250 | `harness.py score <repo>` 출력의 `infra_failed` 목록 |
+| Kotlin 분석 시간 비율은 기계 부하에 따라 같은 코드에서 0.1 가까이 달라진다 | implementer 측정 1.02–1.08, main 유휴 측정 1.10–1.15(같은 구현) | 유휴 상태에서 `tests/rename_comment_evidence/q02.py`를 base worktree와 번갈아 3라운드 |
+| 이 환경에서 CLI 출력 위치를 `mktemp -d`(/var/folders) 아래로 주면 종료 코드 0이어도 `b.json`이 생기지 않았다; 원인 미확인 | 6회 모두 파일 없음, scratchpad 디렉터리로 바꾸자 정상 | `python -m code_analyzer <dir> -o "$(mktemp -d)/r.html" --bottlenecks "$(dirname …)/b.json"` 한 번 실행 후 파일 확인 |

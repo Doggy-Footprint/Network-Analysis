@@ -16,7 +16,7 @@ if mask:
             if n.type in ('line_comment', 'multiline_comment', 'comment', 'block_comment'):
                 seg = data[n.start_byte:n.end_byte].decode('utf-8')
                 blank = ''.join(c if c == '\n' else ' ' * len(c.encode('utf-8')) for c in seg).encode()
-                data[n.start_byte:n.end_byte] = blank  # byte-length preserving
+                data[n.start_byte:n.end_byte] = blank
                 continue
             stack.extend(n.children)
         f.write_bytes(bytes(data))

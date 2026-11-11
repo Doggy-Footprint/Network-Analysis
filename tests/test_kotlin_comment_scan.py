@@ -26,7 +26,6 @@ COUNTER = [
     '',
     'class Holder : Base()',
 ]
-# (from label, to label, relation, 1-based line of the reference in COUNTER)
 READS_EDGE = ('peek', 'count', 'READS', 9)
 WRITES_EDGE = ('bump', 'count', 'WRITES', 6)
 TYPE_USES_EDGE = ('load', 'Param', 'TYPE_USES', 11)
@@ -61,7 +60,6 @@ def project_files(counter_lines, param_lines=PARAM):
 
 
 def inject(lines, inserts=(), replacements=()):
-    """Comment lines go before the given 1-based line; replacements swap one line for one line. Returns (lines, line map)."""
     inserts, replacements = dict(inserts), dict(replacements)
     out = []
     for number, text in enumerate(lines, start=1):
@@ -127,7 +125,6 @@ def test_V11_EP5_EP6_EP7_reference_edges_keep_their_relation_and_shifted_line_un
         assert has(commented, source, target, relation, remap(line)), (style, source, target, remap(line), commented)
 
 
-# ------------------------------------------------------------------ V12 comment boundaries
 
 HEAD = ['package g', 'class Param(val value: String)']
 K_OPEN = ['class K {', '    var total: Int = 0']

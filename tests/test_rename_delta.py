@@ -44,7 +44,6 @@ def assert_quiet(result):
     assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
 
 
-# ------------------------------------------------------------------ V01 repository_commit
 
 def commit_of(root):
     return git(root, 'rev-parse', 'HEAD').strip()
@@ -162,7 +161,6 @@ def test_V01_EP5_cli_output_files_inside_the_project_do_not_make_it_dirty(tmp_pa
     assert snap['git_commit'] == head and snap['git_commit_reason'] is None
 
 
-# ------------------------------------------------------------------ V02 / V03 detect_renames
 
 def detect(root, commit):
     result = renames_api().detect_renames(root, commit)
@@ -222,7 +220,6 @@ def test_V02_S5_two_renames_sorted_by_from(tmp_path):
 
 
 def history_repo(tmp_path):
-    """Baseline commit X, then a later commit that renames a.py; the tree is clean at HEAD."""
     root, base = rename_repo(tmp_path, {'a.py': block('sa'), 'b.py': block('sb'), 'keep.py': block('keep')})
     git(root, 'mv', 'a.py', 'a_impl.py')
     git(root, 'commit', '-q', '-m', 'rename a')
@@ -270,7 +267,6 @@ def test_V03_B2_similarity_49_is_not_a_pair(tmp_path):
     assert detect(root, commit) == {'status': 'applied', 'reason': None, 'pairs': []}
 
 
-# ------------------------------------------------------------------ V04 repository state
 
 def test_V04_EP1_clean_repo_git_mv_leaves_state_unchanged(tmp_path):
     root, commit = rename_repo(tmp_path, {'a.py': block('sa'), 'keep.py': block('keep')})
@@ -298,7 +294,6 @@ def test_V04_EP3_commit_not_found_leaves_state_unchanged(tmp_path):
     assert observations(root) == before
 
 
-# ------------------------------------------------------------------ V05 skipped reasons
 
 def mixed_pair():
     a, b, c = f('a.py'), f('b.py'), f('c.py')
@@ -392,7 +387,6 @@ def test_V05_EP1_baseline_without_commit_key_or_null_through_the_cli(baseline_wi
     assert delta['renames'] == skipped('baseline_without_commit')
 
 
-# ------------------------------------------------------------------ V06 classification tree
 
 OLD, NEW, B, C = 'src/a.py', 'src/a_impl.py', 'src/b.py', 'src/c.py'
 EV_OLD, EV_NEW = 'src/events/events.module.ts', 'src/events/events-impl.module.ts'
@@ -603,7 +597,6 @@ def test_V06_A2_B9_package_cycle_members_and_evidence_rows_are_mapped(rows):
     assert len(control['new_cycles']) + len(control['grown_cycles']) == 1
 
 
-# ------------------------------------------------------------------ V07 metamorphic
 
 def test_V07_M1_no_renames_argument_equals_the_v2_reference_with_v3_policy():
     cur, base = mixed_pair()
@@ -633,7 +626,6 @@ def test_V07_M3_skipped_renames_are_echoed_and_do_not_change_the_comparison(reas
     assert without_renames(result) == without_renames(compute(cur, base, None))
 
 
-# ------------------------------------------------------------------ V08 violation matching decision table
 
 def test_V08_D1_same_five_fields_with_different_ids_is_not_new():
     base = payload([internal_violation('b:old', f(OLD), f(B))])
@@ -693,7 +685,6 @@ def test_V08_D8_only_the_external_name_differs_with_the_same_id_and_target():
     assert result['resolved']['violations'] == 1
 
 
-# ------------------------------------------------------------------ V09 CLI output lines and exit codes
 
 def out_json(directory):
     return json.loads((Path(directory) / 'b.json').read_text(encoding='utf-8'))
@@ -804,7 +795,6 @@ def test_V02_S6_cli_rename_committed_after_the_baseline_is_applied(tmp_path):
     assert renames_lines(done) == (['[Δ] Renames applied: 1'], [])
 
 
-# ------------------------------------------------------------------ V10 load_baseline
 
 def baseline_file(tmp_path, **snapshot):
     data = payload()
