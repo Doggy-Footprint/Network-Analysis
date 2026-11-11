@@ -527,6 +527,36 @@ def test_V06_A3_boundary_mismatch_is_not_mapped(old_id, new_id):
     assert result['resolved']['candidates'] == 1
 
 
+def py_boundary(node):
+    return gen('unresolved_boundary', f(B), 'b:u', {'unresolved_count': 1},
+               evidence=boundary_evidence(node, names=['x'], flags=['dynamic_attr']))
+
+
+@pytest.mark.parametrize('pair, old_id, new_id', [
+    (('pkg/users.py', 'pkg/users_impl.py'), 'py:pkg.users#listing', 'py:pkg.users_impl#listing'),
+    (('pkg/users.py', 'pkg/users_impl.py'), 'py:pkg.users', 'py:pkg.users_impl'),
+    (('pkg/__init__.py', 'pkg2/__init__.py'), 'py:pkg#create_app', 'py:pkg2#create_app'),
+    (('pkg/__init__.py', 'pkg2/__init__.py'), 'py:pkg', 'py:pkg2'),
+], ids=['qualname', 'bare-module', 'package-init-qualname', 'package-init-bare'])
+def test_V06_A5_python_symbol_ids_follow_the_module_name_of_a_renamed_file(pair, old_id, new_id):
+    cur, base = payload([py_boundary(new_id)]), payload([py_boundary(old_id)])
+    assert_quiet(compute(cur, base, applied(pair)))
+    control = compute(cur, base, None)
+    assert len(control['strengthened_candidates']) == 1 and control['new_candidates'] == []
+
+
+@pytest.mark.parametrize('old_id, wrong_new_id', [
+    ('py:pkg.users_x#f', 'py:pkg.users_impl_x#f'),
+    ('py:pkg.users.sub#f', 'py:pkg.users_impl.sub#f'),
+    ('pyx:pkg.users#f', 'pyx:pkg.users_impl#f'),
+], ids=['longer-module-name', 'submodule', 'other-prefix'])
+def test_V06_A6_python_id_boundary_mismatch_is_not_mapped(old_id, wrong_new_id):
+    cur, base = payload([py_boundary(wrong_new_id)]), payload([py_boundary(old_id)])
+    result = compute(cur, base, applied(('pkg/users.py', 'pkg/users_impl.py')))
+    assert len(result['strengthened_candidates']) == 1 and result['new_candidates'] == []
+    assert result['strengthened_candidates'][0]['added_evidence']
+
+
 def test_V06_A4_path_free_package_ids_are_not_mapped_when_a_file_changes_directory():
     moved = applied(('src/a.py', 'lib/a.py'))
     base = payload([gen('large_node', 'file:src/a.py', 'b:1', {'line_count': 5, 'token_count': 9})],

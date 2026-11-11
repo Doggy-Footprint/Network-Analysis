@@ -138,10 +138,24 @@ def map_path_id(text, pairs):
     return out
 
 
+def _module_name(path):
+    return path[:-len('.py')].removesuffix('/__init__').replace('/', '.')
+
+
+def map_py_id(text, pairs):
+    """'py:<module>' at the start, followed by end or '#', for pairs whose both paths end in .py."""
+    for pair in pairs:
+        if pair['from'].endswith('.py') and pair['to'].endswith('.py'):
+            head = 'py:' + _module_name(pair['from'])
+            if text.startswith(head) and (len(text) == len(head) or text[len(head)] == '#'):
+                return 'py:' + _module_name(pair['to']) + text[len(head):]
+    return text
+
+
 def remap_baseline(baseline, pairs):
     """Copy of a baseline payload with renamed paths replaced in the locations the spec lists; candidate ids stay."""
     data = json.loads(json.dumps(baseline))
-    m = lambda value: map_path_id(value, pairs) if isinstance(value, str) else value
+    m = lambda value: map_py_id(map_path_id(value, pairs), pairs) if isinstance(value, str) else value
     network = data['dependency_network']
     if 'file_ids' in network:
         network['file_ids'] = [m(v) for v in network['file_ids']]

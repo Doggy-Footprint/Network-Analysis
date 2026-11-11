@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import re
-from typing import Any, Iterable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 from analysis.structure import TIERS
 
@@ -332,18 +332,35 @@ def _instability_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]
 _NOT_REQUESTED = {"status": "skipped", "reason": "not_requested", "pairs": []}
 
 
-def _remap(value: Any, pattern: "re.Pattern", mapping: Mapping[str, str]) -> Any:
-    if isinstance(value, str): return pattern.sub(lambda found: mapping[found.group(0)], value)
-    if isinstance(value, list): return [_remap(item, pattern, mapping) for item in value]
-    if isinstance(value, dict): return {key: _remap(item, pattern, mapping) for key, item in value.items()}
+def _remap(value: Any, substitute: Callable[[str], str]) -> Any:
+    if isinstance(value, str): return substitute(value)
+    if isinstance(value, list): return [_remap(item, substitute) for item in value]
+    if isinstance(value, dict): return {key: _remap(item, substitute) for key, item in value.items()}
     return value
+
+
+def _module_name(path: str) -> str:
+    module = path[:-len(".py")]
+    if module.endswith("/__init__"): module = module[:-len("/__init__")]
+    return module.replace("/", ".")
+
+
+def _substituter(mapping: Mapping[str, str]) -> Callable[[str], str]:
+    # A path only counts when it is a whole path segment of the id: at the start or after ":", and at the end or before "#".
+    paths = re.compile(r"(?<![^:])(?:" + "|".join(re.escape(old) for old in sorted(mapping, key=len, reverse=True)) + r")(?![^#])")
+    modules = {_module_name(old): _module_name(new) for old, new in mapping.items() if old.endswith(".py") and new.endswith(".py")}
+    modules = {old: new for old, new in modules.items() if old != new}
+    symbols = re.compile(r"py:(" + "|".join(re.escape(old) for old in sorted(modules, key=len, reverse=True)) + r")(?![^#])") if modules else None
+    def substitute(value: str) -> str:
+        value = paths.sub(lambda found: mapping[found.group(0)], value)
+        return symbols.sub(lambda found: "py:" + modules[found.group(1)], value) if symbols and value.startswith("py:") else value
+    return substitute
 
 
 def _remap_baseline(baseline: Mapping[str, Any], mapping: Mapping[str, str]) -> dict:
     result = copy.deepcopy(dict(baseline))
-    # A path only counts when it is a whole path segment of the id: at the start or after ":", and at the end or before "#".
-    pattern = re.compile(r"(?<![^:])(?:" + "|".join(re.escape(old) for old in sorted(mapping, key=len, reverse=True)) + r")(?![^#])")
-    def fix(value: Any) -> Any: return _remap(value, pattern, mapping)
+    substitute = _substituter(mapping)
+    def fix(value: Any) -> Any: return _remap(value, substitute)
     network = result.get("dependency_network") or {}
     if "file_ids" in network: network["file_ids"] = fix(network["file_ids"])
     for pairs in (network.get("package_dependencies") or {}).values():

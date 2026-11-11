@@ -13,8 +13,8 @@ base_delta = importlib.util.module_from_spec(spec); spec.loader.exec_module(base
 SEED, N = 20261111, 5000
 GENERAL = ("large_node", "unresolved_boundary", "evidence_spread", "dangling_doc_reference", "unstable_dependency",
            "untested_hub", "isolated_node", "duplicate_code")
-DIRS = ("", "src/", "src/a/", "b/", "src/a/b/")
-BASES = ("a.py", "m1.py", "xm1.py", "events.module.ts", "app.module.ts", "util.ts", "a.module.ts")
+DIRS = ("", "src/", "src/a/", "b/", "src/a/b/", "a/")
+BASES = ("a.py", "m1.py", "xm1.py", "__init__.py", "events.module.ts", "app.module.ts", "util.ts", "a.module.ts")
 EMPTY = {"status": "applied", "reason": None, "pairs": []}
 
 
@@ -22,8 +22,20 @@ def h(*parts):
     return "b:" + hashlib.sha256("|".join(map(str, parts)).encode()).hexdigest()[:16]
 
 
+def python_paths(paths):
+    # a root __init__.py has no module name, and a.py beside a/__init__.py cannot coexist in Python
+    kept, seen = [], set()
+    for path in paths:
+        if path == "__init__.py": continue
+        if path.endswith(".py"):
+            if module(path) in seen: continue
+            seen.add(module(path))
+        kept.append(path)
+    return kept
+
+
 def model(rnd, paths=None):
-    paths = paths or sorted(set(rnd.choice(DIRS) + rnd.choice(BASES) for _ in range(rnd.randint(2, 8))))
+    paths = paths or python_paths(sorted(set(rnd.choice(DIRS) + rnd.choice(BASES) for _ in range(rnd.randint(2, 8)))))
     n = len(paths)
     m = {"paths": paths, "general": [], "dcycles": [], "pcycles": [], "viol": [], "pdeps": [], "pmet": [], "fc": rnd.randint(1, 50)}
     seen = set()
@@ -54,8 +66,16 @@ def model(rnd, paths=None):
     return m
 
 
+def module(path):
+    stem = path[:-3]
+    if stem == "__init__" or stem.endswith("/__init__"): stem = stem[: -len("__init__")].rstrip("/")
+    return stem.replace("/", ".")
+
+
 def render(m, paths):
     fid = lambda i: "file:" + paths[i]
+    # Python analyzers name symbols py:<dotted module>#<qualname>; other languages keep the file id
+    node = lambda i: ("py:%s#f%d" % (module(paths[i]), i)) if paths[i].endswith(".py") and module(paths[i]) else fid(i)
     def pkg(kind, i):
         if kind == "nest": return "pkg:nestjs:%s#M%d" % (paths[i], i)
         d = paths[i].rsplit("/", 1)[0] if "/" in paths[i] else "."
@@ -73,7 +93,7 @@ def render(m, paths):
             c["metrics"] = {"dangling_count": g["metric"]}; c["evidence"] = [{"line": 1, "notation": "code", "text": r} for r in g["refs"]]
         elif kind == "unresolved_boundary":
             c["metrics"] = {"unresolved_count": g["metric"]}
-            rec = {"node_id": target, "unresolved_references": [{"name": r, "line": 1} for r in g["refs"]], "flags": []}
+            rec = {"node_id": node(g["t"]), "unresolved_references": [{"name": r, "line": 1} for r in g["refs"]], "flags": []}
             if g["edge"]: rec.update(from_id=fid(g["edge"][0]), to_id=fid(g["edge"][1]), relation="CALLS")
             c["evidence"] = [rec]
         elif kind == "unstable_dependency":
