@@ -1,7 +1,7 @@
 ---
 version: 7
 run_id: 73bd5aa508fa3e88
-status: active
+status: complete
 base_commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
 max_verifier_invocations: 3
 commit: 1bd6ebe3ff48cffb6ec28394c97278b6fafbff1e
@@ -162,7 +162,7 @@ CLI: `--baseline` 사용 시 status가 skipped이고 reason이 not_requested가 
 | --- | --- |
 | correction batches used | 4 |
 | verifier invocations | 3 |
-| open finding ids | none (V14 pending full R1) |
+| open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
@@ -180,7 +180,7 @@ Audit state (one entry per obligation; retain prior decisions in the execution l
 | V11 | 7 | test_kotlin_comment_scan.py V11_* | accepted (verifier 3, v7) | M19, M20 killed | none |
 | V12 | 7 | V12_G1–G7 (G1·G2·G3·G6·G7 rewritten in batch 1 to class members) | accepted (verifier 3, v7) | M8 killed by G7; M9 killed by G5; on batch-4 code M8b killed by G7, M9b killed by G5 | none |
 | V13 | 7 | tests/rename_comment_evidence/fuzz/ result.json (v7 harness with `py:` ids, `a/` dir): 5000 inputs, 11591 pairs, P1·P2·P3 0, exceptions 0 | accepted (verifier 3, v7) | n/a | base_delta = 1bd6ebe bottlenecks/delta.py |
-| V14 | 4 | R2 grep done (1 subprocess.run, list args, no shell=True, diff has --no-ext-diff --no-textconv); Q01 0.22 s on ghostfolio copy, .git/index unchanged; Q02 implementer 1.02–1.08; R1 pending | pending | n/a | R1 after verifier |
+| V14 | 7 | R2 grep (1 subprocess.run, list args, no shell=True, diff --no-ext-diff --no-textconv); Q01 0.22 s ghostfolio copy, index unchanged; Q02 main 1.000/1.039/1.031 (`q02_result.txt`); R1 `tests/rename_comment_evidence/r1_comparison.md` | accepted (main review; verifier 3 reviewed the R1 procedure) | Q06: NC1 2/16, nowinandroid NC3 0, NC2 1→1, NC4 0→0; nowinandroid sonnet located -0.051 with 3 per-task causes (comment-derived signals) | none |
 | V15 | 4 | Test command: 3916 passed (v6); delta.py 99%, renames.py 94% branch | accepted (verifier 1, v4); re-run green on v6 | n/a | existing-tests.diff incl. regenerated android golden (android_golden/README.md) |
 
 Execution ledger (append attempts; preserve failed approaches):
@@ -194,6 +194,7 @@ Execution ledger (append attempts; preserve failed approaches):
 | 6 | NC1 4/16 중 4건이 `py:<module>#…` evidence 차이 | F05가 Python symbol id를 다루지 않음(spec gap) | v7 re-brief 승인, A5·A6 test, fuzz에 `py:` node id 생성 추가 | Test command 3923 passed; fuzz 5000 입력·11591 쌍·위반 0; M16–M18 의도한 test에 잡힘 |
 | 7 | v7 controls pilot(`r1_reanalyze.py --only-negative`, 64 controls) | — | — | NC1 분석기 FP 2/16(flask-admin NC1-0·NC1-1 `large_node` token_count, 범위 밖), nowinandroid NC3 0/4, NC2 1/16(ghostfolio NC2-0 `large_node`, 본 실험과 같음), NC4 0/14; Kotlin 새 구현에 M8b·M9b·M19·M20 모두 V11·V12에 잡힘 |
 | 8 | verifier 3 pass: V06·V11·V12·V13 재수용, 나머지 유지, finding 0; 권고 O1(`.py`↔비-`.py` 쌍 미시험, 선언된 분할 밖), O2(주석 구간 경계 mutation 제안) | — | 권고는 다음 작업 후보로 기록 | V14만 남음(전체 R1) |
+| 9 | 전체 R1(608건, 38분): flask-admin P21·P22-sonnet-0 judge 답이 JSON parse 실패(끝 쉼표) → infra_failed로 제외돼 칸 recall 하락처럼 보임 | 측정 잡음 | `r1_reanalyze.py --only`로 두 건 재판정 | 정상 판정, flask-admin 칸 변화 0; 남은 하락은 nowinandroid sonnet located -0.051(3건, 주석 유래) |
 
 # Version Log
 ## v1

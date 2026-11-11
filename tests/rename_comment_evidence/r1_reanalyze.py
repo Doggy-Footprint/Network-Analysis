@@ -1,7 +1,7 @@
 """R1 re-measure driver (spec 73bd5aa508fa3e88 F10). `harness.py rescore` reuses each run's saved delta.json, so this reruns the
 analyzer on every cached task: fresh worktree at `base`, `git apply --index diff.patch`, analyze against the regenerated
 base/bottlenecks.json, then the harness's own assess / assess_match. Validity (judge, gate) is kept from the original run.
-usage: python r1_reanalyze.py <repo> [--only-negative] [--match] [--workers N]"""
+usage: python r1_reanalyze.py <repo> [--only-negative] [--only ID,ID] [--match] [--workers N]"""
 import argparse
 import importlib.util
 import json
@@ -21,6 +21,7 @@ def main():
     ap.add_argument('repo')
     ap.add_argument('--only-negative', action='store_true')
     ap.add_argument('--match', action='store_true')
+    ap.add_argument('--only', default='')
     ap.add_argument('--workers', type=int, default=4)
     args = ap.parse_args()
     catalog = {t['id']: t for t in h.CATALOG['types']}
@@ -32,7 +33,7 @@ def main():
         out, task = path.parent, result['task']
         if result.get('error') or 'analyzer' not in result:
             return task['id'], 'skipped'
-        if args.only_negative and task['method'] != 'negative':
+        if (args.only_negative and task['method'] != 'negative') or (args.only and task['id'] not in args.only.split(',')):
             return task['id'], 'not_selected'
         worktree = h.WORK / args.repo / 'wt' / ('r1-' + task['id'])
         if worktree.exists():
