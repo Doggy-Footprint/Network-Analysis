@@ -5,6 +5,7 @@ injector never sees the analyzer or this project's instructions.
 """
 import argparse
 import fcntl
+import hashlib
 import json
 import os
 import random
@@ -872,6 +873,55 @@ def done(repo, task):
     return path.exists() and not json.loads(path.read_text()).get('infra_failed')
 
 
+ARCHIVE_FILES = ('diff.patch', 'prompt.md', 'INJECTION_NOTE.json', 'result.json', 'delta.json', 'match_prompt.md')
+
+
+def archive_root(dest=None):
+    if dest or os.environ.get('INJECT_ARCHIVE'):
+        return Path(dest or os.environ['INJECT_ARCHIVE'])
+    # the Google Drive desktop app mounts one folder per signed-in account; the account name is not kept in the repository
+    drives = sorted(Path.home().glob('Library/CloudStorage/GoogleDrive-*/My Drive'))
+    return drives[0] / '토이 프로젝트' / 'network-analysis-eval' / 'injections' if drives else None
+
+
+def archive(repo, dest=None):
+    root = archive_root(dest)
+    if root is None:
+        print('archive: no Google Drive folder found; set INJECT_ARCHIVE or pass --dest', file=sys.stderr)
+        return {'added': 0, 'skipped': 0}
+    eval_commit = run(['git', 'rev-parse', 'HEAD'], cwd=ROOT).stdout.strip()
+    added = skipped = 0
+    for path in sorted(paths(repo)['runs'].glob('*/result.json')):
+        result = json.loads(path.read_text())
+        if not result.get('valid') or result.get('error') or result.get('infra_failed'):
+            continue
+        diff = path.parent / 'diff.patch'
+        key = hashlib.sha256(diff.read_bytes() if diff.exists() else b'').hexdigest()[:16]
+        entry = root / repo / f"{result['task']['id']}-{key}"
+        if entry.exists():
+            skipped += 1
+            continue
+        staging = entry.with_name(entry.name + '.partial')
+        shutil.rmtree(staging, ignore_errors=True)
+        staging.mkdir(parents=True)
+        for name in ARCHIVE_FILES:
+            if (path.parent / name).exists():
+                shutil.copy2(path.parent / name, staging / name)
+        meta = {'repo': repo, 'github': MANIFEST[repo]['github'], 'base_commit': MANIFEST[repo]['commit'], 'task': result['task'],
+                'checks': result.get('checks'), 'diff_sha256_16': key, 'eval_commit': eval_commit,
+                'archived_at': time.strftime('%Y-%m-%dT%H:%M:%S%z')}
+        (staging / 'entry.json').write_text(json.dumps(meta, indent=1, ensure_ascii=False))
+        staging.rename(entry)
+        with open(root / 'index.jsonl', 'a') as handle:
+            handle.write(json.dumps({**meta, 'path': f'{repo}/{entry.name}'}, ensure_ascii=False) + '\n')
+        added += 1
+    return {'root': str(root), 'added': added, 'skipped': skipped}
+
+
+def cmd_archive(args):
+    print(json.dumps(archive(args.repo, args.dest), ensure_ascii=False))
+
+
 def stage_usage(r):
     stages = {'inject': (r.get('inject') or {}).get('usage'), 'judge': (r.get('judge') or {}).get('usage'),
               'match': (r.get('match') or {}).get('usage')}
@@ -966,6 +1016,10 @@ def cmd_run(args):
     finally:
         stop.set()
         log_memory(args.repo, 'run_end')
+    try:
+        print(json.dumps({'archive': archive(args.repo)}, ensure_ascii=False), flush=True)
+    except OSError as error:
+        print(f'archive failed: {error}', file=sys.stderr)
 
 
 def hits(r, tools):
@@ -1064,11 +1118,14 @@ def main():
     c.add_argument('--repos', default='CTFd,flask-admin,ghostfolio,nowinandroid')
     c.add_argument('--replicates', type=int, default=1)
     c.add_argument('--negatives', type=int, default=4)
+    a = sub.add_parser('archive', help='copy valid injections and controls to the shared archive, skipping ones already there')
+    a.add_argument('repo')
+    a.add_argument('--dest', help='archive root (default: INJECT_ARCHIVE, else a folder in the Google Drive desktop mount)')
     rs = sub.add_parser('rescore')
     rs.add_argument('repo')
     rs.add_argument('--workers', type=int, default=4)
     args = parser.parse_args()
-    {'memory': lambda a: print(json.dumps({**memory(), 'thermal': thermal()})), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'score': cmd_score, 'cost': cmd_cost}[args.cmd](args)
+    {'memory': lambda a: print(json.dumps({**memory(), 'thermal': thermal()})), 'clone': cmd_clone, 'baseline': cmd_baseline, 'gate': cmd_gate, 'run': cmd_run, 'rescore': cmd_rescore, 'archive': cmd_archive, 'score': cmd_score, 'cost': cmd_cost}[args.cmd](args)
 
 
 if __name__ == '__main__':
