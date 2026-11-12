@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 984a75c3936fe7dd2a320fd945b11cfa91dca61d
+commit: 0f17dd29afc6a0d916529c10562e72a1692f8eab
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -51,6 +51,8 @@ commit: 984a75c3936fe7dd2a320fd945b11cfa91dca61d
   - commit: 334e57c; files: scripts/eval/inject/harness.py
 
 ### Next Step
+- Third improvement (test-related agent problems P11 P12 P13 P14 P15) runs on branch eval-test-signals (from origin/eval 0f17dd2; PR #9 merged into eval, PR #8 eval -> master still open). Spec agent-docs/specs/fda1b3f71e2390f3-test-change-signals.md v1 approved and active (user answers: changed code = new symbol or more branches; test reach through the call graph, framework entrypoints uncertain; JSON size <= 1.15x base). Implementer and test-implementer dispatched; next: reconcile, Test command, verifier (cap 2), fuzz harness tests/test_signals_evidence/fuzz/fuzz_test_changes.py, hand mutations, R1 re-measure (back up current results to backup-symbols/, scores score-tests.txt), R2 size/time.
+  - commit: 0f17dd2; files: agent-docs/specs/fda1b3f71e2390f3-test-change-signals.md
 - Second improvement on branch eval-uncaught-agent-types is complete: spec agent-docs/spec-logs/338f748639b68776-breaking-changes-and-unused-symbols.md v6, status complete, 3 verifier rounds (cap raised to 3 by the user for the v6 signature comparison). Bottleneck JSON (file granularity) has `dependency_network.symbol_columns`/`symbols` rows; delta.v4 adds `changed_signatures`, `removed_symbols`, `symbol_changes`; new candidates `unreferenced_symbol`, `unprovided_injection`. Re-measure (tests/symbol_changes_evidence/r1_comparison.md, scores `inject/<repo>/score-symbols.txt`, previous in `backup-fp-fix/`): P50 located/matched 6/7, P20 8/8; analyzer FP NC1 2/16, NC2 1/16, NC3 0/13, NC4 0/14; analyzer matched recall up in all 8 cells; JSON size ratio up to 1.266 (flask-admin), time ratio up to 1.042. Judge spend about $2.7, cumulative about $48. Open advisories: agent-docs/todos/93365ccc548ad2b4-symbol-changes-verifier-advisories.md. P45 and the other uncaught weight-3 types remain.
   - commit: 8ac8631; files: bottlenecks/symbols.py, bottlenecks/nestjs_visibility.py, bottlenecks/delta.py, tests/symbol_changes_evidence/r1_comparison.md
 - Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
@@ -490,3 +492,23 @@ commit: 984a75c3936fe7dd2a320fd945b11cfa91dca61d
 #### 57 — 2026-11-12T09:49:19Z
 
 > 필요 없는 주석은 지워줘
+
+#### 58 — 2026-11-12T09:53:39Z
+
+> compact
+
+#### 59 — 2026-11-12T09:58:53Z
+
+> 브랜치 바꿔서 다음 수정 사항 진행하자. 뭐가 남았지?
+
+#### 60 — 2026-11-12T10:10:36Z
+
+> 테스트 관련 묶음으로 진행하자. /workflow-approach
+
+#### 61 — 2026-11-12T10:24:31Z
+
+> 진행해
+
+#### 62 — 2026-11-12T10:25:45Z
+
+> 진행해
