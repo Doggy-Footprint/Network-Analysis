@@ -208,3 +208,8 @@ Execution ledger (append attempts; preserve failed approaches):
 - [intent-mismatch] F09 재측정에서 I3 NC2 위반(4/16): 포맷터가 바꾼 끝 쉼표·따옴표·괄호 안 공백이 `changed_signatures`로 보고됨. F04 비교형 도입, C04·V04(D5b·D5c·D8) 확장, max_verifier_invocations 2 → 3(사용자 답). 재측정은 `changed_signatures`가 있던 41건만 `--only`로 다시 실행.
 
 # Retrospective
+## 2026-11-12
+| observation | evidence | how to re-check |
+| --- | --- | --- |
+| `r1_reanalyze.py --match`는 모든 task의 판정을 다시 돌리므로, 도구 결과가 같아도 도구 쪽 matched 재현율이 움직인다 | ghostfolio script any tool 0.108 → 0.081, CTFd sonnet 0.278 → 0.299 (`score-fp-fix.txt`와 `score-symbols.txt`) | `backup-fp-fix/runs/<task>/result.json`과 현재 result.json에서 `tools`는 같고 `match.verdict`만 다른 task를 센다 |
+| fixture 기준 크기 비율은 eval 저장소와 다르게 나온다(fastapi-realworld 1.29, flask-admin 1.27, ghostfolio 1.05) | implementer 보고와 R2 표 | 같은 행 형식으로 fixture와 eval clone을 각각 분석해 base 크기와 비교한다 |

@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 8ac86310178954a9bd27711f6ab36c5d8a125d08
+commit: d360f47331b11784352920849ed13c9feabc105b
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -482,3 +482,7 @@ commit: 8ac86310178954a9bd27711f6ab36c5d8a125d08
 > <status>completed</status>
 > <summary>Background command "I=~/toy-projects/network-analysis-eval/inject &amp;&amp; while read r ids; do .venv/bin/python tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4 --only $ids &gt; $I/$r/r1-symbols-v6.log 2&gt;&amp;1; echo "$r rc=$? $(wc -l &lt; $I/$r/r1-symbols-v6.log)"; done &lt; /private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/scratchpad/cs-tasks.txt" completed (exit code 0)</summary>
 > </task-notification>
+
+#### 56 — 2026-11-12T09:43:28Z
+
+> 그대로 쓰고 PR도 써줘 (한글))
