@@ -17,3 +17,8 @@ File: 01572c68cd525023-test-signals-verifier-advisories.md
 Summary: Separate the Kotlin object scope-walk mutation, add a reach-only fuzz case, re-check CTFd time with alternating runs, cover out-of-table assertion forms.
 Related Files: bottlenecks/test_signals.py, tests/test_signals_evidence/fuzz/fuzz_test_changes.py, tests/test_signals_evidence/r1_comparison.md
 Related Symbols: test_case_table, compute_delta
+---
+File: 6cddcdd2e2ebc085-uncaught-agent-type-groups.md
+Summary: Five groups of weight-3 types the analyzer still misses (dependency declarations, security, data layer, change structure, documentation) with per-group eval counts.
+Related Files: scripts/eval/inject/harness.py, scripts/eval/defects/catalog.json, tests/test_signals_evidence/r1_comparison.md
+Related Symbols: compute_delta

@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: aa5b94ba1f013257ba8207b776d5255b19525bab
+commit: c95ef8fb70a593264bc54267c94d95f7482d60ec
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -573,3 +573,11 @@ commit: aa5b94ba1f013257ba8207b776d5255b19525bab
 
 > Spec 관련은 빼. 내가  처리할게
 > PR하기 전에 필요 없는 주석 처리하고 올려
+
+#### 72 — 2026-11-12T12:07:46Z
+
+> 다음 작업 있어?
+
+#### 73 — 2026-11-12T12:13:28Z
+
+> todo에 넣어줘
