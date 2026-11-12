@@ -21,8 +21,9 @@ CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
 TIERS = ('certain', 'resolved', 'all')
 LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
 SYMBOL_LISTS = ('changed_signatures', 'removed_symbols')
+TEST_LISTS = ('untested_changes', 'weakened_tests', 'added_mocks')
 DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts',
-              'symbol_changes', *SYMBOL_LISTS}
+              'symbol_changes', *SYMBOL_LISTS, 'test_changes', *TEST_LISTS}
 FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
 FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
@@ -32,12 +33,17 @@ SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violatio
 RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
 SYMBOL_SUMMARY = '[Δ] Symbol changes: changed signatures {}, removed symbols {}'
 SYMBOL_WARNING = '[!] Warning: symbol changes not compared ({})'
+TEST_SUMMARY = '[Δ] Test changes: untested changes {}, weakened tests {}, added mocks {}'
+TEST_WARNING = '[!] Warning: test changes not compared ({})'
 SYMBOL_KINDS = ('unreferenced_symbol', 'unprovided_injection')
 SYMBOL_STRENGTH = {'unreferenced_symbol': ('unreferenced_count',), 'unprovided_injection': ('unprovided_count', 'uncertain_count')}
 UNREFERENCED_TAG = 'node'
 UNPROVIDED_TAG = 'injection'
-SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
-SYMBOL_ENTRY_KEYS = {'id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs'}
+LEGACY_SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
+SYMBOL_COLUMNS = [*LEGACY_SYMBOL_COLUMNS, 'branches', 'test_reach']
+SYMBOL_ENTRY_KEYS = set(SYMBOL_COLUMNS)
+TEST_CASE_COLUMNS = ['id', 'file', 'name', 'strong_assertions', 'weak_assertions', 'mocks', 'skipped']
+COUNT_KEYS = ('strong_assertions', 'weak_assertions', 'mocks', 'skipped')
 
 
 def load_manifest():
@@ -169,6 +175,8 @@ def remap_baseline(baseline, pairs):
     columns = network.get('symbol_columns') or []
     for row in network.get('symbols') or []:
         row[columns.index('id')] = m(row[columns.index('id')])
+    for row in network.get('test_cases') or []:
+        row[0] = m(row[0])
     for scheme in network['package_dependencies']:
         for row in network['package_dependencies'][scheme]:
             row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
@@ -298,6 +306,76 @@ def ref_general_with_symbol_kinds(current, baseline):
             'resolved_candidates': resolved}
 
 
+def _test_data(data):
+    network = data['dependency_network']
+    columns = network.get('symbol_columns') or []
+    if 'test_cases' not in network or 'test_case_columns' not in network or 'branches' not in columns or 'test_reach' not in columns:
+        return None
+    ids = network['file_ids']
+    symbols = [dict(zip(columns, row)) for row in network['symbols']]
+    cases = [dict(zip(network['test_case_columns'], row)) for row in network['test_cases']]
+    for item in symbols + cases:
+        item['file'] = ids[item['file']]
+    return symbols, cases
+
+
+def ref_test_changes(current, baseline):
+    """`baseline` must already be rename-mapped."""
+    base, cur = _test_data(baseline), _test_data(current)
+    if base is None or cur is None:
+        reason = 'baseline_without_test_data' if base is None else 'current_without_test_data'
+        return {'status': 'skipped', 'reason': reason}, [], [], []
+    base_symbols, base_cases = base
+    cur_symbols, cur_cases = cur
+    untested = []
+    for new in cur_symbols:
+        if new['kind'] not in ('function', 'method') or new['test_reach'] == 'tested':
+            continue
+        old = None
+        for candidate in base_symbols:
+            if candidate['id'] == new['id']:
+                old = candidate
+                break
+        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+        if old is None or (isint(old['branches']) and isint(new['branches']) and new['branches'] > old['branches']):
+            untested.append({'id': new['id'], 'file': new['file'], 'kind': new['kind'], 'name': new['name'],
+                             'baseline_branches': None if old is None else old['branches'], 'current_branches': new['branches'],
+                             'test_reach': new['test_reach']})
+    counts = lambda row: {key: row[key] for key in COUNT_KEYS}
+    weakened, mocks = [], []
+    for new in cur_cases:
+        old = None
+        for candidate in base_cases:
+            if candidate['id'] == new['id']:
+                old = candidate
+                break
+        reasons = []
+        if old is None:
+            if new['strong_assertions'] == 0:
+                reasons.append('new_without_strong_assertions')
+            if new['mocks'] >= 3:
+                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': None,
+                              'current_mocks': new['mocks']})
+        else:
+            if new['strong_assertions'] < old['strong_assertions']:
+                reasons.append('fewer_strong_assertions')
+            if old['skipped'] is False and new['skipped'] is True:
+                reasons.append('newly_skipped')
+            if new['mocks'] - old['mocks'] >= 2:
+                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': old['mocks'],
+                              'current_mocks': new['mocks']})
+        if reasons:
+            weakened.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'reasons': sorted(reasons),
+                             'baseline': None if old is None else counts(old), 'current': counts(new)})
+    for old in base_cases:
+        if not any(new['id'] == old['id'] for new in cur_cases):
+            weakened.append({'id': old['id'], 'file': old['file'], 'name': old['name'], 'reasons': ['removed'],
+                             'baseline': counts(old), 'current': None})
+    for items in (untested, weakened, mocks):
+        items.sort(key=lambda item: item['id'])
+    return {'status': 'applied', 'reason': None}, untested, weakened, mocks
+
+
 def ref_delta(current, baseline, renames=None):
     pairs = [] if renames is None else renames['pairs']
     if pairs:
@@ -372,7 +450,9 @@ def ref_delta(current, baseline, renames=None):
              'new_package_dependencies': new_pd, 'instability_changes': changes}
     general = ref_general_with_symbol_kinds(current, baseline)
     symbol_status, changed_signatures, removed_symbols = ref_symbol_changes(current, baseline)
-    return {'policy': 'delta.v4', 'symbol_changes': symbol_status, 'changed_signatures': changed_signatures,
+    test_status, untested_changes, weakened_tests, added_mocks = ref_test_changes(current, baseline)
+    return {'policy': 'delta.v5', 'symbol_changes': symbol_status, 'test_changes': test_status, 'untested_changes': untested_changes,
+            'weakened_tests': weakened_tests, 'added_mocks': added_mocks, 'changed_signatures': changed_signatures,
             'removed_symbols': removed_symbols, 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
             'baseline': {'file_count': baseline['snapshot']['file_count'],
                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
@@ -384,7 +464,9 @@ def ref_delta(current, baseline, renames=None):
             'counts': {**{name: len(items) for name, items in lists.items()},
                        'new_candidates': len(general['new_candidates']),
                        'strengthened_candidates': len(general['strengthened_candidates']),
-                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols)}}
+                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols),
+                       'untested_changes': len(untested_changes), 'weakened_tests': len(weakened_tests),
+                       'added_mocks': len(added_mocks)}}
 
 
 def ref_regressions(delta, fail_on):

@@ -270,7 +270,8 @@ PRE_RUN3_BASE_BYTES = {'android-nowinandroid': 7430385, 'fastapi-realworld': 851
 
 
 def test_V11_size_ratio_per_fixture(run):
-    payload = run.payload('file')
+    from tests.doc_references_support import without_test_signals
+    payload = without_test_signals(run.payload('file'))
     payload['dependency_network'].pop('package_dependencies', None)
     size = len(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')) + 1
     ratio = size / run.manifest['file']['bytes']

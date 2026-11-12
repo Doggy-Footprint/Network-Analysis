@@ -492,6 +492,11 @@ def main(
             print(f"[Δ] Symbol changes: changed signatures {counts['changed_signatures']}, removed symbols {counts['removed_symbols']}")
         else:
             print(f"[!] Warning: symbol changes not compared ({changes['reason']})", file=sys.stderr)
+        tests = delta["test_changes"]
+        if tests["status"] == "applied":
+            print(f"[Δ] Test changes: untested changes {counts['untested_changes']}, weakened tests {counts['weakened_tests']}, added mocks {counts['added_mocks']}")
+        else:
+            print(f"[!] Warning: test changes not compared ({tests['reason']})", file=sys.stderr)
         if delta["renames"]["status"] == "skipped" and delta["renames"]["reason"] != "not_requested":
             print(f"[!] Warning: renames not detected ({delta['renames']['reason']})", file=sys.stderr)
         if delta["renames"]["pairs"]:

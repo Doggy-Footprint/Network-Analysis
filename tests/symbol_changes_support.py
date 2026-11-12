@@ -76,6 +76,8 @@ def nest_id(kind, name, path):
 def row_of(entry, file_ids):
     values = dict(entry)
     values['file'] = file_ids.index(entry['file'])
+    values.setdefault('branches', None)
+    values.setdefault('test_reach', 'untested')
     return [values[c] for c in SYMBOL_COLUMNS]
 
 

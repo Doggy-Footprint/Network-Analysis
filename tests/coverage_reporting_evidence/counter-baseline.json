@@ -1,6 +1,6 @@
 {
   "android-kotlin:file": {
-    "kotlin_parse": 2,
+    "kotlin_parse": 3,
     "python_parse": 0,
     "read": 5,
     "typescript_parse": 0
@@ -12,7 +12,7 @@
     "typescript_parse": 0
   },
   "android:file": {
-    "kotlin_parse": 1,
+    "kotlin_parse": 2,
     "python_parse": 0,
     "read": 5,
     "typescript_parse": 0
@@ -25,7 +25,7 @@
   },
   "fastapi-sqlalchemy:file": {
     "kotlin_parse": 0,
-    "python_parse": 8,
+    "python_parse": 9,
     "read": 5,
     "typescript_parse": 0
   },
@@ -37,7 +37,7 @@
   },
   "fastapi:file": {
     "kotlin_parse": 0,
-    "python_parse": 4,
+    "python_parse": 5,
     "read": 5,
     "typescript_parse": 0
   },
@@ -48,7 +48,7 @@
     "typescript_parse": 0
   },
   "kotlin:file": {
-    "kotlin_parse": 1,
+    "kotlin_parse": 2,
     "python_parse": 0,
     "read": 5,
     "typescript_parse": 0
@@ -63,7 +63,7 @@
     "kotlin_parse": 0,
     "python_parse": 0,
     "read": 5,
-    "typescript_parse": 3
+    "typescript_parse": 4
   },
   "nestjs-typescript:symbol": {
     "kotlin_parse": 0,
@@ -75,7 +75,7 @@
     "kotlin_parse": 0,
     "python_parse": 0,
     "read": 5,
-    "typescript_parse": 2
+    "typescript_parse": 3
   },
   "nestjs:symbol": {
     "kotlin_parse": 0,
@@ -85,7 +85,7 @@
   },
   "python:file": {
     "kotlin_parse": 0,
-    "python_parse": 2,
+    "python_parse": 3,
     "read": 5,
     "typescript_parse": 0
   },
@@ -97,7 +97,7 @@
   },
   "sqlalchemy:file": {
     "kotlin_parse": 0,
-    "python_parse": 4,
+    "python_parse": 5,
     "read": 5,
     "typescript_parse": 0
   },
@@ -111,7 +111,7 @@
     "kotlin_parse": 0,
     "python_parse": 0,
     "read": 5,
-    "typescript_parse": 1
+    "typescript_parse": 2
   },
   "typescript:symbol": {
     "kotlin_parse": 0,

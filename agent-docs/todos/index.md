@@ -12,3 +12,8 @@ File: 93365ccc548ad2b4-symbol-changes-verifier-advisories.md
 Summary: Pin NestJS non-object module metadata, check the C04 CLI case, add signature-comparison mutations, add missing report kind labels.
 Related Files: framework_analyzers/nestjs/analyzer.py, bottlenecks/delta.py, report/bottlenecks/generate.py, tests/test_symbol_changes.py, tests/test_unprovided_injection.py
 Related Symbols: compute_delta, unprovided_candidates, KIND_LABELS
+---
+File: 01572c68cd525023-test-signals-verifier-advisories.md
+Summary: Separate the Kotlin object scope-walk mutation, add a reach-only fuzz case, re-check CTFd time with alternating runs, cover out-of-table assertion forms.
+Related Files: bottlenecks/test_signals.py, tests/test_signals_evidence/fuzz/fuzz_test_changes.py, tests/test_signals_evidence/r1_comparison.md
+Related Symbols: test_case_table, compute_delta
