@@ -388,6 +388,48 @@ def test_V04_D7_private_turned_public_without_references_is_reported():
     assert (item['visibility'], item['external_refs'], item['uncertain_external_refs']) == ('public', 0, 0)
 
 
+D5B = {
+    'ts-destructured-trailing-comma': ('deleteMany({ dataSource, symbol }: AssetProfileIdentifier)',
+                                       'deleteMany({ dataSource, symbol, }: AssetProfileIdentifier)'),
+    'ts-type-literal-semicolon': ('f(x: { a: string; b: string; })', 'f(x: { a: string; b: string })'),
+    'kotlin-trailing-comma': ('fun f( x: Int, )', 'fun f(x: Int)'),
+    'generic-trailing-comma': ('f(x: Map<A, B,>)', 'f(x: Map<A, B>)'),
+    'bracket-trailing-comma': ('f(x: [A, B,])', 'f(x: [A, B])'),
+    'repeated-separators': ('f(a,;)', 'f(a)'),
+}
+
+
+@pytest.mark.parametrize('before, now', D5B.values(), ids=D5B.keys())
+def test_V04_D5b_only_separators_before_a_closing_bracket_differ_is_not_reported(before, now):
+    assert changed([f_entry(before)], [f_entry(now)])['changed_signatures'] == []
+    assert changed([f_entry(now)], [f_entry(before)])['changed_signatures'] == []
+
+
+def test_V04_D5c_only_quote_style_differs_is_not_reported():
+    before, now = "f(x: UserWithSettings['createdAt'])", 'f(x: UserWithSettings["createdAt"])'
+    assert changed([f_entry(before)], [f_entry(now)])['changed_signatures'] == []
+
+
+D8 = {
+    'argument-order': ('f(a, b)', 'f(b, a)'),
+    'argument-removed': ('f(a, b)', 'f(a)'),
+    'comma-inside-the-list-removed': ('f(a, b, c)', 'f(a, bc)'),
+    'separator-before-a-non-closing-character': ('f(a, b)', 'f(a; b)'),
+}
+
+
+@pytest.mark.parametrize('before, now', D8.values(), ids=D8.keys())
+def test_V04_D8_changes_inside_the_parameter_list_are_reported_with_the_table_values(before, now):
+    [item] = changed([f_entry(before)], [f_entry(now)])['changed_signatures']
+    assert (item['baseline_signature'], item['current_signature']) == (before, now)
+
+
+def test_V04_D5b_reported_signatures_keep_the_table_text_when_another_difference_exists():
+    before, now = 'f( a, b, )', "f(b, a,\n)"
+    [item] = changed([f_entry(before)], [f_entry(now)])['changed_signatures']
+    assert (item['baseline_signature'], item['current_signature']) == (before, now)
+
+
 @pytest.mark.parametrize('before, now', [(None, 'def f(x)'), ('def f(x)', None), (None, None)], ids=['baseline-null', 'current-null', 'both-null'])
 def test_V04_D6_a_null_signature_on_either_side_is_not_reported(before, now):
     assert changed([f_entry(before)], [f_entry(now)])['changed_signatures'] == []
@@ -511,10 +553,11 @@ def test_C03_private_function_signature_change_depends_on_outside_references(tmp
     assert ids == (['py:app.a#_g'] if listed else [])
 
 
-def test_C04_typescript_signature_that_differs_only_in_whitespace_is_not_reported(tmp_path):
+@pytest.mark.parametrize('replacement', ['function f(x: number,\n    y:   number)', 'function f(x: number, y: number,\n)'],
+                         ids=['whitespace', 'trailing-comma'])
+def test_C04_typescript_signature_that_differs_only_in_formatting_is_not_reported(tmp_path, replacement):
     def edit(root):
-        text = TS_FILES['src/a.ts'].replace('function f(x: number, y: number)', 'function f(x: number,\n    y:   number)')
-        write_files(root, {'src/a.ts': text})
+        write_files(root, {'src/a.ts': TS_FILES['src/a.ts'].replace('function f(x: number, y: number)', replacement)})
     root, baseline = baseline_then_edit(tmp_path, TS_FILES, ['-l', 'typescript'], edit)
     _, data = delta_run(root, baseline, tmp_path, ['-l', 'typescript'])
     assert data['delta']['changed_signatures'] == [] and data['delta']['removed_symbols'] == []

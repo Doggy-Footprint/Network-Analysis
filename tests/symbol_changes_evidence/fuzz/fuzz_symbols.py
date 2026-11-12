@@ -1,7 +1,9 @@
 """Fuzz compute_delta symbol lists (spec 338f748639b68776 V11). argv: repo root, base_commit delta.py path.
 P1 metamorphic: one symbol model rendered with old and renamed paths plus the renames gives empty symbol lists.
 P2 differential: apart from the delta.v4 keys, the result equals base_commit delta.v3 on the payloads without symbols.
-P3: with independent baseline and current symbol models (and renames), both lists equal a reference computed on model keys."""
+P3: with independent baseline and current symbol models (and renames), both lists equal a reference computed on model keys.
+Signatures are drawn as shapes, each rendered through a random formatter variant (v6 F04: whitespace, separators before a
+closing bracket and quote style are not changes), so the reference compares shapes and never canonicalizes strings itself."""
 import copy, importlib.util, json, random, sys
 from pathlib import Path
 
@@ -12,7 +14,10 @@ compute_delta, base_delta = prev.compute_delta, prev.base_delta
 SEED, N = 20261112, 5000
 KINDS = ("function", "method", "class", "constant")
 NAMES = ("f", "g", "_h", "#p", "Cls", "Cls.run", "Cls._run", "MAX", "main")
-SIGS = (None, "def f(x, y)", "def f(y, x)", "private fun g()", "fun g(a: Int)", "run(a,b)", "run(b)", "internal val MAX", "MAX = 1")
+SHAPES = (None, ("def f(x, y)", "def f( x, y )", "def f(x,y)"), ("def f(y, x)", "def f(\n    y,\n    x,\n)"),
+          ("get({ a, b }: T)", "get({ a, b, }: T)", "get({a,b}:T)"), ("get(x: T['a'])", 'get(x: T["a"])', "get( x: T['a'], )"),
+          ("run(a: { p: string; q: number; })", "run(a: { p: string; q: number })"), ("fun g(a: Int)", "fun g(\n    a: Int,\n)"),
+          ("fun g(a: Int, b: Int)",), ("run(b)", "run( b )"), ("x: Map<K, V>", "x: Map<K, V,>"), ("private fun g()",), ("MAX = 1",))
 NEW_KEYS = ("symbol_changes", "changed_signatures", "removed_symbols")
 
 
@@ -20,7 +25,7 @@ def symbol_model(rnd, n):
     out = {}
     for _ in range(rnd.randint(0, 20)):
         key = (rnd.randrange(n), rnd.choice(NAMES))
-        out[key] = {"kind": rnd.choice(KINDS), "signature": rnd.choice(SIGS), "visibility": rnd.choice(("public", "private")),
+        out[key] = {"kind": rnd.choice(KINDS), "shape": rnd.randrange(len(SHAPES)), "visibility": rnd.choice(("public", "private")),
                     "external_refs": rnd.choice((0, 0, 1, 3)), "uncertain_external_refs": rnd.choice((0, 0, 2))}
     return out
 
@@ -30,19 +35,24 @@ def symbol_id(path, name):
     return ("kotlin:" if path.endswith(".kt") else "ts:") + path + "#" + name
 
 
-def render_symbols(symbols, paths):
-    rows = [dict(record, id=symbol_id(paths[i], name), file="file:" + paths[i], name=name) for (i, name), record in symbols.items()]
+def render_symbols(symbols, paths, rnd):
+    rows = []
+    for (i, name), record in symbols.items():
+        shape = SHAPES[record["shape"]]
+        record["signature"] = None if shape is None else rnd.choice(shape)
+        rows.append(dict(record, id=symbol_id(paths[i], name), file="file:" + paths[i], name=name))
     return sorted(rows, key=lambda row: row["id"])
 
 
 COLUMNS = ["id", "file", "kind", "name", "signature", "visibility", "external_refs", "uncertain_external_refs"]
 
 
-def with_symbols(payload, symbols, paths):
+def with_symbols(payload, symbols, paths, rnd):
+    """Renders `symbols` in place: each record's `signature` becomes the variant drawn for this payload."""
     payload = copy.deepcopy(payload)
     network = payload["dependency_network"]
     index = {f: k for k, f in enumerate(network["file_ids"])}
-    rows = render_symbols(symbols, paths)
+    rows = render_symbols(symbols, paths, rnd)
     network["symbol_columns"] = list(COLUMNS)
     network["symbols"] = [[index[row["file"]] if c == "file" else row[c] for c in COLUMNS] for row in rows]
     return payload
@@ -57,7 +67,7 @@ def reference(base, cur, paths):
         refs = b["external_refs"] + b["uncertain_external_refs"]
         if key in cur:
             c = cur[key]
-            if isinstance(b["signature"], str) and isinstance(c["signature"], str) and b["signature"] != c["signature"] and (c["visibility"] == "public" or refs > 0):
+            if isinstance(b["signature"], str) and isinstance(c["signature"], str) and b["shape"] != c["shape"] and (c["visibility"] == "public" or refs > 0):
                 changed.append(dict(common, kind=c["kind"], baseline_signature=b["signature"], current_signature=c["signature"], visibility=c["visibility"]))
         elif b["visibility"] == "public" or refs > 0:
             removed.append(dict(common, kind=b["kind"], baseline_signature=b["signature"], visibility=b["visibility"]))
@@ -87,7 +97,8 @@ def main():
             stats["rename_pairs"] += len(pairs)
             ren = {"status": "applied", "reason": None, "pairs": pairs}
             syms = symbol_model(rnd, len(paths))
-            a, b = with_symbols(prev.render(m, paths), syms, paths), with_symbols(prev.render(m, new_paths), syms, new_paths)
+            a = with_symbols(prev.render(m, paths), syms, paths, rnd)
+            b = with_symbols(prev.render(m, new_paths), copy.deepcopy(syms), new_paths, rnd)
             d1 = compute_delta(b, copy.deepcopy(a), ren)
             if d1["changed_signatures"] or d1["removed_symbols"] or d1["symbol_changes"] != {"status": "applied", "reason": None}:
                 fails["P1"] += 1; examples.append(("P1", pairs, d1["changed_signatures"][:2], d1["removed_symbols"][:2]))
@@ -97,9 +108,9 @@ def main():
             want = base_delta.compute_delta(copy.deepcopy(plain_c), copy.deepcopy(plain_a), ren)
             for case, (cur, base_payload, reason) in {
                     "none": (plain_c, plain_a, "baseline_without_symbols"),
-                    "cur_only": (with_symbols(plain_c, c_syms, new_paths), plain_a, "baseline_without_symbols"),
-                    "base_only": (plain_c, with_symbols(plain_a, syms, paths), "current_without_symbols"),
-                    "both": (with_symbols(plain_c, c_syms, new_paths), with_symbols(plain_a, syms, paths), None)}.items():
+                    "cur_only": (with_symbols(plain_c, c_syms, new_paths, rnd), plain_a, "baseline_without_symbols"),
+                    "base_only": (plain_c, with_symbols(plain_a, syms, paths, rnd), "current_without_symbols"),
+                    "both": (with_symbols(plain_c, c_syms, new_paths, rnd), with_symbols(plain_a, syms, paths, rnd), None)}.items():
                 got = compute_delta(cur, copy.deepcopy(base_payload), ren)
                 status = {"status": "skipped" if reason else "applied", "reason": reason}
                 counts_ok = got["counts"].get("changed_signatures") == len(got["changed_signatures"]) and got["counts"].get("removed_symbols") == len(got["removed_symbols"])

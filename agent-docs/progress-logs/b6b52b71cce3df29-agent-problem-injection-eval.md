@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 075881f86abf2cd8733e74ae8c4df1d79922c05a
+commit: 8ac86310178954a9bd27711f6ab36c5d8a125d08
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -51,8 +51,8 @@ commit: 075881f86abf2cd8733e74ae8c4df1d79922c05a
   - commit: 334e57c; files: scripts/eval/inject/harness.py
 
 ### Next Step
-- Second improvement on branch eval-uncaught-agent-types: spec agent-docs/specs/338f748639b68776-breaking-changes-and-unused-symbols.md v1, status active (brief v1 approved 2026-11-12: schema name stays `bottlenecks.v9`; public symbols are reported on signature change or removal even with 0 references). Scope: symbol table `dependency_network.symbols`, delta.v4 lists `changed_signatures`/`removed_symbols`, standalone candidates `unreferenced_symbol` (P20) and `unprovided_injection` (NestJS export removal, P50); P45 deferred by the user. Next: implementer and test-implementer in parallel, then Test command, fuzz, hand mutations, verifier, R1 re-measure into `score-symbols.txt`.
-  - commit: 075881f; files: agent-docs/specs/338f748639b68776-breaking-changes-and-unused-symbols.md
+- Second improvement on branch eval-uncaught-agent-types is complete: spec agent-docs/spec-logs/338f748639b68776-breaking-changes-and-unused-symbols.md v6, status complete, 3 verifier rounds (cap raised to 3 by the user for the v6 signature comparison). Bottleneck JSON (file granularity) has `dependency_network.symbol_columns`/`symbols` rows; delta.v4 adds `changed_signatures`, `removed_symbols`, `symbol_changes`; new candidates `unreferenced_symbol`, `unprovided_injection`. Re-measure (tests/symbol_changes_evidence/r1_comparison.md, scores `inject/<repo>/score-symbols.txt`, previous in `backup-fp-fix/`): P50 located/matched 6/7, P20 8/8; analyzer FP NC1 2/16, NC2 1/16, NC3 0/13, NC4 0/14; analyzer matched recall up in all 8 cells; JSON size ratio up to 1.266 (flask-admin), time ratio up to 1.042. Judge spend about $2.7, cumulative about $48. Open advisories: agent-docs/todos/93365ccc548ad2b4-symbol-changes-verifier-advisories.md. P45 and the other uncaught weight-3 types remain.
+  - commit: 8ac8631; files: bottlenecks/symbols.py, bottlenecks/nestjs_visibility.py, bottlenecks/delta.py, tests/symbol_changes_evidence/r1_comparison.md
 - Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
   - commit: 092f4a2; files: none
 - First improvement (control false positives) is complete: spec agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md v7, status complete, 3 verifier rounds (cap raised to 3 by the user). Full re-measure 2026-11-11 13:48-14:26 (`tests/rename_comment_evidence/r1_reanalyze.py`, judge about $2.60): analyzer FP on controls rename 15/16 -> 2/16 (flask-admin large_node token_count), format 1/16 -> 1/16, comments 4/13 -> 0/13, refactor 0/14; analyzer recall unchanged in 7 of 8 repo x method cells, ghostfolio sonnet matched 0.037 -> 0.044, nowinandroid sonnet located 0.239 -> 0.188 from 3 tasks whose only signal came from comment text (G12, P23, P29). Table: tests/rename_comment_evidence/r1_comparison.md; scores `inject/<repo>/score-fp-fix.txt`, previous `score-full.txt` and `backup-full/`. Verifier advisories are in agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md. The user asked to work the next improvement (uncaught weight-3 types, proposal: P50, P45, P15/P11, P20, P36, P12-P14, P37/P38) on a new branch after this PR.
@@ -91,6 +91,10 @@ commit: 075881f86abf2cd8733e74ae8c4df1d79922c05a
   - commit: 9ea723b; files: pytest.ini
 
 ### Related
+- agent-docs/spec-logs/338f748639b68776-breaking-changes-and-unused-symbols.md (delta.v4 symbol contract, NestJS visibility rule, re-measure ledger)
+  - commit: 8ac8631; files: agent-docs/spec-logs/338f748639b68776-breaking-changes-and-unused-symbols.md
+- agent-docs/todos/93365ccc548ad2b4-symbol-changes-verifier-advisories.md (untested partitions, missing report kind labels)
+  - commit: 8ac8631; files: agent-docs/todos/93365ccc548ad2b4-symbol-changes-verifier-advisories.md
 - agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md (untested partitions of the rename mapping and the Kotlin comment filter)
   - commit: 3c0ffe3; files: agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md
 - agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md (delta.v3 rename contract, Kotlin comment rule, R1 procedure and retrospective)
@@ -452,3 +456,29 @@ commit: 075881f86abf2cd8733e74ae8c4df1d79922c05a
 
 > A, B - 추천
 > 승인. 진행해
+
+#### 53 — 2026-11-12T08:46:53Z
+
+>  얼마나 걸릴 것 같아?
+
+#### 54 — 2026-11-12T09:00:00Z
+
+> <task-notification>
+> <task-id>bzf6vvxzf</task-id>
+> <tool-use-id>toolu_01BzB7hoS3VgoXQaaBYpQKJW</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bzf6vvxzf.output</output-file>
+> <status>completed</status>
+> <summary>Background command "I=~/toy-projects/network-analysis-eval/inject &amp;&amp; (for r in CTFd flask-admin; do .venv/bin/python tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4 &gt; $I/$r/r1-symbols.log 2&gt;&amp;1; echo "$r done rc=$?" &gt;&gt; $I/r1-symbols-stream1.log; done) &amp;
+> (for r in ghostfolio nowinandroid; do .venv/bin/python tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4 &gt; $I/$r/r1-symbols.log 2&gt;&amp;1; echo "$r done rc=$?" &gt;&gt; $I/r1-symbols-stream2.log; done) &amp;
+> wait" completed (exit code 0)</summary>
+> </task-notification>
+
+#### 55 — 2026-11-12T09:23:20Z
+
+> <task-notification>
+> <task-id>bjj7w474m</task-id>
+> <tool-use-id>toolu_01Nmd6h82D92SuZfuL9kPEn5</tool-use-id>
+> <output-file>/private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/tasks/bjj7w474m.output</output-file>
+> <status>completed</status>
+> <summary>Background command "I=~/toy-projects/network-analysis-eval/inject &amp;&amp; while read r ids; do .venv/bin/python tests/rename_comment_evidence/r1_reanalyze.py $r --match --workers 4 --only $ids &gt; $I/$r/r1-symbols-v6.log 2&gt;&amp;1; echo "$r rc=$? $(wc -l &lt; $I/$r/r1-symbols-v6.log)"; done &lt; /private/tmp/claude-501/-Users-hwansu-orca-workspaces-network-analysis-eval/011c7b90-abc9-4536-ae24-1068deddade2/scratchpad/cs-tasks.txt" completed (exit code 0)</summary>
+> </task-notification>

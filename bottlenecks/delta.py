@@ -360,8 +360,12 @@ def _instability_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]
 _NOT_REQUESTED = {"status": "skipped", "reason": "not_requested", "pairs": []}
 
 
+_TRAILING_SEPARATOR = re.compile(r"[,;]+(?=[)\]}>])")
+
+
 def _squeeze(signature: str) -> str:
-    return " ".join(signature.split())
+    # Formatter-only differences (whitespace, trailing separators, quote style) must not read as signature changes.
+    return _TRAILING_SEPARATOR.sub("", "".join(signature.split())).replace("'", '"')
 
 
 def _reported(symbol: Mapping[str, Any], refs: Mapping[str, Any]) -> bool:

@@ -23,6 +23,9 @@ MUTATIONS = [
     ("M12 consumer/provider ids not rename-mapped", "bottlenecks/delta.py", 'for key in ("from_id", "to_id", "node_id", "consumer_id", "provider_id"):', 'for key in ("from_id", "to_id", "node_id"):'),
     ("M13 uncertain_count not a strength metric", "bottlenecks/delta.py", '"unprovided_injection": ("unprovided_count", "uncertain_count")}', '"unprovided_injection": ("unprovided_count",)}'),
     ("M14 recorded only when invisible in every module", "bottlenecks/nestjs_visibility.py", "            if not missing:\n", "            if len(missing) != len(homes_of):\n"),
+    ("M16 trailing separators kept in the comparison", "bottlenecks/delta.py", '_TRAILING_SEPARATOR.sub("", "".join(signature.split()))', '"".join(signature.split())'),
+    ("M17 quote style kept in the comparison", "bottlenecks/delta.py", '.replace("\'", \'"\')', ''),
+    ("M18 canonical form emitted instead of table text", "bottlenecks/delta.py", '"baseline_signature": before["signature"], "current_signature": after["signature"]', '"baseline_signature": _squeeze(before["signature"]), "current_signature": _squeeze(after["signature"])'),
     ("M15 certainty from all consumer modules", "bottlenecks/nestjs_visibility.py", 'for module in missing)', 'for module in homes_of)'),
 ]
 

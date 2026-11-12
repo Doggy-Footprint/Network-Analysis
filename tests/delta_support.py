@@ -201,6 +201,19 @@ def _violation_key(v):
     return (s['rule_type'], s['from_layer'], s.get('to_layer'), s.get('to_external'), v['target'], first.get('to_id'))
 
 
+def _comparison_form(signature):
+    chars = ['"' if c == "'" else c for c in signature if not c.isspace()]
+    removed = True
+    while removed:
+        removed = False
+        for i in range(len(chars) - 1):
+            if chars[i] in ',;' and chars[i + 1] in ')]}>':
+                del chars[i]
+                removed = True
+                break
+    return ''.join(chars)
+
+
 def ref_symbol_changes(current, baseline):
     """Nested scans over plain lists on purpose, never an index of ids, so it shares no lookup logic with the product."""
     def decode(data):
@@ -231,7 +244,7 @@ def ref_symbol_changes(current, baseline):
                                 'external_refs': old['external_refs'], 'uncertain_external_refs': old['uncertain_external_refs']})
             continue
         before, now = old['signature'], counterpart['signature']
-        if isinstance(before, str) and isinstance(now, str) and before != now and (counterpart['visibility'] == 'public' or refs > 0):
+        if isinstance(before, str) and isinstance(now, str) and _comparison_form(before) != _comparison_form(now) and (counterpart['visibility'] == 'public' or refs > 0):
             changed.append({'id': counterpart['id'], 'file': counterpart['file'], 'kind': counterpart['kind'],
                             'name': counterpart['name'], 'baseline_signature': before, 'current_signature': now,
                             'visibility': counterpart['visibility'], 'external_refs': old['external_refs'],
