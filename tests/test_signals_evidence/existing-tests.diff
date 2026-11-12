@@ -92,7 +92,7 @@ index 2c998ab..296c3f6 100644
    "typescript:symbol": {
      "kotlin_parse": 0,
 diff --git a/tests/delta_support.py b/tests/delta_support.py
-index f624ed3..3d615b2 100644
+index f624ed3..75298f8 100644
 --- a/tests/delta_support.py
 +++ b/tests/delta_support.py
 @@ -21,8 +21,9 @@ CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
@@ -135,12 +135,11 @@ index f624ed3..3d615b2 100644
      for scheme in network['package_dependencies']:
          for row in network['package_dependencies'][scheme]:
              row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
-@@ -298,6 +306,77 @@ def ref_general_with_symbol_kinds(current, baseline):
+@@ -298,6 +306,76 @@ def ref_general_with_symbol_kinds(current, baseline):
              'resolved_candidates': resolved}
  
  
 +def _test_data(data):
-+    """(symbols, cases) decoded with plain lists, or None when the output carries no test data (F08)."""
 +    network = data['dependency_network']
 +    columns = network.get('symbol_columns') or []
 +    if 'test_cases' not in network or 'test_case_columns' not in network or 'branches' not in columns or 'test_reach' not in columns:
@@ -154,7 +153,7 @@ index f624ed3..3d615b2 100644
 +
 +
 +def ref_test_changes(current, baseline):
-+    """baseline is already rename-mapped. Nested scans over plain lists, definitions F05-F07 read literally."""
++    """`baseline` must already be rename-mapped."""
 +    base, cur = _test_data(baseline), _test_data(current)
 +    if base is None or cur is None:
 +        reason = 'baseline_without_test_data' if base is None else 'current_without_test_data'
@@ -213,7 +212,7 @@ index f624ed3..3d615b2 100644
  def ref_delta(current, baseline, renames=None):
      pairs = [] if renames is None else renames['pairs']
      if pairs:
-@@ -372,7 +451,9 @@ def ref_delta(current, baseline, renames=None):
+@@ -372,7 +450,9 @@ def ref_delta(current, baseline, renames=None):
               'new_package_dependencies': new_pd, 'instability_changes': changes}
      general = ref_general_with_symbol_kinds(current, baseline)
      symbol_status, changed_signatures, removed_symbols = ref_symbol_changes(current, baseline)
@@ -224,7 +223,7 @@ index f624ed3..3d615b2 100644
              'removed_symbols': removed_symbols, 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
              'baseline': {'file_count': baseline['snapshot']['file_count'],
                           'rules_sha256': (base_rules or {}).get('rules_sha256')},
-@@ -384,7 +465,9 @@ def ref_delta(current, baseline, renames=None):
+@@ -384,7 +464,9 @@ def ref_delta(current, baseline, renames=None):
              'counts': {**{name: len(items) for name, items in lists.items()},
                         'new_candidates': len(general['new_candidates']),
                         'strengthened_candidates': len(general['strengthened_candidates']),
@@ -236,7 +235,7 @@ index f624ed3..3d615b2 100644
  
  def ref_regressions(delta, fail_on):
 diff --git a/tests/doc_references_support.py b/tests/doc_references_support.py
-index feabf7f..146b12f 100644
+index feabf7f..abf066b 100644
 --- a/tests/doc_references_support.py
 +++ b/tests/doc_references_support.py
 @@ -112,6 +112,8 @@ def strip_new(bottlenecks, details):
@@ -257,15 +256,14 @@ index feabf7f..146b12f 100644
      if isinstance(result.get('coverage'), dict):
          result['coverage'].pop('doc_references', None)
      if isinstance(result.get('versions'), dict) and result['versions'].get('analysis') == NEW_ANALYSIS:
-@@ -139,3 +143,18 @@ def base_symbol_bytes(data):
+@@ -139,3 +143,17 @@ def base_symbol_bytes(data):
          if data.count(new) == 1:
              return data.replace(new, old)
      raise AssertionError('versions.analysis "7" not found exactly once')
 +
 +
 +def without_test_signals(payload):
-+    """Copy of a file-granularity bottleneck payload without the test_cases table and the two symbol columns branches and
-+    test_reach, keeping the rest of the symbol table, so base comparisons keep their measurement context."""
++    """Base comparisons drop only the new test data so the rest of the symbol table stays in the measurement."""
 +    result = json.loads(json.dumps(payload))
 +    network = result['dependency_network']
 +    network.pop('test_cases', None)

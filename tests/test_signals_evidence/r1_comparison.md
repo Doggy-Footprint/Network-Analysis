@@ -58,7 +58,48 @@ No repo × method cell dropped. Three tasks lost an analyzer match while their l
 - nowinandroid G21-script-0 gained an `untested_changes` item.
 - flask-admin P02-sonnet-0 kept the same delta item.
 
-In all three, the earlier match rested on an indirect symptom (an unreferenced symbol), which the judge rejected this time. No task lost a located result.
+In all three, the earlier match rested on an indirect symptom (an unreferenced symbol), which the judge rejected this time. No task lost a located result. Re-judging the three tasks once more (`r1_reanalyze.py <repo> --match --only <task>`) again gave no match, with the same reasons.
+
+Across all 72 types (513 valid tasks), analyzer located went from 191 to 271 and matched from 58 to 91. The types whose counts changed, apart from P11–P15, are listed below; the remaining 31 types and the four controls are unchanged, including P20 and P50 from the previous spec.
+
+| type | valid | located | matched |
+| --- | --- | --- | --- |
+| G02 | 7 | 5 → 6 | 5 → 5 |
+| G03 | 7 | 5 → 6 | 0 → 1 |
+| G09 | 5 | 0 → 2 | 0 → 0 |
+| G13 | 8 | 3 → 5 | 1 → 1 |
+| G14 | 6 | 3 → 6 | 0 → 0 |
+| G15 | 6 | 2 → 3 | 0 → 0 |
+| G16 | 7 | 3 → 5 | 0 → 1 |
+| G17 | 8 | 5 → 7 | 1 → 2 |
+| G19 | 8 | 5 → 7 | 0 → 0 |
+| G20 | 7 | 5 → 6 | 0 → 0 |
+| G21 | 8 | 2 → 2 | 1 → 0 |
+| P01 | 5 | 1 → 3 | 0 → 0 |
+| P02 | 4 | 2 → 2 | 1 → 0 |
+| P05 | 5 | 1 → 2 | 0 → 0 |
+| P07 | 6 | 1 → 2 | 0 → 0 |
+| P08 | 8 | 2 → 3 | 0 → 0 |
+| P09 | 7 | 1 → 3 | 0 → 0 |
+| P10 | 8 | 0 → 3 | 0 → 0 |
+| P16 | 7 | 5 → 6 | 2 → 1 |
+| P17 | 7 | 1 → 4 | 0 → 1 |
+| P18 | 5 | 4 → 5 | 0 → 0 |
+| P19 | 6 | 1 → 2 | 0 → 0 |
+| P22 | 5 | 4 → 5 | 2 → 3 |
+| P23 | 8 | 3 → 4 | 0 → 0 |
+| P24 | 4 | 2 → 3 | 1 → 1 |
+| P26 | 7 | 3 → 5 | 0 → 4 |
+| P27 | 7 | 4 → 6 | 1 → 1 |
+| P28 | 7 | 2 → 5 | 0 → 1 |
+| P32 | 8 | 2 → 3 | 0 → 0 |
+| P33 | 7 | 3 → 5 | 0 → 0 |
+| P34 | 7 | 3 → 5 | 0 → 0 |
+| P36 | 5 | 0 → 1 | 0 → 0 |
+| P39 | 8 | 2 → 3 | 0 → 0 |
+| P40 | 6 | 0 → 3 | 0 → 0 |
+| P41 | 8 | 0 → 4 | 0 → 0 |
+| P45 | 6 | 1 → 3 | 0 → 0 |
 
 ## R2 size and time (base 0f17dd2 vs current, CLI on the clone at `base`)
 

@@ -307,7 +307,6 @@ def ref_general_with_symbol_kinds(current, baseline):
 
 
 def _test_data(data):
-    """(symbols, cases) decoded with plain lists, or None when the output carries no test data (F08)."""
     network = data['dependency_network']
     columns = network.get('symbol_columns') or []
     if 'test_cases' not in network or 'test_case_columns' not in network or 'branches' not in columns or 'test_reach' not in columns:
@@ -321,7 +320,7 @@ def _test_data(data):
 
 
 def ref_test_changes(current, baseline):
-    """baseline is already rename-mapped. Nested scans over plain lists, definitions F05-F07 read literally."""
+    """`baseline` must already be rename-mapped."""
     base, cur = _test_data(baseline), _test_data(current)
     if base is None or cur is None:
         reason = 'baseline_without_test_data' if base is None else 'current_without_test_data'

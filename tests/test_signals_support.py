@@ -1,5 +1,3 @@
-"""Support for the test-change-signal evidence. Expected values are written by hand from the spec tables; payloads and
-architectures are built by hand in the shapes the product reads, so no expectation comes from product output."""
 import copy
 import json
 import shutil

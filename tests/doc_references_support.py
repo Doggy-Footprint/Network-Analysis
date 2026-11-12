@@ -146,8 +146,7 @@ def base_symbol_bytes(data):
 
 
 def without_test_signals(payload):
-    """Copy of a file-granularity bottleneck payload without the test_cases table and the two symbol columns branches and
-    test_reach, keeping the rest of the symbol table, so base comparisons keep their measurement context."""
+    """Base comparisons drop only the new test data so the rest of the symbol table stays in the measurement."""
     result = json.loads(json.dumps(payload))
     network = result['dependency_network']
     network.pop('test_cases', None)

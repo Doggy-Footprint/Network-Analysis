@@ -77,7 +77,6 @@ def with_data(payload, symbols, cases, paths, rnd, *, test_data=True):
 
 
 def project(payload):
-    """The same payload in the base_commit shape (eight symbol columns, no test case table)."""
     payload = copy.deepcopy(payload)
     network = payload["dependency_network"]
     network.pop("test_cases", None); network.pop("test_case_columns", None)

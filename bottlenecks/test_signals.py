@@ -178,7 +178,6 @@ def _kotlin_declarations(root: Any, data: bytes) -> dict:
 
 
 class BranchCounter:
-    """Parses each file once and reuses its declaration lookup across symbols."""
 
     def __init__(self) -> None:
         self._files: dict = {}
@@ -362,7 +361,7 @@ def _ts_parts(node: Any, data: bytes) -> Optional[list]:
 
 
 def _ts_classify(call: Any, data: bytes) -> Optional[tuple]:
-    """Returns (kind, parts) for it/test/describe calls; the `.each(table)` binding call itself is not a test call."""
+    """The `.each(table)` binding call itself is not a test call; the call it returns is."""
     function = call.child_by_field_name("function")
     if function is None:
         return None
@@ -396,7 +395,7 @@ def _ts_callback(call: Any) -> Optional[Any]:
 
 
 def _ts_scan(root: Any, data: bytes, visit: Any) -> None:
-    """Visits calls under root, skipping nested it/test/describe calls, which own their scope."""
+    """Nested it/test/describe calls are skipped because each owns its own scope."""
     stack = [root]
     while stack:
         node = stack.pop()
