@@ -533,7 +533,7 @@ EXPECTED_SHAPE = {
                 'schema', 'snapshot', 'versions'],
         'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy',
                                'edge_count', 'evidence_columns', 'file_ids', 'node_count', 'node_metrics', 'package_dependencies', 'package_metrics',
-                               'rankings', 'rankings_by_category', 'structure_policy'],
+                               'rankings', 'rankings_by_category', 'structure_policy', 'symbol_columns', 'symbols'],
         'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution',
                          'untested_hub_top_n'],
         'coverage': ['analysis_coverage', 'doc_references', 'limitations', 'source_file_count', 'structure'],

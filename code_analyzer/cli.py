@@ -442,6 +442,11 @@ def main(
         _validate(repository_snapshot, arch)
         if args.granularity == "file":
             arch = to_file_architecture(arch, repository_snapshot)
+        else:
+            for node in arch.nodes:
+                if getattr(node, "provenance", "") == "nestjs" and node.kind == "module":
+                    node.metadata.pop("global", None)
+                    node.metadata.pop("unsupported_fields", None)
         timing["conversion"] = time.perf_counter() - stage_started
         stage_started = time.perf_counter()
         final_analysis = GraphAnalyzer(analysis_config).analyze(arch.nodes, arch.edges, project_path=arch.project_path)
@@ -482,6 +487,11 @@ def main(
         print(f"[Δ] Delta vs baseline: new cycles {counts['new_cycles']}, grown cycles {counts['grown_cycles']}, new violations {counts['new_violations']}, "
               f"new package dependencies {counts['new_package_dependencies']}, instability changes {counts['instability_changes']}, "
               f"new candidates {counts['new_candidates']}, strengthened candidates {counts['strengthened_candidates']}")
+        changes = delta["symbol_changes"]
+        if changes["status"] == "applied":
+            print(f"[Δ] Symbol changes: changed signatures {counts['changed_signatures']}, removed symbols {counts['removed_symbols']}")
+        else:
+            print(f"[!] Warning: symbol changes not compared ({changes['reason']})", file=sys.stderr)
         if delta["renames"]["status"] == "skipped" and delta["renames"]["reason"] != "not_requested":
             print(f"[!] Warning: renames not detected ({delta['renames']['reason']})", file=sys.stderr)
         if delta["renames"]["pairs"]:

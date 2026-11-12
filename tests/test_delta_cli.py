@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 
 import pytest
@@ -66,7 +67,11 @@ def summary_for(delta):
 
 
 def stdout_summary(done):
-    return [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
+    lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
+    symbol = [line for line in lines if line.startswith('[Δ] Symbol changes')]
+    assert len(symbol) == min(1, len(lines) - len(symbol))
+    assert all(re.fullmatch(r'\[Δ\] Symbol changes: changed signatures \d+, removed symbols \d+', line) for line in symbol)
+    return [line for line in lines if line not in symbol]
 
 
 def regression_line(delta, names):

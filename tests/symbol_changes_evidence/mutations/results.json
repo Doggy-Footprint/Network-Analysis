@@ -1,0 +1,132 @@
+[
+ {
+  "mutation": "M01 report rule or->and",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V03_EP1_file_path_ids_are_mapped_before_matching"
+  ]
+ },
+ {
+  "mutation": "M02 changed uses current refs",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V04_D2_private_without_baseline_references_is_not_reported[private-with-current-refs]"
+  ]
+ },
+ {
+  "mutation": "M03 skipped reason priority swapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_delta.py::test_F12_delta_object_shape_and_counts",
+   "tests/test_unprovided_injection.py::test_V03_EP6_consumer_file_rename_keeps_the_same_pair_quiet",
+   "tests/test_rename_delta.py::test_V05_EP2_null_baseline_commit"
+  ]
+ },
+ {
+  "mutation": "M04 symbol ids not rename-mapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V03_EP1_file_path_ids_are_mapped_before_matching",
+   "tests/test_rename_delta.py::test_V09_EP1_C18_rename_after_baseline_is_applied_and_reports_nothing[one-rename]"
+  ]
+ },
+ {
+  "mutation": "M05 self edge counts as reference",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP5_only_self_recursion_is_not_a_reference"
+  ]
+ },
+ {
+  "mutation": "M06 framework IMPLEMENTED_BY ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP8_an_implemented_by_edge_from_a_framework_declaration_is_a_reference"
+  ]
+ },
+ {
+  "mutation": "M07 modifier after name counts",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP6_names_that_only_resemble_the_exclusions_are_listed",
+   "tests/test_symbol_changes.py::test_V01_EP4_visibility[modifier-word-after-name]"
+  ]
+ },
+ {
+  "mutation": "M08 same-file source counted external",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V01_EP5_external_reference_counts[same-file]"
+  ]
+ },
+ {
+  "mutation": "M09 global modules ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_global_module_export_means_no_candidate_even_without_an_import"
+  ]
+ },
+ {
+  "mutation": "M10 re-export not followed",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_re_export_chain_means_no_candidate"
+  ]
+ },
+ {
+  "mutation": "M11 unsupported fields ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_unsupported_module_fields_make_the_verdict_uncertain[imports]"
+  ]
+ },
+ {
+  "mutation": "M12 consumer/provider ids not rename-mapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V03_EP6_consumer_file_rename_keeps_the_same_pair_quiet"
+  ]
+ },
+ {
+  "mutation": "M13 uncertain_count not a strength metric",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_delta_uncertain_count_increase_is_strengthened_with_no_added_evidence"
+  ]
+ },
+ {
+  "mutation": "M14 recorded only when invisible in every module",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_visible_in_one_of_two_modules_is_recorded_for_the_invisible_one_only"
+  ]
+ },
+ {
+  "mutation": "M16 trailing separators kept in the comparison",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V04_D5b_only_separators_before_a_closing_bracket_differ_is_not_reported[ts-destructured-trailing-comma]"
+  ]
+ },
+ {
+  "mutation": "M17 quote style kept in the comparison",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V04_D5c_only_quote_style_differs_is_not_reported"
+  ]
+ },
+ {
+  "mutation": "M18 canonical form emitted instead of table text",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V03_EP1_mapped_symbol_with_new_signature_is_reported_at_the_new_path"
+  ]
+ },
+ {
+  "mutation": "M15 certainty from all consumer modules",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_certainty_comes_only_from_the_modules_where_the_provider_is_invisible"
+  ]
+ }
+]

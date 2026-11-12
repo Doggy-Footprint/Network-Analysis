@@ -1,3 +1,4 @@
+import copy
 import importlib
 import hashlib
 import json
@@ -167,6 +168,11 @@ def test_V07_combinations_preserve_semantic_details(monkeypatch,file_project,tmp
     assert run(monkeypatch,file_project,*flags,'-o',output,'--json')==0
     assert run(monkeypatch,file_project,*flags,'--granularity','symbol','-o',symbol)==0
     file_data={**inline(output)['architecture'],'details':details_of(output)}; symbol_data=inline(symbol)['architecture']
+    file_data['details']=copy.deepcopy(file_data['details'])
+    for node in file_data['details']['nodes']:
+        if node['id'].startswith('nestjs:module:'):
+            assert isinstance(node['metadata'].pop('global'),bool) and isinstance(node['metadata'].pop('unsupported_fields'),list)
+    assert not [n for n in symbol_data['nodes'] if n['id'].startswith('nestjs:module:') and {'global','unsupported_fields'}&set(n['metadata'])]
     assert raw_relations(file_data['details'])==raw_relations(symbol_data)
     relations={e['relation'] for e in file_data['details']['edges']}
     if combination in ('fastapi-ts','android-fastapi','fastapi-sqlalchemy-ts','nestjs-ts'):

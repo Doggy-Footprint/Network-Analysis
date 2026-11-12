@@ -17,6 +17,7 @@ COLUMNS = ['doc', 'line', 'notation', 'text', 'status', 'target', 'target_kind',
 OLD_ANALYSIS = '6'
 NEW_ANALYSIS = '7'
 NEW_KIND = 'dangling_doc_reference'
+SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')
 
 K_CONFIGS = {
     'K1': ('fastapi-realworld', ['-f', 'fastapi'], 'file'),
@@ -108,7 +109,9 @@ def strip_new(bottlenecks, details):
     assert bottlenecks['versions']['analysis'] == NEW_ANALYSIS
     bottlenecks['versions']['analysis'] = OLD_ANALYSIS
     bottlenecks['coverage'].pop('doc_references', None)
-    bottlenecks['candidates'] = [c for c in bottlenecks['candidates'] if c['kind'] != NEW_KIND]
+    bottlenecks['candidates'] = [c for c in bottlenecks['candidates'] if c['kind'] != NEW_KIND and c['kind'] not in SYMBOL_CANDIDATE_KINDS]
+    bottlenecks['dependency_network'].pop('symbols', None)
+    bottlenecks['dependency_network'].pop('symbol_columns', None)
     details.pop('doc_references', None)
     return bottlenecks, details
 
@@ -118,7 +121,10 @@ def without_doc_references(payload):
     back to the base value, so legacy comparisons against base-commit evidence keep their original meaning."""
     result = json.loads(json.dumps(payload))
     if 'candidates' in result:
-        result['candidates'] = [c for c in result['candidates'] if c.get('kind') != NEW_KIND]
+        result['candidates'] = [c for c in result['candidates'] if c.get('kind') != NEW_KIND and c.get('kind') not in SYMBOL_CANDIDATE_KINDS]
+    if isinstance(result.get('dependency_network'), dict):
+        result['dependency_network'].pop('symbols', None)
+        result['dependency_network'].pop('symbol_columns', None)
     if isinstance(result.get('coverage'), dict):
         result['coverage'].pop('doc_references', None)
     if isinstance(result.get('versions'), dict) and result['versions'].get('analysis') == NEW_ANALYSIS:

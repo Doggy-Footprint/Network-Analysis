@@ -20,7 +20,9 @@ MAIN = 'from code_analyzer.cli import main; main()'
 CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
 TIERS = ('certain', 'resolved', 'all')
 LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
-DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts'}
+SYMBOL_LISTS = ('changed_signatures', 'removed_symbols')
+DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts',
+              'symbol_changes', *SYMBOL_LISTS}
 FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
 FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
@@ -28,6 +30,14 @@ GENERAL_LISTS = ('new_candidates', 'strengthened_candidates')
 SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
            ', new candidates {}, strengthened candidates {}')
 RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
+SYMBOL_SUMMARY = '[Δ] Symbol changes: changed signatures {}, removed symbols {}'
+SYMBOL_WARNING = '[!] Warning: symbol changes not compared ({})'
+SYMBOL_KINDS = ('unreferenced_symbol', 'unprovided_injection')
+SYMBOL_STRENGTH = {'unreferenced_symbol': ('unreferenced_count',), 'unprovided_injection': ('unprovided_count', 'uncertain_count')}
+UNREFERENCED_TAG = 'node'
+UNPROVIDED_TAG = 'injection'
+SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
+SYMBOL_ENTRY_KEYS = {'id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs'}
 
 
 def load_manifest():
@@ -156,6 +166,9 @@ def remap_baseline(baseline, pairs):
     network = data['dependency_network']
     if 'file_ids' in network:
         network['file_ids'] = [m(v) for v in network['file_ids']]
+    columns = network.get('symbol_columns') or []
+    for row in network.get('symbols') or []:
+        row[columns.index('id')] = m(row[columns.index('id')])
     for scheme in network['package_dependencies']:
         for row in network['package_dependencies'][scheme]:
             row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
@@ -174,7 +187,7 @@ def remap_baseline(baseline, pairs):
         if isinstance(evidence, list):
             for index, element in enumerate(evidence):
                 if isinstance(element, dict):
-                    for key in ('from_id', 'to_id', 'node_id'):
+                    for key in ('from_id', 'to_id', 'node_id', 'consumer_id', 'provider_id'):
                         if key in element:
                             element[key] = m(element[key])
                 elif isinstance(element, list):
@@ -186,6 +199,103 @@ def _violation_key(v):
     s = v['structure']
     first = v['evidence'][0] if v.get('evidence') else {}
     return (s['rule_type'], s['from_layer'], s.get('to_layer'), s.get('to_external'), v['target'], first.get('to_id'))
+
+
+def _comparison_form(signature):
+    chars = ['"' if c == "'" else c for c in signature if not c.isspace()]
+    removed = True
+    while removed:
+        removed = False
+        for i in range(len(chars) - 1):
+            if chars[i] in ',;' and chars[i + 1] in ')]}>':
+                del chars[i]
+                removed = True
+                break
+    return ''.join(chars)
+
+
+def ref_symbol_changes(current, baseline):
+    """Nested scans over plain lists on purpose, never an index of ids, so it shares no lookup logic with the product."""
+    def decode(data):
+        network = data['dependency_network']
+        if network.get('symbols') is None:
+            return None
+        columns, ids = network['symbol_columns'], network['file_ids']
+        entries = [dict(zip(columns, row)) for row in network['symbols']]
+        for entry in entries:
+            entry['file'] = ids[entry['file']]
+        return entries
+    base_rows, cur_rows = decode(baseline), decode(current)
+    if base_rows is None or cur_rows is None:
+        reason = 'baseline_without_symbols' if base_rows is None else 'current_without_symbols'
+        return {'status': 'skipped', 'reason': reason}, [], []
+    changed, removed = [], []
+    for old in base_rows:
+        counterpart = None
+        for new in cur_rows:
+            if new['id'] == old['id']:
+                counterpart = new
+                break
+        refs = old['external_refs'] + old['uncertain_external_refs']
+        if counterpart is None:
+            if old['visibility'] == 'public' or refs > 0:
+                removed.append({'id': old['id'], 'file': old['file'], 'kind': old['kind'], 'name': old['name'],
+                                'baseline_signature': old['signature'], 'visibility': old['visibility'],
+                                'external_refs': old['external_refs'], 'uncertain_external_refs': old['uncertain_external_refs']})
+            continue
+        before, now = old['signature'], counterpart['signature']
+        if isinstance(before, str) and isinstance(now, str) and _comparison_form(before) != _comparison_form(now) and (counterpart['visibility'] == 'public' or refs > 0):
+            changed.append({'id': counterpart['id'], 'file': counterpart['file'], 'kind': counterpart['kind'],
+                            'name': counterpart['name'], 'baseline_signature': before, 'current_signature': now,
+                            'visibility': counterpart['visibility'], 'external_refs': old['external_refs'],
+                            'uncertain_external_refs': old['uncertain_external_refs']})
+    changed.sort(key=lambda item: item['id'])
+    removed.sort(key=lambda item: item['id'])
+    return {'status': 'applied', 'reason': None}, changed, removed
+
+
+def _symbol_signatures(item):
+    rows = []
+    for element in item.get('evidence') or []:
+        if item['kind'] == 'unreferenced_symbol':
+            row = [UNREFERENCED_TAG, element['node_id']]
+        else:
+            row = [UNPROVIDED_TAG, element['consumer_id'], element['provider_id']]
+        if row not in rows:
+            rows.append(row)
+    return rows
+
+
+def ref_general_with_symbol_kinds(current, baseline):
+    from tests.delta_candidates_support import ref_general
+    strip = lambda data: {**data, 'candidates': [c for c in data['candidates'] if c['kind'] not in SYMBOL_KINDS]}
+    general = ref_general(strip(current), strip(baseline))
+    new, strengthened = list(general['new_candidates']), list(general['strengthened_candidates'])
+    base_items = [c for c in baseline['candidates'] if c['kind'] in SYMBOL_KINDS]
+    cur_items = [c for c in current['candidates'] if c['kind'] in SYMBOL_KINDS]
+    for item in cur_items:
+        old = None
+        for other in base_items:
+            if (other['kind'], other['target']) == (item['kind'], item['target']):
+                old = other
+                break
+        if old is None:
+            new.append({'candidate_id': item['id'], 'kind': item['kind'], 'target': item['target'], 'metrics': item['metrics']})
+            continue
+        increased = {m: {'baseline': old['metrics'][m], 'current': item['metrics'][m]}
+                     for m in SYMBOL_STRENGTH[item['kind']] if item['metrics'][m] > old['metrics'][m]}
+        before = _symbol_signatures(old)
+        added = sorted(row for row in _symbol_signatures(item) if row not in before)
+        if increased or added:
+            strengthened.append({'candidate_id': item['id'], 'baseline_candidate_id': old['id'], 'kind': item['kind'],
+                                 'target': item['target'], 'increased': increased, 'added_evidence': added})
+    resolved = general['resolved_candidates']
+    for old in base_items:
+        if not any((old['kind'], old['target']) == (item['kind'], item['target']) for item in cur_items):
+            resolved += 1
+    order = lambda i: (i['kind'], str(i['target']), i['candidate_id'])
+    return {'new_candidates': sorted(new, key=order), 'strengthened_candidates': sorted(strengthened, key=order),
+            'resolved_candidates': resolved}
 
 
 def ref_delta(current, baseline, renames=None):
@@ -260,9 +370,10 @@ def ref_delta(current, baseline, renames=None):
         changed = 'rules_sha256' not in cur_rules or 'rules_sha256' not in base_rules or cur_rules['rules_sha256'] != base_rules['rules_sha256']
     lists = {'new_cycles': new_cycles, 'grown_cycles': grown_cycles, 'new_violations': new_violations,
              'new_package_dependencies': new_pd, 'instability_changes': changes}
-    from tests.delta_candidates_support import ref_general
-    general = ref_general(current, baseline)
-    return {'policy': 'delta.v3', 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
+    general = ref_general_with_symbol_kinds(current, baseline)
+    symbol_status, changed_signatures, removed_symbols = ref_symbol_changes(current, baseline)
+    return {'policy': 'delta.v4', 'symbol_changes': symbol_status, 'changed_signatures': changed_signatures,
+            'removed_symbols': removed_symbols, 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
             'baseline': {'file_count': baseline['snapshot']['file_count'],
                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
             'rules_changed': changed, **lists,
@@ -272,7 +383,8 @@ def ref_delta(current, baseline, renames=None):
                          'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
             'counts': {**{name: len(items) for name, items in lists.items()},
                        'new_candidates': len(general['new_candidates']),
-                       'strengthened_candidates': len(general['strengthened_candidates'])}}
+                       'strengthened_candidates': len(general['strengthened_candidates']),
+                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols)}}
 
 
 def ref_regressions(delta, fail_on):
