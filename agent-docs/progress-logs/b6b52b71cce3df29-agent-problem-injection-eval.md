@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
+commit: 075881f86abf2cd8733e74ae8c4df1d79922c05a
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -51,6 +51,8 @@ commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
   - commit: 334e57c; files: scripts/eval/inject/harness.py
 
 ### Next Step
+- Second improvement on branch eval-uncaught-agent-types: spec agent-docs/specs/338f748639b68776-breaking-changes-and-unused-symbols.md v1, status active (brief v1 approved 2026-11-12: schema name stays `bottlenecks.v9`; public symbols are reported on signature change or removal even with 0 references). Scope: symbol table `dependency_network.symbols`, delta.v4 lists `changed_signatures`/`removed_symbols`, standalone candidates `unreferenced_symbol` (P20) and `unprovided_injection` (NestJS export removal, P50); P45 deferred by the user. Next: implementer and test-implementer in parallel, then Test command, fuzz, hand mutations, verifier, R1 re-measure into `score-symbols.txt`.
+  - commit: 075881f; files: agent-docs/specs/338f748639b68776-breaking-changes-and-unused-symbols.md
 - Full run finished 2026-11-11 07:55: 608 tasks (152 per repo), 0 errors, 0 infra failures, 0 memory/thermal/usage-limit waits, recorded spend $42.66, min memory level 31, max swap 7.25 GB. Valid injections 454 (invalid: judge 56, tests 39; ghostfolio tests 21). Weighted type recall matched/located, analyzer vs any tool: CTFd script 0.046/0.231 vs 0.331/0.700, sonnet 0.069/0.174 vs 0.278/0.528; flask-admin script 0.007/0.152 vs 0.283/0.586, sonnet 0.054/0.250 vs 0.277/0.547; ghostfolio script 0.063/0.252 vs 0.081/0.144, sonnet 0.037/0.200 vs 0.000/0.052; nowinandroid script 0.032/0.354 vs 0.142/0.189, sonnet 0.015/0.239 vs 0.116/0.159. Matched catches summed over types: analyzer 27, any tool 92 of 454. Analyzer-only types: G06 (2/4), G07 (2/3), P16 (1/7). Weight-3 types caught by nobody (24): P01 P06 P08 P11 P12 P13 P14 P15 P17 P18 P20 P24 P25 P29 P36 P37 P38 P39 P40 P41 P43 P45 P50 P52; weight 1: G12 G14 G15 G16 G19 G20 G21. Analyzer FP on controls: rename 15/16, format 1/16 (ghostfolio), comment-only 4/4 nowinandroid (0 elsewhere), refactor 0/14. Re-check: `harness.py score <repo>` and `harness.py cost` (results are cached in inject/<repo>/runs).
   - commit: 092f4a2; files: none
 - First improvement (control false positives) is complete: spec agent-docs/spec-logs/73bd5aa508fa3e88-rename-and-comment-false-positives.md v7, status complete, 3 verifier rounds (cap raised to 3 by the user). Full re-measure 2026-11-11 13:48-14:26 (`tests/rename_comment_evidence/r1_reanalyze.py`, judge about $2.60): analyzer FP on controls rename 15/16 -> 2/16 (flask-admin large_node token_count), format 1/16 -> 1/16, comments 4/13 -> 0/13, refactor 0/14; analyzer recall unchanged in 7 of 8 repo x method cells, ghostfolio sonnet matched 0.037 -> 0.044, nowinandroid sonnet located 0.239 -> 0.188 from 3 tasks whose only signal came from comment text (G12, P23, P29). Table: tests/rename_comment_evidence/r1_comparison.md; scores `inject/<repo>/score-fp-fix.txt`, previous `score-full.txt` and `backup-full/`. Verifier advisories are in agent-docs/todos/5e2b9c41d7a08f36-rename-and-comment-verifier-advisories.md. The user asked to work the next improvement (uncaught weight-3 types, proposal: P50, P45, P15/P11, P20, P36, P12-P14, P37/P38) on a new branch after this PR.
@@ -63,6 +65,10 @@ commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
   - commit: 334e57c; files: scripts/eval/inject/harness.py, scripts/eval/inject/overnight.sh
 
 ### Constraints
+- "And use Korean plz" / "When you report to me"
+  - source: user messages in session 011c7b90
+- "메모리 수준 체크하고 진행"
+  - source: user message in session 011c7b90
 - "프로젝트 정의를 바꾼다. (대안) agent 문제로 보고된 적 없더라도 발생가는한 케이스는 넣는다. 단, agent 문제로 보고된 문제들은 3배의 가중치를 받는다."
   - source: user message in session 011c7b90
 - "분석기는 이제 local에서 돌려야 함 (크레딧 다 떨어짐) - pilot만 돌리고, 본격적인 run은 잘 때 돌리는 것으로"
@@ -79,6 +85,8 @@ commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
   - commit: 6fe7133; files: agent-docs/spec-logs/2afad1e5c96b32ff-delta-all-candidate-kinds.md
 
 ### Dead Ends
+- Directories made with `mktemp -d` outside the scratchpad received no `b.json` from the CLI during the R1 checks; scratchpad directories worked.
+  - commit: 3c0ffe3; files: none
 - `coverage run -m pytest` collects no data in this repo because pytest.ini adds `-n auto`; use pytest-cov.
   - commit: 9ea723b; files: pytest.ini
 
@@ -439,3 +447,8 @@ commit: 3c0ffe312d66a0d170460e18d943f6f6df31f25a
 > 주석과 회고에서 쉽게 재생성 가능한 정보는 배제하고 PR. 
 > 
 > 검증자 권고는 TODO에 넣고, 다음 개선 제안은 새로운 브랜치에서 진행.
+
+#### 52 — 2026-11-12T07:35:48Z
+
+> A, B - 추천
+> 승인. 진행해
