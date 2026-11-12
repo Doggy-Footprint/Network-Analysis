@@ -105,7 +105,7 @@ class NestJSGraphBuilder:
         for kind, label in (("module", "Modules"), ("controller", "Controllers"),
                             ("provider", "Providers"), ("endpoint", "Endpoints")):
             rows = [{"id": d.id, "name": d.name, "file_path": d.file_path,
-                     "line_number": d.span.start_line, **{k: v for k, v in d.metadata.items() if k != "decorator"}}
+                     "line_number": d.span.start_line, **{k: v for k, v in d.metadata.items() if k not in ("decorator", "global", "unsupported_fields")}}
                     for d in declarations if d.kind == kind]
             result.append(ReportCollection(key=f"nestjs_{kind}s", label=label, view="table",
                                            node_category=kind,

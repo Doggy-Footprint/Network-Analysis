@@ -602,18 +602,19 @@ def test_V07_M1_no_renames_argument_equals_the_v2_reference_with_v3_policy():
     cur, base = mixed_pair()
     for result in (wire(delta_api().compute_delta(cur, base)), wire(delta_api().compute_delta(cur, base, None))):
         assert result == wire(ref_delta(cur, base))
-        assert result['policy'] == 'delta.v3'
+        assert result['policy'] == 'delta.v4'
         assert result['renames'] == NOT_REQUESTED == {'status': 'skipped', 'reason': 'not_requested', 'pairs': []}
         assert set(result) == DELTA_KEYS
         assert result['counts'] == {'new_cycles': 0, 'grown_cycles': 1, 'new_violations': 1, 'new_package_dependencies': 1,
-                                    'instability_changes': 1, 'new_candidates': 1, 'strengthened_candidates': 1}
+                                    'instability_changes': 1, 'new_candidates': 1, 'strengthened_candidates': 1,
+                                    'changed_signatures': 0, 'removed_symbols': 0}
 
 
 def test_V07_M2_applied_with_empty_pairs_changes_nothing_but_the_renames_object():
     cur, base = mixed_pair()
     renames = {'status': 'applied', 'reason': None, 'pairs': []}
     result = compute(cur, base, renames)
-    assert result['renames'] == renames and result['policy'] == 'delta.v3'
+    assert result['renames'] == renames and result['policy'] == 'delta.v4'
     assert without_renames(result) == without_renames(compute(cur, base, None))
 
 
@@ -622,7 +623,7 @@ def test_V07_M2_applied_with_empty_pairs_changes_nothing_but_the_renames_object(
 def test_V07_M3_skipped_renames_are_echoed_and_do_not_change_the_comparison(reason):
     cur, base = mixed_pair()
     result = compute(cur, base, skipped(reason))
-    assert result['renames'] == skipped(reason) and result['policy'] == 'delta.v3'
+    assert result['renames'] == skipped(reason) and result['policy'] == 'delta.v4'
     assert without_renames(result) == without_renames(compute(cur, base, None))
 
 

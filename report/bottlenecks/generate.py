@@ -24,6 +24,8 @@ KIND_LABELS = {
     "rule_violation": "경계 규칙 위반",
     "untested_hub": "테스트 미도달 허브",
     "isolated_node": "고립 파일",
+    "unreferenced_symbol": "참조 없는 함수·메서드",
+    "unprovided_injection": "보이지 않는 주입 provider",
 }
 
 KIND_DESCRIPTIONS = {
@@ -36,6 +38,8 @@ KIND_DESCRIPTIONS = {
     "rule_violation": "아키텍처 규칙 file에 선언된 layer 경계(allow 목록 밖 또는 forbid 대상)를 넘는 file 의존 사례입니다.",
     "untested_hub": "PageRank 상위 production 파일 중 테스트 파일에서 직접 확정 연결(TESTS)이 닿지 않는 사례입니다.",
     "isolated_node": "다른 production 파일과 확정된 정적 연결이 없는 소스 파일 사례입니다. 프레임워크·동적·불확실 연결은 근거로 함께 보입니다.",
+    "unreferenced_symbol": "production 파일의 함수·메서드 중 다른 어떤 node에서도 참조(호출·import 등)되지 않고 framework 선언에도 연결되지 않은 사례입니다. 제외 이름(dunder, constructor, main)과 override는 빠집니다.",
+    "unprovided_injection": "NestJS 생성자 주입 대상 provider가 consumer가 속한 module에서 보이지 않는 사례입니다(providers, import한 module의 export, 전역 module 기준). 동적 항목이 있거나 소속 module이 없으면 uncertain으로 표시됩니다.",
 }
 
 METRIC_DEFINITIONS = [
@@ -62,6 +66,8 @@ _KIND_SCORE_FIELDS = {
     "unstable_dependency": ("instability_delta", 0),
     "untested_hub": ("pagerank_rank", 0),
     "isolated_node": ("line_count", 0),
+    "unreferenced_symbol": ("unreferenced_count", 0),
+    "unprovided_injection": ("unprovided_count", 0),
 }
 
 

@@ -644,6 +644,8 @@ def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
     expected = load_manifest()['fixtures'][pipe.name]['file']
     assert payload['schema'] == 'bottlenecks.v8' == expected['schema']
     assert payload['edge_weights'][KEY] == 10
+    raw = json.loads(pipe.output('file'))
+    assert raw['dependency_network']['symbols'] and not {'symbols', 'symbol_columns'} & set(payload['dependency_network'])
     assert {c['kind'] for c in payload['candidates']} - set(NEW_KINDS) == set(expected['candidate_kinds'])
     stripped = without_reach(payload)
     assert set(stripped) == set(expected['sections'])
@@ -683,14 +685,15 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
 
 
 def delta_v1_form(delta):
-    """The delta without the fields added by delta.v2, so the base-commit hash still applies."""
+    """The delta without the fields added by delta.v2 and delta.v4, so the base-commit hash still applies."""
     result = copy.deepcopy(delta)
     result['policy'] = 'delta.v1'
     assert set(result['renames']) == {'status', 'reason', 'pairs'}
     del result['renames']
-    for name in ('new_candidates', 'strengthened_candidates'):
+    for name in ('new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols'):
         del result[name]
         del result['counts'][name]
+    del result['symbol_changes']
     del result['resolved']['candidates']
     return result
 
@@ -701,7 +704,9 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     first = pipe.directory / 'baseline.json'
     first.write_bytes(pipe.output('file'))
     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
-    assert payload['delta']['policy'] == 'delta.v3'
+    assert payload['delta']['policy'] == 'delta.v4'
+    assert payload['delta']['symbol_changes'] == {'status': 'applied', 'reason': None}
+    assert payload['delta']['changed_signatures'] == [] and payload['delta']['removed_symbols'] == []
     assert payload['delta']['new_candidates'] == [] and payload['delta']['strengthened_candidates'] == []
     assert payload['delta']['resolved']['candidates'] == 0
     assert canonical_sha(delta_v1_form(payload['delta'])) == expected['delta']

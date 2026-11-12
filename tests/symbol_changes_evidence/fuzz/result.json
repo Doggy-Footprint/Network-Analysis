@@ -1,0 +1,15 @@
+{
+ "seed": 20261112,
+ "inputs": 5000,
+ "executed": 4959,
+ "rename_pairs": 11709,
+ "changed": 5403,
+ "removed": 26787,
+ "failures": {
+  "P1": 0,
+  "P2": 0,
+  "P3": 0,
+  "exceptions": 0
+ },
+ "examples": []
+}

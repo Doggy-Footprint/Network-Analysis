@@ -1,0 +1,83 @@
+[
+ {
+  "mutation": "M01 report rule or->and",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V03_EP1_file_path_ids_are_mapped_before_matching"
+  ]
+ },
+ {
+  "mutation": "M02 changed uses current refs",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V04_D2_private_without_baseline_references_is_not_reported[private-with-current-refs]"
+  ]
+ },
+ {
+  "mutation": "M03 skipped reason priority swapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_delta.py::test_F12_delta_object_shape_and_counts",
+   "tests/test_rename_delta.py::test_V05_EP2_null_baseline_commit",
+   "tests/test_symbol_changes.py::test_V03_EP4_current_without_symbols_is_skipped_and_the_rest_of_the_delta_is_unchanged"
+  ]
+ },
+ {
+  "mutation": "M04 symbol ids not rename-mapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_rename_delta.py::test_V09_EP1_C18_rename_after_baseline_is_applied_and_reports_nothing[one-rename]",
+   "tests/test_symbol_changes.py::test_V03_EP1_file_path_ids_are_mapped_before_matching"
+  ]
+ },
+ {
+  "mutation": "M05 self edge counts as reference",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP5_only_self_recursion_is_not_a_reference"
+  ]
+ },
+ {
+  "mutation": "M06 framework IMPLEMENTED_BY ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP8_an_implemented_by_edge_from_a_framework_declaration_is_a_reference"
+  ]
+ },
+ {
+  "mutation": "M07 modifier after name counts",
+  "status": "killed",
+  "failed": [
+   "tests/test_unreferenced_symbol.py::test_V06_EP6_names_that_only_resemble_the_exclusions_are_listed",
+   "tests/test_symbol_changes.py::test_V01_EP4_visibility[modifier-word-after-name]"
+  ]
+ },
+ {
+  "mutation": "M08 same-file source counted external",
+  "status": "killed",
+  "failed": [
+   "tests/test_symbol_changes.py::test_V01_EP5_external_reference_counts[same-file]"
+  ]
+ },
+ {
+  "mutation": "M09 global modules ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_global_module_export_means_no_candidate_even_without_an_import"
+  ]
+ },
+ {
+  "mutation": "M10 re-export not followed",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_re_export_chain_means_no_candidate"
+  ]
+ },
+ {
+  "mutation": "M11 unsupported fields ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_unsupported_module_fields_make_the_verdict_uncertain[imports]"
+  ]
+ }
+]

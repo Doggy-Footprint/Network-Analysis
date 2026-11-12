@@ -9,7 +9,7 @@ import pytest
 
 from fixtures.registry import fixture_root
 from tests.delta_candidates_support import SEVEN_PAIRS, STRENGTH, boundary_evidence, doc_evidence, gen, ref_general
-from tests.delta_support import (DELTA_KEYS, SUMMARY, append_file, copy_fixture, cycle, internal_violation, payload,
+from tests.delta_support import (DELTA_KEYS, SUMMARY, SYMBOL_SUMMARY, append_file, copy_fixture, cycle, internal_violation, payload,
                                  pdep, pmetrics, ref_delta, retrack, run_bottlenecks, wire)
 
 A, B, C = ('file:%s.py' % n for n in 'abc')
@@ -302,13 +302,13 @@ def mixed_pair():
 
 
 def test_V04_policy_value_and_key_sets():
-    assert api().DELTA_POLICY == 'delta.v3'
+    assert api().DELTA_POLICY == 'delta.v4'
     cur, base = mixed_pair()
     result = run(cur, base)
-    assert result['policy'] == 'delta.v3'
+    assert result['policy'] == 'delta.v4'
     assert set(result) == DELTA_KEYS
     assert set(result['counts']) == {'new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes',
-                                     'new_candidates', 'strengthened_candidates'}
+                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols'}
     assert set(result['resolved']) == {'cycles', 'violations', 'package_dependencies', 'candidates'}
     assert result['counts']['new_candidates'] == len(result['new_candidates']) == 1
     assert result['counts']['strengthened_candidates'] == len(result['strengthened_candidates']) == 1
@@ -380,6 +380,9 @@ def test_V05_cli_baseline_rerun_reports_new_unresolved_boundary_and_isolated_nod
     assert any(i['kind'] == 'isolated_node' and i['target'] == 'file:app/zz_orphan.py' for i in delta['new_candidates'])
     assert all(i['kind'] not in ('dependency_cycle', 'package_cycle', 'rule_violation') for i in reported)
     lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]')]
+    symbol_lines = [line for line in lines if line.startswith('[Δ] Symbol changes')]
+    assert symbol_lines == [SYMBOL_SUMMARY.format(delta['counts']['changed_signatures'], delta['counts']['removed_symbols'])]
+    lines = [line for line in lines if line not in symbol_lines]
     expected = SUMMARY.format(*(len(delta[n]) for n in ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies',
                                                         'instability_changes')),
                               len(delta['new_candidates']), len(delta['strengthened_candidates']))

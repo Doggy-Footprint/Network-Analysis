@@ -10,6 +10,7 @@ GOLDEN = Path(__file__).parent / 'build_modules_evidence' / 'base_android-nowina
 BUILD_FILE = re.compile(r'(^|/)(build\.gradle(\.kts)?|settings\.gradle(\.kts)?|package\.json)$')
 GLOBAL_FIELDS = {'pagerank', 'weighted_centrality_cost', 'betweenness_centrality'}   # graph-wide measures move when any node is added
 MODULE_PREFIX = 'build-module:'
+SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')   # not build-induced; asserted by the symbol tests
 
 
 def golden():
@@ -85,7 +86,7 @@ def assert_file_changes_are_build_only(payload):
         assert before.items() <= after.items(), scheme
         for pair in set(after) - set(before):
             assert pair[0] in build_dirs or pair[1] in build_dirs, pair
-    by_id = {c['id']: c for c in payload['candidates']}
+    by_id = {c['id']: c for c in payload['candidates'] if c['kind'] not in SYMBOL_CANDIDATE_KINDS}
     base_ids = {c['id'] for c in base['candidates']}
     assert base_ids <= set(by_id)
     for ident in set(by_id) - base_ids:

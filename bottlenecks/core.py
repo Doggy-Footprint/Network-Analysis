@@ -287,7 +287,11 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             from analysis.doc_references import analyze_doc_references
             doc_table, doc_candidates, doc_summary = analyze_doc_references(snapshot, architecture.details)
             architecture.details["doc_references"] = doc_table
-            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates, key=lambda item: (item["kind"], item["id"]))
+            from bottlenecks.nestjs_visibility import unprovided_candidates
+            from bottlenecks.symbols import SYMBOL_COLUMNS, incoming_index, symbol_rows, symbol_table, unreferenced_candidates
+            incoming = incoming_index(architecture)
+            symbols = symbol_rows(symbol_table(architecture, incoming), sorted(metrics))
+            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates + unreferenced_candidates(architecture, incoming) + unprovided_candidates(architecture), key=lambda item: (item["kind"], item["id"]))
             _compact_structure_evidence(candidates, sorted(metrics))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold, "large_node_token_threshold": weights.large_node_token_threshold}
@@ -304,7 +308,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
         if is_file:
-            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS)
+            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS, symbols=symbols, symbol_columns=SYMBOL_COLUMNS)
         if doc_summary is not None:
             coverage["doc_references"] = doc_summary
         if structure is not None:
