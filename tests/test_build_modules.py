@@ -615,6 +615,7 @@ def test_V10_G1_build_file_free_fixture_matches_base_commit_golden(name, tmp_pat
     expected = {key: golden[key] for key in NORMALIZED}
     expected['coverage']['structure']['policy'] = '<policy>'
     assert policy == 'structure.v2'
+    assert payload['dependency_network']['symbols']
     assert 'build' not in payload['coverage']['structure']['schemes']
     assert 'build' not in payload['dependency_network']['package_metrics']
     assert 'build' not in payload['dependency_network']['package_dependencies']

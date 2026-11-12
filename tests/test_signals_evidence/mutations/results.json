@@ -1,0 +1,122 @@
+[
+ {
+  "mutation": "M01 uncertain reach treated as tested",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V08_D2_new_uncertain_function_is_listed"
+  ]
+ },
+ {
+  "mutation": "M02 equal branch count reported",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V08_D5_equal_branch_count_is_not_listed[same]"
+  ]
+ },
+ {
+  "mutation": "M03 existing-case mock increase threshold 1",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V10_existing_case_threshold_is_an_increase_of_two[increase-1]"
+  ]
+ },
+ {
+  "mutation": "M04 test case ids not rename-mapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V11_EP5_a_renamed_test_file_with_the_same_content_reports_nothing_and_the_control_does"
+  ]
+ },
+ {
+  "mutation": "M05 skipped reason priority swapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V11_EP4_both_without_test_data_reports_the_baseline_reason[no-test-cases]"
+  ]
+ },
+ {
+  "mutation": "M06 python >= counted strong",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_changes_delta.py::test_V11_EP1_cli_applied_prints_one_summary_line_on_stdout_and_no_warning",
+   "tests/test_test_signals.py::test_V05_python_assert_statements[ge]"
+  ]
+ },
+ {
+  "mutation": "M07 jest .not ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V05_typescript_chain_rules[not-makes-it-weak]"
+  ]
+ },
+ {
+  "mutation": "M08 bool operator counts every operand",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V01_python_branch_constructs[bool-operands-minus-one]"
+  ]
+ },
+ {
+  "mutation": "M09 nested named declarations counted",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V01_nested_named_declarations_are_excluded_from_the_outer_count[ts-outer]"
+  ]
+ },
+ {
+  "mutation": "M10 resolution ignored for confirmed edges",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V03_cause_a_single_unconfirmed_edge_from_the_test_gives_uncertain[certain-ambiguous]"
+  ]
+ },
+ {
+  "mutation": "M11 INSTANTIATES does not reach constructors",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V03_cause_instantiation_reaches_the_constructor_methods_and_what_they_call"
+  ]
+ },
+ {
+  "mutation": "M12 framework entrypoints ignored",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V03_cause_framework_node_edge_makes_the_target_and_its_callees_uncertain"
+  ]
+ },
+ {
+  "mutation": "M13 jest file-level mocks not counted",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V06_typescript_file_top_level_statements_count_for_every_case_in_the_file"
+  ]
+ },
+ {
+  "mutation": "M14 Kotlin class-level skip not inherited",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V07_kotlin_object_annotation_is_inherited_by_its_cases[@Ignore-True]"
+  ]
+ },
+ {
+  "mutation": "M15 Kotlin check prefix counted strong",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V05_kotlin_other_calls_are_not_assertions[check(x)]"
+  ]
+ },
+ {
+  "mutation": "M16 Kotlin object scope not entered",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V04_kotlin_annotated_functions_in_classes_objects_and_nested_classes"
+  ]
+ },
+ {
+  "mutation": "M17 Python decorator line does not match",
+  "status": "killed",
+  "failed": [
+   "tests/test_test_signals.py::test_V01_decorated_declaration_matches_on_its_first_line_or_its_name_line_only[python-function]"
+  ]
+ }
+]

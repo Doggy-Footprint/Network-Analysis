@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 
 import pytest
@@ -51,16 +52,29 @@ def written(tmp_path, directory='out'):
     return json.loads((tmp_path / directory / 'b.json').read_text(encoding='utf-8'))
 
 
+RENAMES_WARNING_PREFIX = '[!] Warning: renames not detected ('
+
+
 def error_lines(done):
-    return [line for line in done.stderr.splitlines() if line.startswith('[!]')]
+    lines = [line for line in done.stderr.splitlines() if line.startswith('[!]')]
+    warnings = [line for line in lines if line.startswith(RENAMES_WARNING_PREFIX)]
+    assert len(warnings) <= 1
+    return [line for line in lines if line not in warnings]
 
 
 def summary_for(delta):
-    return SUMMARY.format(*(len(delta[name]) for name in LISTS))
+    return SUMMARY.format(*(len(delta[name]) for name in LISTS), len(delta['new_candidates']), len(delta['strengthened_candidates']))
 
 
 def stdout_summary(done):
-    return [line for line in done.stdout.splitlines() if line.startswith('[Δ]')]
+    lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
+    symbol = [line for line in lines if line.startswith('[Δ] Symbol changes')]
+    tests = [line for line in lines if line.startswith('[Δ] Test changes')]
+    assert len(symbol) == min(1, len(lines) - len(symbol) - len(tests))
+    assert len(tests) == min(1, len(lines) - len(symbol) - len(tests))
+    assert all(re.fullmatch(r'\[Δ\] Symbol changes: changed signatures \d+, removed symbols \d+', line) for line in symbol)
+    assert all(re.fullmatch(r'\[Δ\] Test changes: untested changes \d+, weakened tests \d+, added mocks \d+', line) for line in tests)
+    return [line for line in lines if line not in symbol and line not in tests]
 
 
 def regression_line(delta, names):
@@ -71,7 +85,8 @@ def regression_line(delta, names):
 def assert_matches_reference(after, baseline_path):
     base = json.loads(baseline_path.read_text(encoding='utf-8'))
     body = {k: v for k, v in after.items() if k != 'delta'}
-    assert after['delta'] == wire(ref_delta(body, base))
+    assert set(after['delta']['renames']) == {'status', 'reason', 'pairs'}
+    assert after['delta'] == wire(ref_delta(body, base, after['delta']['renames']))
     return after['delta']
 
 
@@ -80,9 +95,9 @@ def test_V07_C01_rerun_on_same_commit_reports_nothing(tmp_path, pristine, baseli
     assert done.returncode == 0, done.stderr[-1500:]
     delta = assert_matches_reference(written(tmp_path), baselines['ruled'])
     assert all(delta[name] == [] for name in LISTS)
-    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0}
+    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
     assert delta['rules_changed'] is False
-    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0)]
+    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0, 0, 0)]
     assert error_lines(done) == []
     assert outputs(tmp_path / 'out') == ALL_OUTPUTS
 
@@ -162,7 +177,7 @@ def test_V07_C04_new_package_dependency_never_fails(tmp_path, baselines):
                                                   'to_id': 'pkg:python:app.core', 'tier': 'certain'}]
     assert delta['new_cycles'] == [] and delta['grown_cycles'] == [] and delta['new_violations'] == []
     assert done.returncode == 0, done.stderr[-1500:]
-    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0)]
+    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0, len(delta['new_candidates']), len(delta['strengthened_candidates']))]
     assert error_lines(done) == []
 
 
@@ -177,7 +192,7 @@ def test_V07_C15_baseline_and_bottlenecks_share_a_path(tmp_path, baselines):
     after = written(tmp_path)
     assert shared.read_bytes() != original
     assert after['delta']['counts']['new_package_dependencies'] == 1
-    assert after['delta'] == wire(ref_delta({k: v for k, v in after.items() if k != 'delta'}, json.loads(original)))
+    assert after['delta'] == wire(ref_delta({k: v for k, v in after.items() if k != 'delta'}, json.loads(original), after['delta']['renames']))
 
 
 def test_V07_C22_both_regressions_name_both(tmp_path, baselines):

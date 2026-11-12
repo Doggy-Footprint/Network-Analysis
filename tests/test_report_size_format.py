@@ -20,7 +20,13 @@ V8_DETAILS = golden('v8_details.json')
 
 @pytest.fixture(scope='module')
 def v9():
-    return fixture_payload()
+    payload = fixture_payload()
+    assert payload['dependency_network']['symbols'] and payload['dependency_network']['symbol_columns']
+    assert 'test_case_columns' in payload['dependency_network'] and 'test_cases' in payload['dependency_network']
+    network = {k: v for k, v in payload['dependency_network'].items()
+               if k not in ('symbols', 'symbol_columns', 'test_cases', 'test_case_columns')}
+    kinds = ('unreferenced_symbol', 'unprovided_injection')
+    return {**payload, 'dependency_network': network, 'candidates': [c for c in payload['candidates'] if c['kind'] not in kinds]}
 
 
 @pytest.fixture(scope='module')

@@ -1,0 +1,218 @@
+diff --git a/tests/delta_support.py b/tests/delta_support.py
+index e25c10e..a3a7b29 100644
+--- a/tests/delta_support.py
++++ b/tests/delta_support.py
+@@ -20,11 +20,13 @@ MAIN = 'from code_analyzer.cli import main; main()'
+ CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
+ TIERS = ('certain', 'resolved', 'all')
+ LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
+-DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'resolved', 'counts'}
++DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts'}
+ FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
+ FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
+                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
+-SUMMARY = '[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
++GENERAL_LISTS = ('new_candidates', 'strengthened_candidates')
++SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
++           ', new candidates {}, strengthened candidates {}')
+ RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
+ 
+ 
+@@ -187,14 +189,19 @@ def ref_delta(current, baseline):
+         changed = 'rules_sha256' not in cur_rules or 'rules_sha256' not in base_rules or cur_rules['rules_sha256'] != base_rules['rules_sha256']
+     lists = {'new_cycles': new_cycles, 'grown_cycles': grown_cycles, 'new_violations': new_violations,
+              'new_package_dependencies': new_pd, 'instability_changes': changes}
+-    return {'policy': 'delta.v1',
++    from tests.delta_candidates_support import ref_general
++    general = ref_general(current, baseline)
++    return {'policy': 'delta.v2',
+             'baseline': {'file_count': baseline['snapshot']['file_count'],
+                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
+             'rules_changed': changed, **lists,
++            'new_candidates': general['new_candidates'], 'strengthened_candidates': general['strengthened_candidates'],
+             'resolved': {'cycles': resolved_cycles,
+                          'violations': sum(1 for i in base_ids if i not in cur_ids),
+-                         'package_dependencies': resolved_pd},
+-            'counts': {name: len(items) for name, items in lists.items()}}
++                         'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
++            'counts': {**{name: len(items) for name, items in lists.items()},
++                       'new_candidates': len(general['new_candidates']),
++                       'strengthened_candidates': len(general['strengthened_candidates'])}}
+ 
+ 
+ def ref_regressions(delta, fail_on):
+diff --git a/tests/test_delta.py b/tests/test_delta.py
+index 77545cb..32f8ae3 100644
+--- a/tests/test_delta.py
++++ b/tests/test_delta.py
+@@ -38,7 +38,7 @@ def pairs_of(*pairs):
+ 
+ 
+ def test_policy_constant():
+-    assert delta_api().DELTA_POLICY == 'delta.v1'
++    assert delta_api().DELTA_POLICY == 'delta.v2'
+ 
+ 
+ def test_F12_delta_object_shape_and_counts():
+@@ -46,12 +46,12 @@ def test_F12_delta_object_shape_and_counts():
+     cur = payload(candidates=[cycle([A, B, C]), cycle([D, E])], file_count=9, rules_sha='h1')
+     result = run(cur, base)
+     assert set(result) == DELTA_KEYS
+-    assert result['policy'] == 'delta.v1'
++    assert result['policy'] == 'delta.v2'
+     assert result['baseline'] == {'file_count': 7, 'rules_sha256': 'h1'}
+     assert result['rules_changed'] is False
+-    assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0}
++    assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
+     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 1, 'new_violations': 0, 'new_package_dependencies': 0,
+-                                'instability_changes': 0}
++                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
+ 
+ 
+ def test_F12_same_input_same_bytes_and_inputs_untouched():
+@@ -357,8 +357,8 @@ def test_V14_schemes_are_not_mixed_for_cycles_dependencies_and_metrics():
+                   package_dependencies={'framework': [pdep('p', 'q')]}, package_metrics={'framework': pmetrics({'pkg:x': 1.0})})
+     result = run(cur, base)
+     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 1,
+-                                'instability_changes': 0}
+-    assert result['resolved'] == {'cycles': 1, 'violations': 0, 'package_dependencies': 1}
++                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
++    assert result['resolved'] == {'cycles': 1, 'violations': 0, 'package_dependencies': 1, 'candidates': 0}
+ 
+ 
+ def test_V14_resolved_cycles_exclude_baseline_cycles_that_overlap_current():
+@@ -418,7 +418,7 @@ def good():
+     return payload(
+         candidates=[cycle([A, B]), cycle(['p', 'q'], kind='package_cycle', scheme='language'),
+                     internal_violation('b:v1', A, B), external_violation('b:v2', A, 'os'),
+-                    {'id': 'b:l', 'kind': 'large_node'}],
++                    {'id': 'b:l', 'kind': 'large_node', 'target': A, 'metrics': {}}],
+         package_dependencies={'language': [pdep('p', 'q')]}, package_metrics={'language': pmetrics({'pkg:x': 0.5, 'pkg:n': None})},
+         rules_sha='abc')
+ 
+diff --git a/tests/test_delta_cli.py b/tests/test_delta_cli.py
+index 9684a55..2abad79 100644
+--- a/tests/test_delta_cli.py
++++ b/tests/test_delta_cli.py
+@@ -56,7 +56,7 @@ def error_lines(done):
+ 
+ 
+ def summary_for(delta):
+-    return SUMMARY.format(*(len(delta[name]) for name in LISTS))
++    return SUMMARY.format(*(len(delta[name]) for name in LISTS), len(delta['new_candidates']), len(delta['strengthened_candidates']))
+ 
+ 
+ def stdout_summary(done):
+@@ -80,9 +80,9 @@ def test_V07_C01_rerun_on_same_commit_reports_nothing(tmp_path, pristine, baseli
+     assert done.returncode == 0, done.stderr[-1500:]
+     delta = assert_matches_reference(written(tmp_path), baselines['ruled'])
+     assert all(delta[name] == [] for name in LISTS)
+-    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0}
++    assert delta['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
+     assert delta['rules_changed'] is False
+-    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0)]
++    assert stdout_summary(done) == [summary_for(delta)] == [SUMMARY.format(0, 0, 0, 0, 0, 0, 0)]
+     assert error_lines(done) == []
+     assert outputs(tmp_path / 'out') == ALL_OUTPUTS
+ 
+@@ -162,7 +162,7 @@ def test_V07_C04_new_package_dependency_never_fails(tmp_path, baselines):
+                                                   'to_id': 'pkg:python:app.core', 'tier': 'certain'}]
+     assert delta['new_cycles'] == [] and delta['grown_cycles'] == [] and delta['new_violations'] == []
+     assert done.returncode == 0, done.stderr[-1500:]
+-    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0)]
++    assert stdout_summary(done) == [SUMMARY.format(0, 0, 0, 1, 0, len(delta['new_candidates']), len(delta['strengthened_candidates']))]
+     assert error_lines(done) == []
+ 
+ 
+diff --git a/tests/test_delta_integration.py b/tests/test_delta_integration.py
+index c18023d..f354e83 100644
+--- a/tests/test_delta_integration.py
++++ b/tests/test_delta_integration.py
+@@ -224,7 +224,7 @@ def test_V12_Q02_identical_real_json_pair(outputs_by_id):
+     seconds, result = fastest(lambda: compute_delta(current, copy.deepcopy(current)))
+     assert seconds <= 1.0, seconds
+     assert wire(result)['counts'] == {'new_cycles': 0, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 0,
+-                                      'instability_changes': 0}
++                                      'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
+ 
+ 
+ def large_pair():
+@@ -250,8 +250,8 @@ def test_V12_Q03_compute_delta_on_large_synthetic_input():
+     assert seconds <= 3.0, seconds
+     result = wire(result)
+     assert result['counts'] == {'new_cycles': 250, 'grown_cycles': 250, 'new_violations': 5000, 'new_package_dependencies': 5000,
+-                                'instability_changes': 0}
+-    assert result['resolved'] == {'cycles': 100, 'violations': 1000, 'package_dependencies': 500}
++                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0}
++    assert result['resolved'] == {'cycles': 100, 'violations': 1000, 'package_dependencies': 500, 'candidates': 0}
+     assert [i['candidate_id'] for i in result['new_cycles']] == sorted(cid('dependency_cycle', 'file', 'all', [
+         f'file:c{i:04d}/m{j:02d}.py' for j in range(20)]) for i in range(750, 1000))
+     assert all(len(i['added_members']) == 1 for i in result['grown_cycles'])
+diff --git a/tests/test_reach_candidates.py b/tests/test_reach_candidates.py
+index 8c77ac0..8c9f1f0 100644
+--- a/tests/test_reach_candidates.py
++++ b/tests/test_reach_candidates.py
+@@ -682,15 +682,30 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
+     assert hashlib.sha256(data).hexdigest() == expected['sha256']
+ 
+ 
++def delta_v1_form(delta):
++    """The delta without the fields added by delta.v2, so the base-commit hash still applies."""
++    result = copy.deepcopy(delta)
++    result['policy'] = 'delta.v1'
++    for name in ('new_candidates', 'strengthened_candidates'):
++        del result[name]
++        del result['counts'][name]
++    del result['resolved']['candidates']
++    return result
++
++
+ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
+     expected = load_manifest()['delta']
+     pipe = Pipeline(expected['fixture'], tmp_path_factory.mktemp('delta'))
+     first = pipe.directory / 'baseline.json'
+     first.write_bytes(pipe.output('file'))
+     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
+-    assert canonical_sha(payload['delta']) == expected['delta']
++    assert payload['delta']['policy'] == 'delta.v2'
++    assert payload['delta']['new_candidates'] == [] and payload['delta']['strengthened_candidates'] == []
++    assert payload['delta']['resolved']['candidates'] == 0
++    assert canonical_sha(delta_v1_form(payload['delta'])) == expected['delta']
+     payload = with_base_policy(payload)
+     stripped = without_reach(payload)
++    stripped['delta'] = delta_v1_form(stripped['delta'])
+     assert sorted(k for k, v in stripped.items() if canonical_sha(v) != expected['sections'][k]) == []
+     assert payload['delta']['counts'] == {key: 0 for key in payload['delta']['counts']}
+ 
+@@ -705,7 +720,12 @@ def test_V7_base_candidate_kinds_are_unchanged_when_baseline_has_no_new_kinds(tm
+     path = pipe.directory / 'old.json'
+     path.write_text(json.dumps(baseline), encoding='utf-8')
+     payload = json.loads(pipe.output('file', extra=['--baseline', str(path)], tag='old'))
+-    assert canonical_sha(payload['delta']) == expected['delta']
++    assert canonical_sha(delta_v1_form(payload['delta'])) == expected['delta']
++    from tests.delta_candidates_support import ref_general
++    wanted = ref_general({k: v for k, v in payload.items() if k != 'delta'}, baseline)
++    assert payload['delta']['new_candidates'] == json.loads(json.dumps(wanted['new_candidates']))
++    assert payload['delta']['strengthened_candidates'] == json.loads(json.dumps(wanted['strengthened_candidates']))
++    assert payload['delta']['resolved']['candidates'] == wanted['resolved_candidates']
+ 
+ 
+ N_LADDER = [1, 3, 10, 25, 100000]
+diff --git a/tests/test_structure_panel_browser.py b/tests/test_structure_panel_browser.py
+index 2e59da3..4cf25a8 100644
+--- a/tests/test_structure_panel_browser.py
++++ b/tests/test_structure_panel_browser.py
+@@ -93,9 +93,10 @@ def violation_item(candidate):
+ 
+ def delta_of(new_cycles=(), grown_cycles=(), new_violations=(), packages=(), instability=(), rules_changed=False):
+     lists = {'new_cycles': list(new_cycles), 'grown_cycles': list(grown_cycles), 'new_violations': list(new_violations),
+-             'new_package_dependencies': list(packages), 'instability_changes': list(instability)}
+-    return {'policy': 'delta.v1', 'baseline': {'file_count': 5, 'rules_sha256': 'a' * 64}, 'rules_changed': rules_changed, **lists,
+-            'resolved': {'cycles': 0, 'violations': 0, 'package_dependencies': 0},
++             'new_package_dependencies': list(packages), 'instability_changes': list(instability),
++             'new_candidates': [], 'strengthened_candidates': []}
++    return {'policy': 'delta.v2', 'baseline': {'file_count': 5, 'rules_sha256': 'a' * 64}, 'rules_changed': rules_changed, **lists,
++            'resolved': {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0},
+             'counts': {name: len(items) for name, items in lists.items()}}
+ 
+ 

@@ -130,6 +130,8 @@ class NestJSAnalyzer:
                                 declaration.metadata["controller_path"] = _normalize(path)
                         if kind == "module":
                             declaration.metadata["module_decorator"] = decorator
+                            declaration.metadata["global"] = any(name == "Global" for name, _ in recognized)
+                            declaration.metadata.setdefault("unsupported_fields", [])
                         break
         for file in self.files.values():
             self._modules(file, only_providers=True)
@@ -364,6 +366,11 @@ class NestJSAnalyzer:
             if not any((r.from_id, r.to_id, r.relation) == (ref.from_id, ref.to_id, ref.relation) for r in self.arch.references):
                 self.arch.references.append(ref)
 
+    @staticmethod
+    def _mark_unsupported(declaration, *fields):
+        marked = declaration.metadata["unsupported_fields"]
+        marked[:] = sorted(set(marked) | {name for name in fields if name in {"imports", "providers"}})
+
     def _modules(self, file, only_providers=False):
         for declaration in list(self.arch.declarations):
             if declaration.file_path != file.key or declaration.kind != "module":
@@ -373,6 +380,7 @@ class NestJSAnalyzer:
             obj = args[0] if len(args) == 1 and args[0].type == "object" else None
             if obj is None:
                 self._diagnostic("unsupported_expression", file, decorator or declaration.ast_node, "module metadata must be an object")
+                self._mark_unsupported(declaration, "imports", "providers")
                 continue
             for pair in _children(obj, "pair"):
                 key = pair.child_by_field_name("key")
@@ -384,13 +392,17 @@ class NestJSAnalyzer:
                     continue
                 if value is None or value.type != "array":
                     self._diagnostic("unsupported_expression", file, value or pair, "module field must be an array")
+                    self._mark_unsupported(declaration, field)
                     continue
                 for item in value.named_children:
                     if item.type not in ("identifier", "member_expression"):
                         self._diagnostic("unsupported_expression", file, item, "dynamic module item is unsupported")
+                        self._mark_unsupported(declaration, field)
                         continue
                     expected = {"imports": "module", "controllers": "controller", "providers": "provider", "exports": None}[field]
                     target = self._resolve(file, item, expected, register_provider=(field == "providers"))
+                    if target is None:
+                        self._mark_unsupported(declaration, field)
                     if target and field == "exports" and target.kind not in {"module", "provider"}:
                         self._diagnostic("unresolved_reference", file, item, "export is not a module or provider")
                         continue

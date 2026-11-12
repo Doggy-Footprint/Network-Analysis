@@ -20,12 +20,30 @@ MAIN = 'from code_analyzer.cli import main; main()'
 CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
 TIERS = ('certain', 'resolved', 'all')
 LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
-DELTA_KEYS = {'policy', 'baseline', 'rules_changed', *LISTS, 'resolved', 'counts'}
+SYMBOL_LISTS = ('changed_signatures', 'removed_symbols')
+TEST_LISTS = ('untested_changes', 'weakened_tests', 'added_mocks')
+DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts',
+              'symbol_changes', *SYMBOL_LISTS, 'test_changes', *TEST_LISTS}
 FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
 FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
-SUMMARY = '[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
+GENERAL_LISTS = ('new_candidates', 'strengthened_candidates')
+SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violations {}, new package dependencies {}, instability changes {}'
+           ', new candidates {}, strengthened candidates {}')
 RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
+SYMBOL_SUMMARY = '[Δ] Symbol changes: changed signatures {}, removed symbols {}'
+SYMBOL_WARNING = '[!] Warning: symbol changes not compared ({})'
+TEST_SUMMARY = '[Δ] Test changes: untested changes {}, weakened tests {}, added mocks {}'
+TEST_WARNING = '[!] Warning: test changes not compared ({})'
+SYMBOL_KINDS = ('unreferenced_symbol', 'unprovided_injection')
+SYMBOL_STRENGTH = {'unreferenced_symbol': ('unreferenced_count',), 'unprovided_injection': ('unprovided_count', 'uncertain_count')}
+UNREFERENCED_TAG = 'node'
+UNPROVIDED_TAG = 'injection'
+LEGACY_SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
+SYMBOL_COLUMNS = [*LEGACY_SYMBOL_COLUMNS, 'branches', 'test_reach']
+SYMBOL_ENTRY_KEYS = set(SYMBOL_COLUMNS)
+TEST_CASE_COLUMNS = ['id', 'file', 'name', 'strong_assertions', 'weak_assertions', 'mocks', 'skipped']
+COUNT_KEYS = ('strong_assertions', 'weak_assertions', 'mocks', 'skipped')
 
 
 def load_manifest():
@@ -118,7 +136,250 @@ def _overlaps(a, b):
     return _same_key(a, b) and any(m == n for m in a['members'] for n in b['members'])
 
 
-def ref_delta(current, baseline):
+NOT_REQUESTED = {'status': 'skipped', 'reason': 'not_requested', 'pairs': []}
+
+
+def map_path_id(text, pairs):
+    out, i = '', 0
+    while i < len(text):
+        for pair in pairs:
+            old, new = pair['from'], pair['to']
+            end = i + len(old)
+            if text.startswith(old, i) and (i == 0 or text[i - 1] == ':') and (end == len(text) or text[end] == '#'):
+                out, i = out + new, end
+                break
+        else:
+            out, i = out + text[i], i + 1
+    return out
+
+
+def _module_name(path):
+    return path[:-len('.py')].removesuffix('/__init__').replace('/', '.')
+
+
+def map_py_id(text, pairs):
+    for pair in pairs:
+        if pair['from'].endswith('.py') and pair['to'].endswith('.py'):
+            head = 'py:' + _module_name(pair['from'])
+            if text.startswith(head) and (len(text) == len(head) or text[len(head)] == '#'):
+                return 'py:' + _module_name(pair['to']) + text[len(head):]
+    return text
+
+
+def remap_baseline(baseline, pairs):
+    data = json.loads(json.dumps(baseline))
+    m = lambda value: map_py_id(map_path_id(value, pairs), pairs) if isinstance(value, str) else value
+    network = data['dependency_network']
+    if 'file_ids' in network:
+        network['file_ids'] = [m(v) for v in network['file_ids']]
+    columns = network.get('symbol_columns') or []
+    for row in network.get('symbols') or []:
+        row[columns.index('id')] = m(row[columns.index('id')])
+    for row in network.get('test_cases') or []:
+        row[0] = m(row[0])
+    for scheme in network['package_dependencies']:
+        for row in network['package_dependencies'][scheme]:
+            row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
+    network['package_metrics'] = {scheme: {m(k): v for k, v in rows.items()} for scheme, rows in network['package_metrics'].items()}
+    for item in data['candidates']:
+        if 'target' in item:
+            item['target'] = m(item['target'])
+        structure = item.get('structure')
+        if isinstance(structure, dict) and item['kind'] not in ('rule_violation',):
+            if item['kind'] in CYCLE_KINDS:
+                structure['members'] = [m(v) for v in structure['members']]
+            else:
+                for key in structure:
+                    structure[key] = m(structure[key])
+        evidence = item.get('evidence')
+        if isinstance(evidence, list):
+            for index, element in enumerate(evidence):
+                if isinstance(element, dict):
+                    for key in ('from_id', 'to_id', 'node_id', 'consumer_id', 'provider_id'):
+                        if key in element:
+                            element[key] = m(element[key])
+                elif isinstance(element, list):
+                    evidence[index] = [m(v) for v in element]
+    return data
+
+
+def _violation_key(v):
+    s = v['structure']
+    first = v['evidence'][0] if v.get('evidence') else {}
+    return (s['rule_type'], s['from_layer'], s.get('to_layer'), s.get('to_external'), v['target'], first.get('to_id'))
+
+
+def _comparison_form(signature):
+    chars = ['"' if c == "'" else c for c in signature if not c.isspace()]
+    removed = True
+    while removed:
+        removed = False
+        for i in range(len(chars) - 1):
+            if chars[i] in ',;' and chars[i + 1] in ')]}>':
+                del chars[i]
+                removed = True
+                break
+    return ''.join(chars)
+
+
+def ref_symbol_changes(current, baseline):
+    """Nested scans over plain lists on purpose, never an index of ids, so it shares no lookup logic with the product."""
+    def decode(data):
+        network = data['dependency_network']
+        if network.get('symbols') is None:
+            return None
+        columns, ids = network['symbol_columns'], network['file_ids']
+        entries = [dict(zip(columns, row)) for row in network['symbols']]
+        for entry in entries:
+            entry['file'] = ids[entry['file']]
+        return entries
+    base_rows, cur_rows = decode(baseline), decode(current)
+    if base_rows is None or cur_rows is None:
+        reason = 'baseline_without_symbols' if base_rows is None else 'current_without_symbols'
+        return {'status': 'skipped', 'reason': reason}, [], []
+    changed, removed = [], []
+    for old in base_rows:
+        counterpart = None
+        for new in cur_rows:
+            if new['id'] == old['id']:
+                counterpart = new
+                break
+        refs = old['external_refs'] + old['uncertain_external_refs']
+        if counterpart is None:
+            if old['visibility'] == 'public' or refs > 0:
+                removed.append({'id': old['id'], 'file': old['file'], 'kind': old['kind'], 'name': old['name'],
+                                'baseline_signature': old['signature'], 'visibility': old['visibility'],
+                                'external_refs': old['external_refs'], 'uncertain_external_refs': old['uncertain_external_refs']})
+            continue
+        before, now = old['signature'], counterpart['signature']
+        if isinstance(before, str) and isinstance(now, str) and _comparison_form(before) != _comparison_form(now) and (counterpart['visibility'] == 'public' or refs > 0):
+            changed.append({'id': counterpart['id'], 'file': counterpart['file'], 'kind': counterpart['kind'],
+                            'name': counterpart['name'], 'baseline_signature': before, 'current_signature': now,
+                            'visibility': counterpart['visibility'], 'external_refs': old['external_refs'],
+                            'uncertain_external_refs': old['uncertain_external_refs']})
+    changed.sort(key=lambda item: item['id'])
+    removed.sort(key=lambda item: item['id'])
+    return {'status': 'applied', 'reason': None}, changed, removed
+
+
+def _symbol_signatures(item):
+    rows = []
+    for element in item.get('evidence') or []:
+        if item['kind'] == 'unreferenced_symbol':
+            row = [UNREFERENCED_TAG, element['node_id']]
+        else:
+            row = [UNPROVIDED_TAG, element['consumer_id'], element['provider_id']]
+        if row not in rows:
+            rows.append(row)
+    return rows
+
+
+def ref_general_with_symbol_kinds(current, baseline):
+    from tests.delta_candidates_support import ref_general
+    strip = lambda data: {**data, 'candidates': [c for c in data['candidates'] if c['kind'] not in SYMBOL_KINDS]}
+    general = ref_general(strip(current), strip(baseline))
+    new, strengthened = list(general['new_candidates']), list(general['strengthened_candidates'])
+    base_items = [c for c in baseline['candidates'] if c['kind'] in SYMBOL_KINDS]
+    cur_items = [c for c in current['candidates'] if c['kind'] in SYMBOL_KINDS]
+    for item in cur_items:
+        old = None
+        for other in base_items:
+            if (other['kind'], other['target']) == (item['kind'], item['target']):
+                old = other
+                break
+        if old is None:
+            new.append({'candidate_id': item['id'], 'kind': item['kind'], 'target': item['target'], 'metrics': item['metrics']})
+            continue
+        increased = {m: {'baseline': old['metrics'][m], 'current': item['metrics'][m]}
+                     for m in SYMBOL_STRENGTH[item['kind']] if item['metrics'][m] > old['metrics'][m]}
+        before = _symbol_signatures(old)
+        added = sorted(row for row in _symbol_signatures(item) if row not in before)
+        if increased or added:
+            strengthened.append({'candidate_id': item['id'], 'baseline_candidate_id': old['id'], 'kind': item['kind'],
+                                 'target': item['target'], 'increased': increased, 'added_evidence': added})
+    resolved = general['resolved_candidates']
+    for old in base_items:
+        if not any((old['kind'], old['target']) == (item['kind'], item['target']) for item in cur_items):
+            resolved += 1
+    order = lambda i: (i['kind'], str(i['target']), i['candidate_id'])
+    return {'new_candidates': sorted(new, key=order), 'strengthened_candidates': sorted(strengthened, key=order),
+            'resolved_candidates': resolved}
+
+
+def _test_data(data):
+    network = data['dependency_network']
+    columns = network.get('symbol_columns') or []
+    if 'test_cases' not in network or 'test_case_columns' not in network or 'branches' not in columns or 'test_reach' not in columns:
+        return None
+    ids = network['file_ids']
+    symbols = [dict(zip(columns, row)) for row in network['symbols']]
+    cases = [dict(zip(network['test_case_columns'], row)) for row in network['test_cases']]
+    for item in symbols + cases:
+        item['file'] = ids[item['file']]
+    return symbols, cases
+
+
+def ref_test_changes(current, baseline):
+    """`baseline` must already be rename-mapped."""
+    base, cur = _test_data(baseline), _test_data(current)
+    if base is None or cur is None:
+        reason = 'baseline_without_test_data' if base is None else 'current_without_test_data'
+        return {'status': 'skipped', 'reason': reason}, [], [], []
+    base_symbols, base_cases = base
+    cur_symbols, cur_cases = cur
+    untested = []
+    for new in cur_symbols:
+        if new['kind'] not in ('function', 'method') or new['test_reach'] == 'tested':
+            continue
+        old = None
+        for candidate in base_symbols:
+            if candidate['id'] == new['id']:
+                old = candidate
+                break
+        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+        if old is None or (isint(old['branches']) and isint(new['branches']) and new['branches'] > old['branches']):
+            untested.append({'id': new['id'], 'file': new['file'], 'kind': new['kind'], 'name': new['name'],
+                             'baseline_branches': None if old is None else old['branches'], 'current_branches': new['branches'],
+                             'test_reach': new['test_reach']})
+    counts = lambda row: {key: row[key] for key in COUNT_KEYS}
+    weakened, mocks = [], []
+    for new in cur_cases:
+        old = None
+        for candidate in base_cases:
+            if candidate['id'] == new['id']:
+                old = candidate
+                break
+        reasons = []
+        if old is None:
+            if new['strong_assertions'] == 0:
+                reasons.append('new_without_strong_assertions')
+            if new['mocks'] >= 3:
+                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': None,
+                              'current_mocks': new['mocks']})
+        else:
+            if new['strong_assertions'] < old['strong_assertions']:
+                reasons.append('fewer_strong_assertions')
+            if old['skipped'] is False and new['skipped'] is True:
+                reasons.append('newly_skipped')
+            if new['mocks'] - old['mocks'] >= 2:
+                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': old['mocks'],
+                              'current_mocks': new['mocks']})
+        if reasons:
+            weakened.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'reasons': sorted(reasons),
+                             'baseline': None if old is None else counts(old), 'current': counts(new)})
+    for old in base_cases:
+        if not any(new['id'] == old['id'] for new in cur_cases):
+            weakened.append({'id': old['id'], 'file': old['file'], 'name': old['name'], 'reasons': ['removed'],
+                             'baseline': counts(old), 'current': None})
+    for items in (untested, weakened, mocks):
+        items.sort(key=lambda item: item['id'])
+    return {'status': 'applied', 'reason': None}, untested, weakened, mocks
+
+
+def ref_delta(current, baseline, renames=None):
+    pairs = [] if renames is None else renames['pairs']
+    if pairs:
+        baseline = remap_baseline(baseline, pairs)
     cur, base = _cycles(current), _cycles(baseline)
     new_cycles, grown_cycles = [], []
     for c in cur:
@@ -139,11 +400,11 @@ def ref_delta(current, baseline):
 
     def violations(data):
         return [c for c in data['candidates'] if c['kind'] == 'rule_violation']
-    base_ids = [v['id'] for v in violations(baseline)]
-    cur_ids = [v['id'] for v in violations(current)]
+    base_keys = [_violation_key(v) for v in violations(baseline)]
+    cur_keys = [_violation_key(v) for v in violations(current)]
     new_violations = []
     for v in violations(current):
-        if v['id'] in base_ids:
+        if _violation_key(v) in base_keys:
             continue
         s = v['structure']
         item = {'candidate_id': v['id'], 'rule_type': s['rule_type'], 'from_layer': s['from_layer'], 'target': v['target']}
@@ -187,14 +448,25 @@ def ref_delta(current, baseline):
         changed = 'rules_sha256' not in cur_rules or 'rules_sha256' not in base_rules or cur_rules['rules_sha256'] != base_rules['rules_sha256']
     lists = {'new_cycles': new_cycles, 'grown_cycles': grown_cycles, 'new_violations': new_violations,
              'new_package_dependencies': new_pd, 'instability_changes': changes}
-    return {'policy': 'delta.v1',
+    general = ref_general_with_symbol_kinds(current, baseline)
+    symbol_status, changed_signatures, removed_symbols = ref_symbol_changes(current, baseline)
+    test_status, untested_changes, weakened_tests, added_mocks = ref_test_changes(current, baseline)
+    return {'policy': 'delta.v5', 'symbol_changes': symbol_status, 'test_changes': test_status, 'untested_changes': untested_changes,
+            'weakened_tests': weakened_tests, 'added_mocks': added_mocks, 'changed_signatures': changed_signatures,
+            'removed_symbols': removed_symbols, 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
             'baseline': {'file_count': baseline['snapshot']['file_count'],
                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
             'rules_changed': changed, **lists,
+            'new_candidates': general['new_candidates'], 'strengthened_candidates': general['strengthened_candidates'],
             'resolved': {'cycles': resolved_cycles,
-                         'violations': sum(1 for i in base_ids if i not in cur_ids),
-                         'package_dependencies': resolved_pd},
-            'counts': {name: len(items) for name, items in lists.items()}}
+                         'violations': sum(1 for k in base_keys if k not in cur_keys),
+                         'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
+            'counts': {**{name: len(items) for name, items in lists.items()},
+                       'new_candidates': len(general['new_candidates']),
+                       'strengthened_candidates': len(general['strengthened_candidates']),
+                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols),
+                       'untested_changes': len(untested_changes), 'weakened_tests': len(weakened_tests),
+                       'added_mocks': len(added_mocks)}}
 
 
 def ref_regressions(delta, fail_on):
@@ -203,6 +475,10 @@ def ref_regressions(delta, fail_on):
         names.update(('cycle', 'violation') if name == 'any' else (name,))
     hit = {'cycle': bool(delta['new_cycles'] or delta['grown_cycles']), 'violation': bool(delta['new_violations'])}
     return [name for name in ('cycle', 'violation') if name in names and hit[name]]
+
+
+def without_renames(delta):
+    return {k: v for k, v in delta.items() if k != 'renames'}
 
 
 def make_delta(**lists):
@@ -272,6 +548,8 @@ def without_digest(coverage):
 
 def base_form_bytes(data):
     obj = without_doc_references(json.loads(data))
+    obj.get('snapshot', {}).pop('git_commit', None)
+    obj.get('snapshot', {}).pop('git_commit_reason', None)
     obj['dependency_network'].pop('package_dependencies', None)
     obj['dependency_network']['structure_policy'] = 'structure.v1'   # base hashes predate the structure.v2 bump (build scheme)
     obj.get('coverage', {}).get('structure', {})['policy'] = 'structure.v1'

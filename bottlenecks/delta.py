@@ -1,16 +1,28 @@
+import copy
 import json
 import os
-from typing import Any, Iterable, Mapping
+import re
+from typing import Any, Callable, Iterable, Mapping
 
 from analysis.structure import TIERS
+from bottlenecks.test_signals import TEST_CASE_COLUMNS
 
-DELTA_POLICY = "delta.v1"
+DELTA_POLICY = "delta.v5"
 INSTABILITY_THRESHOLD = 0.2
 # Tolerates float error of differences such as 0.8 - 0.6 landing just below 0.2.
 _EPSILON = 1e-12
 _SCHEMAS = ("bottlenecks.v8", "bottlenecks.v9")
 _CYCLE_KINDS = ("dependency_cycle", "package_cycle")
-_LIST_NAMES = ("new_cycles", "grown_cycles", "new_violations", "new_package_dependencies", "instability_changes")
+_LIST_NAMES = ("new_cycles", "grown_cycles", "new_violations", "new_package_dependencies", "instability_changes", "new_candidates", "strengthened_candidates", "changed_signatures", "removed_symbols", "untested_changes", "weakened_tests", "added_mocks")
+_SPECIAL_KINDS = _CYCLE_KINDS + ("rule_violation",)
+# Only these count as strengthening; line spans, thresholds and ranks change on formatting alone.
+_STRENGTH_METRICS = {"large_node": ("line_count", "token_count"), "unresolved_boundary": ("unresolved_count",),
+                     "evidence_spread": ("file_count", "directory_count"), "dangling_doc_reference": ("dangling_count",),
+                     "unstable_dependency": ("file_pair_count",), "unreferenced_symbol": ("unreferenced_count",),
+                     "unprovided_injection": ("unprovided_count", "uncertain_count")}
+_EVIDENCE_KINDS = ("unresolved_boundary", "dangling_doc_reference", "unreferenced_symbol", "unprovided_injection")
+_TEST_REACH = ("tested", "uncertain", "untested")
+_SYMBOL_COLUMNS = ("id", "file", "kind", "name", "signature", "visibility", "external_refs", "uncertain_external_refs")
 
 
 class BaselineError(ValueError):
@@ -51,6 +63,8 @@ def _check_baseline(document: Any, path: str) -> None:
     snapshot = _object(_member(root, "snapshot", path, "$"), path, "$.snapshot")
     count = _member(snapshot, "file_count", path, "$.snapshot")
     if not isinstance(count, int) or isinstance(count, bool): _fail(path, "$.snapshot.file_count", "an integer")
+    commit = snapshot.get("git_commit")
+    if commit is not None and not isinstance(commit, str): _fail(path, "$.snapshot.git_commit", "a string or null")
     network = _object(_member(root, "dependency_network", path, "$"), path, "$.dependency_network")
     columns = _check_columns(network, path) if schema == "bottlenecks.v9" else None
     _string(_member(network, "structure_policy", path, "$.dependency_network"), path, "$.dependency_network.structure_policy")
@@ -82,6 +96,9 @@ def _check_baseline(document: Any, path: str) -> None:
         _string(candidate.get("kind"), path, where + ".kind")
         if candidate["kind"] in _CYCLE_KINDS: _check_cycle(candidate, path, where, columns)
         elif candidate["kind"] == "rule_violation": _check_violation(candidate, path, where)
+        else: _check_general(candidate, path, where)
+    if "symbols" in network: _check_symbols(network, path)
+    if "test_cases" in network: _check_test_cases(network, path)
     coverage = root.get("coverage")
     if coverage is not None:
         _object(coverage, path, "$.coverage")
@@ -89,6 +106,50 @@ def _check_baseline(document: Any, path: str) -> None:
         if "architecture_rules" in coverage:
             _object(rules, path, "$.coverage.architecture_rules")
             if "rules_sha256" in rules: _string(rules["rules_sha256"], path, "$.coverage.architecture_rules.rules_sha256")
+
+
+def _check_symbols(network: Mapping[str, Any], path: str) -> None:
+    base = "$.dependency_network"
+    symbols, columns = network["symbols"], network.get("symbol_columns")
+    if not isinstance(symbols, list): _fail(path, base + ".symbols", "a list")
+    if not isinstance(columns, list) or not all(isinstance(item, str) for item in columns) or not set(_SYMBOL_COLUMNS) <= set(columns):
+        _fail(path, base + ".symbol_columns", "a list of strings containing " + ", ".join(_SYMBOL_COLUMNS))
+    ids = network.get("file_ids")
+    if not isinstance(ids, list): _fail(path, base + ".file_ids", "a list")
+    for index, row in enumerate(symbols):
+        where = f"{base}.symbols[{index}]"
+        if not isinstance(row, list) or len(row) != len(columns): _fail(path, where, f"a list of {len(columns)} values")
+        cells = dict(zip(columns, row))
+        for name in ("id", "kind", "name"): _string(cells[name], path, f"{where}.{name}")
+        if cells["signature"] is not None: _string(cells["signature"], path, where + ".signature")
+        for name in ("external_refs", "uncertain_external_refs"):
+            if not isinstance(cells[name], int) or isinstance(cells[name], bool): _fail(path, f"{where}.{name}", "an integer")
+        if not isinstance(cells["file"], int) or isinstance(cells["file"], bool) or not 0 <= cells["file"] < len(ids): _fail(path, where + ".file", "an integer index within file_ids")
+        if "branches" in cells and cells["branches"] is not None and not _count(cells["branches"]): _fail(path, where + ".branches", "a non-negative integer or null")
+        if "test_reach" in cells and cells["test_reach"] not in _TEST_REACH: _fail(path, where + ".test_reach", 'one of "tested", "uncertain", "untested"')
+
+
+def _count(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _check_test_cases(network: Mapping[str, Any], path: str) -> None:
+    base = "$.dependency_network"
+    cases, columns = network["test_cases"], network.get("test_case_columns")
+    if not isinstance(cases, list): _fail(path, base + ".test_cases", "a list")
+    if not isinstance(columns, list) or not all(isinstance(item, str) for item in columns) or not set(TEST_CASE_COLUMNS) <= set(columns):
+        _fail(path, base + ".test_case_columns", "a list of strings containing " + ", ".join(TEST_CASE_COLUMNS))
+    ids = network.get("file_ids")
+    if not isinstance(ids, list): _fail(path, base + ".file_ids", "a list")
+    for index, row in enumerate(cases):
+        where = f"{base}.test_cases[{index}]"
+        if not isinstance(row, list) or len(row) != len(columns): _fail(path, where, f"a list of {len(columns)} values")
+        cells = dict(zip(columns, row))
+        for name in ("id", "name"): _string(cells[name], path, f"{where}.{name}")
+        if not isinstance(cells["file"], int) or isinstance(cells["file"], bool) or not 0 <= cells["file"] < len(ids): _fail(path, where + ".file", "an integer index within file_ids")
+        for name in ("strong_assertions", "weak_assertions", "mocks"):
+            if not _count(cells[name]): _fail(path, f"{where}.{name}", "a non-negative integer")
+        if not isinstance(cells["skipped"], bool): _fail(path, where + ".skipped", "a boolean")
 
 
 def _check_columns(network: Mapping[str, Any], path: str) -> dict:
@@ -144,6 +205,17 @@ def _check_violation(candidate: Mapping[str, Any], path: str, where: str) -> Non
     if "to_layer" in structure: _string(structure["to_layer"], path, where + ".structure.to_layer")
     elif "to_external" in structure: _string(structure["to_external"], path, where + ".structure.to_external")
     else: _fail(path, where + ".structure", "an object with a string to_layer or to_external")
+
+
+def _check_general(candidate: Mapping[str, Any], path: str, where: str) -> None:
+    _string(candidate.get("target"), path, where + ".target")
+    metrics = _object(candidate.get("metrics"), path, where + ".metrics")
+    for name in _STRENGTH_METRICS.get(candidate["kind"], ()):
+        if name in metrics and not _number(metrics[name]): _fail(path, f"{where}.metrics.{name}", "a number")
+    if candidate["kind"] in _EVIDENCE_KINDS:
+        evidence = candidate.get("evidence")
+        if not isinstance(evidence, list): _fail(path, where + ".evidence", "a list")
+        for index, record in enumerate(evidence): _object(record, path, f"{where}.evidence[{index}]")
 
 
 def load_baseline(path: "str | os.PathLike") -> dict:
@@ -209,6 +281,12 @@ def _cycle_delta(current: list, baseline: list, current_ids: list | None = None,
     return sorted(new, key=order), sorted(grown, key=order), resolved
 
 
+def _violation_key(candidate: Mapping[str, Any]) -> tuple:
+    structure, evidence = candidate["structure"], candidate.get("evidence")
+    first = evidence[0].get("to_id") if isinstance(evidence, list) and evidence and isinstance(evidence[0], dict) else None
+    return (structure["rule_type"], structure["from_layer"], structure.get("to_layer"), structure.get("to_external"), candidate["target"], first)
+
+
 def _violations(candidates: Iterable[Mapping[str, Any]]) -> dict[str, Mapping[str, Any]]:
     found: dict[str, Mapping[str, Any]] = {}
     for candidate in candidates:
@@ -222,6 +300,68 @@ def _violation_item(candidate: Mapping[str, Any]) -> dict:
     if "to_external" in structure: item["to_external"] = structure["to_external"]
     else: item.update(to_layer=structure["to_layer"], to_id=candidate["evidence"][0]["to_id"])
     return item
+
+
+def _signatures(candidate: Mapping[str, Any]) -> set[tuple[str, ...]]:
+    kind, found = candidate["kind"], set()
+    evidence = candidate.get("evidence")
+    if kind not in _EVIDENCE_KINDS or not isinstance(evidence, list): return found
+    for record in evidence:
+        if not isinstance(record, dict): continue
+        if kind == "unreferenced_symbol":
+            if isinstance(record.get("node_id"), str): found.add(("node", record["node_id"]))
+            continue
+        if kind == "unprovided_injection":
+            if isinstance(record.get("consumer_id"), str) and isinstance(record.get("provider_id"), str): found.add(("injection", record["consumer_id"], record["provider_id"]))
+            continue
+        if kind == "dangling_doc_reference":
+            if isinstance(record.get("notation"), str) and isinstance(record.get("text"), str): found.add(("doc", record["notation"], record["text"]))
+            continue
+        node = record["node_id"] if isinstance(record.get("node_id"), str) else candidate.get("target")
+        references, flags = record.get("unresolved_references"), record.get("flags")
+        if isinstance(references, list):
+            found.update(("reference", node, item["name"]) for item in references if isinstance(item, dict) and isinstance(item.get("name"), str))
+        if isinstance(flags, list): found.update(("flag", node, flag) for flag in flags if isinstance(flag, str))
+        if isinstance(record.get("from_id"), str) and isinstance(record.get("to_id"), str):
+            relation = record.get("relation")
+            found.add(("edge", record["from_id"], record["to_id"], relation if isinstance(relation, str) else ""))
+    return found
+
+
+def _general(candidates: Iterable[Mapping[str, Any]]) -> dict[tuple, Mapping[str, Any]]:
+    keys = []
+    seen: dict[tuple, int] = {}
+    chosen = [candidate for candidate in candidates if candidate.get("kind") not in _SPECIAL_KINDS]
+    for candidate in chosen:
+        structure = candidate.get("structure")
+        if isinstance(structure, dict): structure = json.dumps({k: v for k, v in structure.items() if k != "tier"}, sort_keys=True)
+        else: structure = "" if structure is None else json.dumps(structure, sort_keys=True)
+        key = (candidate.get("kind"), candidate.get("target"), structure)
+        keys.append(key)
+        seen[key] = seen.get(key, 0) + 1
+    return {(key + (candidate.get("id"),) if seen[key] > 1 else key): candidate for key, candidate in zip(keys, chosen)}
+
+
+def _general_delta(current: Iterable[Mapping[str, Any]], baseline: Iterable[Mapping[str, Any]]) -> tuple[list, list, int]:
+    now, then = _general(current), _general(baseline)
+    new, strengthened = [], []
+    for key, candidate in now.items():
+        before = then.get(key)
+        if before is None:
+            new.append({"candidate_id": candidate.get("id"), "kind": candidate["kind"], "target": candidate.get("target"), "metrics": candidate.get("metrics")})
+            continue
+        increased = {}
+        now_metrics, then_metrics = candidate.get("metrics"), before.get("metrics")
+        if isinstance(now_metrics, dict) and isinstance(then_metrics, dict):
+            for name in _STRENGTH_METRICS.get(candidate["kind"], ()):
+                if _number(now_metrics.get(name)) and _number(then_metrics.get(name)) and now_metrics[name] > then_metrics[name]:
+                    increased[name] = {"baseline": then_metrics[name], "current": now_metrics[name]}
+        added = sorted(_signatures(candidate) - _signatures(before))
+        if increased or added:
+            strengthened.append({"candidate_id": candidate.get("id"), "baseline_candidate_id": before.get("id"), "kind": candidate["kind"], "target": candidate.get("target"),
+                                 "increased": increased, "added_evidence": [list(item) for item in added]})
+    order = lambda item: (item["kind"], item["target"], item["candidate_id"])
+    return sorted(new, key=order), sorted(strengthened, key=order), len(then.keys() - now.keys())
 
 
 def _dependency_map(network: Mapping[str, Any]) -> dict[tuple[str, str, str], str]:
@@ -245,7 +385,160 @@ def _instability_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]
     return sorted(changes, key=lambda item: (-abs(item["delta"]), item["scheme"], item["package"]))
 
 
-def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> dict:
+_NOT_REQUESTED = {"status": "skipped", "reason": "not_requested", "pairs": []}
+
+
+_TRAILING_SEPARATOR = re.compile(r"[,;]+(?=[)\]}>])")
+
+
+def _squeeze(signature: str) -> str:
+    # Formatter-only differences (whitespace, trailing separators, quote style) must not read as signature changes.
+    return _TRAILING_SEPARATOR.sub("", "".join(signature.split())).replace("'", '"')
+
+
+def _reported(symbol: Mapping[str, Any], refs: Mapping[str, Any]) -> bool:
+    return symbol.get("visibility") != "private" or refs["external_refs"] + refs["uncertain_external_refs"] > 0
+
+
+def _symbol_map(network: Mapping[str, Any]) -> dict[str, dict]:
+    columns, ids = network["symbol_columns"], network["file_ids"]
+    found = {}
+    for row in network["symbols"]:
+        symbol = dict(zip(columns, row))
+        symbol["file"] = ids[symbol["file"]]
+        found[symbol["id"]] = symbol
+    return found
+
+
+def _symbol_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> tuple[dict, list, list]:
+    if "symbols" not in baseline: return {"status": "skipped", "reason": "baseline_without_symbols"}, [], []
+    if "symbols" not in current: return {"status": "skipped", "reason": "current_without_symbols"}, [], []
+    now, then = _symbol_map(current), _symbol_map(baseline)
+    changed, removed = [], []
+    for symbol_id in sorted(then):
+        before, after = then[symbol_id], now.get(symbol_id)
+        if after is None:
+            if _reported(before, before):
+                removed.append({"id": symbol_id, "file": before["file"], "kind": before["kind"], "name": before["name"], "baseline_signature": before.get("signature"),
+                                "visibility": before.get("visibility"), "external_refs": before["external_refs"], "uncertain_external_refs": before["uncertain_external_refs"]})
+        elif isinstance(before.get("signature"), str) and isinstance(after.get("signature"), str) and _squeeze(before["signature"]) != _squeeze(after["signature"]) and _reported(after, before):
+            changed.append({"id": symbol_id, "file": after["file"], "kind": after["kind"], "name": after["name"], "baseline_signature": before["signature"], "current_signature": after["signature"],
+                            "visibility": after.get("visibility"), "external_refs": before["external_refs"], "uncertain_external_refs": before["uncertain_external_refs"]})
+    return {"status": "applied", "reason": None}, changed, removed
+
+
+def _has_test_data(network: Mapping[str, Any]) -> bool:
+    columns = network.get("symbol_columns") or ()
+    return "symbols" in network and "test_cases" in network and "branches" in columns and "test_reach" in columns
+
+
+def _case_map(network: Mapping[str, Any]) -> dict[str, dict]:
+    columns, ids = network["test_case_columns"], network["file_ids"]
+    found = {}
+    for row in network["test_cases"]:
+        case = dict(zip(columns, row))
+        case["file"] = ids[case["file"]]
+        found[case["id"]] = case
+    return found
+
+
+def _counts(case: Mapping[str, Any] | None) -> dict | None:
+    if case is None: return None
+    return {"strong_assertions": case["strong_assertions"], "weak_assertions": case["weak_assertions"], "mocks": case["mocks"], "skipped": case["skipped"]}
+
+
+def _test_changes(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> tuple[dict, list, list, list]:
+    if not _has_test_data(baseline): return {"status": "skipped", "reason": "baseline_without_test_data"}, [], [], []
+    if not _has_test_data(current): return {"status": "skipped", "reason": "current_without_test_data"}, [], [], []
+    now, then = _symbol_map(current), _symbol_map(baseline)
+    untested = []
+    for symbol_id in sorted(now):
+        after, before = now[symbol_id], then.get(symbol_id)
+        if after["kind"] not in ("function", "method") or after["test_reach"] == "tested": continue
+        grown = before is None or (isinstance(before["branches"], int) and isinstance(after["branches"], int) and after["branches"] > before["branches"])
+        if grown:
+            untested.append({"id": symbol_id, "file": after["file"], "kind": after["kind"], "name": after["name"],
+                             "baseline_branches": None if before is None else before["branches"], "current_branches": after["branches"], "test_reach": after["test_reach"]})
+    cases_now, cases_then = _case_map(current), _case_map(baseline)
+    weakened, mocks = [], []
+    for case_id in sorted(set(cases_now) | set(cases_then)):
+        after, before = cases_now.get(case_id), cases_then.get(case_id)
+        reasons = []
+        if after is None: reasons.append("removed")
+        elif before is None:
+            if after["strong_assertions"] == 0: reasons.append("new_without_strong_assertions")
+            if after["mocks"] >= 3: mocks.append({"id": case_id, "file": after["file"], "name": after["name"], "baseline_mocks": None, "current_mocks": after["mocks"]})
+        else:
+            if after["strong_assertions"] < before["strong_assertions"]: reasons.append("fewer_strong_assertions")
+            if after["skipped"] and not before["skipped"]: reasons.append("newly_skipped")
+            if after["mocks"] - before["mocks"] >= 2: mocks.append({"id": case_id, "file": after["file"], "name": after["name"], "baseline_mocks": before["mocks"], "current_mocks": after["mocks"]})
+        if reasons:
+            weakened.append({"id": case_id, "file": (after or before)["file"], "name": (after or before)["name"], "reasons": sorted(reasons), "baseline": _counts(before), "current": _counts(after)})
+    return {"status": "applied", "reason": None}, untested, weakened, mocks
+
+
+def _remap(value: Any, substitute: Callable[[str], str]) -> Any:
+    if isinstance(value, str): return substitute(value)
+    if isinstance(value, list): return [_remap(item, substitute) for item in value]
+    if isinstance(value, dict): return {key: _remap(item, substitute) for key, item in value.items()}
+    return value
+
+
+def _module_name(path: str) -> str:
+    module = path[:-len(".py")]
+    if module.endswith("/__init__"): module = module[:-len("/__init__")]
+    return module.replace("/", ".")
+
+
+def _substituter(mapping: Mapping[str, str]) -> Callable[[str], str]:
+    paths = re.compile(r"(?<![^:])(?:" + "|".join(re.escape(old) for old in sorted(mapping, key=len, reverse=True)) + r")(?![^#])")
+    modules = {_module_name(old): _module_name(new) for old, new in mapping.items() if old.endswith(".py") and new.endswith(".py")}
+    modules = {old: new for old, new in modules.items() if old != new}
+    symbols = re.compile(r"py:(" + "|".join(re.escape(old) for old in sorted(modules, key=len, reverse=True)) + r")(?![^#])") if modules else None
+    def substitute(value: str) -> str:
+        value = paths.sub(lambda found: mapping[found.group(0)], value)
+        return symbols.sub(lambda found: "py:" + modules[found.group(1)], value) if symbols and value.startswith("py:") else value
+    return substitute
+
+
+def _remap_baseline(baseline: Mapping[str, Any], mapping: Mapping[str, str]) -> dict:
+    result = copy.deepcopy(dict(baseline))
+    substitute = _substituter(mapping)
+    def fix(value: Any) -> Any: return _remap(value, substitute)
+    network = result.get("dependency_network") or {}
+    if "file_ids" in network: network["file_ids"] = fix(network["file_ids"])
+    for pairs in (network.get("package_dependencies") or {}).values():
+        for pair in pairs:
+            pair["from_id"], pair["to_id"] = fix(pair["from_id"]), fix(pair["to_id"])
+    if "symbols" in network:
+        position = network["symbol_columns"].index("id")
+        for row in network["symbols"]: row[position] = fix(row[position])
+    if "test_cases" in network and isinstance(network.get("test_case_columns"), list) and "id" in network["test_case_columns"]:
+        position = network["test_case_columns"].index("id")
+        for row in network["test_cases"]: row[position] = fix(row[position])
+    metrics = network.get("package_metrics") or {}
+    for scheme, packages in metrics.items(): metrics[scheme] = {fix(package): record for package, record in packages.items()}
+    for candidate in result.get("candidates", []):
+        if "target" in candidate: candidate["target"] = fix(candidate["target"])
+        structure = candidate.get("structure")
+        if candidate.get("kind") == "rule_violation": pass
+        elif candidate.get("kind") in _CYCLE_KINDS: structure["members"] = fix(structure["members"])
+        elif structure is not None: candidate["structure"] = fix(structure)
+        evidence = candidate.get("evidence")
+        for record in evidence if isinstance(evidence, list) else [evidence]:
+            if isinstance(record, dict):
+                for key in ("from_id", "to_id", "node_id", "consumer_id", "provider_id"):
+                    if key in record: record[key] = fix(record[key])
+            elif isinstance(record, list):
+                for position in (0, 1):
+                    if isinstance(record[position], str): record[position] = fix(record[position])
+    return result
+
+
+def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any], renames: Mapping[str, Any] | None = None) -> dict:
+    renames = dict(_NOT_REQUESTED) if renames is None else renames
+    mapping = {pair["from"]: pair["to"] for pair in renames["pairs"] if pair["from"] != pair["to"]}
+    if mapping: baseline = _remap_baseline(baseline, mapping)
     current_network, baseline_network = current.get("dependency_network") or {}, baseline.get("dependency_network") or {}
     if current_network.get("structure_policy") != baseline_network.get("structure_policy"):
         raise BaselineError(f"baseline: structure_policy {baseline_network.get('structure_policy')!r} differs from current {current_network.get('structure_policy')!r}")
@@ -258,15 +551,24 @@ def compute_delta(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> di
 
     new_cycles, grown_cycles, resolved_cycles = _cycle_delta(current["candidates"], baseline["candidates"], current_network.get("file_ids"), baseline_network.get("file_ids"))
     current_violations, baseline_violations = _violations(current["candidates"]), _violations(baseline["candidates"])
-    new_violations = [_violation_item(current_violations[key]) for key in sorted(set(current_violations) - set(baseline_violations))]
+    current_keys = {_violation_key(candidate) for candidate in current_violations.values()}
+    baseline_keys = {_violation_key(candidate) for candidate in baseline_violations.values()}
+    new_violations = [_violation_item(current_violations[found]) for found in sorted(current_violations) if _violation_key(current_violations[found]) not in baseline_keys]
+    resolved_violations = sum(1 for candidate in baseline_violations.values() if _violation_key(candidate) not in current_keys)
     current_pairs, baseline_pairs = _dependency_map(current_network), _dependency_map(baseline_network)
     new_pairs = [{"scheme": key[0], "from_id": key[1], "to_id": key[2], "tier": current_pairs[key]} for key in sorted(set(current_pairs) - set(baseline_pairs))]
     changes = _instability_changes(current_network, baseline_network)
-    delta = {"policy": DELTA_POLICY, "baseline": {"file_count": baseline["snapshot"]["file_count"], "rules_sha256": digest}, "rules_changed": rules_changed,
+    new_candidates, strengthened, resolved_candidates = _general_delta(current["candidates"], baseline["candidates"])
+    symbol_changes, changed_signatures, removed_symbols = _symbol_changes(current_network, baseline_network)
+    test_status, untested_changes, weakened_tests, added_mocks = _test_changes(current_network, baseline_network)
+    delta = {"policy": DELTA_POLICY, "renames": {"status": renames["status"], "reason": renames["reason"], "pairs": [dict(pair) for pair in renames["pairs"]]}, "baseline": {"file_count": baseline["snapshot"]["file_count"], "rules_sha256": digest}, "rules_changed": rules_changed,
              "new_cycles": new_cycles, "grown_cycles": grown_cycles, "new_violations": new_violations,
              "new_package_dependencies": new_pairs, "instability_changes": changes,
-             "resolved": {"cycles": resolved_cycles, "violations": len(set(baseline_violations) - set(current_violations)),
-                          "package_dependencies": len(set(baseline_pairs) - set(current_pairs))}}
+             "new_candidates": new_candidates, "strengthened_candidates": strengthened,
+             "resolved": {"cycles": resolved_cycles, "violations": resolved_violations,
+                          "package_dependencies": len(set(baseline_pairs) - set(current_pairs)), "candidates": resolved_candidates},
+             "symbol_changes": symbol_changes, "changed_signatures": changed_signatures, "removed_symbols": removed_symbols,
+             "test_changes": test_status, "untested_changes": untested_changes, "weakened_tests": weakened_tests, "added_mocks": added_mocks}
     delta["counts"] = {name: len(delta[name]) for name in _LIST_NAMES}
     return delta
 

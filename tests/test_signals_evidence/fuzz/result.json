@@ -1,0 +1,16 @@
+{
+ "seed": 20261113,
+ "inputs": 5000,
+ "executed": 5000,
+ "rename_pairs": 12123,
+ "untested": 8519,
+ "weakened": 27645,
+ "mocks": 12431,
+ "failures": {
+  "P1": 0,
+  "P2": 0,
+  "P3": 0,
+  "exceptions": 0
+ },
+ "examples": []
+}
