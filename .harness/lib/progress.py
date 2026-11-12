@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,20 +14,28 @@ RECORD_SUBSECTIONS = ("Changes", "Commands", "Failed Attempts", "Sources", "User
 CONSTRAINTS = "Constraints"
 USER_REQUESTS = "User Requests"
 FRONTMATTER_FIELDS = ("session", "before", "previous", "branch")
+INSTALLER_RUN_RECORD = ".harness/sessions/installer-run.json"
 PROGRESS_DIR_NAME = "progress"
 PROGRESS_LOGS_DIR_NAME = "progress-logs"
 DEFAULT_HOST_SUFFIXES = (".corp", ".internal", ".local", ".lan", ".intranet")
 SIMILARITY_THRESHOLD = 0.90
 SIMILARITY_MIN_LENGTH = 20
 GIT_TIMEOUT = 10
+UNCOMMITTED = "0" * 40
+PLACEHOLDER = "[harness-requires]"
+RECORD_ONLY = "record-only"
+SNAPSHOT_VERSION = 2
+EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 _FENCE_LINE_RE = re.compile(r"^\s*(`{3,}|~{3,})")
 _HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.*?)[ \t]*#*[ \t]*$")
 _BULLET_RE = re.compile(r"^[-*+][ \t]+(.*)$")
-_COMMIT_META_RE = re.compile(r"^\s+[-*+]\s+commit:")
+_COMMIT_META_RE = re.compile(r"^\s+[-*+]\s+(?:commit|files):")
 _COMMIT_META_FULL_RE = re.compile(
-    r"^\s+[-*+]\s+commit:\s*([0-9A-Fa-f]{7,64})\s*;\s*files:\s*(\S.*?)\s*$"
+    r"^\s+[-*+]\s+(?:commit:\s*([0-9A-Fa-f]{7,64})\s*;\s*)?files:\s*(\S.*?)\s*$"
 )
+_BLAME_HEADER_RE = re.compile(r"^([0-9a-f]{40}) \d+ (\d+)(?: \d+)?$")
+_NAME_WORD_RE = re.compile(r"[a-z0-9]+")
 _SOURCE_META_RE = re.compile(r"^\s+[-*+]\s+source:\s*\S")
 _NONE_BULLET_RE = re.compile(r"^none:\s*\S")
 _WHITESPACE_RE = re.compile(r"\s+")
@@ -60,6 +69,8 @@ class Entry:
     commit: str | None = None
     files: list[str] | None = None
     metadata_error: str | None = None
+    anchor: str | None = None
+    meta_line: int | None = None
 
 
 @dataclass
@@ -195,7 +206,11 @@ def entries(progress: Progress) -> list[Entry]:
             if not match:
                 entry.metadata_error = "invalid"
             else:
-                entry.commit = match.group(1).lower()
+                entry.commit = match.group(1).lower() if match.group(1) else None
+                for offset in range(index + 1, index + len(lines) + 1):
+                    if progress.lines[offset].rstrip("\r") == meta_lines[0].rstrip("\r"):
+                        entry.meta_line = offset + 1
+                        break
                 files = match.group(2).strip()
                 if files.lower() == "none":
                     entry.files = []
@@ -216,7 +231,31 @@ def _excerpt(text: str) -> str:
     return text[:60]
 
 
+def is_record_only(parsed: Progress) -> bool:
+    return bool(parsed.frontmatter) and parsed.frontmatter.get("kind") == RECORD_ONLY
+
+
+def _record_only_findings(progress: Progress) -> list[tuple[int, str]]:
+    findings = []
+    if progress.title() is None:
+        findings.append((1, "missing `# <title>` heading; add it"))
+    record = progress.section_range(RECORD)
+    if record is None:
+        findings.append((1, f"missing `## {RECORD}` section; add it with its `###` subsections"))
+        return findings
+    changes = progress.section_range("Changes", level=3, within=record)
+    if changes is None:
+        findings.append((record[0] + 1, f"missing `### Changes` under `## {RECORD}`; add it"))
+    elif not any(_BULLET_RE.match(progress.lines[index].rstrip("\r")) for index in range(changes[0] + 1, changes[1])):
+        findings.append((changes[0] + 1, "`### Changes` has no bullet; list each changed record path as `- <path>`"))
+    if progress.section_range(USER_REQUESTS, level=3, within=record) is None:
+        findings.append((record[0] + 1, f"missing `### {USER_REQUESTS}` under `## {RECORD}`; add it"))
+    return findings
+
+
 def format_findings(progress: Progress) -> list[tuple[int, str]]:
+    if is_record_only(progress):
+        return _record_only_findings(progress)
     findings = []
     if progress.title() is None:
         findings.append((1, "missing `# <title>` heading; add it"))
@@ -232,14 +271,14 @@ def format_findings(progress: Progress) -> list[tuple[int, str]]:
         if entry.metadata_error == "missing":
             findings.append((
                 entry.line,
-                f"entry without commit metadata: {_excerpt(entry.text)}; add the line "
-                "`  - commit: <sha>; files: <comma-separated repo paths or none>` under it",
+                f"entry without files metadata: {_excerpt(entry.text)}; add the line "
+                "`  - files: <comma-separated repo paths or none>` under it",
             ))
         elif entry.metadata_error == "invalid":
             findings.append((
                 entry.line,
-                f"invalid commit metadata for entry: {_excerpt(entry.text)}; write it as "
-                "`  - commit: <full or 7+ char sha>; files: <comma-separated repo paths or none>`",
+                f"invalid files metadata for entry: {_excerpt(entry.text)}; write it as "
+                "`  - files: <comma-separated repo paths or none>`",
             ))
     for subsection, index, lines in _section_items(progress, NEXT_SESSION):
         if subsection != CONSTRAINTS or _is_none_item(lines):
@@ -250,7 +289,33 @@ def format_findings(progress: Progress) -> list[tuple[int, str]]:
                 f"constraint without source: {_excerpt(_item_text(lines))}; add the line "
                 "`  - source: <where the user said it>` under it",
             ))
+    findings.extend(
+        (line, f"unfilled placeholder {PLACEHOLDER}; replace it with content") for line in placeholder_lines(progress)
+    )
     return findings
+
+
+def placeholder_lines(progress: Progress) -> list[int]:
+    _fields, _error, body_start = parse_frontmatter(progress.text)
+    record = progress.section_range(RECORD)
+    requests = progress.section_range(USER_REQUESTS, level=3, within=record) if record else None
+    found = []
+    fence = None
+    for index in range(body_start, len(progress.lines)):
+        line = progress.lines[index].rstrip("\r")
+        fence_match = _FENCE_LINE_RE.match(line)
+        if fence is not None:
+            if fence_match and fence_match.group(1)[0] == fence[0] and len(fence_match.group(1)) >= len(fence):
+                fence = None
+            continue
+        if fence_match:
+            fence = fence_match.group(1)
+            continue
+        if requests and requests[0] <= index < requests[1]:
+            continue
+        if PLACEHOLDER in line:
+            found.append(index + 1)
+    return found
 
 
 def similarity(a: str, b: str) -> float:
@@ -296,20 +361,17 @@ def levenshtein(a: str, b: str) -> int:
     return score
 
 
-def _same_commit(a: str | None, b: str | None) -> bool:
-    if not a or not b:
-        return False
-    a, b = a.lower(), b.lower()
-    return a.startswith(b) or b.startswith(a)
+def _short(anchor: str | None) -> str:
+    return "uncommitted" if anchor == UNCOMMITTED else (anchor or "unknown")[:7]
 
 
 def near_duplicates(current: list[Entry], predecessors: list[Entry]) -> dict[int, Entry]:
     result = {}
     for index, entry in enumerate(current):
-        if len(entry.text) < SIMILARITY_MIN_LENGTH or not entry.commit:
+        if len(entry.text) < SIMILARITY_MIN_LENGTH or not entry.anchor:
             continue
         for previous in predecessors:
-            if not previous.commit or _same_commit(entry.commit, previous.commit):
+            if not previous.anchor or entry.anchor == previous.anchor:
                 continue
             longest = max(len(entry.text), len(previous.text))
             if abs(len(entry.text) - len(previous.text)) > longest * (1 - SIMILARITY_THRESHOLD) + 1e-9:
@@ -348,13 +410,20 @@ def git_branch(repo_root: Path) -> str:
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
-def git_worktree_fingerprint(repo_root: Path, excluded_prefix: str) -> str:
+def _porcelain_paths(line: str) -> tuple[str, str | None]:
+    names = line[3:].split(" -> ", 1)
+    return names[-1].strip().strip('"'), (names[0].strip().strip('"') if len(names) == 2 else None)
+
+
+def git_worktree_snapshot(repo_root: Path, excluded_prefix: str) -> dict:
     result = _git(repo_root, ["-c", "core.quotePath=false", "status", "--porcelain", "--untracked-files=all"])
     if result.returncode != 0:
         raise GitUnavailable(result.stderr.strip() or "git status failed")
-    digest = hashlib.sha256(git_head(repo_root).encode("utf-8"))
+    head = git_head(repo_root)
+    digest = hashlib.sha256(head.encode("utf-8"))
+    entries = []
     for line in sorted(result.stdout.splitlines()):
-        path = line[3:].split(" -> ", 1)[-1].strip().strip('"')
+        path = _porcelain_paths(line)[0]
         if path.startswith(excluded_prefix):
             continue
         try:
@@ -363,7 +432,49 @@ def git_worktree_fingerprint(repo_root: Path, excluded_prefix: str) -> str:
         except OSError:
             signature = "-"
         digest.update(f"\0{line}\0{signature}".encode("utf-8"))
-    return digest.hexdigest()
+        entries.append([line, signature])
+    return {"v": SNAPSHOT_VERSION, "head": head, "fingerprint": digest.hexdigest(), "entries": entries}
+
+
+def git_worktree_fingerprint(repo_root: Path, excluded_prefix: str) -> str:
+    return git_worktree_snapshot(repo_root, excluded_prefix)["fingerprint"]
+
+
+def load_snapshot(text: str) -> dict | None:
+    try:
+        value = json.loads(text)
+    except ValueError:
+        return None
+    if (
+        isinstance(value, dict) and value.get("v") == SNAPSHOT_VERSION and isinstance(value.get("head"), str)
+        and isinstance(value.get("fingerprint"), str) and isinstance(value.get("entries"), list)
+    ):
+        return value
+    return None
+
+
+def snapshot_changed_paths(repo_root: Path, before: dict, after: dict, excluded_prefix: str) -> list[str] | None:
+    def index(snapshot: dict) -> dict[str, tuple]:
+        return {_porcelain_paths(line)[0]: (line, signature) for line, signature in snapshot["entries"]}
+
+    old, new = index(before), index(after)
+    changed = {path for path in old.keys() | new.keys() if old.get(path) != new.get(path)}
+    for table in (old, new):
+        for path in list(changed):
+            if path in table:
+                origin = _porcelain_paths(table[path][0])[1]
+                if origin and not origin.startswith(excluded_prefix):
+                    changed.add(origin)
+    if before["head"] != after["head"]:
+        result = _git(
+            repo_root,
+            ["-c", "core.quotePath=false", "diff", "--name-only", "--no-renames",
+             before["head"] or EMPTY_TREE, after["head"] or EMPTY_TREE],
+        )
+        if result.returncode != 0:
+            return None
+        changed.update(name for name in result.stdout.splitlines() if name and not name.startswith(excluded_prefix))
+    return sorted(changed)
 
 
 def git_resolve(repo_root: Path, ref: str) -> str | None:
@@ -455,14 +566,54 @@ def _touches(changed: str, listed: str) -> bool:
     return changed == listed or changed.startswith(listed + "/")
 
 
-def freshness(entry_list: list[Entry], repo_root: Path) -> list[str]:
+def line_commits(repo_root: Path, path: Path) -> dict[int, str] | None:
+    try:
+        text = path.read_text(encoding="utf-8")
+        relative = repo_relative(path, repo_root)
+        in_head = _git(repo_root, ["cat-file", "-e", f"HEAD:{relative}"])
+        if in_head.returncode != 0:
+            if "not a git repository" in in_head.stderr.lower():
+                return None
+            return {number: UNCOMMITTED for number in range(1, text.count("\n") + (0 if not text or text.endswith("\n") else 1) + 1)}
+        result = _git(repo_root, ["blame", "--porcelain", "--", relative])
+    except (OSError, UnicodeDecodeError, GitUnavailable):
+        return None
+    if result.returncode != 0:
+        return None
+    commits = {}
+    for line in result.stdout.split("\n"):
+        match = _BLAME_HEADER_RE.match(line)
+        if match:
+            commits[int(match.group(2))] = match.group(1)
+    return commits
+
+
+def anchor_entries(entry_list: list[Entry], repo_root: Path, path: Path) -> None:
+    commits = line_commits(repo_root, path)
+    fallback: dict[str, str | None] = {}
+    if commits is None:
+        wanted = sorted({entry.commit for entry in entry_list if entry.commit})
+        try:
+            fallback = _resolve_commits(repo_root, wanted) if wanted and git_head(repo_root) else {}
+        except GitUnavailable:
+            fallback = {}
+    for entry in entry_list:
+        entry.anchor = None
+        if entry.metadata_error:
+            continue
+        if commits is not None and entry.meta_line in commits:
+            entry.anchor = commits[entry.meta_line]
+        elif entry.commit:
+            entry.anchor = fallback.get(entry.commit)
+
+
+def freshness(entry_list: list[Entry], repo_root: Path, path: Path) -> list[str]:
     head = git_head(repo_root)
+    anchor_entries(entry_list, repo_root, path)
     statuses: list[str | None] = [None] * len(entry_list)
-    wanted = sorted({entry.commit for entry in entry_list if entry.commit})
-    resolved = _resolve_commits(repo_root, wanted) if head else {}
     ancestors = set()
-    for full in sorted({value for value in resolved.values() if value}):
-        if _git(repo_root, ["merge-base", "--is-ancestor", full, head]).returncode == 0:
+    for full in sorted({entry.anchor for entry in entry_list if entry.anchor and entry.anchor != UNCOMMITTED}):
+        if head and _git(repo_root, ["merge-base", "--is-ancestor", full, head]).returncode == 0:
             ancestors.add(full)
     base = None
     if ancestors:
@@ -487,40 +638,39 @@ def freshness(entry_list: list[Entry], repo_root: Path) -> list[str]:
             touched = {}
             for commit, (_parents, paths) in history.items():
                 if commit not in excluded:
-                    for path in paths:
-                        touched.setdefault(path, commit)
+                    for changed in paths:
+                        touched.setdefault(changed, commit)
             touched_cache[start] = touched
         return touched_cache[start]
 
     for index, entry in enumerate(entry_list):
-        if entry.metadata_error or not entry.commit:
+        if entry.metadata_error:
             statuses[index] = "stale: no commit metadata"
             continue
-        full = resolved.get(entry.commit)
-        if not full:
-            statuses[index] = "stale: unresolved commit"
+        if entry.anchor == UNCOMMITTED:
+            statuses[index] = "fresh"
             continue
-        if full not in ancestors:
-            statuses[index] = "stale: not ancestor of HEAD"
+        if not entry.anchor or entry.anchor not in ancestors:
+            statuses[index] = "stale: no recording commit"
             continue
         if not entry.files:
             statuses[index] = "fresh"
             continue
-        touched = touched_since(full)
+        touched = touched_since(entry.anchor)
         hit = None
         for listed in entry.files:
             if listed in touched:
                 hit = (listed, touched[listed])
             else:
-                hit = next(((path, commit) for path, commit in touched.items() if _touches(path, listed)), None)
+                hit = next(((changed, commit) for changed, commit in touched.items() if _touches(changed, listed)), None)
             if hit:
                 break
         statuses[index] = f"stale: changed {hit[0]} in {hit[1][:7]}" if hit else "fresh"
     return [status or "fresh" for status in statuses]
 
 
-def fresh(entry: Entry, repo_root: Path) -> bool:
-    return freshness([entry], repo_root)[0] == "fresh"
+def fresh(entry: Entry, repo_root: Path, path: Path) -> bool:
+    return freshness([entry], repo_root, path)[0] == "fresh"
 
 
 def repo_root_of(path: Path) -> Path:
@@ -539,6 +689,37 @@ def repo_relative(path: Path, repo_root: Path) -> str:
 
 def is_progress_file(path: Path, progress_dir: Path) -> bool:
     return path.suffix == ".md" and path.resolve().parent == progress_dir.resolve()
+
+
+def claim_session_file(
+    repo_root: Path, path: Path, session_id: str, progress_dir: str, logs_dir: str
+) -> str | None:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
+    frontmatter = parse(text).frontmatter
+    if frontmatter is None:
+        return None
+    value = frontmatter.get("session", "")
+    if value == session_id:
+        return None
+    try:
+        in_head = _git(repo_root, ["cat-file", "-e", f"HEAD:{repo_relative(path, repo_root)}"])
+        if in_head.returncode == 0 or "not a git repository" in in_head.stderr.lower():
+            return None
+        if value and value != "auto" and session_known(repo_root, value, progress_dir, logs_dir):
+            return None
+        updated = set_frontmatter_field(text, "session", session_id)
+        if updated == text:
+            return None
+        path.write_text(updated, encoding="utf-8")
+    except (OSError, GitUnavailable):
+        return None
+    return (
+        f"harness: set `session: {session_id}` in {repo_relative(path, repo_root)}; "
+        f"`{value or '(empty)'}` is not a session of this checkout."
+    )
 
 
 def read_progress(path: Path) -> Progress | None:
@@ -614,7 +795,9 @@ def predecessor_entries(parsed: Progress, repo_root: Path) -> list[tuple[str, li
             continue
         other = read_progress(repo_root / value)
         if other is not None:
-            found.append((value, entries(other)))
+            previous_entries = entries(other)
+            anchor_entries(previous_entries, repo_root, repo_root / value)
+            found.append((value, previous_entries))
     return found
 
 
@@ -632,34 +815,43 @@ def check_findings(path: Path, repo_root: Path, label: str) -> list[str]:
             if key not in parsed.frontmatter:
                 findings.append(f"{label}:1: frontmatter is missing `{key}:`; add it (`none` when it does not apply)")
     findings.extend(f"{label}:{line}: {message}" for line, message in format_findings(parsed))
+    owner = (parsed.frontmatter or {}).get("session")
+    if is_record_only(parsed) and owner and code_marker(repo_root, owner).exists():
+        findings.append(
+            f"{label}:1: record-only progress in a session that changed code; run any Edit to let the hook "
+            "upgrade it, or write the full structure"
+        )
     entry_list = entries(parsed)
-    statuses = freshness(entry_list, repo_root)
+    statuses = freshness(entry_list, repo_root, path)
     for entry, status in zip(entry_list, statuses):
         if status.startswith("stale:") and not entry.metadata_error:
             findings.append(
                 f"{label}:{entry.line}: {status}: {entry.text[:60]}; re-check the entry against HEAD and update "
-                "its text and commit, or move it to ### Dead Ends"
+                "its text and `  - files:` line, or move it to ### Dead Ends"
             )
     for source, previous_entries in predecessor_entries(parsed, repo_root):
         for index, match in near_duplicates(entry_list, previous_entries).items():
             entry = entry_list[index]
             findings.append(
-                f"{label}:{entry.line}: near-duplicate of an entry in {source} with a different commit "
-                f"({match.commit} -> {entry.commit}): {entry.text[:60]}; ask the user whether this entry was "
-                "re-verified at the new commit or copied forward, then update or remove it"
+                f"{label}:{entry.line}: near-duplicate of an entry in {source} recorded in a different commit "
+                f"({_short(match.anchor)} -> {_short(entry.anchor)}): {entry.text[:60]}; ask the user whether this "
+                "entry was re-verified at the new commit or copied forward, then update or remove it"
             )
     return findings
 
 
-def entry_report(parsed: Progress, repo_root: Path) -> list[tuple[Entry, str]]:
+def entry_report(parsed: Progress, repo_root: Path, path: Path) -> list[tuple[Entry, str]]:
     entry_list = entries(parsed)
     try:
-        statuses = freshness(entry_list, repo_root)
+        statuses = freshness(entry_list, repo_root, path)
     except GitUnavailable:
         statuses = ["freshness unknown: git unavailable"] * len(entry_list)
     duplicates = set()
-    for _source, previous_entries in predecessor_entries(parsed, repo_root):
-        duplicates.update(near_duplicates(entry_list, previous_entries))
+    try:
+        for _source, previous_entries in predecessor_entries(parsed, repo_root):
+            duplicates.update(near_duplicates(entry_list, previous_entries))
+    except GitUnavailable:
+        pass
     report = []
     for index, (entry, status) in enumerate(zip(entry_list, statuses)):
         labels = [] if status == "fresh" else [status]
@@ -681,8 +873,193 @@ def state_path(repo_root: Path, session_id: str) -> Path:
     return repo_root / ".harness" / "sessions" / f"progress-{safe_session_id(session_id)}.json"
 
 
+def session_known(
+    repo_root: Path,
+    value: str,
+    progress_dir: str = "agent-docs/progress",
+    logs_dir: str = "agent-docs/progress-logs",
+) -> bool:
+    if not value:
+        return False
+    if state_path(repo_root, value).exists():
+        return True
+    if not git_head(repo_root):
+        return False
+    return any(git_tree_session_files(repo_root, "HEAD", directory, value) for directory in (progress_dir, logs_dir))
+
+
+SKELETON_TEMPLATE = """---
+session: {session}
+before: none
+previous: none
+branch: {branch}
+---
+
+# [harness-requires] title of this session's work
+
+## Next Session
+
+### State
+- [harness-requires] what is done and verified
+  - files: none
+
+### Next Step
+- [harness-requires] what the next session does first
+  - files: none
+
+### Constraints
+- none: [harness-requires] quote user constraints from ### User Requests with `  - source:`, or state that there are none
+
+### Verify
+- [harness-requires] commands that re-check the state
+  - files: none
+
+### Dead Ends
+- none: [harness-requires] failed approaches, or state that there are none
+
+### Related
+- none: [harness-requires] records the next session needs, or state that there are none
+
+## Record
+
+### Changes
+- [harness-requires]
+
+### Commands
+- [harness-requires]
+
+### Failed Attempts
+| attempt | failure evidence | cause |
+| --- | --- | --- |
+
+### Sources
+- [harness-requires]
+
+### User Requests
+"""
+
+
+def skeleton(session_id: str, branch: str) -> str:
+    return SKELETON_TEMPLATE.format(session=session_id, branch=branch)
+
+
+def skeleton_name(first_prompt: str | None) -> str:
+    words = _NAME_WORD_RE.findall((first_prompt or "").lower())[:5]
+    return f"{secrets.token_hex(8)}-{'-'.join(words) or 'session'}"
+
+
 def change_dir(repo_root: Path, session_id: str) -> Path:
     return repo_root / ".harness" / "sessions" / f"progress-{safe_session_id(session_id)}.d"
+
+
+def changed_paths_file(repo_root: Path, session_id: str) -> Path:
+    return change_dir(repo_root, session_id) / "changed-paths"
+
+
+def code_marker(repo_root: Path, session_id: str) -> Path:
+    return change_dir(repo_root, session_id) / "code"
+
+
+def read_changed_paths(repo_root: Path, session_id: str) -> list[str]:
+    try:
+        text = changed_paths_file(repo_root, session_id).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    return sorted({line for line in text.splitlines() if line})
+
+
+def add_changed_paths(repo_root: Path, session_id: str, paths: list[str]) -> None:
+    if not paths:
+        return
+    merged = sorted(set(read_changed_paths(repo_root, session_id)) | set(paths))
+    target = changed_paths_file(repo_root, session_id)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + f".{os.getpid()}.tmp")
+    temporary.write_text("\n".join(merged) + "\n", encoding="utf-8")
+    os.replace(temporary, target)
+
+
+def classify_path(path: str, docs_root: str) -> str:
+    docs = docs_root.strip("/")
+    parts = path.split("/")
+    docs_parts = docs.split("/") if docs and docs != "." else []
+    if not docs_parts or parts[:len(docs_parts)] != docs_parts or len(parts) <= len(docs_parts):
+        return "code"
+    inner = parts[len(docs_parts):]
+    if inner[0] in (PROGRESS_DIR_NAME, PROGRESS_LOGS_DIR_NAME) and len(inner) > 1:
+        return "progress"
+    return "record"
+
+
+def record_paths(paths: list[str], docs_root: str) -> list[str]:
+    return sorted(path for path in paths if classify_path(path, docs_root) == "record")
+
+
+RECORD_ONLY_TEMPLATE = """---
+session: {session}
+kind: record-only
+before: none
+previous: none
+branch: {branch}
+---
+
+# Record-only session
+
+## Record
+
+### Changes
+{changes}
+
+### User Requests
+"""
+
+
+def record_only_text(session_id: str, branch: str, changes: list[str]) -> str:
+    bullets = "\n".join(f"- {path}" for path in changes)
+    return RECORD_ONLY_TEMPLATE.format(session=session_id, branch=branch, changes=bullets)
+
+
+def sync_changes(text: str, changes: list[str]) -> str:
+    parsed = parse(text)
+    if not is_record_only(parsed) or not changes:
+        return text
+    record = parsed.section_range(RECORD)
+    section = parsed.section_range("Changes", level=3, within=record) if record else None
+    if section is None:
+        return text
+    lines = parsed.lines
+    bullets = [f"- {path}" for path in sorted(set(changes))]
+    return "\n".join(lines[:section[0] + 1] + bullets + [""] + lines[section[1]:])
+
+
+def _next_session_block() -> list[str]:
+    lines = SKELETON_TEMPLATE.split("\n")
+    start = lines.index("## Next Session")
+    end = lines.index("## Record")
+    return lines[start:end]
+
+
+def upgrade_record_only(text: str) -> str:
+    parsed = parse(text)
+    if not is_record_only(parsed):
+        return text
+    record = parsed.section_range(RECORD)
+    section = parsed.section_range("Changes", level=3, within=record) if record else None
+    if record is None or section is None:
+        return text
+    lines = list(parsed.lines)
+    bullets = [line for line in lines[section[0] + 1:section[1]] if line.strip()]
+    skeleton_lines = SKELETON_TEMPLATE.split("\n")
+    commands = skeleton_lines.index("### Commands")
+    requests = skeleton_lines.index("### User Requests")
+    rebuilt = (
+        lines[:section[0] + 1] + bullets + [f"- {PLACEHOLDER}", ""] + skeleton_lines[commands:requests] + lines[section[1]:]
+    )
+    rebuilt[record[0]:record[0]] = _next_session_block()
+    body_start = parse_frontmatter(text)[2]
+    return "\n".join(
+        line for index, line in enumerate(rebuilt) if not (index < body_start and line.startswith("kind:"))
+    )
 
 
 def load_state(path: Path) -> dict | None:
@@ -698,6 +1075,22 @@ def write_state(path: Path, state: dict) -> None:
     temporary = path.with_name(path.name + f".{os.getpid()}.tmp")
     temporary.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     os.replace(temporary, path)
+
+
+def write_installer_run(repo_root: Path, before: str, after: str) -> None:
+    write_state(repo_root / INSTALLER_RUN_RECORD, {"before": before, "after": after})
+
+
+def consume_installer_run(repo_root: Path, before: str, after: str) -> bool:
+    path = repo_root / INSTALLER_RUN_RECORD
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(record, dict) or record.get("before") != before or record.get("after") != after:
+            return False
+        path.unlink()
+    except (OSError, ValueError, TypeError):
+        return False
+    return True
 
 
 # Claude Code delivers a subagent's hand-back through UserPromptSubmit as an ordinary prompt; the hook

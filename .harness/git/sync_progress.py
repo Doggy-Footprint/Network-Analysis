@@ -25,6 +25,11 @@ def sync(path: Path, head: str) -> bool:
     state = progress.load_state(progress.state_path(REPO_ROOT, session_id))
     prompts = progress.state_prompts(state) if state is not None else None
     text = progress.sync_user_requests(original, prompts)
+    if progress.is_record_only(progress.parse(text)):
+        docs = progress.repo_relative(PATHS.docs_root, REPO_ROOT)
+        text = progress.sync_changes(
+            text, progress.record_paths(progress.read_changed_paths(REPO_ROOT, session_id), docs)
+        )
     if text == original:
         return False
     if head:
@@ -40,6 +45,15 @@ def main() -> int:
         return 0
     paths = sorted(PATHS.progress.glob("*.md")) if PATHS.progress.is_dir() else []
     session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    if session_id:
+        for path in paths:
+            if path.is_file():
+                claimed = progress.claim_session_file(
+                    REPO_ROOT, path, session_id, progress.repo_relative(PATHS.progress, REPO_ROOT),
+                    progress.repo_relative(PATHS.progress_logs, REPO_ROOT),
+                )
+                if claimed:
+                    subprocess.run(["git", "-C", str(REPO_ROOT), "add", "--", str(path)], check=False)
     if session_id:
         paths += progress.session_files(PATHS.progress_logs, session_id)
     for path in paths:

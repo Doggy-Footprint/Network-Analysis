@@ -52,3 +52,4 @@ agent-docs/specs/.seed/
 /tests/*_evidence/performance.latest.json
 .harness/sessions/progress-*.json
 .harness/sessions/progress-*.d/
+.harness/sessions/installer-run.json
