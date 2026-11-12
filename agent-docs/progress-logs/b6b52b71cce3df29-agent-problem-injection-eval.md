@@ -3,7 +3,7 @@ session: 011c7b90-abc9-4536-ae24-1068deddade2
 before: none
 previous: none
 branch: eval
-commit: d360f47331b11784352920849ed13c9feabc105b
+commit: 984a75c3936fe7dd2a320fd945b11cfa91dca61d
 ---
 
 # Fault-injection eval weighted toward AI-agent problems
@@ -486,3 +486,7 @@ commit: d360f47331b11784352920849ed13c9feabc105b
 #### 56 — 2026-11-12T09:43:28Z
 
 > 그대로 쓰고 PR도 써줘 (한글))
+
+#### 57 — 2026-11-12T09:49:19Z
+
+> 필요 없는 주석은 지워줘

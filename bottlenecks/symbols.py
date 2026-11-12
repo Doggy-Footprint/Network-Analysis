@@ -27,9 +27,7 @@ def _ownership(edge: Any, nodes: dict) -> bool:
 
 
 def incoming_index(architecture: Any) -> tuple[dict, set]:
-    """(target id -> [confirmed source files, uncertain source files], ids implemented by a framework declaration).
-
-    Presence in the first mapping means a non-ownership edge points at the node."""
+    """Presence in the first mapping means a non-ownership edge points at the node, even when both file sets are empty."""
     details = architecture.details
     node_files = details["node_files"]
     nodes = {node["id"]: node for node in details["nodes"]}

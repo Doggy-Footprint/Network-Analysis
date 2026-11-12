@@ -1,4 +1,4 @@
-"""Hand mutations (spec 338f748639b68776). Each mutation replaces one unique snippet, runs the new test files, and restores the file.
+"""Hand mutations (spec 338f748639b68776).
 pytest -x under xdist exits 2 (Interrupted) after a failure, so 1 and 2 both count when a FAILED line exists.
 usage: python run_mutations.py <repo root>"""
 import json, subprocess, sys

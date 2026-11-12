@@ -2,7 +2,6 @@ from typing import Any
 
 
 def _exported(root: str, exports: dict, modules: set) -> set:
-    # Walks EXPORTS of re-exported modules; the visited set breaks export cycles.
     providers, visited, pending = set(), set(), [root]
     while pending:
         module = pending.pop()

@@ -197,7 +197,7 @@ index df63972..f624ed3 100644
  
  def ref_regressions(delta, fail_on):
 diff --git a/tests/doc_references_support.py b/tests/doc_references_support.py
-index 1e01604..5d02f96 100644
+index 1e01604..feabf7f 100644
 --- a/tests/doc_references_support.py
 +++ b/tests/doc_references_support.py
 @@ -17,6 +17,7 @@ COLUMNS = ['doc', 'line', 'notation', 'text', 'status', 'target', 'target_kind',
@@ -208,7 +208,7 @@ index 1e01604..5d02f96 100644
  
  K_CONFIGS = {
      'K1': ('fastapi-realworld', ['-f', 'fastapi'], 'file'),
-@@ -108,17 +109,23 @@ def strip_new(bottlenecks, details):
+@@ -108,7 +109,9 @@ def strip_new(bottlenecks, details):
      assert bottlenecks['versions']['analysis'] == NEW_ANALYSIS
      bottlenecks['versions']['analysis'] = OLD_ANALYSIS
      bottlenecks['coverage'].pop('doc_references', None)
@@ -219,12 +219,8 @@ index 1e01604..5d02f96 100644
      details.pop('doc_references', None)
      return bottlenecks, details
  
- 
- def without_doc_references(payload):
-     """Copy of a bottleneck payload (or details dict) with what spec 64deae051d59caac adds removed and versions.analysis set
--    back to the base value, so legacy comparisons against base-commit evidence keep their original meaning."""
-+    back to the base value, so legacy comparisons against base-commit evidence keep their original meaning. Also drops the
-+    symbol table and the two symbol candidate kinds."""
+@@ -118,7 +121,10 @@ def without_doc_references(payload):
+     back to the base value, so legacy comparisons against base-commit evidence keep their original meaning."""
      result = json.loads(json.dumps(payload))
      if 'candidates' in result:
 -        result['candidates'] = [c for c in result['candidates'] if c.get('kind') != NEW_KIND]

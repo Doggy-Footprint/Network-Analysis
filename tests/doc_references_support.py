@@ -118,8 +118,7 @@ def strip_new(bottlenecks, details):
 
 def without_doc_references(payload):
     """Copy of a bottleneck payload (or details dict) with what spec 64deae051d59caac adds removed and versions.analysis set
-    back to the base value, so legacy comparisons against base-commit evidence keep their original meaning. Also drops the
-    symbol table and the two symbol candidate kinds."""
+    back to the base value, so legacy comparisons against base-commit evidence keep their original meaning."""
     result = json.loads(json.dumps(payload))
     if 'candidates' in result:
         result['candidates'] = [c for c in result['candidates'] if c.get('kind') != NEW_KIND and c.get('kind') not in SYMBOL_CANDIDATE_KINDS]

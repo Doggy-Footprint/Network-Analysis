@@ -1,6 +1,5 @@
-"""Builders for the symbol table, symbol candidates and symbol delta tests. Architectures are built by hand in the shape
-analysis.file_graph.to_file_architecture produces (details.nodes/edges/node_files/node_owners/file_nodes plus one file node
-per path), so expectations never depend on product code."""
+"""Architectures are built by hand in the shape analysis.file_graph.to_file_architecture produces, so expectations never
+depend on product code."""
 import json
 import os
 import shutil
