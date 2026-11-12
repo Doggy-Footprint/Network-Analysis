@@ -1,10 +1,10 @@
 {
  "seed": 20261112,
  "inputs": 5000,
- "executed": 4959,
- "rename_pairs": 11709,
- "changed": 5403,
- "removed": 26787,
+ "executed": 5000,
+ "rename_pairs": 11822,
+ "changed": 5449,
+ "removed": 27025,
  "failures": {
   "P1": 0,
   "P2": 0,

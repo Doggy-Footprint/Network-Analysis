@@ -35,8 +35,6 @@ def only(nodes, edges=()):
     return result[0]
 
 
-# ---------------------------------------------------------------- V06 unit, synthetic architectures
-
 def test_V06_EP1_functions_and_methods_without_incoming_edges_are_listed_with_the_declared_shape():
     nodes = [sym('py:a#lonely', 'a.py', 'function', line=3), sym('py:a#K', 'a.py', 'class'), sym('py:a#K.m', 'a.py', 'method', line=9),
              sym('py:a#C', 'a.py', 'constant')]
@@ -127,8 +125,6 @@ def test_V06_EP8_an_implemented_by_edge_from_a_language_node_is_not_a_reference(
     assert evidence_ids(only(nodes, [rel('py:a#iface', 'py:a#impl', 'IMPLEMENTED_BY')])) == ['py:a#impl']
 
 
-# ---------------------------------------------------------------- V06 integration, temporary projects
-
 PY = {
     'app/__init__.py': '',
     'app/h.py': 'def helper():\n    return 1\n\n\ndef caller():\n    return helper()\n\n\nclass R:\n    def __repr__(self):\n        return "R"\n\n\n'
@@ -200,8 +196,6 @@ def test_C06_two_new_unreferenced_methods_raise_the_count_and_the_delta_reports_
     assert len(reported) == 1
     assert reported[0] in (data['delta']['new_candidates'] if not before else data['delta']['strengthened_candidates'])
 
-
-# ---------------------------------------------------------------- V07 delta strengthening
 
 def candidate(count, node_ids, ident='b:0001', target='file:a.py'):
     return {'id': ident, 'kind': KIND, 'target': target, 'metrics': {'unreferenced_count': count},

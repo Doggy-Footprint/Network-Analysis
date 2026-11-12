@@ -685,7 +685,7 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
 
 
 def delta_v1_form(delta):
-    """The delta without the fields added by delta.v2 and delta.v4, so the base-commit hash still applies."""
+    """The delta without the fields added by delta.v2, so the base-commit hash still applies."""
     result = copy.deepcopy(delta)
     result['policy'] = 'delta.v1'
     assert set(result['renames']) == {'status', 'reason', 'pairs'}

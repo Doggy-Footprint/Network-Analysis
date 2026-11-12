@@ -41,7 +41,6 @@ def rel(source, target, relation='CALLS', confidence=SC, resolution=EXACT, candi
 
 
 def arch(nodes, edges=()):
-    """FileArchitecture whose details hold every node and edge; ids of `nodes` carry their file in span.file_path."""
     by_id = {n.id: n for n in nodes}
     paths = []
     for n in nodes:
@@ -64,8 +63,6 @@ def by_id(entries):
     return {e['id']: e for e in entries}
 
 
-# ----- NestJS synthetic nodes (ids follow nestjs:<kind>:<path>#<Name>)
-
 def nest(kind, name, path, line=1, global_=None, unsupported=None, provenance='nestjs'):
     metadata = {}
     if kind == 'module':
@@ -76,8 +73,6 @@ def nest(kind, name, path, line=1, global_=None, unsupported=None, provenance='n
 def nest_id(kind, name, path):
     return f'nestjs:{kind}:{path}#{name}'
 
-
-# ----- delta payloads in the row format
 
 def row_of(entry, file_ids):
     values = dict(entry)
@@ -91,7 +86,6 @@ def entry(ident, file='file:a.py', kind='function', name=None, signature='def f(
 
 
 def sym_payload(entries=None, candidates=(), extra_files=(), **kwargs):
-    """A delta payload; entries None keeps the payload without any symbol table."""
     data = payload(candidates=candidates, **kwargs)
     if entries is not None:
         file_ids = sorted({e['file'] for e in entries} | set(extra_files))
@@ -112,15 +106,12 @@ def decode_rows(data):
 
 
 def assert_symbol_additions(data):
-    """Separate assertions on what the symbol work adds to a raw file-granularity bottleneck JSON."""
     network = data['dependency_network']
     assert network['symbol_columns'] == SYMBOL_COLUMNS
     assert network['symbols'], 'symbol table is empty'
     assert all(len(row) == len(SYMBOL_COLUMNS) for row in network['symbols'])
     assert {k for k in decode_rows(data)[0]} == SYMBOL_ENTRY_KEYS
 
-
-# ----- temporary projects and the CLI
 
 def cli_args(root, out, lang, *extra, bottlenecks='b.json', json_output=False):
     out = Path(out)
@@ -143,7 +134,6 @@ def analyze(root, out, lang, *extra):
 
 
 def table_of(bottlenecks):
-    """Symbol entries of a raw bottleneck JSON as F01 dicts."""
     return decode_rows(bottlenecks)
 
 
@@ -164,7 +154,6 @@ def delta_lines(done):
 
 
 def baseline_then_edit(tmp_path, files, lang, edit):
-    """Commit `files`, analyse them as the baseline, apply `edit(root)`, return (root, baseline path)."""
     root = tmp_path / 'repo'
     make_repo(root, files)
     analyze(root, tmp_path / 'base', lang)
@@ -179,7 +168,6 @@ def delta_run(root, baseline, tmp_path, lang, *extra):
 
 
 def base_worktree(tmp_dir):
-    """Detached worktree of the base commit; the caller removes it with remove_worktree."""
     target = Path(tmp_dir) / 'base-worktree'
     git(REPO, 'worktree', 'add', '--detach', target, BASE_COMMIT)
     return target

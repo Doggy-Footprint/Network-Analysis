@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -39,8 +40,6 @@ def full(ident, file, kind, name, signature, visibility, refs=0, uncertain=0):
     return {'id': ident, 'file': file, 'kind': kind, 'name': name, 'signature': signature, 'visibility': visibility,
             'external_refs': refs, 'uncertain_external_refs': uncertain}
 
-
-# ---------------------------------------------------------------- V01 symbol table, synthetic architectures
 
 def test_V01_EP1_four_kinds_each_give_one_entry_sorted_by_id():
     nodes = [sym('py:a#f', 'a.py', 'function', signature='def f(x)'), sym('py:a#K.m', 'a.py', 'method', signature='def m(self)'),
@@ -86,7 +85,6 @@ def test_V01_EP4_whitespace_runs_in_signature_collapse_and_edges_are_stripped():
 
 
 def target_with(*sources):
-    """Nodes/edges for target py:a#f in a.py plus `sources` = (node id, file, edge kwargs or None)."""
     nodes = [sym('py:a#f', 'a.py'), sym('py:a#other', 'a.py')]
     edges = []
     seen = {n.id for n in nodes}
@@ -120,8 +118,6 @@ def test_V01_EP5_external_reference_counts(sources, expected):
     row = by_id(table(nodes, edges))['py:a#f']
     assert (row['external_refs'], row['uncertain_external_refs']) == expected
 
-
-# ---------------------------------------------------------------- V01 integration, CLI JSON
 
 PY_FILES = {
     'app/__init__.py': '',
@@ -187,8 +183,6 @@ def test_V01_EP6_cli_json_serialisation_uses_columns_rows_and_file_id_indexes(tm
     assert f_row == ['py:app.a#f', network['file_ids'].index('file:app/a.py'), 'function', 'f', 'def f(x, y)', 'public', 1, 0]
 
 
-# ---------------------------------------------------------------- V02 symbol granularity equals the base commit
-
 @pytest.fixture(scope='module')
 def base_tree(tmp_path_factory):
     path = base_worktree(tmp_path_factory.mktemp('base-tree'))
@@ -214,8 +208,6 @@ def test_V02_M1_symbol_granularity_output_equals_base_commit(name, lang, base_tr
     assert actual['r.json'] == expected['r.json']
     assert b'symbol_columns' not in actual['b.json']
 
-
-# ---------------------------------------------------------------- V14 report generator
 
 def generate(source, output):
     import subprocess
@@ -250,11 +242,16 @@ def test_V14_report_generator_accepts_symbol_tables_and_new_kinds(tmp_path, file
     done = generate(tmp_path / 'o' / 'b.json', tmp_path / 'report.html')
     assert done.returncode == 0, done.stderr[-1500:]
     html = (tmp_path / 'report.html').read_text(encoding='utf-8')
-    if kind:
-        assert kind in html
+    assert '<html' in html.lower()
 
 
-# ---------------------------------------------------------------- V03 mapping and skipped states
+def test_V14_kind_labels_and_descriptions_exist_for_both_new_kinds():
+    from report.bottlenecks import generate as module
+    assert module.KIND_LABELS['unreferenced_symbol'] == '참조 없는 함수·메서드'
+    assert module.KIND_LABELS['unprovided_injection'] == '보이지 않는 주입 provider'
+    for kind in ('unreferenced_symbol', 'unprovided_injection'):
+        assert isinstance(module.KIND_DESCRIPTIONS[kind], str) and module.KIND_DESCRIPTIONS[kind].strip()
+
 
 SRC_A = 'file:src/A.kt'
 SRC_B = 'file:src/B.kt'
@@ -337,8 +334,6 @@ def test_V03_EP5_empty_symbol_tables_count_as_present():
     assert result['symbol_changes']['status'] == 'applied' and [r['id'] for r in result['removed_symbols']] == ['py:a#f']
 
 
-# ---------------------------------------------------------------- V04 changed_signatures decision table
-
 def changed(base_entries, cur_entries, renames=None):
     return compute(sym_payload(cur_entries), sym_payload(base_entries), renames)
 
@@ -388,6 +383,11 @@ def test_V04_D5_signature_that_differs_only_in_whitespace_is_not_reported():
     assert len(compute(really, base)['changed_signatures']) == 1
 
 
+def test_V04_D7_private_turned_public_without_references_is_reported():
+    [item] = changed([f_entry('def f(x)', 'private')], [f_entry('def f(x, y)', 'public')])['changed_signatures']
+    assert (item['visibility'], item['external_refs'], item['uncertain_external_refs']) == ('public', 0, 0)
+
+
 @pytest.mark.parametrize('before, now', [(None, 'def f(x)'), ('def f(x)', None), (None, None)], ids=['baseline-null', 'current-null', 'both-null'])
 def test_V04_D6_a_null_signature_on_either_side_is_not_reported(before, now):
     assert changed([f_entry(before)], [f_entry(now)])['changed_signatures'] == []
@@ -399,8 +399,6 @@ def test_V04_result_is_ordered_by_id_and_unchanged_signatures_are_ignored():
     cur = [entry(i, signature='def x(a)' if i.endswith('keep') else 'def x(a, b)') for i in reversed(names)]
     assert [c['id'] for c in changed(base, cur)['changed_signatures']] == ['py:a#B', 'py:a#m', 'py:a#z']
 
-
-# ---------------------------------------------------------------- V05 removed_symbols decision table
 
 def test_V05_D1_removed_public_symbol_is_reported_with_baseline_values():
     base = [entry('py:a#ALLOWED', kind='constant', signature=None, name='ALLOWED'), entry('py:a#keep')]
@@ -432,8 +430,6 @@ def test_V05_result_is_ordered_by_id():
     base = [entry(i) for i in ('py:a#z', 'py:a#B', 'py:a#m')]
     assert [r['id'] for r in changed(base, [])['removed_symbols']] == ['py:a#B', 'py:a#m', 'py:a#z']
 
-
-# ---------------------------------------------------------------- V09 policy, counts and CLI lines
 
 def test_V09_EP1_applied_policy_counts_and_object_shape():
     result = compute(sym_payload(STATE_CUR), sym_payload(STATE_BASE + [entry('py:a#gone')]))
@@ -477,8 +473,6 @@ def test_V09_EP3_cli_without_baseline_prints_no_symbol_line_and_no_delta(tmp_pat
     assert delta_lines(done) == ([], [])
     assert 'delta' not in json.loads((tmp_path / 'o' / 'b.json').read_text(encoding='utf-8'))
 
-
-# ---------------------------------------------------------------- CLI scenarios on temporary projects
 
 def edit_a(old, new):
     return lambda root: write_files(root, {'app/a.py': PY_FILES['app/a.py'].replace(old, new)})
@@ -567,8 +561,6 @@ def test_C13_string_reference_count_in_baseline_is_a_baseline_error_with_the_jso
     assert not (tmp_path / 'out' / 'b.json').exists()
 
 
-# ---------------------------------------------------------------- V10 load_baseline
-
 def write_baseline(tmp_path, data):
     path = tmp_path / 'baseline.json'
     path.write_text(json.dumps(data), encoding='utf-8')
@@ -579,11 +571,13 @@ def good_payload():
     return sym_payload([entry('py:a#f', 'file:a.py'), entry('py:b#g', 'file:b.py')])
 
 
-def assert_rejected(tmp_path, data, needle):
+def assert_rejected(tmp_path, data, needle, exact=False):
     path = write_baseline(tmp_path, data)
     with pytest.raises(delta_api().BaselineError) as raised:
         delta_api().load_baseline(path)
-    assert str(raised.value).startswith(f'baseline {path}: ') and needle in str(raised.value)
+    message = str(raised.value)
+    assert message.startswith(f'baseline {path}: ')
+    assert (re.search(re.escape(needle) + r'(?![.\[\w])', message) if exact else needle in message), message
 
 
 def test_V10_EP1_well_formed_symbol_table_loads_and_compares(tmp_path):
@@ -614,7 +608,7 @@ def test_V10_EP3_row_field_that_is_not_a_string(tmp_path, column, value):
 def test_V10_EP3_row_that_is_not_a_list(tmp_path):
     data = good_payload()
     data['dependency_network']['symbols'][1] = {'id': 'x'}
-    assert_rejected(tmp_path, data, '$.dependency_network.symbols[1]')
+    assert_rejected(tmp_path, data, '$.dependency_network.symbols[1]', exact=True)
 
 
 @pytest.mark.parametrize('column', ['external_refs', 'uncertain_external_refs'])
@@ -651,4 +645,4 @@ def test_V10_EP8_row_length_differs_from_column_count(tmp_path, change):
     data = good_payload()
     row = data['dependency_network']['symbols'][1]
     data['dependency_network']['symbols'][1] = row[:-1] if change == 'short' else row + [0]
-    assert_rejected(tmp_path, data, '$.dependency_network.symbols[1]')
+    assert_rejected(tmp_path, data, '$.dependency_network.symbols[1]', exact=True)

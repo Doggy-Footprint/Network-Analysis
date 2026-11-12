@@ -75,7 +75,7 @@ def main():
     fails = {"P1": 0, "P2": 0, "P3": 0, "exceptions": 0}
     examples, stats = [], {"executed": 0, "rename_pairs": 0, "changed": 0, "removed": 0}
     bases = prev.BASES + ("Main.kt", "ui/Screen.kt")
-    for _ in range(N):
+    while stats["executed"] < N:
         try:
             paths = prev.python_paths(sorted(set(rnd.choice(prev.DIRS) + rnd.choice(bases) for _ in range(rnd.randint(2, 8)))))
             if len(paths) < 2: continue

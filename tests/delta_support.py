@@ -202,8 +202,7 @@ def _violation_key(v):
 
 
 def ref_symbol_changes(current, baseline):
-    """Independent F03-F05 implementation: nested scans over plain lists, no dict or set index of ids. `baseline` is the
-    payload after the rename mapping."""
+    """Nested scans over plain lists on purpose, never an index of ids, so it shares no lookup logic with the product."""
     def decode(data):
         network = data['dependency_network']
         if network.get('symbols') is None:
@@ -255,7 +254,6 @@ def _symbol_signatures(item):
 
 
 def ref_general_with_symbol_kinds(current, baseline):
-    """ref_general for every kind but the two symbol candidates, plus the same comparison for those two by (kind, target)."""
     from tests.delta_candidates_support import ref_general
     strip = lambda data: {**data, 'candidates': [c for c in data['candidates'] if c['kind'] not in SYMBOL_KINDS]}
     general = ref_general(strip(current), strip(baseline))

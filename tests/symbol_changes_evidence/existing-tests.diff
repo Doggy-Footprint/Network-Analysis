@@ -1,12 +1,12 @@
 diff --git a/tests/android_build_support.py b/tests/android_build_support.py
-index 798813f..0b0cfc7 100644
+index 798813f..5c9c18d 100644
 --- a/tests/android_build_support.py
 +++ b/tests/android_build_support.py
 @@ -10,6 +10,7 @@ GOLDEN = Path(__file__).parent / 'build_modules_evidence' / 'base_android-nowina
  BUILD_FILE = re.compile(r'(^|/)(build\.gradle(\.kts)?|settings\.gradle(\.kts)?|package\.json)$')
  GLOBAL_FIELDS = {'pagerank', 'weighted_centrality_cost', 'betweenness_centrality'}   # graph-wide measures move when any node is added
  MODULE_PREFIX = 'build-module:'
-+SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')   # not build-induced; asserted by the symbol tests
++SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')
  
  
  def golden():
@@ -20,7 +20,7 @@ index 798813f..0b0cfc7 100644
      assert base_ids <= set(by_id)
      for ident in set(by_id) - base_ids:
 diff --git a/tests/delta_support.py b/tests/delta_support.py
-index df63972..3164025 100644
+index df63972..e5e27d9 100644
 --- a/tests/delta_support.py
 +++ b/tests/delta_support.py
 @@ -20,7 +20,9 @@ MAIN = 'from code_analyzer.cli import main; main()'
@@ -68,13 +68,12 @@ index df63972..3164025 100644
                          if key in element:
                              element[key] = m(element[key])
                  elif isinstance(element, list):
-@@ -188,6 +201,92 @@ def _violation_key(v):
+@@ -188,6 +201,90 @@ def _violation_key(v):
      return (s['rule_type'], s['from_layer'], s.get('to_layer'), s.get('to_external'), v['target'], first.get('to_id'))
  
  
 +def ref_symbol_changes(current, baseline):
-+    """Independent F03-F05 implementation: nested scans over plain lists, no dict or set index of ids. `baseline` is the
-+    payload after the rename mapping."""
++    """Nested scans over plain lists on purpose, never an index of ids, so it shares no lookup logic with the product."""
 +    def decode(data):
 +        network = data['dependency_network']
 +        if network.get('symbols') is None:
@@ -126,7 +125,6 @@ index df63972..3164025 100644
 +
 +
 +def ref_general_with_symbol_kinds(current, baseline):
-+    """ref_general for every kind but the two symbol candidates, plus the same comparison for those two by (kind, target)."""
 +    from tests.delta_candidates_support import ref_general
 +    strip = lambda data: {**data, 'candidates': [c for c in data['candidates'] if c['kind'] not in SYMBOL_KINDS]}
 +    general = ref_general(strip(current), strip(baseline))
@@ -161,7 +159,7 @@ index df63972..3164025 100644
  def ref_delta(current, baseline, renames=None):
      pairs = [] if renames is None else renames['pairs']
      if pairs:
-@@ -260,9 +359,10 @@ def ref_delta(current, baseline, renames=None):
+@@ -260,9 +357,10 @@ def ref_delta(current, baseline, renames=None):
          changed = 'rules_sha256' not in cur_rules or 'rules_sha256' not in base_rules or cur_rules['rules_sha256'] != base_rules['rules_sha256']
      lists = {'new_cycles': new_cycles, 'grown_cycles': grown_cycles, 'new_violations': new_violations,
               'new_package_dependencies': new_pd, 'instability_changes': changes}
@@ -175,7 +173,7 @@ index df63972..3164025 100644
              'baseline': {'file_count': baseline['snapshot']['file_count'],
                           'rules_sha256': (base_rules or {}).get('rules_sha256')},
              'rules_changed': changed, **lists,
-@@ -272,7 +372,8 @@ def ref_delta(current, baseline, renames=None):
+@@ -272,7 +370,8 @@ def ref_delta(current, baseline, renames=None):
                           'package_dependencies': resolved_pd, 'candidates': general['resolved_candidates']},
              'counts': {**{name: len(items) for name, items in lists.items()},
                         'new_candidates': len(general['new_candidates']),
@@ -421,7 +419,7 @@ index 211c215..03f12b0 100644
      relations={e['relation'] for e in file_data['details']['edges']}
      if combination in ('fastapi-ts','android-fastapi','fastapi-sqlalchemy-ts','nestjs-ts'):
 diff --git a/tests/test_reach_candidates.py b/tests/test_reach_candidates.py
-index b64a9b4..ba9d7c0 100644
+index b64a9b4..44b4e6c 100644
 --- a/tests/test_reach_candidates.py
 +++ b/tests/test_reach_candidates.py
 @@ -644,6 +644,8 @@ def test_V7_R9_C14_file_output_equals_base_after_dropping_the_new_kinds(pipe):
@@ -433,13 +431,7 @@ index b64a9b4..ba9d7c0 100644
      assert {c['kind'] for c in payload['candidates']} - set(NEW_KINDS) == set(expected['candidate_kinds'])
      stripped = without_reach(payload)
      assert set(stripped) == set(expected['sections'])
-@@ -683,14 +685,15 @@ def test_V7_R9_C15_symbol_output_is_byte_identical_to_base(pipe):
- 
- 
- def delta_v1_form(delta):
--    """The delta without the fields added by delta.v2, so the base-commit hash still applies."""
-+    """The delta without the fields added by delta.v2 and delta.v4, so the base-commit hash still applies."""
-     result = copy.deepcopy(delta)
+@@ -688,9 +690,10 @@ def delta_v1_form(delta):
      result['policy'] = 'delta.v1'
      assert set(result['renames']) == {'status', 'reason', 'pairs'}
      del result['renames']

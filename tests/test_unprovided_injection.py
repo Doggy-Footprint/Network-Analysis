@@ -6,7 +6,8 @@ import pytest
 from tests.nestjs_support import analyze as nest_analyze
 from tests.nestjs_support import framework_nodes, write_project
 from tests.rename_delta_support import make_repo
-from tests.symbol_changes_support import analyze, arch, candidates_of, nest, rel
+from tests.delta_support import ref_delta, wire
+from tests.symbol_changes_support import analyze, arch, candidates_of, nest, rel, sym_payload
 
 KIND = 'unprovided_injection'
 S_PATH, A_PATH, B_PATH, C_PATH, G_PATH, CTL_PATH = ('src/s.ts', 'src/a.module.ts', 'src/b.module.ts', 'src/c.module.ts',
@@ -69,8 +70,6 @@ def assert_candidate(result, certain, uncertain, certainty):
     return item
 
 
-# ---------------------------------------------------------------- V08 cause-effect, synthetic architectures
-
 def test_V08_cause_own_providers_means_no_candidate():
     nodes, edges, n = scene(a_provides=False, imports_a=False)
     edges.append(edge(n['b'], n['s'], 'PROVIDES'))
@@ -83,7 +82,7 @@ def test_V08_effect_certain_when_the_provider_is_not_visible_from_the_only_modul
     [evidence] = item['evidence']
     assert set(evidence) == {'consumer_id', 'provider_id', 'module_ids', 'certainty', 'line'}
     assert evidence['consumer_id'] == n['ctl'].id and evidence['provider_id'] == n['s'].id
-    assert evidence['module_ids'] == [n['b'].id] and isinstance(evidence['line'], int)
+    assert evidence['module_ids'] == [n['b'].id] and evidence['line'] == 7
 
 
 def test_V08_cause_direct_import_export_means_no_candidate():
@@ -170,12 +169,39 @@ def test_V08_counts_follow_certainty_per_evidence_and_one_candidate_covers_the_f
         ('BController', 'certain'), ('BController', 'certain'), ('Lone', 'uncertain')]
 
 
+def second_module(nodes, edges, n, name, path, provides=False, unsupported=()):
+    module = nest('module', name, path, unsupported=unsupported)
+    nodes.append(module)
+    edges.append(edge(module, n['ctl'], 'DECLARES'))
+    if provides:
+        edges.append(edge(module, n['s'], 'PROVIDES'))
+    return module
+
+
+def test_V08_cause_visible_in_one_of_two_modules_is_recorded_for_the_invisible_one_only():
+    nodes, edges, n = scene()
+    second_module(nodes, edges, n, 'B2Module', 'src/b2.module.ts', provides=True)
+    item = assert_candidate(run(nodes, edges), 1, 0, 'certain')
+    assert item['evidence'][0]['module_ids'] == [n['b'].id] and item['evidence'][0]['line'] == 7
+
+
+def test_V08_cause_certainty_comes_only_from_the_modules_where_the_provider_is_invisible():
+    nodes, edges, n = scene()
+    second_module(nodes, edges, n, 'B2Module', 'src/b2.module.ts', provides=True, unsupported=['imports', 'providers'])
+    assert_candidate(run(nodes, edges), 1, 0, 'certain')
+
+
+def test_V08_cause_two_invisible_modules_with_mixed_unsupported_fields_are_uncertain_with_both_ids_sorted():
+    nodes, edges, n = scene()
+    other = second_module(nodes, edges, n, 'AaModule', 'src/aa.module.ts', unsupported=['imports'])
+    item = assert_candidate(run(nodes, edges), 0, 1, 'uncertain')
+    assert item['evidence'][0]['module_ids'] == sorted([n['b'].id, other.id]) == [other.id, n['b'].id]
+
+
 def test_V08_a_graph_without_nestjs_nodes_has_no_candidates():
     from tests.symbol_changes_support import sym
     assert run([sym('py:a#f', 'a.py'), sym('py:b#g', 'b.py')], [rel('py:b#g', 'py:a#f')]) == []
 
-
-# ---------------------------------------------------------------- V08 integration, NestJS projects
 
 SERVICE = "import { Injectable } from '@nestjs/common';\n@Injectable()\nexport class S {}\n"
 CONTROLLER = ("import { Controller } from '@nestjs/common';\nimport { S } from './s.service';\n@Controller('b')\n"
@@ -254,24 +280,93 @@ def test_V08_module_node_metadata_records_global_and_unsupported_fields(tmp_path
         'src/g.ts': "import { Module, Global } from '@nestjs/common';\n@Global()\n@Module({})\nexport class GlobalOne {}\n",
         'src/p.ts': "import { Module } from '@nestjs/common';\n@Module({})\nexport class Plain {}\n",
         'src/d.ts': ("import { Module } from '@nestjs/common';\nimport { ConfigModule } from '@nestjs/config';\n"
-                     "@Module({ imports: [ConfigModule.forRoot()] })\nexport class Dynamic {}\n")})
+                     "@Module({ imports: [ConfigModule.forRoot()] })\nexport class Dynamic {}\n"),
+        'src/r.ts': ("import { Module } from '@nestjs/common';\nclass Y {}\n"
+                     "@Module({ providers: [{ provide: 'X', useClass: Y }] })\nexport class Recorded {}\n")})
     modules = {n.label: n.metadata for n in framework_nodes(nest_analyze(root, language=False), 'module')}
-    assert modules['GlobalOne']['global'] is True and modules['Plain']['global'] is False and modules['Dynamic']['global'] is False
-    assert not modules['GlobalOne']['unsupported_fields'] and not modules['Plain']['unsupported_fields']
-    assert modules['Dynamic']['unsupported_fields']
-    assert json.dumps(modules['Dynamic']['unsupported_fields'])
+    assert {k: (v['global'], v['unsupported_fields']) for k, v in modules.items()} == {
+        'GlobalOne': (True, []), 'Plain': (False, []), 'Dynamic': (False, ['imports']), 'Recorded': (False, ['providers'])}
+
+
+def pair_candidate(pairs, ident, certain=None, uncertain=0, target='file:src/b.controller.ts', consumer_path='src/b.controller.ts'):
+    evidence = [{'consumer_id': f'nestjs:controller:{consumer_path}#BController', 'provider_id': p, 'module_ids': [], 'certainty': 'certain',
+                 'line': 1} for p in pairs]
+    return {'id': ident, 'kind': KIND, 'target': target, 'coverage': 'static_analyzer_relation', 'status': 'static_candidate',
+            'metrics': {'unprovided_count': len(pairs) if certain is None else certain, 'uncertain_count': uncertain}, 'evidence': evidence}
+
+
+S1, S2 = 'nestjs:provider:src/s.service.ts#S', 'nestjs:provider:src/t.service.ts#T'
+
+
+def delta_compare(cur, base, renames=None):
+    import bottlenecks.delta as delta
+    current, baseline = sym_payload(None, candidates=cur), sym_payload(None, candidates=base)
+    result = wire(delta.compute_delta(current, baseline, renames))
+    assert result == wire(ref_delta(current, baseline, renames))
+    return result
+
+
+def applied(*pairs):
+    return {'status': 'applied', 'reason': None, 'pairs': [{'from': a, 'to': b, 'similarity': 100} for a, b in pairs]}
+
+
+def test_V03_EP6_consumer_file_rename_keeps_the_same_pair_quiet():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate([S1], 'b:0000000000000002', target='file:src/b2.controller.ts', consumer_path='src/b2.controller.ts')]
+    result = delta_compare(cur, base, applied(('src/b.controller.ts', 'src/b2.controller.ts')))
+    assert result['new_candidates'] == [] and result['strengthened_candidates'] == [] and result['resolved']['candidates'] == 0
+    control = delta_compare(cur, base)
+    assert len(control['new_candidates']) == 1 and control['resolved']['candidates'] == 1
+
+
+def test_V03_EP6_provider_file_rename_keeps_the_same_pair_quiet():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate(['nestjs:provider:src/s2.service.ts#S'], 'b:0000000000000002')]
+    result = delta_compare(cur, base, applied(('src/s.service.ts', 'src/s2.service.ts')))
+    assert result['new_candidates'] == [] and result['strengthened_candidates'] == [] and result['resolved']['candidates'] == 0
+    control = delta_compare(cur, base)
+    assert [i['kind'] for i in control['strengthened_candidates']] == [KIND]
+
+
+def test_V08_delta_unprovided_count_increase_is_strengthened_with_no_added_evidence():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate([S1], 'b:0000000000000002', certain=2)]
+    [item] = delta_compare(cur, base)['strengthened_candidates']
+    assert item['increased'] == {'unprovided_count': {'baseline': 1, 'current': 2}} and item['added_evidence'] == []
+
+
+def test_V08_delta_uncertain_count_increase_is_strengthened_with_no_added_evidence():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate([S1], 'b:0000000000000002', certain=1, uncertain=1)]
+    [item] = delta_compare(cur, base)['strengthened_candidates']
+    assert item['increased'] == {'uncertain_count': {'baseline': 0, 'current': 1}} and item['added_evidence'] == []
+
+
+def test_V08_delta_certainty_flip_on_the_same_pair_reports_only_the_uncertain_increase():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate([S1], 'b:0000000000000002', certain=0, uncertain=1)]
+    [item] = delta_compare(cur, base)['strengthened_candidates']
+    assert item['increased'] == {'uncertain_count': {'baseline': 0, 'current': 1}} and item['added_evidence'] == []
+
+
+def test_V08_delta_count_decrease_is_not_reported():
+    base = [pair_candidate([S1, S2], 'b:0000000000000001')]
+    cur = [pair_candidate([S1], 'b:0000000000000002')]
+    result = delta_compare(cur, base)
+    assert result['strengthened_candidates'] == [] and result['new_candidates'] == []
+
+
+def test_V08_delta_new_consumer_file_is_a_new_candidate():
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    other = pair_candidate([S2], 'b:0000000000000003', target='file:src/c.controller.ts', consumer_path='src/c.controller.ts')
+    result = delta_compare([base[0], other], base)
+    assert [(i['kind'], i['target'], i['metrics']) for i in result['new_candidates']] == [
+        (KIND, 'file:src/c.controller.ts', {'unprovided_count': 1, 'uncertain_count': 0})]
+    assert result['strengthened_candidates'] == []
 
 
 def test_V08_delta_strengthening_adds_the_injection_row_for_a_new_consumer_provider_pair():
-    import bottlenecks.delta as delta
-    from tests.symbol_changes_support import sym_payload
-
-    def item(pairs, ident):
-        evidence = [{'consumer_id': c, 'provider_id': p, 'module_ids': [], 'certainty': 'certain', 'line': 1} for c, p in pairs]
-        return {'id': ident, 'kind': KIND, 'target': 'file:src/b.controller.ts', 'coverage': 'static_analyzer_relation',
-                'status': 'static_candidate', 'metrics': {'unprovided_count': len(pairs), 'uncertain_count': 0}, 'evidence': evidence}
-    base = sym_payload(None, candidates=[item([('c1', 'p1')], 'b:0000000000000000')])
-    cur = sym_payload(None, candidates=[item([('c1', 'p2')], 'b:0000000000000001')])
-    result = json.loads(json.dumps(delta.compute_delta(cur, base)))
-    [strengthened] = result['strengthened_candidates']
-    assert strengthened['increased'] == {} and strengthened['added_evidence'] == [['injection', 'c1', 'p2']]
+    base = [pair_candidate([S1], 'b:0000000000000001')]
+    cur = [pair_candidate([S2], 'b:0000000000000002')]
+    [item] = delta_compare(cur, base)['strengthened_candidates']
+    assert item['increased'] == {} and item['added_evidence'] == [['injection', 'nestjs:controller:src/b.controller.ts#BController', S2]]

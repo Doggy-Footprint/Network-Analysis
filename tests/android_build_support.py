@@ -10,7 +10,7 @@ GOLDEN = Path(__file__).parent / 'build_modules_evidence' / 'base_android-nowina
 BUILD_FILE = re.compile(r'(^|/)(build\.gradle(\.kts)?|settings\.gradle(\.kts)?|package\.json)$')
 GLOBAL_FIELDS = {'pagerank', 'weighted_centrality_cost', 'betweenness_centrality'}   # graph-wide measures move when any node is added
 MODULE_PREFIX = 'build-module:'
-SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')   # not build-induced; asserted by the symbol tests
+SYMBOL_CANDIDATE_KINDS = ('unreferenced_symbol', 'unprovided_injection')
 
 
 def golden():

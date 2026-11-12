@@ -20,6 +20,10 @@ MUTATIONS = [
     ("M09 global modules ignored", "bottlenecks/nestjs_visibility.py", 'if nestjs[module]["metadata"].get("global"):', "if False:"),
     ("M10 re-export not followed", "bottlenecks/nestjs_visibility.py", "                pending.append(target)\n", "                pass\n"),
     ("M11 unsupported fields ignored", "bottlenecks/nestjs_visibility.py", 'certain = not any(nestjs[module]["metadata"].get("unsupported_fields") for module in missing)', "certain = True"),
+    ("M12 consumer/provider ids not rename-mapped", "bottlenecks/delta.py", 'for key in ("from_id", "to_id", "node_id", "consumer_id", "provider_id"):', 'for key in ("from_id", "to_id", "node_id"):'),
+    ("M13 uncertain_count not a strength metric", "bottlenecks/delta.py", '"unprovided_injection": ("unprovided_count", "uncertain_count")}', '"unprovided_injection": ("unprovided_count",)}'),
+    ("M14 recorded only when invisible in every module", "bottlenecks/nestjs_visibility.py", "            if not missing:\n", "            if len(missing) != len(homes_of):\n"),
+    ("M15 certainty from all consumer modules", "bottlenecks/nestjs_visibility.py", 'for module in missing)', 'for module in homes_of)'),
 ]
 
 

@@ -18,8 +18,8 @@
   "status": "killed",
   "failed": [
    "tests/test_delta.py::test_F12_delta_object_shape_and_counts",
-   "tests/test_rename_delta.py::test_V05_EP2_null_baseline_commit",
-   "tests/test_symbol_changes.py::test_V03_EP4_current_without_symbols_is_skipped_and_the_rest_of_the_delta_is_unchanged"
+   "tests/test_unprovided_injection.py::test_V03_EP6_consumer_file_rename_keeps_the_same_pair_quiet",
+   "tests/test_rename_delta.py::test_V05_EP2_null_baseline_commit"
   ]
  },
  {
@@ -78,6 +78,34 @@
   "status": "killed",
   "failed": [
    "tests/test_unprovided_injection.py::test_V08_cause_unsupported_module_fields_make_the_verdict_uncertain[imports]"
+  ]
+ },
+ {
+  "mutation": "M12 consumer/provider ids not rename-mapped",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V03_EP6_consumer_file_rename_keeps_the_same_pair_quiet"
+  ]
+ },
+ {
+  "mutation": "M13 uncertain_count not a strength metric",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_delta_uncertain_count_increase_is_strengthened_with_no_added_evidence"
+  ]
+ },
+ {
+  "mutation": "M14 recorded only when invisible in every module",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_visible_in_one_of_two_modules_is_recorded_for_the_invisible_one_only"
+  ]
+ },
+ {
+  "mutation": "M15 certainty from all consumer modules",
+  "status": "killed",
+  "failed": [
+   "tests/test_unprovided_injection.py::test_V08_cause_certainty_comes_only_from_the_modules_where_the_provider_is_invisible"
   ]
  }
 ]
