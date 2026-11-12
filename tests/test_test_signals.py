@@ -7,9 +7,6 @@ from tests.test_signals_support import (AMBIGUOUS, BASE_COMMIT, DR, EXACT, FI, S
                                         branch_count, case_row, cases_of, counts_of, decode_symbols, indent, make_repo,
                                         reach_of, rel, remove_worktree, run_cli, run_file_granularity, sym, symbols_api)
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V01 branch_count, table B constructs per language. Every expected integer is counted by hand from table B.
-# ---------------------------------------------------------------------------------------------------------------------
 
 PY_CASES = {
     'if': ('def f(x):\n    if x:\n        return 1\n    return 0\n', 1),
@@ -199,9 +196,21 @@ def test_V01_declaration_line_and_value_line_both_find_the_assigned_arrow():
     assert branch_count('a.ts', source, 3, 'f') is None
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V02 symbol table columns (unit with contents) and CLI file granularity (integration)
-# ---------------------------------------------------------------------------------------------------------------------
+DECORATED = {
+    'python-function': ('a.py', "@app.route('/x')\n@other\ndef handler(a):\n    if a:\n        return 1\n    return 0\n", {1: 1, 2: None, 3: 1, 4: None}, 'handler'),
+    'python-staticmethod': ('a.py', 'class K:\n    @staticmethod\n    def m(a):\n        return 1 if a else 0\n', {2: 1, 3: 1, 1: None}, 'm'),
+    'typescript-method-two-decorators': ('a.ts', "class K {\n  @Get('x')\n  @Auth()\n  m(a: number): number {\n    return a ? 1 : 0;\n  }\n}\n",
+                                         {2: 1, 3: None, 4: 1}, 'm'),
+    'kotlin-method-two-annotations': ('A.kt', 'class K {\n    @Test\n    @Ignore\n    fun m(a: Int): Int {\n        return if (a > 0) 1 else 0\n    }\n}\n',
+                                      {2: 1, 3: None, 4: 1}, 'm'),
+    'kotlin-top-level-two-annotations': ('A.kt', '@Suppress("x")\n@JvmName("y")\nfun f(a: Int): Int = if (a > 0) 1 else 0\n', {1: 1, 2: None, 3: 1}, 'f'),
+}
+
+
+@pytest.mark.parametrize('path, source, lines, name', DECORATED.values(), ids=DECORATED.keys())
+def test_V01_decorated_declaration_matches_on_its_first_line_or_its_name_line_only(path, source, lines, name):
+    assert {line: branch_count(path, source, line, name) for line in lines} == lines
+
 
 def test_V02_symbol_columns_constant_order():
     assert symbols_api().SYMBOL_COLUMNS == ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs',
@@ -344,10 +353,6 @@ def test_V01_cli_syntax_error_files_give_null_branches_and_no_test_rows_without_
     network = data['dependency_network']
     assert not [row for row in network['test_cases'] if network['file_ids'][row[1]] == 'file:src/bad.spec.ts']
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V03 test_reach, cause-effect graph
-# ---------------------------------------------------------------------------------------------------------------------
 
 def prod(ident, kind='function', path='src/m.py', **kwargs):
     return sym(ident, path, kind, **kwargs)
@@ -517,10 +522,6 @@ def test_V03_cause_test_directory_and_name_conventions_decide_the_seed_files():
     assert reach_of(nodes + only_test, edges) == {'py:m#A': 'uncertain', 'py:p#plain': 'untested'}
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V04 test case table: rows and ids
-# ---------------------------------------------------------------------------------------------------------------------
-
 def ids_of(path, source):
     return [row['id'] for row in cases_of(path, source)]
 
@@ -624,10 +625,6 @@ def test_V04_unsupported_extension_gives_no_rows(path):
     assert cases_of(path, "def test_a\nend\n") == []
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V05 assertion classification, table A
-# ---------------------------------------------------------------------------------------------------------------------
-
 def py_body(body):
     return 'def test_a():\n' + indent(body.rstrip('\n') + '\n', 4)
 
@@ -699,6 +696,16 @@ def test_V05_python_prefix_rule_counts_unlisted_calls_as_strong(call):
                          ids=['ensure', 'validate', 'plain-call', 'print', 'prefix-not-at-start'])
 def test_V05_python_other_calls_are_not_assertions(call):
     assert py_counts(call) == (0, 0)
+
+
+@pytest.mark.parametrize('call', ['assertSomething(x)', 'verifyFoo(x)', 'expectBar(x)'])
+def test_V05_kotlin_prefix_rule_counts_assert_verify_expect_calls_as_strong(call):
+    assert kt_counts(call) == (1, 0)
+
+
+@pytest.mark.parametrize('call', ['verifyX(x)', 'assertSomething(x)', 'checkX(x)', 'expectThing(x)', 'check(x)'])
+def test_V05_typescript_prefixed_calls_outside_an_expect_chain_count_nothing(call):
+    assert ts_counts(call + ';') == (0, 0)
 
 
 def test_V05_python_assertions_inside_nested_function_and_lambda_are_counted_and_other_cases_are_not():
@@ -794,7 +801,7 @@ def test_V05_kotlin_weak_calls(call):
     assert kt_counts(call) == (0, 1)
 
 
-@pytest.mark.parametrize('call', ['println(x)', 'foo(x)', 'val y = compute(x)'])
+@pytest.mark.parametrize('call', ['println(x)', 'foo(x)', 'val y = compute(x)', 'check(x)', 'checkFoo(x)'])
 def test_V05_kotlin_other_calls_are_not_assertions(call):
     assert kt_counts(call) == (0, 0)
 
@@ -824,10 +831,6 @@ def test_V05_kotlin_assertions_inside_lambda_are_counted_and_other_cases_are_not
 def test_V05_kotlin_assertThat_one_assertion_per_chain_decided_by_the_last_matcher(chain, expected):
     assert kt_counts(chain) == expected
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V06 mock counts, table M
-# ---------------------------------------------------------------------------------------------------------------------
 
 def py_mocks(body, header='', name='test_a'):
     return counts_of('tests/test_a.py', header + 'def test_a():\n' + indent(body.rstrip('\n') + '\n', 4), name)[2]
@@ -938,15 +941,26 @@ def test_V06_kotlin_outer_class_properties_and_before_functions_apply_to_a_neste
     assert counts_of('src/test/kotlin/TTest.kt', source, 'Outer.Inner.a')[2] == 4
 
 
+KT_OBJECT = ('object O {\n    private val r = mockk<R>()\n\n    @%s\n    fun setUp() {\n        mockkObject(X)\n    }\n\n    @Test\n    fun a() {\n'
+             '        every { r.f() } returns 1\n    }\n}\n')
+
+
+@pytest.mark.parametrize('hook', ['Before', 'BeforeEach'])
+def test_V06_kotlin_object_property_initialisers_and_before_functions_count_for_its_cases(hook):
+    assert counts_of('src/test/kotlin/TTest.kt', KT_OBJECT % hook, 'O.a')[2] == 3
+
+
+def test_V06_kotlin_object_nested_in_a_class_gets_both_scopes():
+    source = ('class Outer {\n    private val p = mockk<P>()\n\n    @Before\n    fun setUp() {\n        mockkObject(X)\n    }\n\n    object Inner {\n'
+              '        private val q = mockk<Q>()\n\n        @Test\n        fun a() {\n            spyk(x)\n        }\n    }\n}\n')
+    assert counts_of('src/test/kotlin/TTest.kt', source, 'Outer.Inner.a')[2] == 4
+
+
 def test_V06_kotlin_before_each_function_counts():
     source = ('class T {\n    @BeforeEach\n    fun setup() {\n        every { x.y() } returns 2\n        whenever(z.w()).thenReturn(1)\n    }\n\n'
               '    @Test\n    fun a() {\n    }\n}\n')
     assert counts_of('src/test/kotlin/TTest.kt', source, 'T.a')[2] == 2
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V07 skipped, table S
-# ---------------------------------------------------------------------------------------------------------------------
 
 def py_skipped(decorators='', body='pass', class_decorators='', name='test_a'):
     if class_decorators:
@@ -1007,6 +1021,17 @@ def test_V07_kotlin_case_annotations(annotation, expected):
     assert counts_of('src/test/kotlin/TTest.kt', source, 'T.a')[3] is expected
 
 
+@pytest.mark.parametrize('annotation, expected', [('@Ignore', True), ('@Disabled', True), ('@Suppress("x")', False)])
+def test_V07_kotlin_object_annotation_is_inherited_by_its_cases(annotation, expected):
+    source = f'{annotation}\nobject O {{\n    @Test\n    fun a() {{\n    }}\n}}\n'
+    assert counts_of('src/test/kotlin/TTest.kt', source, 'O.a')[3] is expected
+
+
+def test_V07_kotlin_object_nested_in_a_skipped_class_is_skipped():
+    source = '@Disabled\nclass Outer {\n    object Inner {\n        @Test\n        fun a() {\n        }\n    }\n}\n'
+    assert counts_of('src/test/kotlin/TTest.kt', source, 'Outer.Inner.a')[3] is True
+
+
 def test_V07_python_outer_class_skip_applies_to_a_case_of_a_nested_class():
     source = '@pytest.mark.skip\nclass TestOuter:\n    class TestInner:\n        def test_a(self):\n            pass\n'
     assert counts_of('tests/test_a.py', source, 'TestOuter.TestInner.test_a')[3] is True
@@ -1032,3 +1057,21 @@ def test_V07_kotlin_class_annotation_is_inherited_by_every_case(annotation, expe
 def test_V07_python_mark_prefix_omitted_decorator_forms_skip(decorator):
     assert py_skipped(decorators=decorator) is True
     assert py_skipped(class_decorators=decorator) is True
+
+
+def symbol_granularity(root, directory, cwd, lang):
+    directory.mkdir(parents=True)
+    args = [root, *lang, '--granularity', 'symbol', '--json', '-o', directory / 'r.html', '--bottlenecks', directory / 'b.json']
+    done = run_cli(args, cwd=cwd)
+    assert done.returncode == 0, done.stderr[-1500:]
+    return (directory / 'b.json').read_bytes().replace(str(directory).encode(), b'<out>')
+
+
+@pytest.mark.parametrize('language', PROJECTS)
+def test_V15_symbol_granularity_bottleneck_json_equals_the_base_commit(language, base_tree, tmp_path):
+    files, lang = PROJECTS[language]
+    root = tmp_path / 'repo'
+    make_repo(root, files)
+    expected = symbol_granularity(root, tmp_path / 'base', base_tree, lang)
+    actual = symbol_granularity(root, tmp_path / 'cur', Path(__file__).resolve().parents[1], lang)
+    assert actual == expected

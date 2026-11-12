@@ -19,10 +19,6 @@ def untested_item(ident, base, cur, reach, kind='function', name=None, file='fil
             'current_branches': cur, 'test_reach': reach}
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V08 untested_changes decision table
-# ---------------------------------------------------------------------------------------------------------------------
-
 def test_V08_D1_new_untested_function_is_listed_with_null_baseline_branches():
     result = cur_base([symbol('py:a#f', branches=2, reach='untested')], [])
     assert result['untested_changes'] == [untested_item('py:a#f', None, 2, 'untested')]
@@ -98,10 +94,6 @@ def test_V08_items_are_ordered_by_id_and_have_exactly_the_declared_keys():
     assert [i['id'] for i in items] == ['py:a#B', 'py:a#m', 'py:a#z']
     assert all(set(i) == {'id', 'file', 'kind', 'name', 'baseline_branches', 'current_branches', 'test_reach'} for i in items)
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V09 weakened_tests decision table
-# ---------------------------------------------------------------------------------------------------------------------
 
 def weak(current_cases, base_cases, renames=None):
     return compute(signal_payload([], current_cases), signal_payload([], base_cases), renames)
@@ -183,10 +175,6 @@ def test_V09_items_are_ordered_by_id_and_have_exactly_the_declared_keys():
     assert all(set(i['baseline'] or i['current']) == {'strong_assertions', 'weak_assertions', 'mocks', 'skipped'} for i in items)
 
 
-# ---------------------------------------------------------------------------------------------------------------------
-# V10 added_mocks boundaries
-# ---------------------------------------------------------------------------------------------------------------------
-
 def mocks_of(current_cases, base_cases, renames=None):
     return compute(signal_payload([], current_cases), signal_payload([], base_cases), renames)['added_mocks']
 
@@ -229,10 +217,6 @@ def test_V10_a_case_can_be_in_both_the_weakened_and_the_mock_lists():
     result = compute(signal_payload([], [case(f'{T1}#n', strong=0, mocks=3)]), signal_payload([], []))
     assert [i['id'] for i in result['weakened_tests']] == [f'{T1}#n'] and [i['id'] for i in result['added_mocks']] == [f'{T1}#n']
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V11 status, mapping and CLI lines
-# ---------------------------------------------------------------------------------------------------------------------
 
 def with_data(*cases_):
     return signal_payload([symbol('py:a#f', branches=1)], list(cases_))
@@ -292,6 +276,25 @@ def test_V11_EP4_both_without_test_data_reports_the_baseline_reason(make):
     assert_skipped(compute(make(), make()), 'baseline_without_test_data')
 
 
+def drop_symbol_column(name):
+    def make():
+        data = signal_payload([symbol('py:a#f', branches=1, reach='tested')], [case(f'{T1}#t')])
+        network = data['dependency_network']
+        index = network['symbol_columns'].index(name)
+        del network['symbol_columns'][index]
+        network['symbols'] = [row[:index] + row[index + 1:] for row in network['symbols']]
+        return data
+    return make
+
+
+@pytest.mark.parametrize('name', ['branches', 'test_reach'])
+def test_V11_EP4a_a_symbol_table_missing_only_one_new_column_counts_as_no_test_data(name):
+    missing = drop_symbol_column(name)
+    assert_skipped(compute(with_data(case(f'{T1}#t')), missing()), 'baseline_without_test_data')
+    assert_skipped(compute(missing(), with_data(case(f'{T1}#t'))), 'current_without_test_data')
+    assert_skipped(compute(missing(), missing()), 'baseline_without_test_data')
+
+
 def test_V11_skipping_changes_nothing_else_in_the_delta():
     base_cycles, cur_cycles = [cycle(['file:a.py', 'file:b.py'])], [cycle(['file:a.py', 'file:b.py', 'file:c.py'])]
     full = compute(signal_payload([], [case(f'{T1}#t')], candidates=cur_cycles), signal_payload([], [case(f'{T1}#t')], candidates=base_cycles))
@@ -339,8 +342,6 @@ def test_V11_EP6_skipped_or_empty_renames_do_not_map_anything():
     assert [i['baseline_branches'] for i in compute(cur, base, skipped)['untested_changes']] == [None]
     assert [i['baseline_branches'] for i in compute(cur, base, applied())['untested_changes']] == [None]
 
-
-# --- CLI ---------------------------------------------------------------------------------------------------------------
 
 PY_FILES = {
     'app/__init__.py': '',
@@ -446,10 +447,6 @@ def test_V11_EP2_cli_baseline_with_the_test_data_removed_is_skipped_with_one_war
     assert summary_lines(done) == ([], [TEST_WARNING.format('baseline_without_test_data')])
     assert data['delta']['test_changes'] == {'status': 'skipped', 'reason': 'baseline_without_test_data'}
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# V12 load_baseline validation
-# ---------------------------------------------------------------------------------------------------------------------
 
 def write_baseline(tmp_path, data):
     path = tmp_path / 'baseline.json'

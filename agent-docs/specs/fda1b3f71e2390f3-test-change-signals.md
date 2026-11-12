@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 run_id: fda1b3f71e2390f3
 status: active
 base_commit: 0f17dd29afc6a0d916529c10562e72a1692f8eab
@@ -22,7 +22,7 @@ Out of scope: 테스트 실행·coverage 도구 사용, production 코드가 테
 
 # Paths
 Implementation: bottlenecks/test_signals.py, bottlenecks/symbols.py, bottlenecks/core.py, bottlenecks/delta.py, code_analyzer/cli.py
-Tests: tests/test_test_signals.py, tests/test_test_changes_delta.py, tests/test_signals_support.py, tests/test_signals_evidence/, 그리고 기존 tests/ file(조정 허용 범위: `"delta.v4"` 기대값을 `"delta.v5"`로; delta key 집합과 `counts` key 집합에 새 key 추가; `symbol_columns` 기대값 끝에 `branches`·`test_reach` 추가와 그에 따른 행 길이; bottleneck JSON의 `dependency_network` key 집합에 `test_cases`·`test_case_columns` 추가; base 출력과 hash·byte·크기 비율로 비교하는 characterization은 비교 전에 `test_cases`·`test_case_columns`와 심볼 행의 두 새 열을 제거한 뒤 비교하고 새 항목은 같은 test에서 별도로 단언; `tests/delta_support.py` `ref_delta`를 새 목록까지 독립 구현으로 확장; `--baseline` CLI test의 stdout 기대값에 `[Δ] Test changes: …` 한 줄, stderr 기대값에 `[!] Warning: test changes not compared (<reason>)` 한 줄 허용; `tests/coverage_reporting_evidence/counter-baseline.json`의 file granularity 항목 parse 수를 새 값으로 갱신(read 수와 symbol granularity 항목은 불변). 다른 assertion 약화 금지. 모든 변경은 `tests/test_signals_evidence/existing-tests.diff`에 기록)
+Tests: tests/test_test_signals.py, tests/test_test_changes_delta.py, tests/test_signals_support.py, tests/test_signals_evidence/, 그리고 기존 tests/ file(조정 허용 범위: `"delta.v4"` 기대값을 `"delta.v5"`로; delta key 집합과 `counts` key 집합에 새 key 추가; `symbol_columns` 기대값 끝에 `branches`·`test_reach` 추가와 그에 따른 행 길이; bottleneck JSON의 `dependency_network` key 집합에 `test_cases`·`test_case_columns` 추가; base 출력과 hash·byte·크기 비율로 비교하는 characterization은 비교 전에 `test_cases`·`test_case_columns`와 심볼 행의 두 새 열을 제거한 뒤 비교하고 새 항목은 같은 test에서 별도로 단언(공용 strip helper를 쓰는 base 비교 test와 생성 dump `tests/coverage_reporting_evidence/counters.json`은 V02가 새 항목을 단언하므로 예외); `tests/delta_support.py` `ref_delta`를 새 목록까지 독립 구현으로 확장; `--baseline` CLI test의 stdout 기대값에 `[Δ] Test changes: …` 한 줄, stderr 기대값에 `[!] Warning: test changes not compared (<reason>)` 한 줄 허용; `tests/coverage_reporting_evidence/counter-baseline.json`의 file granularity 항목 parse 수를 새 값으로 갱신(read 수와 symbol granularity 항목은 불변). 다른 assertion 약화 금지. 모든 변경은 `tests/test_signals_evidence/existing-tests.diff`에 기록)
 Test command: uv run -q --with-requirements requirements-dev.txt python -c "from fixtures.registry import fixture_root; [fixture_root(n) for n in ('futuramaapi','fastapi-realworld','fastapi-official-template','android-nowinandroid','typescript-nestjs-realworld')]" && uv run -q --with-requirements requirements-dev.txt --with pytest-cov python -m pytest -q -p no:cacheprovider --cov=bottlenecks.delta --cov=bottlenecks.symbols --cov=bottlenecks.test_signals --cov-branch --cov-report=term-missing --cov-fail-under=90 --deselect 'tests/test_analysis_coverage_reporting.py::test_V05_characterization_and_V04_cli_stages' --deselect 'tests/test_doc_references.py::test_V8_base_choice_cli_output_equals_base_after_removing_new_keys' --deselect 'tests/test_file_analysis_cli.py::test_V01_direct_builder_defaults_characterization' --deselect 'tests/test_nestjs_quality.py::TestRegression::test_O11_characterization_existing_standalone_outputs_are_byte_identical' --deselect 'tests/test_signal_defects_round4.py::test_V4_B_data_object' --deselect 'tests/test_report_modal.py::test_V04_graph_tab_active_modal_selects_and_centres_node' --deselect 'tests/test_report_size_format.py::test_V01_fixture_details_equal_base_details'
 Review evidence: R1 — eval 재측정(Traceability F11): 네 저장소 baseline 재생성(`harness.py baseline <repo>`) 뒤 608 task 전체를 `tests/rename_comment_evidence/r1_reanalyze.py <repo> --match --workers 4`로 재분석, 산출물 `~/toy-projects/network-analysis-eval/inject/<repo>/score-tests.txt`와 main이 쓰는 `tests/test_signals_evidence/r1_comparison.md`(직전 점수 `score-symbols.txt`와 비교, 이전 결과는 `backup-symbols/`에 보관). R2 — 크기·시간: 네 eval 저장소 clone(`base` commit)에서 file granularity CLI를 base_commit과 현재 코드로 각 3회 실행해 bottleneck JSON byte 비와 분석 시간 비(최솟값)를 기록.
 Fuzzing: main이 작성하는 stdlib harness `tests/test_signals_evidence/fuzz/fuzz_test_changes.py`, seed 20261113, 대상 `compute_delta`. 생성: 파일 2~8개(일부는 test 파일), 심볼 0~20개(kind·branches·test_reach 무작위)와 테스트 케이스 0~20개(강·약 검증 수, mocks, skipped 무작위)를 가진 합성 payload 쌍과 파일 이름 변경. oracle — P1(metamorphic) 같은 모델을 이름 변경 경로로 다시 그린 payload와 renames를 주면 세 새 목록이 비고; P2(differential) 새 열·표를 뺀 payload의 결과는 base_commit delta.v4 결과(새 key 제외)와 같고; P3 세 목록이 F05~F07 정의를 모델 key로 직접 계산한 기준과 같다. 5,000 입력, 예외 0.
@@ -46,7 +46,7 @@ CLI(`--baseline`, applied): stdout `[Δ] Test changes: untested changes <n>, wea
 # Functional Requirements
 | id | requirement | priority | source |
 | --- | --- | --- | --- |
-| F01 | 심볼 표 `branches`: kind가 function·method인 행은 표 B 규칙으로 센 분기 수, class·constant 행과 span·내용이 없거나 구문 오류·미지원 언어인 행은 null. 범위는 그 선언 node 전체(안의 lambda·arrow function·function expression 포함)에서 안쪽에 선언된 이름 있는 function·method·class 선언의 몸통을 뺀 부분. 선언은 span 시작 줄에서 시작하고 이름이 행 `name`의 마지막 `.` 뒤 부분과 같은 함수·메서드 선언. TS/JS에서는 변수 선언(`const`·`let`·`var`, `export` 포함)이나 class field에 대입된 arrow function·function expression도 그 이름의 선언이며, 시작 줄은 선언 문(`export` 포함) 또는 값의 시작 줄 | must | I1 |
+| F01 | 심볼 표 `branches`: kind가 function·method인 행은 표 B 규칙으로 센 분기 수, class·constant 행과 span·내용이 없거나 구문 오류·미지원 언어인 행은 null. 범위는 그 선언 node 전체(안의 lambda·arrow function·function expression 포함)에서 안쪽에 선언된 이름 있는 function·method·class 선언의 몸통을 뺀 부분. 선언은 span 시작 줄이 그 선언의 첫 줄(decorator·annotation·modifier 포함) 또는 이름이 있는 줄 중 하나와 같고, 이름이 행 `name`의 마지막 `.` 뒤 부분과 같은 함수·메서드 선언. TS/JS에서는 변수 선언(`const`·`let`·`var`, `export` 포함)이나 class field에 대입된 arrow function·function expression도 그 이름의 선언이며, 시작 줄은 선언 문(`export` 포함) 또는 값의 시작 줄 | must | I1 |
 | F02 | 심볼 표 `test_reach`: seed는 test 범주 파일의 모든 node. 따라가는 edge는 relation이 CALLS·INSTANTIATES·CALLS_ROUTE·IMPLEMENTED_BY·DECORATES인 edge의 후보 target 전체(`candidate_targets`); INSTANTIATES로 class에 닿으면 그 class가 CONTAINS·DECLARES로 가진 `__init__`·`__post_init__`·`constructor`·`init` 메서드에도 닿는다. `tested` = seed에서 confirmed edge(confidence static_certain·static_inferred이고 resolution exact·unique_name)만으로 닿음. `uncertain` = tested가 아니고, seed에서 아무 edge로나 닿거나 framework 진입점(언어 provenance가 아닌 node에서 오는, relation 종류와 무관한 모든 edge의 target인 production node)에서 아무 edge로나 닿음(진입점 자신 포함). 그 밖은 `untested` | must | I1, 사용자 답 |
 | F03 | 테스트 케이스 표: test 범주 파일(`path_flags`에 test) 중 `.py`·`.ts`·`.tsx`·`.js`·`.jsx`·`.mjs`·`.cjs`·`.kt` 파일에서 표 T로 케이스를 찾아 한 행씩. 같은 파일 안 같은 id는 원본 순서로 두 번째부터 ` [2]`·` [3]`… 를 붙인다(`id`에만; `name` 열은 접미 없음). 구문 오류 파일은 행 없음 | must | I2, I3 |
 | F04 | 각 케이스의 `strong_assertions`·`weak_assertions`는 표 A, `mocks`는 표 M, `skipped`는 표 S로 센다 | must | I2, I3 |
@@ -141,21 +141,21 @@ CLI(`--baseline`, applied): stdout `[Δ] Test changes: untested changes <n>, wea
 # Verification Obligations
 | id | parent requirement/Case ids | variant and target surface | test layer and selection policy | ISO/IEC/IEEE 29119-4 technique | coverage items | coverage target | observation and expected result | evidence procedure |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| V01 | F01, C01, C10, C15 | `branch_count` | unit(소스 문자열) | equivalence partitioning | 표 B의 구문 항목(Python 8, TS/JS 8, Kotlin 7) 각각; EP 안쪽 이름 있는 함수·class 몸통 제외; EP lambda·arrow 포함; EP 이름·시작 줄 불일치 → None; EP 구문 오류 → None; EP 미지원 확장자 → None | 100% | 각 항목에서 기대 정수 또는 None | Test command |
+| V01 | F01, C01, C04, C10, C15 | `branch_count` | unit(소스 문자열) | equivalence partitioning | 표 B의 구문 항목(Python 8, TS/JS 8, Kotlin 7) 각각; EP 안쪽 이름 있는 함수·class 몸통 제외; EP lambda·arrow 포함; EP decorator·annotation이 붙은 선언(언어별)에서 첫 decorator 줄과 이름 줄 모두 일치, 그 사이 다른 decorator 줄은 None; EP 이름·시작 줄 불일치 → None; EP 구문 오류 → None; EP 미지원 확장자 → None | 100% | 각 항목에서 기대 정수 또는 None | Test command |
 | V02 | F01, F12 | CLI file granularity JSON의 심볼 열 | integration(임시 project, Python·TS·Kotlin 각 1) | equivalence partitioning | EP1 `symbol_columns` 순서, EP2 function·method 행 정수, EP3 class·constant 행 null, EP4 새 열을 뺀 행이 base_commit과 같음 | 100% | F01·Signatures와 일치 | Test command |
 | V03 | F02, C03, C04 | `test_reach` | unit(합성 architecture) | cause-effect graphing | 원인: confirmed 사슬 / uncertain edge 포함 사슬 / 따라가지 않는 relation(IMPORTS·TYPE_USES·TESTS)만 / framework node에서 오는 edge / 진입점에서 이어지는 호출 / INSTANTIATES → 생성자 메서드 / 닿지 않음 / test 파일 안 node가 seed; 결과: tested·uncertain·untested | 원인·결과 각 1회, 100% | F02 정의와 일치 | Test command |
 | V04 | F03, C16 | `test_case_table` 케이스·id | unit | equivalence partitioning | Python: module 함수, class 메서드, 중첩 class, `test` 아닌 이름; TS: `it`, `test`, `.only`, `.each`, `xit`, 중첩 describe, template 제목, 비리터럴 제목, 중복 제목; Kotlin: `@Test`, `@org.junit.Test`, annotation 없음, object 안; 확장자 `.js`·`.mjs`; 구문 오류 | 100% | 행 유무와 id | Test command |
-| V05 | F04, C05, C06, C11 | 검증 분류 | unit | equivalence partitioning | 표 A의 각 이름·연산자 항목(언어별 강·약 목록 전부, `.not` 예외, 인자 수로 갈리는 matcher, 미지정 matcher, 접두 규칙) | 100% | strong·weak 수 | Test command |
-| V06 | F04, C07, C08 | mock 수 | unit | equivalence partitioning | 표 M의 각 이름, 각 범위(케이스 몸통, decorator, class decorator, module 최상위, describe 직접 문·hook, 다른 케이스 제외, Kotlin property·`@Before`) | 100% | mocks 수 | Test command |
-| V07 | F04, C17 | skipped | unit | equivalence partitioning | 표 S 각 항목과 class·describe 상속 | 100% | skipped 값 | Test command |
+| V05 | F04, C05, C06, C11 | 검증 분류 | unit | equivalence partitioning | 표 A의 각 이름·연산자 항목(언어별 강·약 목록 전부, `.not` 예외, 인자 수로 갈리는 matcher, 미지정 matcher, 접두 규칙과 언어별 접두 범위: Python `check` 포함, Kotlin `check` 제외, TS/JS 접두 규칙 없음) | 100% | strong·weak 수 | Test command |
+| V06 | F04, C07, C08 | mock 수 | unit | equivalence partitioning | 표 M의 각 이름, 각 범위(케이스 몸통, decorator, class decorator, module 최상위, describe 직접 문·hook, 다른 케이스 제외, Kotlin class·object의 property·`@Before`, 중첩) | 100% | mocks 수 | Test command |
+| V07 | F04, C17 | skipped | unit | equivalence partitioning | 표 S 각 항목과 class·object·describe 상속 | 100% | skipped 값 | Test command |
 | V08 | F05, C01–C04, C10 | `untested_changes` | unit(합성 payload) | decision table | D1 새 심볼 untested, D2 새 심볼 uncertain, D3 새 심볼 tested, D4 분기 증가 untested, D5 분기 같음, D6 분기 감소, D7 한쪽 null, D8 class·constant kind, D9 이름 변경으로 id 매핑 | 100% | D1·D2·D4 포함, 나머지 제외 | Test command |
 | V09 | F06, C05, C06, C11, C17, C18 | `weakened_tests` | unit | decision table | D1 strong 감소, D2 strong 같고 weak 증가, D3 newly skipped, D4 skipped true→false, D5 removed, D6 새 케이스 strong 0, D7 새 케이스 strong ≥ 1, D8 reason 둘 동시 | 100% | D1·D3·D5·D6·D8 포함(D8은 reasons 2개 정렬), 나머지 제외 | Test command |
 | V10 | F07, C07–C09 | `added_mocks` | unit | boundary value analysis(2-value) | 새 케이스 mocks 2·3, 기존 케이스 증가 1·2 | 100% | 3·증가 2만 | Test command |
-| V11 | F08, F09, C13, C14 | 상태·매핑·CLI 줄 | unit + integration(CLI `--baseline`) | equivalence partitioning | EP1 applied, EP2 baseline 데이터 없음, EP3 current 데이터 없음, EP4 둘 다 없음(baseline reason), EP5 test 파일 이름 변경 매핑, EP6 production 파일 이름 변경 매핑, EP7 `--baseline` 없음 | 100% | status·reason·빈 목록·counts·stdout/stderr 줄 | Test command |
+| V11 | F08, F09, C13, C14 | 상태·매핑·CLI 줄 | unit + integration(CLI `--baseline`) | equivalence partitioning | EP1 applied, EP2 baseline 데이터 없음, EP3 current 데이터 없음, EP4 둘 다 없음(baseline reason), EP4a 한쪽에 `branches`·`test_reach` 중 하나만 없음, EP5 test 파일 이름 변경 매핑, EP6 production 파일 이름 변경 매핑, EP7 `--baseline` 없음 | 100% | status·reason·빈 목록·counts·stdout/stderr 줄 | Test command |
 | V12 | F10, C12 | `load_baseline` | unit | equivalence partitioning | EP1 정상, EP2 `test_cases`가 dict, EP3 columns 누락, EP4 행 길이, EP5 mocks 문자열, EP6 skipped 정수, EP7 file 색인 범위 밖, EP8 strong 음수, EP9 `branches` -1, EP10 `branches` 문자열, EP11 `test_reach` 미지정 값, EP12 `branches` bool, EP13 file 색인 bool | 100% | EP2~13 BaselineError(JSON 경로 포함) | Test command |
 | V13 | Q04 | `compute_delta` | fuzz | random + metamorphic + differential | Fuzzing 줄 P1~P3 | 5,000 입력 | 위반 0, 예외 0 | main |
 | V14 | F11, Q01, Q02, Q05 | 재측정·크기·시간 | review | none — review procedure | R1, R2 | 전부 수행 | 기준 충족 또는 사유 기록 | R1, R2 |
-| V15 | Q03, Q06, F12 | 기존 suite, coverage, symbol granularity | automated | branch(coverage.py) | 세 module branch | ≥ 90% | Test command 통과 | Test command |
+| V15 | Q03, Q06, F12 | 기존 suite, coverage, symbol granularity | automated | branch(coverage.py) + equivalence partitioning | 세 module branch; F12 symbol granularity 출력이 base_commit과 같음(Python·TS·Kotlin 임시 project) | ≥ 90% | Test command 통과 | Test command |
 
 # Assumptions and Defaults
 | id | decision | evidence and uncertainty | brief v<n> — approved / vetoed → <answer> / user answer |
@@ -197,18 +197,34 @@ CLI(`--baseline`, applied): stdout `[Δ] Test changes: untested changes <n>, wea
 # Workflow Control
 | item | value |
 | --- | --- |
-| correction batches used | 1 |
+| correction batches used | 2 |
 | verifier invocations | 1 |
-| open finding ids | none |
+| open finding ids | SC-1, G-2, G-3 |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
+| V01 | 2→3 | verifier 1회차, commit a361f84 | open | SC-1: decorated 선언 일치 줄 미명시 → v3 F01 | test_signals branch lookup |
+| V02 | 2→3 | verifier 1회차, commit a361f84 | accepted | EP1–EP4 CLI·unit | symbols·core 출력 변경 시 |
+| V03 | 2→3 | verifier 1회차, commit a361f84 | accepted | cause·effect 전부 | test_reach 변경 시 |
+| V04 | 2→3 | verifier 1회차, commit a361f84 | accepted | 표 T 항목 전부 | 케이스 탐색 변경 시 |
+| V05 | 2→3 | verifier 1회차, commit a361f84 | open | G-2: Kotlin·TS 접두 범위 음성 없음 | 검증 분류 변경 시 |
+| V06 | 2→3 | verifier 1회차, commit a361f84 | open | G-3: Kotlin object 범위 없음 | mock 범위 변경 시 |
+| V07 | 2→3 | verifier 1회차, commit a361f84 | open | G-3: Kotlin object 상속 없음 | skip 범위 변경 시 |
+| V08 | 2→3 | verifier 1회차, commit a361f84 | accepted | D1–D9 | delta 변경 시 |
+| V09 | 2→3 | verifier 1회차, commit a361f84 | accepted | D1–D8 | delta 변경 시 |
+| V10 | 2→3 | verifier 1회차, commit a361f84 | accepted | 2-value 경계 | delta 변경 시 |
+| V11 | 2→3 | verifier 1회차, commit a361f84 | invalidated | EP1–EP7 accepted; v3 EP4a 추가 | F08 판정 변경 시 |
+| V12 | 2→3 | verifier 1회차, commit a361f84 | accepted | EP1–EP13 | load_baseline 변경 시 |
+| V13 | 2→3 | verifier 1회차, commit a361f84 | accepted | fuzz 5,000, 위반 0 | delta 변경 시 재실행 |
+| V14 | 2→3 | verifier 1회차, commit a361f84 | pending | R1·R2 main 수행 예정 | — |
+| V15 | 2→3 | verifier 1회차, commit a361f84 | invalidated | coverage 98.43% accepted; v3 F12 symbol granularity 동일 항목 추가 | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
 | 1 | Test command v1: 2 failed, 4663 passed; coverage 98.23%. `test_V11_skipping_changes_nothing_else_in_the_delta` KeyError 0 in `_pairs`; `test_V07_read_parse_counts_match_immutable_characterization` file granularity parse +1 | 첫째: test가 file_ids 있는 payload에 dict 형식 cycle evidence를 씀(test defect). 둘째: A05 재파싱의 의도된 결과(spec gap: 조정 허용 누락) | v2 조정 허용 추가; correction batch 1: test 수정, 구현은 v2 명확화(Python assert 안 호출, Kotlin assertThat 사슬) 반영 | 첫째 수정 뒤 같은 test가 `signal_payload`의 입력 candidate 제자리 변경으로 TypeError(test defect, deepcopy로 수정); 셋째 실행 4700 passed, coverage 98.43%, fuzz 5,000 위반 0 — resolved |
+| 2 | verifier 1회차 retry: SC-1(decorated 선언 줄), G-2(접두 범위), G-3(Kotlin object); advisory A-1~A-4 | SC-1 spec gap, G-2·G-3 evidence gap | v3 amendment; correction batch 2: 구현은 두 줄 모두 일치, test는 V01·V05·V06·V07·V11 EP4a·V15 F12 추가; A-4는 표 밖이라 제외 | Test command 4727 passed, coverage 98.44%; hand mutation 17개(M01–M17, `tests/test_signals_evidence/mutations/results.json`) 모두 의도한 test가 검출 — verifier 2회차 대기 |
 
 # Version Log
 ## v1
@@ -217,5 +233,9 @@ Execution ledger (append attempts; preserve failed approaches):
 ## v2
 - 계약 명확화(구현·테스트 보고의 해석 차이): Python `assert` 문 안 호출은 따로 세지 않음; Kotlin `assertThat` 사슬은 사슬당 1개, 마지막 matcher로 강·약; Python skip decorator 생략형 목록 명시; Python Mock 계열 접두; mock·skip 범위의 둘러싼 class·describe는 중첩 전 단계; F02 진입점은 모든 relation; F03 접미는 id에만; F01 TS/JS 변수·field에 대입된 arrow·function expression 선언; F10 `branches`·file 색인 bool 거부(V12 EP12·EP13 추가).
 - Tests 조정 허용에 `tests/coverage_reporting_evidence/counter-baseline.json` file granularity parse 수 갱신 추가: 첫 Test command에서 `test_V07_read_parse_counts_match_immutable_characterization`이 file granularity parse 수 +1(모든 fixture)로 실패, read 수와 symbol granularity는 불변 — 승인된 A05(재파싱)의 결과.
+
+## v3
+- [verifier 1회차] F01 선언 일치 줄 명확화(SC-1): span 시작 줄이 첫 줄(decorator·annotation·modifier 포함) 또는 이름 줄 중 하나면 일치. 근거: 언어 분석기 span은 Python·TS가 이름 줄, Kotlin이 annotation 줄(임시 project 탐침에서 세 언어 모두 decorated 함수 branches 정수); 구현은 분석기가 쓰는 한쪽 줄만 받음.
+- V01 decorated 선언, V05 언어별 접두 범위(G-2), V06·V07 Kotlin object 범위(G-3), V11 EP4a(F08 한 열만 없음), V15 F12 symbol granularity base 동일 항목 추가. 조정 허용 문구에 공용 strip helper·counters.json 예외 명시(A-1).
 
 # Retrospective

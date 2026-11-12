@@ -21,8 +21,6 @@ def _suffix(path: str) -> str:
     return PurePosixPath(path).suffix.lower()
 
 
-# --- parsing -----------------------------------------------------------------
-
 def _python_tree(source: str) -> Optional[ast.AST]:
     try:
         with warnings.catch_warnings():
@@ -51,8 +49,6 @@ def _text(data: bytes, node: Any) -> str:
 def _line(node: Any) -> int:
     return node.start_point[0] + 1
 
-
-# --- branch counting -----------------------------------------------------------
 
 _PY_BRANCH_NODES = tuple(item for item in (ast.If, ast.For, ast.AsyncFor, ast.While, ast.ExceptHandler, ast.IfExp, getattr(ast, "match_case", None)) if item)
 _PY_NESTED = (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
@@ -122,6 +118,8 @@ def _python_declarations(tree: ast.AST) -> dict:
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             found.setdefault((node.lineno, node.name), node)
+            if node.decorator_list:
+                found.setdefault((min(item.lineno for item in node.decorator_list), node.name), node)
     return found
 
 
@@ -131,6 +129,11 @@ def _ts_declarations(root: Any, data: bytes) -> dict:
     def register(node: Any, name: str, anchors: Iterable[Any]) -> None:
         for anchor in anchors:
             found.setdefault((_line(anchor), name), node)
+        first = node
+        while first.prev_named_sibling is not None and first.prev_named_sibling.type == "decorator":
+            first = first.prev_named_sibling
+        if first is not node:
+            found.setdefault((_line(first), name), node)
 
     stack = [root]
     while stack:
@@ -141,7 +144,7 @@ def _ts_declarations(root: Any, data: bytes) -> dict:
             name = node.child_by_field_name("name")
             if name is not None:
                 anchors = [node] + ([parent] if parent is not None and parent.type == "export_statement" else [])
-                register(node, _text(data, name), anchors)
+                register(node, _text(data, name), anchors + [name])
         elif kind in _TS_FUNCTION_VALUES and parent is not None:
             name, anchors = None, [node]
             if parent.type == "variable_declarator":
@@ -169,6 +172,7 @@ def _kotlin_declarations(root: Any, data: bytes) -> dict:
             name = next((child for child in node.children if child.type == "simple_identifier"), None)
             if name is not None:
                 found.setdefault((_line(node), _text(data, name)), node)
+                found.setdefault((_line(name), _text(data, name)), node)
         stack.extend(node.named_children)
     return found
 
@@ -206,8 +210,6 @@ class BranchCounter:
 def branch_count(path: str, source: str, start_line: int, name: str) -> Optional[int]:
     return BranchCounter().count(path, source, start_line, name)
 
-
-# --- test cases ----------------------------------------------------------------
 
 _PY_STRONG = frozenset("""assertEqual assertEquals assertIs assertIsNone assertDictEqual assertListEqual assertCountEqual
 assertSequenceEqual assertTupleEqual assertSetEqual assertMultiLineEqual assertAlmostEqual assertRaises assertRaisesRegex
@@ -617,8 +619,6 @@ def test_case_table(contents: Mapping[str, str], test_paths: Iterable[str]) -> l
                           "weak_assertions": weak, "mocks": mocks, "skipped": skipped})
     return sorted(table, key=lambda item: item["id"])
 
-
-# --- test reach ----------------------------------------------------------------
 
 def _short_name(node: dict) -> str:
     return (node["metadata"].get("name") or node["label"]).rsplit(".", 1)[-1]
