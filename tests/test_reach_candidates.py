@@ -694,6 +694,10 @@ def delta_v1_form(delta):
         del result[name]
         del result['counts'][name]
     del result['symbol_changes']
+    del result['test_changes']
+    for name in ('untested_changes', 'weakened_tests', 'added_mocks'):
+        del result[name]
+        del result['counts'][name]
     del result['resolved']['candidates']
     return result
 
@@ -704,7 +708,7 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
     first = pipe.directory / 'baseline.json'
     first.write_bytes(pipe.output('file'))
     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
-    assert payload['delta']['policy'] == 'delta.v4'
+    assert payload['delta']['policy'] == 'delta.v5'
     assert payload['delta']['symbol_changes'] == {'status': 'applied', 'reason': None}
     assert payload['delta']['changed_signatures'] == [] and payload['delta']['removed_symbols'] == []
     assert payload['delta']['new_candidates'] == [] and payload['delta']['strengthened_candidates'] == []

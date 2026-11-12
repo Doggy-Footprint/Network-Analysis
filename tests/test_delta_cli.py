@@ -69,9 +69,12 @@ def summary_for(delta):
 def stdout_summary(done):
     lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
     symbol = [line for line in lines if line.startswith('[Δ] Symbol changes')]
-    assert len(symbol) == min(1, len(lines) - len(symbol))
+    tests = [line for line in lines if line.startswith('[Δ] Test changes')]
+    assert len(symbol) == min(1, len(lines) - len(symbol) - len(tests))
+    assert len(tests) == min(1, len(lines) - len(symbol) - len(tests))
     assert all(re.fullmatch(r'\[Δ\] Symbol changes: changed signatures \d+, removed symbols \d+', line) for line in symbol)
-    return [line for line in lines if line not in symbol]
+    assert all(re.fullmatch(r'\[Δ\] Test changes: untested changes \d+, weakened tests \d+, added mocks \d+', line) for line in tests)
+    return [line for line in lines if line not in symbol and line not in tests]
 
 
 def regression_line(delta, names):

@@ -290,7 +290,12 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             from bottlenecks.nestjs_visibility import unprovided_candidates
             from bottlenecks.symbols import SYMBOL_COLUMNS, incoming_index, symbol_rows, symbol_table, unreferenced_candidates
             incoming = incoming_index(architecture)
-            symbols = symbol_rows(symbol_table(architecture, incoming), sorted(metrics))
+            contents = dict(snapshot.contents)
+            symbols = symbol_rows(symbol_table(architecture, incoming, contents), sorted(metrics))
+            from bottlenecks.test_signals import TEST_CASE_COLUMNS, test_case_table
+            position = {file_id: number for number, file_id in enumerate(sorted(metrics))}
+            test_paths = [node.id[len("file:"):] for node in nodes if node.id in architecture.details["file_nodes"] and categories[node.id] == "test"]
+            test_cases = [[item["id"], position[item["file"]], *(item[name] for name in TEST_CASE_COLUMNS[2:])] for item in test_case_table(contents, test_paths)]
             candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates + unreferenced_candidates(architecture, incoming) + unprovided_candidates(architecture), key=lambda item: (item["kind"], item["id"]))
             _compact_structure_evidence(candidates, sorted(metrics))
         candidate_groups = _intern_candidate_groups(candidates)
@@ -308,7 +313,7 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
         if is_file:
-            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS, symbols=symbols, symbol_columns=SYMBOL_COLUMNS)
+            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS, symbols=symbols, symbol_columns=SYMBOL_COLUMNS, test_case_columns=TEST_CASE_COLUMNS, test_cases=test_cases)
         if doc_summary is not None:
             coverage["doc_references"] = doc_summary
         if structure is not None:

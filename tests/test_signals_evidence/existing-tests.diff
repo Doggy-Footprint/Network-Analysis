@@ -1,0 +1,594 @@
+diff --git a/tests/coverage_reporting_evidence/counter-baseline.json b/tests/coverage_reporting_evidence/counter-baseline.json
+index 2c998ab..296c3f6 100644
+--- a/tests/coverage_reporting_evidence/counter-baseline.json
++++ b/tests/coverage_reporting_evidence/counter-baseline.json
+@@ -1,6 +1,6 @@
+ {
+   "android-kotlin:file": {
+-    "kotlin_parse": 2,
++    "kotlin_parse": 3,
+     "python_parse": 0,
+     "read": 5,
+     "typescript_parse": 0
+@@ -12,7 +12,7 @@
+     "typescript_parse": 0
+   },
+   "android:file": {
+-    "kotlin_parse": 1,
++    "kotlin_parse": 2,
+     "python_parse": 0,
+     "read": 5,
+     "typescript_parse": 0
+@@ -25,7 +25,7 @@
+   },
+   "fastapi-sqlalchemy:file": {
+     "kotlin_parse": 0,
+-    "python_parse": 8,
++    "python_parse": 9,
+     "read": 5,
+     "typescript_parse": 0
+   },
+@@ -37,7 +37,7 @@
+   },
+   "fastapi:file": {
+     "kotlin_parse": 0,
+-    "python_parse": 4,
++    "python_parse": 5,
+     "read": 5,
+     "typescript_parse": 0
+   },
+@@ -48,7 +48,7 @@
+     "typescript_parse": 0
+   },
+   "kotlin:file": {
+-    "kotlin_parse": 1,
++    "kotlin_parse": 2,
+     "python_parse": 0,
+     "read": 5,
+     "typescript_parse": 0
+@@ -63,7 +63,7 @@
+     "kotlin_parse": 0,
+     "python_parse": 0,
+     "read": 5,
+-    "typescript_parse": 3
++    "typescript_parse": 4
+   },
+   "nestjs-typescript:symbol": {
+     "kotlin_parse": 0,
+@@ -75,7 +75,7 @@
+     "kotlin_parse": 0,
+     "python_parse": 0,
+     "read": 5,
+-    "typescript_parse": 2
++    "typescript_parse": 3
+   },
+   "nestjs:symbol": {
+     "kotlin_parse": 0,
+@@ -85,7 +85,7 @@
+   },
+   "python:file": {
+     "kotlin_parse": 0,
+-    "python_parse": 2,
++    "python_parse": 3,
+     "read": 5,
+     "typescript_parse": 0
+   },
+@@ -97,7 +97,7 @@
+   },
+   "sqlalchemy:file": {
+     "kotlin_parse": 0,
+-    "python_parse": 4,
++    "python_parse": 5,
+     "read": 5,
+     "typescript_parse": 0
+   },
+@@ -111,7 +111,7 @@
+     "kotlin_parse": 0,
+     "python_parse": 0,
+     "read": 5,
+-    "typescript_parse": 1
++    "typescript_parse": 2
+   },
+   "typescript:symbol": {
+     "kotlin_parse": 0,
+diff --git a/tests/delta_support.py b/tests/delta_support.py
+index f624ed3..3d615b2 100644
+--- a/tests/delta_support.py
++++ b/tests/delta_support.py
+@@ -21,8 +21,9 @@ CYCLE_KINDS = ('dependency_cycle', 'package_cycle')
+ TIERS = ('certain', 'resolved', 'all')
+ LISTS = ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes')
+ SYMBOL_LISTS = ('changed_signatures', 'removed_symbols')
++TEST_LISTS = ('untested_changes', 'weakened_tests', 'added_mocks')
+ DELTA_KEYS = {'policy', 'renames', 'baseline', 'rules_changed', *LISTS, 'new_candidates', 'strengthened_candidates', 'resolved', 'counts',
+-              'symbol_changes', *SYMBOL_LISTS}
++              'symbol_changes', *SYMBOL_LISTS, 'test_changes', *TEST_LISTS}
+ FIXTURES = ('futuramaapi', 'fastapi-realworld', 'fastapi-official-template', 'android-nowinandroid', 'typescript-nestjs-realworld')
+ FIXTURE_ARGS = {'futuramaapi': ['-l', 'python'], 'fastapi-realworld': ['-l', 'python'], 'fastapi-official-template': ['-l', 'python'],
+                 'android-nowinandroid': ['-l', 'kotlin'], 'typescript-nestjs-realworld': ['-l', 'typescript']}
+@@ -32,12 +33,17 @@ SUMMARY = ('[Δ] Delta vs baseline: new cycles {}, grown cycles {}, new violatio
+ RULES_WARNING = '[!] Warning: architecture rules differ from the baseline'
+ SYMBOL_SUMMARY = '[Δ] Symbol changes: changed signatures {}, removed symbols {}'
+ SYMBOL_WARNING = '[!] Warning: symbol changes not compared ({})'
++TEST_SUMMARY = '[Δ] Test changes: untested changes {}, weakened tests {}, added mocks {}'
++TEST_WARNING = '[!] Warning: test changes not compared ({})'
+ SYMBOL_KINDS = ('unreferenced_symbol', 'unprovided_injection')
+ SYMBOL_STRENGTH = {'unreferenced_symbol': ('unreferenced_count',), 'unprovided_injection': ('unprovided_count', 'uncertain_count')}
+ UNREFERENCED_TAG = 'node'
+ UNPROVIDED_TAG = 'injection'
+-SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
+-SYMBOL_ENTRY_KEYS = {'id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs'}
++LEGACY_SYMBOL_COLUMNS = ['id', 'file', 'kind', 'name', 'signature', 'visibility', 'external_refs', 'uncertain_external_refs']
++SYMBOL_COLUMNS = [*LEGACY_SYMBOL_COLUMNS, 'branches', 'test_reach']
++SYMBOL_ENTRY_KEYS = set(SYMBOL_COLUMNS)
++TEST_CASE_COLUMNS = ['id', 'file', 'name', 'strong_assertions', 'weak_assertions', 'mocks', 'skipped']
++COUNT_KEYS = ('strong_assertions', 'weak_assertions', 'mocks', 'skipped')
+ 
+ 
+ def load_manifest():
+@@ -169,6 +175,8 @@ def remap_baseline(baseline, pairs):
+     columns = network.get('symbol_columns') or []
+     for row in network.get('symbols') or []:
+         row[columns.index('id')] = m(row[columns.index('id')])
++    for row in network.get('test_cases') or []:
++        row[0] = m(row[0])
+     for scheme in network['package_dependencies']:
+         for row in network['package_dependencies'][scheme]:
+             row['from_id'], row['to_id'] = m(row['from_id']), m(row['to_id'])
+@@ -298,6 +306,77 @@ def ref_general_with_symbol_kinds(current, baseline):
+             'resolved_candidates': resolved}
+ 
+ 
++def _test_data(data):
++    """(symbols, cases) decoded with plain lists, or None when the output carries no test data (F08)."""
++    network = data['dependency_network']
++    columns = network.get('symbol_columns') or []
++    if 'test_cases' not in network or 'test_case_columns' not in network or 'branches' not in columns or 'test_reach' not in columns:
++        return None
++    ids = network['file_ids']
++    symbols = [dict(zip(columns, row)) for row in network['symbols']]
++    cases = [dict(zip(network['test_case_columns'], row)) for row in network['test_cases']]
++    for item in symbols + cases:
++        item['file'] = ids[item['file']]
++    return symbols, cases
++
++
++def ref_test_changes(current, baseline):
++    """baseline is already rename-mapped. Nested scans over plain lists, definitions F05-F07 read literally."""
++    base, cur = _test_data(baseline), _test_data(current)
++    if base is None or cur is None:
++        reason = 'baseline_without_test_data' if base is None else 'current_without_test_data'
++        return {'status': 'skipped', 'reason': reason}, [], [], []
++    base_symbols, base_cases = base
++    cur_symbols, cur_cases = cur
++    untested = []
++    for new in cur_symbols:
++        if new['kind'] not in ('function', 'method') or new['test_reach'] == 'tested':
++            continue
++        old = None
++        for candidate in base_symbols:
++            if candidate['id'] == new['id']:
++                old = candidate
++                break
++        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
++        if old is None or (isint(old['branches']) and isint(new['branches']) and new['branches'] > old['branches']):
++            untested.append({'id': new['id'], 'file': new['file'], 'kind': new['kind'], 'name': new['name'],
++                             'baseline_branches': None if old is None else old['branches'], 'current_branches': new['branches'],
++                             'test_reach': new['test_reach']})
++    counts = lambda row: {key: row[key] for key in COUNT_KEYS}
++    weakened, mocks = [], []
++    for new in cur_cases:
++        old = None
++        for candidate in base_cases:
++            if candidate['id'] == new['id']:
++                old = candidate
++                break
++        reasons = []
++        if old is None:
++            if new['strong_assertions'] == 0:
++                reasons.append('new_without_strong_assertions')
++            if new['mocks'] >= 3:
++                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': None,
++                              'current_mocks': new['mocks']})
++        else:
++            if new['strong_assertions'] < old['strong_assertions']:
++                reasons.append('fewer_strong_assertions')
++            if old['skipped'] is False and new['skipped'] is True:
++                reasons.append('newly_skipped')
++            if new['mocks'] - old['mocks'] >= 2:
++                mocks.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'baseline_mocks': old['mocks'],
++                              'current_mocks': new['mocks']})
++        if reasons:
++            weakened.append({'id': new['id'], 'file': new['file'], 'name': new['name'], 'reasons': sorted(reasons),
++                             'baseline': None if old is None else counts(old), 'current': counts(new)})
++    for old in base_cases:
++        if not any(new['id'] == old['id'] for new in cur_cases):
++            weakened.append({'id': old['id'], 'file': old['file'], 'name': old['name'], 'reasons': ['removed'],
++                             'baseline': counts(old), 'current': None})
++    for items in (untested, weakened, mocks):
++        items.sort(key=lambda item: item['id'])
++    return {'status': 'applied', 'reason': None}, untested, weakened, mocks
++
++
+ def ref_delta(current, baseline, renames=None):
+     pairs = [] if renames is None else renames['pairs']
+     if pairs:
+@@ -372,7 +451,9 @@ def ref_delta(current, baseline, renames=None):
+              'new_package_dependencies': new_pd, 'instability_changes': changes}
+     general = ref_general_with_symbol_kinds(current, baseline)
+     symbol_status, changed_signatures, removed_symbols = ref_symbol_changes(current, baseline)
+-    return {'policy': 'delta.v4', 'symbol_changes': symbol_status, 'changed_signatures': changed_signatures,
++    test_status, untested_changes, weakened_tests, added_mocks = ref_test_changes(current, baseline)
++    return {'policy': 'delta.v5', 'symbol_changes': symbol_status, 'test_changes': test_status, 'untested_changes': untested_changes,
++            'weakened_tests': weakened_tests, 'added_mocks': added_mocks, 'changed_signatures': changed_signatures,
+             'removed_symbols': removed_symbols, 'renames': dict(NOT_REQUESTED) if renames is None else json.loads(json.dumps(renames)),
+             'baseline': {'file_count': baseline['snapshot']['file_count'],
+                          'rules_sha256': (base_rules or {}).get('rules_sha256')},
+@@ -384,7 +465,9 @@ def ref_delta(current, baseline, renames=None):
+             'counts': {**{name: len(items) for name, items in lists.items()},
+                        'new_candidates': len(general['new_candidates']),
+                        'strengthened_candidates': len(general['strengthened_candidates']),
+-                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols)}}
++                       'changed_signatures': len(changed_signatures), 'removed_symbols': len(removed_symbols),
++                       'untested_changes': len(untested_changes), 'weakened_tests': len(weakened_tests),
++                       'added_mocks': len(added_mocks)}}
+ 
+ 
+ def ref_regressions(delta, fail_on):
+diff --git a/tests/doc_references_support.py b/tests/doc_references_support.py
+index feabf7f..146b12f 100644
+--- a/tests/doc_references_support.py
++++ b/tests/doc_references_support.py
+@@ -112,6 +112,8 @@ def strip_new(bottlenecks, details):
+     bottlenecks['candidates'] = [c for c in bottlenecks['candidates'] if c['kind'] != NEW_KIND and c['kind'] not in SYMBOL_CANDIDATE_KINDS]
+     bottlenecks['dependency_network'].pop('symbols', None)
+     bottlenecks['dependency_network'].pop('symbol_columns', None)
++    bottlenecks['dependency_network'].pop('test_cases', None)
++    bottlenecks['dependency_network'].pop('test_case_columns', None)
+     details.pop('doc_references', None)
+     return bottlenecks, details
+ 
+@@ -125,6 +127,8 @@ def without_doc_references(payload):
+     if isinstance(result.get('dependency_network'), dict):
+         result['dependency_network'].pop('symbols', None)
+         result['dependency_network'].pop('symbol_columns', None)
++        result['dependency_network'].pop('test_cases', None)
++        result['dependency_network'].pop('test_case_columns', None)
+     if isinstance(result.get('coverage'), dict):
+         result['coverage'].pop('doc_references', None)
+     if isinstance(result.get('versions'), dict) and result['versions'].get('analysis') == NEW_ANALYSIS:
+@@ -139,3 +143,18 @@ def base_symbol_bytes(data):
+         if data.count(new) == 1:
+             return data.replace(new, old)
+     raise AssertionError('versions.analysis "7" not found exactly once')
++
++
++def without_test_signals(payload):
++    """Copy of a file-granularity bottleneck payload without the test_cases table and the two symbol columns branches and
++    test_reach, keeping the rest of the symbol table, so base comparisons keep their measurement context."""
++    result = json.loads(json.dumps(payload))
++    network = result['dependency_network']
++    network.pop('test_cases', None)
++    network.pop('test_case_columns', None)
++    columns = network.get('symbol_columns')
++    if columns:
++        keep = [i for i, name in enumerate(columns) if name not in ('branches', 'test_reach')]
++        network['symbol_columns'] = [columns[i] for i in keep]
++        network['symbols'] = [[row[i] for i in keep] for row in network['symbols']]
++    return result
+diff --git a/tests/symbol_changes_support.py b/tests/symbol_changes_support.py
+index 7be6d3d..f95df49 100644
+--- a/tests/symbol_changes_support.py
++++ b/tests/symbol_changes_support.py
+@@ -76,6 +76,8 @@ def nest_id(kind, name, path):
+ def row_of(entry, file_ids):
+     values = dict(entry)
+     values['file'] = file_ids.index(entry['file'])
++    values.setdefault('branches', None)
++    values.setdefault('test_reach', 'untested')
+     return [values[c] for c in SYMBOL_COLUMNS]
+ 
+ 
+diff --git a/tests/test_delta.py b/tests/test_delta.py
+index 0f42b64..41cc208 100644
+--- a/tests/test_delta.py
++++ b/tests/test_delta.py
+@@ -38,7 +38,7 @@ def pairs_of(*pairs):
+ 
+ 
+ def test_policy_constant():
+-    assert delta_api().DELTA_POLICY == 'delta.v4'
++    assert delta_api().DELTA_POLICY == 'delta.v5'
+ 
+ 
+ def test_F12_delta_object_shape_and_counts():
+@@ -46,13 +46,13 @@ def test_F12_delta_object_shape_and_counts():
+     cur = payload(candidates=[cycle([A, B, C]), cycle([D, E])], file_count=9, rules_sha='h1')
+     result = run(cur, base)
+     assert set(result) == DELTA_KEYS
+-    assert result['policy'] == 'delta.v4'
++    assert result['policy'] == 'delta.v5'
+     assert result['baseline'] == {'file_count': 7, 'rules_sha256': 'h1'}
+     assert result['rules_changed'] is False
+     assert result['resolved'] == {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0}
+     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 1, 'new_violations': 0, 'new_package_dependencies': 0,
+                                 'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+-                                'changed_signatures': 0, 'removed_symbols': 0}
++                                'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+ 
+ 
+ def test_F12_same_input_same_bytes_and_inputs_untouched():
+@@ -359,7 +359,7 @@ def test_V14_schemes_are_not_mixed_for_cycles_dependencies_and_metrics():
+     result = run(cur, base)
+     assert result['counts'] == {'new_cycles': 1, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 1,
+                                 'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+-                                'changed_signatures': 0, 'removed_symbols': 0}
++                                'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+     assert result['resolved'] == {'cycles': 1, 'violations': 0, 'package_dependencies': 1, 'candidates': 0}
+ 
+ 
+diff --git a/tests/test_delta_candidates.py b/tests/test_delta_candidates.py
+index 75900d3..849ad24 100644
+--- a/tests/test_delta_candidates.py
++++ b/tests/test_delta_candidates.py
+@@ -9,7 +9,7 @@ import pytest
+ 
+ from fixtures.registry import fixture_root
+ from tests.delta_candidates_support import SEVEN_PAIRS, STRENGTH, boundary_evidence, doc_evidence, gen, ref_general
+-from tests.delta_support import (DELTA_KEYS, SUMMARY, SYMBOL_SUMMARY, append_file, copy_fixture, cycle, internal_violation, payload,
++from tests.delta_support import (DELTA_KEYS, TEST_LISTS, TEST_SUMMARY, SUMMARY, SYMBOL_SUMMARY, append_file, copy_fixture, cycle, internal_violation, payload,
+                                  pdep, pmetrics, ref_delta, retrack, run_bottlenecks, wire)
+ 
+ A, B, C = ('file:%s.py' % n for n in 'abc')
+@@ -302,13 +302,14 @@ def mixed_pair():
+ 
+ 
+ def test_V04_policy_value_and_key_sets():
+-    assert api().DELTA_POLICY == 'delta.v4'
++    assert api().DELTA_POLICY == 'delta.v5'
+     cur, base = mixed_pair()
+     result = run(cur, base)
+-    assert result['policy'] == 'delta.v4'
++    assert result['policy'] == 'delta.v5'
+     assert set(result) == DELTA_KEYS
+     assert set(result['counts']) == {'new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes',
+-                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols'}
++                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols',
++                                     'untested_changes', 'weakened_tests', 'added_mocks'}
+     assert set(result['resolved']) == {'cycles', 'violations', 'package_dependencies', 'candidates'}
+     assert result['counts']['new_candidates'] == len(result['new_candidates']) == 1
+     assert result['counts']['strengthened_candidates'] == len(result['strengthened_candidates']) == 1
+@@ -382,7 +383,9 @@ def test_V05_cli_baseline_rerun_reports_new_unresolved_boundary_and_isolated_nod
+     lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]')]
+     symbol_lines = [line for line in lines if line.startswith('[Δ] Symbol changes')]
+     assert symbol_lines == [SYMBOL_SUMMARY.format(delta['counts']['changed_signatures'], delta['counts']['removed_symbols'])]
+-    lines = [line for line in lines if line not in symbol_lines]
++    test_lines = [line for line in lines if line.startswith('[Δ] Test changes')]
++    assert test_lines == [TEST_SUMMARY.format(*(delta['counts'][n] for n in TEST_LISTS))]
++    lines = [line for line in lines if line not in symbol_lines and line not in test_lines]
+     expected = SUMMARY.format(*(len(delta[n]) for n in ('new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies',
+                                                         'instability_changes')),
+                               len(delta['new_candidates']), len(delta['strengthened_candidates']))
+diff --git a/tests/test_delta_cli.py b/tests/test_delta_cli.py
+index 323bb43..df756d4 100644
+--- a/tests/test_delta_cli.py
++++ b/tests/test_delta_cli.py
+@@ -69,9 +69,12 @@ def summary_for(delta):
+ def stdout_summary(done):
+     lines = [line for line in done.stdout.splitlines() if line.startswith('[Δ]') and not line.startswith('[Δ] Renames applied')]
+     symbol = [line for line in lines if line.startswith('[Δ] Symbol changes')]
+-    assert len(symbol) == min(1, len(lines) - len(symbol))
++    tests = [line for line in lines if line.startswith('[Δ] Test changes')]
++    assert len(symbol) == min(1, len(lines) - len(symbol) - len(tests))
++    assert len(tests) == min(1, len(lines) - len(symbol) - len(tests))
+     assert all(re.fullmatch(r'\[Δ\] Symbol changes: changed signatures \d+, removed symbols \d+', line) for line in symbol)
+-    return [line for line in lines if line not in symbol]
++    assert all(re.fullmatch(r'\[Δ\] Test changes: untested changes \d+, weakened tests \d+, added mocks \d+', line) for line in tests)
++    return [line for line in lines if line not in symbol and line not in tests]
+ 
+ 
+ def regression_line(delta, names):
+diff --git a/tests/test_delta_integration.py b/tests/test_delta_integration.py
+index 0d8156b..b7fc10b 100644
+--- a/tests/test_delta_integration.py
++++ b/tests/test_delta_integration.py
+@@ -227,7 +227,7 @@ def test_V12_Q02_identical_real_json_pair(outputs_by_id):
+     assert seconds <= 1.0, seconds
+     assert wire(result)['counts'] == {'new_cycles': 0, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 0,
+                                       'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+-                                      'changed_signatures': 0, 'removed_symbols': 0}
++                                      'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+ 
+ 
+ def large_pair():
+@@ -254,7 +254,7 @@ def test_V12_Q03_compute_delta_on_large_synthetic_input():
+     result = wire(result)
+     assert result['counts'] == {'new_cycles': 250, 'grown_cycles': 250, 'new_violations': 5000, 'new_package_dependencies': 5000,
+                                 'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+-                                      'changed_signatures': 0, 'removed_symbols': 0}
++                                      'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+     assert result['resolved'] == {'cycles': 100, 'violations': 1000, 'package_dependencies': 500, 'candidates': 0}
+     assert [i['candidate_id'] for i in result['new_cycles']] == sorted(cid('dependency_cycle', 'file', 'all', [
+         f'file:c{i:04d}/m{j:02d}.py' for j in range(20)]) for i in range(750, 1000))
+diff --git a/tests/test_fact_defects.py b/tests/test_fact_defects.py
+index fb90808..0b6f6cc 100644
+--- a/tests/test_fact_defects.py
++++ b/tests/test_fact_defects.py
+@@ -533,7 +533,7 @@ EXPECTED_SHAPE = {
+                 'schema', 'snapshot', 'versions'],
+         'dependency_network': ['ambiguity_policy', 'betweenness_sample_size', 'betweenness_strategy',
+                                'edge_count', 'evidence_columns', 'file_ids', 'node_count', 'node_metrics', 'package_dependencies', 'package_metrics',
+-                               'rankings', 'rankings_by_category', 'structure_policy', 'symbol_columns', 'symbols'],
++                               'rankings', 'rankings_by_category', 'structure_policy', 'symbol_columns', 'symbols', 'test_case_columns', 'test_cases'],
+         'edge_weights': ['confidence', 'large_node_line_threshold', 'large_node_token_threshold', 'resolution',
+                          'untested_hub_top_n'],
+         'coverage': ['analysis_coverage', 'doc_references', 'limitations', 'source_file_count', 'structure'],
+diff --git a/tests/test_reach_candidates.py b/tests/test_reach_candidates.py
+index 44b4e6c..beaa24b 100644
+--- a/tests/test_reach_candidates.py
++++ b/tests/test_reach_candidates.py
+@@ -694,6 +694,10 @@ def delta_v1_form(delta):
+         del result[name]
+         del result['counts'][name]
+     del result['symbol_changes']
++    del result['test_changes']
++    for name in ('untested_changes', 'weakened_tests', 'added_mocks'):
++        del result[name]
++        del result['counts'][name]
+     del result['resolved']['candidates']
+     return result
+ 
+@@ -704,7 +708,7 @@ def test_V7_Q3_delta_with_itself_as_baseline_equals_base(tmp_path_factory):
+     first = pipe.directory / 'baseline.json'
+     first.write_bytes(pipe.output('file'))
+     payload = pipe.payload('file', extra=['--baseline', str(first)], tag='delta')
+-    assert payload['delta']['policy'] == 'delta.v4'
++    assert payload['delta']['policy'] == 'delta.v5'
+     assert payload['delta']['symbol_changes'] == {'status': 'applied', 'reason': None}
+     assert payload['delta']['changed_signatures'] == [] and payload['delta']['removed_symbols'] == []
+     assert payload['delta']['new_candidates'] == [] and payload['delta']['strengthened_candidates'] == []
+diff --git a/tests/test_rename_delta.py b/tests/test_rename_delta.py
+index 73c3535..442742e 100644
+--- a/tests/test_rename_delta.py
++++ b/tests/test_rename_delta.py
+@@ -602,19 +602,19 @@ def test_V07_M1_no_renames_argument_equals_the_v2_reference_with_v3_policy():
+     cur, base = mixed_pair()
+     for result in (wire(delta_api().compute_delta(cur, base)), wire(delta_api().compute_delta(cur, base, None))):
+         assert result == wire(ref_delta(cur, base))
+-        assert result['policy'] == 'delta.v4'
++        assert result['policy'] == 'delta.v5'
+         assert result['renames'] == NOT_REQUESTED == {'status': 'skipped', 'reason': 'not_requested', 'pairs': []}
+         assert set(result) == DELTA_KEYS
+         assert result['counts'] == {'new_cycles': 0, 'grown_cycles': 1, 'new_violations': 1, 'new_package_dependencies': 1,
+                                     'instability_changes': 1, 'new_candidates': 1, 'strengthened_candidates': 1,
+-                                    'changed_signatures': 0, 'removed_symbols': 0}
++                                    'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+ 
+ 
+ def test_V07_M2_applied_with_empty_pairs_changes_nothing_but_the_renames_object():
+     cur, base = mixed_pair()
+     renames = {'status': 'applied', 'reason': None, 'pairs': []}
+     result = compute(cur, base, renames)
+-    assert result['renames'] == renames and result['policy'] == 'delta.v4'
++    assert result['renames'] == renames and result['policy'] == 'delta.v5'
+     assert without_renames(result) == without_renames(compute(cur, base, None))
+ 
+ 
+@@ -623,7 +623,7 @@ def test_V07_M2_applied_with_empty_pairs_changes_nothing_but_the_renames_object(
+ def test_V07_M3_skipped_renames_are_echoed_and_do_not_change_the_comparison(reason):
+     cur, base = mixed_pair()
+     result = compute(cur, base, skipped(reason))
+-    assert result['renames'] == skipped(reason) and result['policy'] == 'delta.v4'
++    assert result['renames'] == skipped(reason) and result['policy'] == 'delta.v5'
+     assert without_renames(result) == without_renames(compute(cur, base, None))
+ 
+ 
+diff --git a/tests/test_report_size_format.py b/tests/test_report_size_format.py
+index cf30ee9..a526161 100644
+--- a/tests/test_report_size_format.py
++++ b/tests/test_report_size_format.py
+@@ -22,7 +22,9 @@ V8_DETAILS = golden('v8_details.json')
+ def v9():
+     payload = fixture_payload()
+     assert payload['dependency_network']['symbols'] and payload['dependency_network']['symbol_columns']
+-    network = {k: v for k, v in payload['dependency_network'].items() if k not in ('symbols', 'symbol_columns')}
++    assert 'test_case_columns' in payload['dependency_network'] and 'test_cases' in payload['dependency_network']
++    network = {k: v for k, v in payload['dependency_network'].items()
++               if k not in ('symbols', 'symbol_columns', 'test_cases', 'test_case_columns')}
+     kinds = ('unreferenced_symbol', 'unprovided_injection')
+     return {**payload, 'dependency_network': network, 'candidates': [c for c in payload['candidates'] if c['kind'] not in kinds]}
+ 
+diff --git a/tests/test_structure_integration.py b/tests/test_structure_integration.py
+index 6a8916b..919a825 100644
+--- a/tests/test_structure_integration.py
++++ b/tests/test_structure_integration.py
+@@ -270,7 +270,8 @@ PRE_RUN3_BASE_BYTES = {'android-nowinandroid': 7430385, 'fastapi-realworld': 851
+ 
+ 
+ def test_V11_size_ratio_per_fixture(run):
+-    payload = run.payload('file')
++    from tests.doc_references_support import without_test_signals
++    payload = without_test_signals(run.payload('file'))
+     payload['dependency_network'].pop('package_dependencies', None)
+     size = len(json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')) + 1
+     ratio = size / run.manifest['file']['bytes']
+diff --git a/tests/test_symbol_changes.py b/tests/test_symbol_changes.py
+index 69f7557..1017729 100644
+--- a/tests/test_symbol_changes.py
++++ b/tests/test_symbol_changes.py
+@@ -5,7 +5,7 @@ from pathlib import Path
+ import pytest
+ 
+ from fixtures.registry import fixture_root
+-from tests.delta_support import DELTA_KEYS, SYMBOL_COLUMNS, SYMBOL_SUMMARY, SYMBOL_WARNING, ref_delta, wire
++from tests.delta_support import DELTA_KEYS, LEGACY_SYMBOL_COLUMNS, SYMBOL_COLUMNS, SYMBOL_SUMMARY, SYMBOL_WARNING, ref_delta, wire
+ from tests.rename_delta_support import git, make_repo, write_files
+ from tests.symbol_changes_support import (AMBIGUOUS, FI, SC, SI, UNIQUE, UNRESOLVED, arch, assert_symbol_additions, base_worktree,
+                                           baseline_then_edit, by_id, cli_args, delta_lines, delta_run, entry, find,
+@@ -36,9 +36,9 @@ def compute(current, baseline, renames=None):
+     return result
+ 
+ 
+-def full(ident, file, kind, name, signature, visibility, refs=0, uncertain=0):
++def full(ident, file, kind, name, signature, visibility, refs=0, uncertain=0, branches=None, reach='untested'):
+     return {'id': ident, 'file': file, 'kind': kind, 'name': name, 'signature': signature, 'visibility': visibility,
+-            'external_refs': refs, 'uncertain_external_refs': uncertain}
++            'external_refs': refs, 'uncertain_external_refs': uncertain, 'branches': branches, 'test_reach': reach}
+ 
+ 
+ def test_V01_EP1_four_kinds_each_give_one_entry_sorted_by_id():
+@@ -146,7 +146,7 @@ def test_V01_python_cli_symbol_table_values(tmp_path):
+     assert_symbol_additions(data)
+     rows = table_of(data)
+     f = find(rows, 'f', 'file:app/a.py')
+-    assert f == full('py:app.a#f', 'file:app/a.py', 'function', 'f', 'def f(x, y)', 'public', 1, 0)
++    assert f == full('py:app.a#f', 'file:app/a.py', 'function', 'f', 'def f(x, y)', 'public', 1, 0, branches=0)
+     assert find(rows, '_g')['visibility'] == 'private' and find(rows, '_g')['signature'] == 'def _g(x)'
+     assert find(rows, 'ALLOWED') == full('py:app.a#ALLOWED', 'file:app/a.py', 'constant', 'ALLOWED', None, 'public')
+     assert find(rows, 'K')['kind'] == 'class' and find(rows, 'm')['kind'] == 'method'
+@@ -177,10 +177,10 @@ def test_V01_EP6_cli_json_serialisation_uses_columns_rows_and_file_id_indexes(tm
+     ids = [row[0] for row in network['symbols']]
+     assert ids == sorted(ids) and len(set(ids)) == len(ids)
+     for row in network['symbols']:
+-        assert len(row) == 8 and type(row[1]) is int and 0 <= row[1] < len(network['file_ids'])
++        assert len(row) == 10 and type(row[1]) is int and 0 <= row[1] < len(network['file_ids'])
+         assert network['file_ids'][row[1]].startswith('file:app/')
+     f_row = next(row for row in network['symbols'] if row[0] == 'py:app.a#f')
+-    assert f_row == ['py:app.a#f', network['file_ids'].index('file:app/a.py'), 'function', 'f', 'def f(x, y)', 'public', 1, 0]
++    assert f_row == ['py:app.a#f', network['file_ids'].index('file:app/a.py'), 'function', 'f', 'def f(x, y)', 'public', 1, 0, 0, 'untested']
+ 
+ 
+ @pytest.fixture(scope='module')
+@@ -475,17 +475,18 @@ def test_V05_result_is_ordered_by_id():
+ 
+ def test_V09_EP1_applied_policy_counts_and_object_shape():
+     result = compute(sym_payload(STATE_CUR), sym_payload(STATE_BASE + [entry('py:a#gone')]))
+-    assert delta_api().DELTA_POLICY == result['policy'] == 'delta.v4'
++    assert delta_api().DELTA_POLICY == result['policy'] == 'delta.v5'
+     assert set(result) == DELTA_KEYS
+     assert set(result['counts']) == {'new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes',
+-                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols'}
++                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols',
++                                     'untested_changes', 'weakened_tests', 'added_mocks'}
+     assert result['counts']['changed_signatures'] == 1 and result['counts']['removed_symbols'] == 1
+     assert set(result['symbol_changes']) == {'status', 'reason'}
+ 
+ 
+ def test_V09_EP2_skipped_policy_and_zero_counts():
+     result = compute(sym_payload(None), sym_payload(STATE_BASE))
+-    assert result['policy'] == 'delta.v4' and result['counts']['changed_signatures'] == result['counts']['removed_symbols'] == 0
++    assert result['policy'] == 'delta.v5' and result['counts']['changed_signatures'] == result['counts']['removed_symbols'] == 0
+ 
+ 
+ def test_V09_EP1_cli_prints_one_symbol_line_on_stdout_and_no_warning(tmp_path):
+@@ -667,8 +668,8 @@ def test_V10_EP5_signature_that_is_an_integer(tmp_path):
+     assert_rejected(tmp_path, data, '$.dependency_network.symbols[0].signature')
+ 
+ 
+-@pytest.mark.parametrize('mutate', [lambda n: n.pop('symbol_columns'), lambda n: n.__setitem__('symbol_columns', SYMBOL_COLUMNS[:-1]),
+-                                    lambda n: n.__setitem__('symbol_columns', 'id'), lambda n: n.__setitem__('symbol_columns', [1] * 8)],
++@pytest.mark.parametrize('mutate', [lambda n: n.pop('symbol_columns'), lambda n: n.__setitem__('symbol_columns', LEGACY_SYMBOL_COLUMNS[:-1]),
++                                    lambda n: n.__setitem__('symbol_columns', 'id'), lambda n: n.__setitem__('symbol_columns', [1] * 10)],
+                          ids=['missing', 'a-column-short', 'not-a-list', 'not-strings'])
+ def test_V10_EP6_symbol_columns_missing_or_incomplete(tmp_path, mutate):
+     data = good_payload()

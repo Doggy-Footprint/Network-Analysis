@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from fixtures.registry import fixture_root
-from tests.delta_support import DELTA_KEYS, SYMBOL_COLUMNS, SYMBOL_SUMMARY, SYMBOL_WARNING, ref_delta, wire
+from tests.delta_support import DELTA_KEYS, LEGACY_SYMBOL_COLUMNS, SYMBOL_COLUMNS, SYMBOL_SUMMARY, SYMBOL_WARNING, ref_delta, wire
 from tests.rename_delta_support import git, make_repo, write_files
 from tests.symbol_changes_support import (AMBIGUOUS, FI, SC, SI, UNIQUE, UNRESOLVED, arch, assert_symbol_additions, base_worktree,
                                           baseline_then_edit, by_id, cli_args, delta_lines, delta_run, entry, find,
@@ -36,9 +36,9 @@ def compute(current, baseline, renames=None):
     return result
 
 
-def full(ident, file, kind, name, signature, visibility, refs=0, uncertain=0):
+def full(ident, file, kind, name, signature, visibility, refs=0, uncertain=0, branches=None, reach='untested'):
     return {'id': ident, 'file': file, 'kind': kind, 'name': name, 'signature': signature, 'visibility': visibility,
-            'external_refs': refs, 'uncertain_external_refs': uncertain}
+            'external_refs': refs, 'uncertain_external_refs': uncertain, 'branches': branches, 'test_reach': reach}
 
 
 def test_V01_EP1_four_kinds_each_give_one_entry_sorted_by_id():
@@ -146,7 +146,7 @@ def test_V01_python_cli_symbol_table_values(tmp_path):
     assert_symbol_additions(data)
     rows = table_of(data)
     f = find(rows, 'f', 'file:app/a.py')
-    assert f == full('py:app.a#f', 'file:app/a.py', 'function', 'f', 'def f(x, y)', 'public', 1, 0)
+    assert f == full('py:app.a#f', 'file:app/a.py', 'function', 'f', 'def f(x, y)', 'public', 1, 0, branches=0)
     assert find(rows, '_g')['visibility'] == 'private' and find(rows, '_g')['signature'] == 'def _g(x)'
     assert find(rows, 'ALLOWED') == full('py:app.a#ALLOWED', 'file:app/a.py', 'constant', 'ALLOWED', None, 'public')
     assert find(rows, 'K')['kind'] == 'class' and find(rows, 'm')['kind'] == 'method'
@@ -177,10 +177,10 @@ def test_V01_EP6_cli_json_serialisation_uses_columns_rows_and_file_id_indexes(tm
     ids = [row[0] for row in network['symbols']]
     assert ids == sorted(ids) and len(set(ids)) == len(ids)
     for row in network['symbols']:
-        assert len(row) == 8 and type(row[1]) is int and 0 <= row[1] < len(network['file_ids'])
+        assert len(row) == 10 and type(row[1]) is int and 0 <= row[1] < len(network['file_ids'])
         assert network['file_ids'][row[1]].startswith('file:app/')
     f_row = next(row for row in network['symbols'] if row[0] == 'py:app.a#f')
-    assert f_row == ['py:app.a#f', network['file_ids'].index('file:app/a.py'), 'function', 'f', 'def f(x, y)', 'public', 1, 0]
+    assert f_row == ['py:app.a#f', network['file_ids'].index('file:app/a.py'), 'function', 'f', 'def f(x, y)', 'public', 1, 0, 0, 'untested']
 
 
 @pytest.fixture(scope='module')
@@ -475,17 +475,18 @@ def test_V05_result_is_ordered_by_id():
 
 def test_V09_EP1_applied_policy_counts_and_object_shape():
     result = compute(sym_payload(STATE_CUR), sym_payload(STATE_BASE + [entry('py:a#gone')]))
-    assert delta_api().DELTA_POLICY == result['policy'] == 'delta.v4'
+    assert delta_api().DELTA_POLICY == result['policy'] == 'delta.v5'
     assert set(result) == DELTA_KEYS
     assert set(result['counts']) == {'new_cycles', 'grown_cycles', 'new_violations', 'new_package_dependencies', 'instability_changes',
-                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols'}
+                                     'new_candidates', 'strengthened_candidates', 'changed_signatures', 'removed_symbols',
+                                     'untested_changes', 'weakened_tests', 'added_mocks'}
     assert result['counts']['changed_signatures'] == 1 and result['counts']['removed_symbols'] == 1
     assert set(result['symbol_changes']) == {'status', 'reason'}
 
 
 def test_V09_EP2_skipped_policy_and_zero_counts():
     result = compute(sym_payload(None), sym_payload(STATE_BASE))
-    assert result['policy'] == 'delta.v4' and result['counts']['changed_signatures'] == result['counts']['removed_symbols'] == 0
+    assert result['policy'] == 'delta.v5' and result['counts']['changed_signatures'] == result['counts']['removed_symbols'] == 0
 
 
 def test_V09_EP1_cli_prints_one_symbol_line_on_stdout_and_no_warning(tmp_path):
@@ -667,8 +668,8 @@ def test_V10_EP5_signature_that_is_an_integer(tmp_path):
     assert_rejected(tmp_path, data, '$.dependency_network.symbols[0].signature')
 
 
-@pytest.mark.parametrize('mutate', [lambda n: n.pop('symbol_columns'), lambda n: n.__setitem__('symbol_columns', SYMBOL_COLUMNS[:-1]),
-                                    lambda n: n.__setitem__('symbol_columns', 'id'), lambda n: n.__setitem__('symbol_columns', [1] * 8)],
+@pytest.mark.parametrize('mutate', [lambda n: n.pop('symbol_columns'), lambda n: n.__setitem__('symbol_columns', LEGACY_SYMBOL_COLUMNS[:-1]),
+                                    lambda n: n.__setitem__('symbol_columns', 'id'), lambda n: n.__setitem__('symbol_columns', [1] * 10)],
                          ids=['missing', 'a-column-short', 'not-a-list', 'not-strings'])
 def test_V10_EP6_symbol_columns_missing_or_incomplete(tmp_path, mutate):
     data = good_payload()

@@ -1,15 +1,16 @@
 import re
-from typing import Any
+from typing import Any, Mapping
 
 from analysis.candidate_projection import candidate_targets
 from analysis.file_graph import _DECLARATION_KINDS, _LANGUAGE_PROVENANCE
+from bottlenecks.test_signals import BranchCounter, test_reach
 
 _KINDS = frozenset({"function", "method", "class", "constant"})
 _CONFIRMED = frozenset({"exact", "unique_name"})
 _STATIC = frozenset({"static_certain", "static_inferred"})
 _PRIVATE_WORDS = frozenset({"private", "protected", "internal"})
 _WORD = re.compile(r"[^\s(<:=,{]+")
-SYMBOL_COLUMNS = ["id", "file", "kind", "name", "signature", "visibility", "external_refs", "uncertain_external_refs"]
+SYMBOL_COLUMNS = ["id", "file", "kind", "name", "signature", "visibility", "external_refs", "uncertain_external_refs", "branches", "test_reach"]
 _EXCLUDED_NAMES = frozenset({"constructor", "main"})
 
 
@@ -69,9 +70,11 @@ def _modifiers(signature: str, name: str) -> set:
     return found
 
 
-def symbol_table(architecture: Any, index: tuple | None = None) -> list[dict]:
+def symbol_table(architecture: Any, index: tuple | None = None, contents: Mapping[str, str] | None = None) -> list[dict]:
     index = (incoming_index(architecture) if index is None else index)[0]
     production = _production_files(architecture)
+    reach = test_reach(architecture)
+    counter = BranchCounter()
     node_files = architecture.details["node_files"]
     table = []
     for node in architecture.details["nodes"]:
@@ -84,9 +87,16 @@ def symbol_table(architecture: Any, index: tuple | None = None) -> list[dict]:
         signature = " ".join(signature.split()) if isinstance(signature, str) else None
         private = name[:1] in ("_", "#") or (signature is not None and not _PRIVATE_WORDS.isdisjoint(_modifiers(signature, name)))
         confirmed, uncertain = index.get(node["id"], (set(), set()))
+        branches = None
+        start = (node.get("span") or {}).get("start_line")
+        if contents is not None and kind in ("function", "method") and isinstance(start, int):
+            path = file[len("file:"):]
+            text = contents.get(path)
+            branches = counter.count(path, text, start, name) if isinstance(text, str) else None
         table.append({"id": node["id"], "file": file, "kind": kind, "name": name, "signature": signature,
                       "visibility": "private" if private else "public",
-                      "external_refs": len(confirmed), "uncertain_external_refs": len(uncertain - confirmed)})
+                      "external_refs": len(confirmed), "uncertain_external_refs": len(uncertain - confirmed),
+                      "branches": branches, "test_reach": reach.get(node["id"])})
     return sorted(table, key=lambda item: item["id"])
 
 
