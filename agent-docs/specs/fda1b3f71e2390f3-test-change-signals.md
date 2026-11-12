@@ -198,7 +198,7 @@ CLI(`--baseline`, applied): stdout `[Δ] Test changes: untested changes <n>, wea
 | item | value |
 | --- | --- |
 | correction batches used | 2 |
-| verifier invocations | 1 |
+| verifier invocations | 2 |
 | open finding ids | SC-1, G-2, G-3 |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
@@ -217,7 +217,7 @@ Audit state (one entry per obligation; retain prior decisions in the execution l
 | V11 | 2→3 | verifier 1회차, commit a361f84 | invalidated | EP1–EP7 accepted; v3 EP4a 추가 | F08 판정 변경 시 |
 | V12 | 2→3 | verifier 1회차, commit a361f84 | accepted | EP1–EP13 | load_baseline 변경 시 |
 | V13 | 2→3 | verifier 1회차, commit a361f84 | accepted | fuzz 5,000, 위반 0 | delta 변경 시 재실행 |
-| V14 | 2→3 | verifier 1회차, commit a361f84 | pending | R1·R2 main 수행 예정 | — |
+| V14 | 3 | `tests/test_signals_evidence/r1_comparison.md`, commit fea60c7 | accepted | P11+P15 12/12, P12 5/3, P13 5/5, P14 7/7; NC 2/1/0/0(변화 없음); 칸별 matched 하락 없음; 크기 비 ≤ 1.066, 시간 비 ≤ 1.127 | 구현 변경 시 재측정 |
 | V15 | 2→3 | verifier 1회차, commit a361f84 | invalidated | coverage 98.43% accepted; v3 F12 symbol granularity 동일 항목 추가 | — |
 
 Execution ledger (append attempts; preserve failed approaches):
