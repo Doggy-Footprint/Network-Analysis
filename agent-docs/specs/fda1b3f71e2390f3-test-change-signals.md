@@ -199,32 +199,32 @@ CLI(`--baseline`, applied): stdout `[Δ] Test changes: untested changes <n>, wea
 | --- | --- |
 | correction batches used | 2 |
 | verifier invocations | 2 |
-| open finding ids | SC-1, G-2, G-3 |
+| open finding ids | none |
 
 Audit state (one entry per obligation; retain prior decisions in the execution ledger):
 | obligation id | spec version | evidence references and revision | accepted / open / invalidated / pending | rationale and mutation outcome | dependencies and reopening evidence |
 | --- | --- | --- | --- | --- | --- |
-| V01 | 2→3 | verifier 1회차, commit a361f84 | open | SC-1: decorated 선언 일치 줄 미명시 → v3 F01 | test_signals branch lookup |
-| V02 | 2→3 | verifier 1회차, commit a361f84 | accepted | EP1–EP4 CLI·unit | symbols·core 출력 변경 시 |
-| V03 | 2→3 | verifier 1회차, commit a361f84 | accepted | cause·effect 전부 | test_reach 변경 시 |
-| V04 | 2→3 | verifier 1회차, commit a361f84 | accepted | 표 T 항목 전부 | 케이스 탐색 변경 시 |
-| V05 | 2→3 | verifier 1회차, commit a361f84 | open | G-2: Kotlin·TS 접두 범위 음성 없음 | 검증 분류 변경 시 |
-| V06 | 2→3 | verifier 1회차, commit a361f84 | open | G-3: Kotlin object 범위 없음 | mock 범위 변경 시 |
-| V07 | 2→3 | verifier 1회차, commit a361f84 | open | G-3: Kotlin object 상속 없음 | skip 범위 변경 시 |
-| V08 | 2→3 | verifier 1회차, commit a361f84 | accepted | D1–D9 | delta 변경 시 |
-| V09 | 2→3 | verifier 1회차, commit a361f84 | accepted | D1–D8 | delta 변경 시 |
-| V10 | 2→3 | verifier 1회차, commit a361f84 | accepted | 2-value 경계 | delta 변경 시 |
-| V11 | 2→3 | verifier 1회차, commit a361f84 | invalidated | EP1–EP7 accepted; v3 EP4a 추가 | F08 판정 변경 시 |
-| V12 | 2→3 | verifier 1회차, commit a361f84 | accepted | EP1–EP13 | load_baseline 변경 시 |
-| V13 | 2→3 | verifier 1회차, commit a361f84 | accepted | fuzz 5,000, 위반 0 | delta 변경 시 재실행 |
+| V01 | 3 | verifier 2회차, commit fea60c7 | accepted | decorated 선언 항목 추가, M17 검출 | test_signals branch lookup |
+| V02 | 3 | verifier 1·2회차, commit fea60c7 | accepted | EP1–EP4 CLI·unit | symbols·core 출력 변경 시 |
+| V03 | 3 | verifier 1·2회차, commit fea60c7 | accepted | cause·effect 전부 | test_reach 변경 시 |
+| V04 | 3 | verifier 1·2회차, commit fea60c7 | accepted | 표 T 항목 전부 | 케이스 탐색 변경 시 |
+| V05 | 3 | verifier 2회차, commit fea60c7 | accepted | 언어별 접두 범위, M15 검출 | 검증 분류 변경 시 |
+| V06 | 3 | verifier 2회차, commit fea60c7 | accepted | Kotlin object 범위(정확한 수) | mock 범위 변경 시 |
+| V07 | 3 | verifier 2회차, commit fea60c7 | accepted | Kotlin object 상속, M14 검출 | skip 범위 변경 시 |
+| V08 | 3 | verifier 1·2회차, commit fea60c7 | accepted | D1–D9 | delta 변경 시 |
+| V09 | 3 | verifier 1·2회차, commit fea60c7 | accepted | D1–D8 | delta 변경 시 |
+| V10 | 3 | verifier 1·2회차, commit fea60c7 | accepted | 2-value 경계 | delta 변경 시 |
+| V11 | 3 | verifier 2회차, commit fea60c7 | accepted | EP4a 추가 | F08 판정 변경 시 |
+| V12 | 3 | verifier 1·2회차, commit fea60c7 | accepted | EP1–EP13 | load_baseline 변경 시 |
+| V13 | 3 | verifier 1·2회차, commit fea60c7 | accepted | fuzz 5,000, 위반 0 | delta 변경 시 재실행 |
 | V14 | 3 | `tests/test_signals_evidence/r1_comparison.md`, commit fea60c7 | accepted | P11+P15 12/12, P12 5/3, P13 5/5, P14 7/7; NC 2/1/0/0(변화 없음); 칸별 matched 하락 없음; 크기 비 ≤ 1.066, 시간 비 ≤ 1.127 | 구현 변경 시 재측정 |
-| V15 | 2→3 | verifier 1회차, commit a361f84 | invalidated | coverage 98.43% accepted; v3 F12 symbol granularity 동일 항목 추가 | — |
+| V15 | 3 | verifier 2회차, commit fea60c7 | accepted | coverage 98.44%, F12 symbol granularity base 동일 | — |
 
 Execution ledger (append attempts; preserve failed approaches):
 | attempt | finding / failure signature | cause hypothesis | changed approach / new evidence | result / disposition |
 | --- | --- | --- | --- | --- |
 | 1 | Test command v1: 2 failed, 4663 passed; coverage 98.23%. `test_V11_skipping_changes_nothing_else_in_the_delta` KeyError 0 in `_pairs`; `test_V07_read_parse_counts_match_immutable_characterization` file granularity parse +1 | 첫째: test가 file_ids 있는 payload에 dict 형식 cycle evidence를 씀(test defect). 둘째: A05 재파싱의 의도된 결과(spec gap: 조정 허용 누락) | v2 조정 허용 추가; correction batch 1: test 수정, 구현은 v2 명확화(Python assert 안 호출, Kotlin assertThat 사슬) 반영 | 첫째 수정 뒤 같은 test가 `signal_payload`의 입력 candidate 제자리 변경으로 TypeError(test defect, deepcopy로 수정); 셋째 실행 4700 passed, coverage 98.43%, fuzz 5,000 위반 0 — resolved |
-| 2 | verifier 1회차 retry: SC-1(decorated 선언 줄), G-2(접두 범위), G-3(Kotlin object); advisory A-1~A-4 | SC-1 spec gap, G-2·G-3 evidence gap | v3 amendment; correction batch 2: 구현은 두 줄 모두 일치, test는 V01·V05·V06·V07·V11 EP4a·V15 F12 추가; A-4는 표 밖이라 제외 | Test command 4727 passed, coverage 98.44%; hand mutation 17개(M01–M17, `tests/test_signals_evidence/mutations/results.json`) 모두 의도한 test가 검출 — verifier 2회차 대기 |
+| 2 | verifier 1회차 retry: SC-1(decorated 선언 줄), G-2(접두 범위), G-3(Kotlin object); advisory A-1~A-4 | SC-1 spec gap, G-2·G-3 evidence gap | v3 amendment; correction batch 2: 구현은 두 줄 모두 일치, test는 V01·V05·V06·V07·V11 EP4a·V15 F12 추가; A-4는 표 밖이라 제외 | Test command 4727 passed, coverage 98.44%; hand mutation 17개(M01–M17, `tests/test_signals_evidence/mutations/results.json`) 모두 의도한 test가 검출; verifier 2회차 pass(advisory A-5~A-7) — resolved |
 
 # Version Log
 ## v1
