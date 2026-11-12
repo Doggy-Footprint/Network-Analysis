@@ -14,6 +14,7 @@ from language_analyzers.core.serialization import edge_to_dict
 from analysis.graph_metrics import GraphAnalysisConfig, GraphAnalyzer
 from language_analyzers.core.flags import GENERATED, TEST, VENDORED, path_flags
 from repository.models import RepositorySnapshot
+from bottlenecks.renames import repository_commit
 
 
 class BottleneckInputError(ValueError): pass
@@ -261,7 +262,7 @@ def _intern_candidate_groups(candidates):
     return groups
 
 
-def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None) -> BottleneckReport:
+def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights: EdgeWeights, *, analysis: Optional[Mapping[str, Any]] = None, rules: Any = None, exclude_paths: Tuple[Path, ...] = ()) -> BottleneckReport:
     try:
         _weights(weights)
         _snapshot(snapshot); nodes, edges, pairs = _validate(snapshot, architecture)
@@ -286,7 +287,16 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
             from analysis.doc_references import analyze_doc_references
             doc_table, doc_candidates, doc_summary = analyze_doc_references(snapshot, architecture.details)
             architecture.details["doc_references"] = doc_table
-            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates, key=lambda item: (item["kind"], item["id"]))
+            from bottlenecks.nestjs_visibility import unprovided_candidates
+            from bottlenecks.symbols import SYMBOL_COLUMNS, incoming_index, symbol_rows, symbol_table, unreferenced_candidates
+            incoming = incoming_index(architecture)
+            contents = dict(snapshot.contents)
+            symbols = symbol_rows(symbol_table(architecture, incoming, contents), sorted(metrics))
+            from bottlenecks.test_signals import TEST_CASE_COLUMNS, test_case_table
+            position = {file_id: number for number, file_id in enumerate(sorted(metrics))}
+            test_paths = [node.id[len("file:"):] for node in nodes if node.id in architecture.details["file_nodes"] and categories[node.id] == "test"]
+            test_cases = [[item["id"], position[item["file"]], *(item[name] for name in TEST_CASE_COLUMNS[2:])] for item in test_case_table(contents, test_paths)]
+            candidates = sorted(candidates + list(structure.candidates) + reach + doc_candidates + unreferenced_candidates(architecture, incoming) + unprovided_candidates(architecture), key=lambda item: (item["kind"], item["id"]))
             _compact_structure_evidence(candidates, sorted(metrics))
         candidate_groups = _intern_candidate_groups(candidates)
         payload = {"confidence": dict(weights.confidence), "resolution": dict(weights.resolution), "large_node_line_threshold": weights.large_node_line_threshold, "large_node_token_threshold": weights.large_node_token_threshold}
@@ -303,13 +313,16 @@ def analyze_bottlenecks(snapshot: RepositorySnapshot, architecture: Any, weights
         if candidate_groups:
             network["candidate_groups"] = candidate_groups
         if is_file:
-            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS)
+            network.update(file_ids=sorted(metrics), evidence_columns=EVIDENCE_COLUMNS, symbols=symbols, symbol_columns=SYMBOL_COLUMNS, test_case_columns=TEST_CASE_COLUMNS, test_cases=test_cases)
         if doc_summary is not None:
             coverage["doc_references"] = doc_summary
         if structure is not None:
             from analysis.structure import STRUCTURE_POLICY
             network.update(package_metrics=structure.package_metrics, package_dependencies=structure.package_dependencies, structure_policy=STRUCTURE_POLICY); coverage.update(structure.coverage)
-        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
+        snapshot_record = {"file_count": len(snapshot.contents), "ignore_source": snapshot.ignore_source}
+        if is_file:
+            snapshot_record["git_commit"], snapshot_record["git_commit_reason"] = repository_commit(Path(snapshot.root), exclude=exclude_paths)
+        return BottleneckReport("bottlenecks.v9" if is_file else "bottlenecks.v6", snapshot_record, payload, {"analysis": "7"}, coverage, network, tuple(candidates), tuple(limitations), "file" if is_file else None)
     except (BottleneckInputError, ArchitectureRulesError): raise
     except (AttributeError, KeyError, TypeError, ValueError) as exc: raise BottleneckInputError("analysis input structure is invalid") from exc
 

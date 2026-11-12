@@ -1,0 +1,9 @@
+# Q02 (main, idle machine, KotlinAnalyzer(android-nowinandroid).build() min of 3 per round; base = 1bd6ebe worktree)
+## before correction batch 4
+round 1 base 0.1232 new 0.1360 ratio 1.104
+round 2 base 0.1215 new 0.1364 ratio 1.122
+round 3 base 0.1205 new 0.1383 ratio 1.147
+## after correction batch 4 (spec v7)
+round 1 base 0.1331 new 0.1330 ratio 1.000
+round 2 base 0.1216 new 0.1263 ratio 1.039
+round 3 base 0.1212 new 0.1249 ratio 1.031

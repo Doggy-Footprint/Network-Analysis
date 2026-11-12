@@ -2,6 +2,7 @@
 commit. Size checks are deliberately not benchmark-marked so they run in the default selection; the 20k-file external rules
 time budget runs with -m benchmark because wall-clock medians are unreliable under the parallel default run."""
 import fnmatch
+import copy
 import hashlib
 import json
 import statistics
@@ -130,6 +131,11 @@ def test_V11_architecture_file_canonical_equal_to_base(plain):
     if name == ANDROID:
         assert_architecture_changes_are_build_only(payload)
         return
+    payload = copy.deepcopy(payload)
+    modules = [n for n in payload['nodes'] + payload['details']['nodes'] if n['id'].startswith('nestjs:module:')]
+    assert bool(modules) == name.startswith('typescript-nestjs')
+    for node in modules:
+        assert isinstance(node['metadata'].pop('global'), bool) and isinstance(node['metadata'].pop('unsupported_fields'), list)
     assert canonical_architecture_sha(payload) == MANIFEST['fixtures'][name]['file']['architecture_canonical_sha256']
 
 

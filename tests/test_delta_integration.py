@@ -94,6 +94,8 @@ def test_V06_C27_output_minus_added_keys_is_byte_equal_to_base(entry, outputs_by
         return
     data = outputs_by_id(entry)
     obj = json.loads(data)
+    assert set(obj['snapshot']) >= {'git_commit', 'git_commit_reason'}
+    del obj['snapshot']['git_commit'], obj['snapshot']['git_commit_reason']
     obj['dependency_network']['structure_policy'] = 'structure.v1'
     obj['coverage']['structure']['policy'] = 'structure.v1'
     del obj['dependency_network']['package_dependencies']
@@ -224,7 +226,8 @@ def test_V12_Q02_identical_real_json_pair(outputs_by_id):
     seconds, result = fastest(lambda: compute_delta(current, copy.deepcopy(current)))
     assert seconds <= 1.0, seconds
     assert wire(result)['counts'] == {'new_cycles': 0, 'grown_cycles': 0, 'new_violations': 0, 'new_package_dependencies': 0,
-                                      'instability_changes': 0}
+                                      'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+                                      'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
 
 
 def large_pair():
@@ -250,8 +253,9 @@ def test_V12_Q03_compute_delta_on_large_synthetic_input():
     assert seconds <= 3.0, seconds
     result = wire(result)
     assert result['counts'] == {'new_cycles': 250, 'grown_cycles': 250, 'new_violations': 5000, 'new_package_dependencies': 5000,
-                                'instability_changes': 0}
-    assert result['resolved'] == {'cycles': 100, 'violations': 1000, 'package_dependencies': 500}
+                                'instability_changes': 0, 'new_candidates': 0, 'strengthened_candidates': 0,
+                                      'changed_signatures': 0, 'removed_symbols': 0, 'untested_changes': 0, 'weakened_tests': 0, 'added_mocks': 0}
+    assert result['resolved'] == {'cycles': 100, 'violations': 1000, 'package_dependencies': 500, 'candidates': 0}
     assert [i['candidate_id'] for i in result['new_cycles']] == sorted(cid('dependency_cycle', 'file', 'all', [
         f'file:c{i:04d}/m{j:02d}.py' for j in range(20)]) for i in range(750, 1000))
     assert all(len(i['added_members']) == 1 for i in result['grown_cycles'])

@@ -93,9 +93,10 @@ def violation_item(candidate):
 
 def delta_of(new_cycles=(), grown_cycles=(), new_violations=(), packages=(), instability=(), rules_changed=False):
     lists = {'new_cycles': list(new_cycles), 'grown_cycles': list(grown_cycles), 'new_violations': list(new_violations),
-             'new_package_dependencies': list(packages), 'instability_changes': list(instability)}
-    return {'policy': 'delta.v1', 'baseline': {'file_count': 5, 'rules_sha256': 'a' * 64}, 'rules_changed': rules_changed, **lists,
-            'resolved': {'cycles': 0, 'violations': 0, 'package_dependencies': 0},
+             'new_package_dependencies': list(packages), 'instability_changes': list(instability),
+             'new_candidates': [], 'strengthened_candidates': []}
+    return {'policy': 'delta.v2', 'baseline': {'file_count': 5, 'rules_sha256': 'a' * 64}, 'rules_changed': rules_changed, **lists,
+            'resolved': {'cycles': 0, 'violations': 0, 'package_dependencies': 0, 'candidates': 0},
             'counts': {name: len(items) for name, items in lists.items()}}
 
 
