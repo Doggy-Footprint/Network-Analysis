@@ -3,7 +3,7 @@ session: 4d7b0c3c-66fd-42d7-aa6e-8f8019257d86
 before: agent-docs/progress-logs/2e536f4a85267799-pr-push.md
 previous: none
 branch: dev
-commit: a7546777664d2195c7aa370ee9da6ffd4ee4e888
+commit: 58ca8efe956118b0ea69735f2ba074475f2dd5ca
 ---
 
 # README evaluation section
@@ -11,16 +11,13 @@ commit: a7546777664d2195c7aa370ee9da6ffd4ee4e888
 ## Next Session
 
 ### State
-- README.md has a new `# 평가` section summarizing the injection eval: 74 types (52 agent-reported, weight 3), 4 repos, validity and match judging, first measure (analyzer 27 of 454 valid, any comparison tool 92, rename false positives 15/16), the three improvements, and the current result (91 of 454; 41 of 51 on the 7 types no tool caught at first: P11–P15, P20, P50). Committed on branch dev and sent as a PR dev -> master; the user chose to ignore, for now, that README is read by agents at session start.
+- README.md has a new `# 평가` section summarizing the injection eval: 74 types (52 agent-reported, weight 3), 4 repos, validity and match judging, first measure (analyzer 27 of 454 valid, any comparison tool 92, rename false positives 15/16), the three improvements, and the current result (91 of 454; 41 of 51 on the 7 types no tool caught at first: P11–P15, P20, P50). Merged into master through PR #11 (merge d6c2f4c); the user then removed the closing caveat sentence about Sonnet judging (58ca8ef); the user chose to ignore, for now, that README is read by agents at session start.
   - files: README.md, tests/test_signals_evidence/r1_comparison.md, tests/symbol_changes_evidence/r1_comparison.md, agent-docs/progress-logs/b6b52b71cce3df29-agent-problem-injection-eval.md
 - The blog post `~/toy-projects/doggy-portfolio/content/posts/is-my-code-ai-friendly.mdx` was not changed. Its `## Next` lists analysis coverage reporting and equal-share ambiguous candidates, both already complete (spec-logs cfa172d091b48e63, 9c41e725d083ab6f).
   - files: agent-docs/spec-logs/cfa172d091b48e63-analysis-coverage-reporting.md, agent-docs/spec-logs/9c41e725d083ab6f-ambiguous-route-candidates.md
 
 ### Next Step
-- Merge the dev -> master PR after the user reviews it.
-  - files: README.md
-- The previous session's open step (push master and close PR #8) is still in agent-docs/progress-logs/2e536f4a85267799-pr-push.md.
-  - files: agent-docs/progress-logs/2e536f4a85267799-pr-push.md
+- none: the README work is merged, and the previous session's open step (push master, close PR #8) is done: origin/master contains a754677 and PR #8 is closed
 
 ### Constraints
 - "summary 그대로 둬. 너무 ai 티난다.."
@@ -94,3 +91,11 @@ commit: a7546777664d2195c7aa370ee9da6ffd4ee4e888
 #### 5 — 2026-11-23T11:52:05Z
 
 > dev -> master로 보내. 일단은 간섭은 무시.
+
+#### 6 — 2026-11-23T12:58:14Z
+
+> 이미 병합한 PR인데?
+
+#### 7 — 2026-11-23T12:59:57Z
+
+> 그럼 저거 적용은?
