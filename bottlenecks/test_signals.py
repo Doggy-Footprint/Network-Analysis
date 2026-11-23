@@ -361,7 +361,6 @@ def _ts_parts(node: Any, data: bytes) -> Optional[list]:
 
 
 def _ts_classify(call: Any, data: bytes) -> Optional[tuple]:
-    """The `.each(table)` binding call itself is not a test call; the call it returns is."""
     function = call.child_by_field_name("function")
     if function is None:
         return None
