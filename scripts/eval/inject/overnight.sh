@@ -1,7 +1,6 @@
 #!/bin/sh
 # usage: overnight.sh "CTFd flask-admin ghostfolio nowinandroid" [replicates] [negatives] ["extra run flags", e.g. "--fraction 3"]
-# caffeinate keeps the Mac awake; tasks that failed for network reasons are not cached, so the second pass retries them.
-# Repositories run one after another so test gates never compete for the CPU.
+# Tasks that failed for network reasons are not cached, so the second pass retries them.
 set -e
 cd "$(dirname "$0")/../../.."
 for REPO in ${1:-CTFd}; do

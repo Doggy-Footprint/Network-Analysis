@@ -1,8 +1,5 @@
-"""Fault-injection eval: Sonnet injects one catalog problem per task, the analyzer is judged on its baseline delta.
-
-The workspace lives outside this repository and headless agents run with --restricted in a per-task worktree, so the
-injector never sees the analyzer or this project's instructions.
-"""
+"""The workspace lives outside this repository and headless agents run with --restricted in a per-task worktree, so the
+injector never sees the analyzer or this project's instructions."""
 import argparse
 import fcntl
 import hashlib
@@ -74,7 +71,6 @@ GATE_SPACING = 60
 
 
 def memory():
-    """kern.memorystatus_level is the system-wide free-memory percentage macOS itself uses for memory pressure."""
     stats = run(['vm_stat']).stdout
     page = int(re.search(r'page size of (\d+)', stats).group(1))
     pages = {k: int(v) for k, v in re.findall(r'Pages (free|inactive|speculative|purgeable):\s+(\d+)', stats)}
@@ -84,7 +80,7 @@ def memory():
 
 
 def thermal():
-    """NSProcessInfo.thermalState is macOS's own heat verdict (0 nominal .. 3 critical); it needs no sudo, unlike powermetrics."""
+    """NSProcessInfo.thermalState needs no sudo, unlike powermetrics."""
     proc = run(['osascript', '-l', 'JavaScript', '-e', 'ObjC.import("Foundation"); $.NSProcessInfo.processInfo.thermalState'])
     return int(proc.stdout.strip()) if proc.stdout.strip().isdigit() else None
 
@@ -194,7 +190,6 @@ def files_of(repo, kind):
 
 
 def part_of(types, index, parts):
-    # strata keep every part's mix of weights and file kinds close to the whole catalog's
     catalog = {t['id']: t for t in CATALOG['types']}
     strata = {}
     for type_id in sorted(types, key=lambda t: random.Random(f'part:{t}').random()):
@@ -275,7 +270,6 @@ def recorded_spend():
 
 
 def over_budget():
-    # spend is summed from every repository's saved results, so both parallel streams share one cap
     if budget_state['usd'] is None:
         return False
     with budget_lock:
@@ -307,7 +301,6 @@ def log_limit(event, **fields):
 
 
 def wait_limit(message, sent_at):
-    # one thread per process probes; the others block on the lock and retry once it is released
     with limit_lock:
         if limit_state['gave_up']:
             return False
@@ -365,7 +358,6 @@ def usage(proc, seconds):
 
 
 def reset_worktree(worktree):
-    # a call cut off by the usage limit may leave a half-made injection; the retry starts from the base commit
     run(['git', 'reset', '-q', '--hard', 'HEAD'], cwd=worktree, check=True)
     run(['git', 'clean', '-qfd'], cwd=worktree, check=True)
 
@@ -485,7 +477,6 @@ def analyze(repo, worktree, out, baseline):
 
 
 def location_tokens(touched, roots):
-    """Strings that tie a delta item to a touched file: its path, its directory package, and its language package."""
     tokens = set(touched)
     for rel in touched:
         path = Path(rel)
@@ -935,7 +926,6 @@ def category(task):
 
 
 def cmd_cost(args):
-    """Sonnet spend per task category, measured on runs that recorded usage, and its projection to the full plan."""
     types = [t['id'] for t in CATALOG['types'] if t['injectable']]
     per_cat, elapsed, full, remaining = {}, {}, {}, {}
     for repo in args.repos.split(','):

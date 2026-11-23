@@ -44,8 +44,6 @@ def strengthened_item(cur, base, increased, added=()):
             'increased': increased, 'added_evidence': list(added)}
 
 
-# ---------------------------------------------------------------- V01 decision table
-
 # kind, target, baseline metrics, increased metrics, decreased metrics, metrics differing only in non-strength fields,
 # the {metric: {baseline, current}} that the increase must report
 KINDS_WITH_STRENGTH = {
@@ -190,8 +188,6 @@ def test_V01_unknown_kind_R11_single_baseline_against_duplicated_current_pairs_n
     assert result['resolved']['candidates'] == 1
 
 
-# ---------------------------------------------------------------- V02 boundaries
-
 BOUNDARY_CASES = [(kind, metric, step) for kind, metric in SEVEN_PAIRS for step in (0, 1)]
 
 
@@ -208,8 +204,6 @@ def test_V02_strength_metric_boundary(kind, metric, step):
     else:
         assert result['strengthened_candidates'] == [strengthened_item(cur, base, {metric: {'baseline': 10, 'current': 11}})]
 
-
-# ---------------------------------------------------------------- V03 F11 syntax
 
 def write(tmp_path, data, name='baseline.json'):
     target = tmp_path / name
@@ -285,8 +279,6 @@ def test_V03_unknown_kind_is_not_subject_to_strength_metric_and_evidence_checks(
     assert loaded['candidates'][0]['kind'] == 'duplicate_code'
 
 
-# ---------------------------------------------------------------- V04 equivalence classes
-
 def mixed_pair():
     base = payload(
         candidates=[cycle([A, B]), internal_violation('b:v1', A, B),
@@ -359,8 +351,6 @@ def test_V04_v8_baseline_file_applies_general_comparison_and_checks(tmp_path):
         api().load_baseline(write(tmp_path, broken, 'broken.json'))
 
 
-# ---------------------------------------------------------------- V05 CLI scenario
-
 UNRESOLVED_CALLS = ('\nfrom app.services import jwt as zz_jwt_module\n\n\ndef zz_calls_missing_attributes():\n'
                     + ''.join(f'    zz_jwt_module.zz_missing_name_{i}()\n' for i in range(3)))
 
@@ -394,8 +384,6 @@ def test_V05_cli_baseline_rerun_reports_new_unresolved_boundary_and_isolated_nod
                              f"strengthened candidates {delta['counts']['strengthened_candidates']}")
     assert delta['counts']['new_candidates'] == len(delta['new_candidates']) >= 1
 
-
-# ---------------------------------------------------------------- V06 metamorphic
 
 def varied_pair():
     base = payload(candidates=[
@@ -447,8 +435,6 @@ def test_V06_M4_rename_is_resolved_plus_new_known_false_positive():
     assert result['strengthened_candidates'] == []
 
 
-# ---------------------------------------------------------------- V07 performance
-
 def large_general_pair():
     kinds = ['large_node', 'unresolved_boundary', 'evidence_spread', 'dangling_doc_reference', 'unstable_dependency', 'untested_hub']
     main = {'large_node': 'line_count', 'unresolved_boundary': 'unresolved_count', 'evidence_spread': 'file_count',
@@ -479,8 +465,6 @@ def test_V07_fifty_thousand_candidates_per_side_in_three_seconds():
     assert result['resolved']['candidates'] == 25000
     assert result['counts']['strengthened_candidates'] == 4166
 
-
-# ---------------------------------------------------------------- V08 error guessing
 
 def test_V08_pairing_uses_key_not_id():
     base = gen('large_node', A, 'same-id', {'line_count': 1})

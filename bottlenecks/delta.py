@@ -392,7 +392,6 @@ _TRAILING_SEPARATOR = re.compile(r"[,;]+(?=[)\]}>])")
 
 
 def _squeeze(signature: str) -> str:
-    # Formatter-only differences (whitespace, trailing separators, quote style) must not read as signature changes.
     return _TRAILING_SEPARATOR.sub("", "".join(signature.split())).replace("'", '"')
 
 
